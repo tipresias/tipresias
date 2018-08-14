@@ -1,6 +1,8 @@
 rpy2
 tzlocal
 jupyter
+requests
+bs4
 
 numpy
 pandas

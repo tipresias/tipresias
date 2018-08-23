@@ -1,6 +1,8 @@
 import os
 import sys
 from datetime import datetime
+import dateutil
+from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 import numpy as np
@@ -12,14 +14,30 @@ if project_path not in sys.path:
 from src import clean_data
 
 
-URL = 'https://www.footywire.com/afl/footy/afl_betting'
+BETTING_LABEL = 'afl_betting'
+MATCH_LABEL = 'ft_match_list'
+URL = 'https://www.footywire.com/afl/footy/'
+PAGES = [BETTING_LABEL, MATCH_LABEL]
 
 
-def betting_row(idx, tr):
+def match_row(year, tr):
+    table_row = list(tr.stripped_strings)
+
+    if len(table_row) == 0:
+        return []
+
+    return [year] + table_row
+
+def match_table(year, data_div):
+    data_table = data_div.find('table')
+
+    if data_table is None:
+        return None
+
+    return [match_row(year, tr) for tr in data_table.find_all('tr')]
+
+def betting_row(tr):
         table_row = list(tr.stripped_strings)
-
-        if len(table_row) == 0:
-            return []
 
         # First two columns in data rows have rowspan="2", so empty cells need to be prepended
         # to every-other data row. There doesn't seem to be a good way of identifying these rows
@@ -30,7 +48,6 @@ def betting_row(idx, tr):
 
         return table_row
 
-
 def betting_table(data_div):
     # afl_betting page nests the data table inside of an outer table
     data_table = data_div.find('table').find('table')
@@ -38,17 +55,16 @@ def betting_table(data_div):
     if data_table is None:
         return None
 
-    return [betting_row(idx, tr) for idx, tr in enumerate(data_table.find_all('tr'))]
+    return [betting_row(tr) for tr in data_table.find_all('tr')]
 
-
-def fetch_page(year):
-    res = requests.get(URL, params={'year': str(year)})
+def fetch_page(page_path, year):
+    page_url = urljoin(URL, page_path)
+    res = requests.get(page_url, params={'year': str(year)})
     text = res.text
     # Have to use html5lib, because default HTML parser wasn't working for this site
     return BeautifulSoup(text, 'html5lib')
 
-
-def scrape_pages():
+def scrape_pages(page_path):
     today = datetime.now()
     data = []
 
@@ -57,30 +73,30 @@ def scrape_pages():
     # NOTE: This can't be refactored, because we need to be able to break the loop
     # once a blank page is returned.
     for year in reversed(range(today.year + 1)):
-        page = fetch_page(year)
+        page = fetch_page(page_path, year)
         data_div = page.find('div', class_='datadiv')
 
         if data_div is None:
             break
 
-        data.extend(betting_table(data_div))
+        if page_path == BETTING_LABEL:
+            data.extend(betting_table(data_div))
+        if page_path == MATCH_LABEL:
+            data.extend(match_table(year, data_div))
 
     if len(data) > 0:
         max_length = len(max(data, key=len))
         # Add null cells, so all rows are same length for Pandas dataframe
         padded_data = [list(row) + [None] * (max_length - len(row)) for row in data]
+    else:
+        padded_data = []
 
     return padded_data
 
-
 def main():
-    return scrape_pages()
-
+    return {page_path: scrape_pages(page_path) for page_path in PAGES}
 
 if __name__ == '__main__':
     data = main()
 
-    with open(project_path + '/test.csv', 'w') as stream:
-        stream.write('\n'.join([','.join([str(y) for y in x]) for x in data]))
-
-    # clean_data.main(data, csv=True)
+    clean_data.main(data, csv=True)

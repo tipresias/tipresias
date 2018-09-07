@@ -3,11 +3,13 @@ tzlocal
 jupyter
 requests
 bs4
+pylint
 
 numpy
 pandas
 scikit-learn
 scipy
+xgboost
 
 seaborn
 matplotlib

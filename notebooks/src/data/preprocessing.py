@@ -6,15 +6,14 @@ import numpy as np
 
 project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
 
-
 def raw_betting_df(path=f'{project_path}/data/afl_betting.csv'):
     betting_df = pd.read_csv(path, index_col=('date', 'venue'), parse_dates=['date'])
     home_df = betting_df[betting_df['home'] == 1].drop('home', axis=1).rename(columns=lambda x: f'home_{x}')
     away_df = betting_df[betting_df['home'] == 0].drop('home', axis=1).rename(columns=lambda x: f'away_{x}')
 
     return (home_df.merge(away_df, on=('date', 'venue'))
-                                   .reset_index()
-                                   .set_index(['date', 'venue', 'home_team', 'away_team']))
+                   .reset_index()
+                   .set_index(['date', 'venue', 'home_team', 'away_team']))
 
 def raw_match_df(path=f'{project_path}/data/ft_match_list.csv'):
     return (pd.read_csv(path, parse_dates=['date'])
@@ -133,16 +132,84 @@ def team_year_oppo_feature(column_label):
               .set_index(['team', 'year', 'round_number'])
               .sort_index())
 
+# Function to get rolling mean without losing the first n rows of data by filling
+# the with an expanding mean
+def rolling_team_rate(series):
+    groups = series.groupby(level=0, group_keys=False)
+    rolling_win_rate = groups.rolling(window=23).mean()
+    expanding_win_rate = (groups.expanding(1)
+                                .mean()
+                                # Only select rows that are NaNs in rolling series
+                                [rolling_win_rate.isna()])
+
+    return (pd.concat([rolling_win_rate, expanding_win_rate], join='inner')
+              .dropna()
+              .sort_index())
+
+def rolling_pred_win_rate(df):
+    wins = (df['line_odds'] < 0)
+    draws = (df['line_odds'] == 0) * 0.5
+    return rolling_team_rate(wins + draws)
+
+def last_week_result(df):
+    wins = (df['last_week_score'] > df['oppo_last_week_score'])
+    draws = (df['last_week_score'] == df['oppo_last_week_score']) * 0.5
+    return wins + draws
+
+def rolling_last_week_win_rate(df):
+    return rolling_team_rate(last_week_result(df))
+
+# Calculate win/loss streaks. Positive result (win or draw) adds 1 (or 0.5);
+# negative result subtracts 1. Changes in direction (i.e. broken streak) result in
+# starting at 1 or -1.
+def win_streak(df):
+    last_week_win_groups = last_week_result(df).dropna().groupby(level=0, group_keys=False)
+    streak_groups = []
+
+    for group_key, group in last_week_win_groups:
+        streaks = []
+        
+        for idx, result in enumerate(group):
+            # 1 represents win, 0.5 represents draw
+            if result > 0:
+                if idx == 0 or streaks[idx - 1] <= 0:
+                    streaks.append(result)
+                else:
+                    streaks.append(streaks[idx - 1] + result)
+            # 0 represents loss
+            elif result == 0:
+                if idx == 0 or streaks[idx - 1] >= 0:
+                    streaks.append(-1)
+                else:
+                    streaks.append(streaks[idx - 1] - 1)
+            else:
+                raise Exception(f'No results should be negative, but {result} is at index {idx} of group {group_key}')
+                        
+        streak_groups.extend(streaks)
+        
+    return pd.Series(streak_groups, index=df.index)
+
 def cum_team_df(df):
     return (df.assign(ladder_position=team_year_ladder_position,
                       cum_percent=team_year_percent,
                       cum_win_points=team_year_win_points,
-                      last_week_score=lambda x: x.groupby(level=0)['score'].shift())
+                      last_week_score=lambda x: x.groupby(level=0)['score'].shift(),
+                      rolling_pred_win_rate=rolling_pred_win_rate)
                # oppo features depend on associated cumulative feature,
                # so they need to be assigned after
                .assign(oppo_ladder_position=team_year_oppo_feature('ladder_position'),
                        oppo_cum_percent=team_year_oppo_feature('cum_percent'),
                        oppo_cum_win_points=team_year_oppo_feature('cum_win_points'),
-                       oppo_last_week_score=team_year_oppo_feature('last_week_score'))
+                       oppo_last_week_score=team_year_oppo_feature('last_week_score'),
+                       oppo_rolling_pred_win_rate=team_year_oppo_feature('rolling_pred_win_rate'))
+               # Columns that depend on last week's results depend on last_week_score
+               # and oppo_last_week_score
+               .assign(rolling_last_week_win_rate=rolling_last_week_win_rate,
+                       win_streak=win_streak)
+               .assign(oppo_rolling_last_week_win_rate=team_year_oppo_feature('rolling_last_week_win_rate'),
+                       oppo_win_streak=team_year_oppo_feature('win_streak'))
                # Drop first round as it's noisy due to most data being from previous week's match
-               .dropna())
+               .dropna()
+               # Gotta drop duplicates, because St Kilda & Carlton tied a Grand Final
+               # in 2010 and had to replay it
+               .drop_duplicates(subset=['team', 'year', 'round_number'], keep='last'))

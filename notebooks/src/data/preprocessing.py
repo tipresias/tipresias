@@ -67,9 +67,10 @@ def team_df(df, team_type='home'):
         raise Exception(f'team_type must be either "home" or "away", but {team_type} was given.')
 
     oppo_team_type = 'away' if team_type == 'home' else 'home'
+    at_home_col = np.ones(len(df)) if team_type == 'home' else np.zeros(len(df))
 
     return (df.rename(columns=lambda x: x.replace(f'{team_type}_', '').replace(f'{oppo_team_type}_', 'oppo_'))
-              .assign(at_home=np.ones(len(df)))
+              .assign(at_home=at_home_col)
               .set_index(['team', 'year', 'round_number'], drop=False))
 
 def team_betting_model_df(df):
@@ -152,8 +153,8 @@ def rolling_pred_win_rate(df):
     return rolling_team_rate(wins + draws)
 
 def last_week_result(df):
-    wins = (df['last_week_score'] > df['oppo_last_week_score'])
-    draws = (df['last_week_score'] == df['oppo_last_week_score']) * 0.5
+    wins = (df['last_week_score'] > df['last_week_oppo_score'])
+    draws = (df['last_week_score'] == df['last_week_oppo_score']) * 0.5
     return wins + draws
 
 def rolling_last_week_win_rate(df):
@@ -194,16 +195,16 @@ def cum_team_df(df):
                       cum_percent=team_year_percent,
                       cum_win_points=team_year_win_points,
                       last_week_score=lambda x: x.groupby(level=0)['score'].shift(),
+                      last_week_oppo_score=lambda x: x.groupby(level=0)['oppo_score'].shift(),
                       rolling_pred_win_rate=rolling_pred_win_rate)
                # oppo features depend on associated cumulative feature,
                # so they need to be assigned after
                .assign(oppo_ladder_position=team_year_oppo_feature('ladder_position'),
                        oppo_cum_percent=team_year_oppo_feature('cum_percent'),
                        oppo_cum_win_points=team_year_oppo_feature('cum_win_points'),
-                       oppo_last_week_score=team_year_oppo_feature('last_week_score'),
                        oppo_rolling_pred_win_rate=team_year_oppo_feature('rolling_pred_win_rate'))
                # Columns that depend on last week's results depend on last_week_score
-               # and oppo_last_week_score
+               # and last_week_oppo_score
                .assign(rolling_last_week_win_rate=rolling_last_week_win_rate,
                        win_streak=win_streak)
                .assign(oppo_rolling_last_week_win_rate=team_year_oppo_feature('rolling_last_week_win_rate'),

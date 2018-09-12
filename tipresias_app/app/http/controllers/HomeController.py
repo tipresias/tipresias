@@ -1,8 +1,8 @@
 ''' Welcome The User To Masonite '''
 
-class WelcomeController:
+class HomeController:
     ''' Controller For Welcoming The User '''
 
-    def show(self, Application):
+    def show(self):
         ''' Show Welcome Template '''
-        return view('welcome', {'app': Application})
+        return view('/storage/compiled/index')

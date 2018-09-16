@@ -1,17 +1,17 @@
 # Data packages
-numpy==1.14.5
-pandas==0.23.3
-scikit-learn==0.19.1
-scipy==1.1.0
-tensorflow==1.8.0
+numpy
+pandas
+scikit-learn
+scipy
+# tensorflow==1.10.1
 xgboost
 jupyter
-rpy2
-tzlocal
+# rpy2
+# tzlocal
 
 # Data vis packages
-seaborn==0.9
-matplotlib==2.0.2
+seaborn
+matplotlib
 
 # App packages
 masonite-cli

@@ -1,15 +1,23 @@
-rpy2
-tzlocal
-jupyter
-requests
-bs4
-pylint
-
+# Data packages
 numpy
 pandas
 scikit-learn
 scipy
+# tensorflow==1.10.1
 xgboost
+jupyter
+# rpy2
+# tzlocal
 
+# Data vis packages
 seaborn
 matplotlib
+
+# App packages
+masonite-cli
+waitress==1.1.0
+masonite>=2.0,<=2.0.99
+
+requests
+bs4
+pylint

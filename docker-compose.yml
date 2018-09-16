@@ -1,10 +1,33 @@
 version: '3.1'
 services:
-  jupyter:
+  server:
     build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_DEBUG=True
+    depends_on:
+      - client # Make sure the assets are build first
+    command: craft serve -r --host server
+  client:
+    build:
+      context: .
+      dockerfile: client.Dockerfile
+    volumes:
+      - ./storage/:/app/storage/
+      - ./package.json:/app/package.json
+      - ./yarn.lock:/app/yarn.lock
+    ports:
+        - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: yarn run dev
+  notebook:
+    image: tipresias_server:latest
     volumes:
       - .:/app
     ports:
       - "8888:8888"
     command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
-

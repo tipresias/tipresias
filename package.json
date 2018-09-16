@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "parcel watch storage/static/index.html -d storage/compiled --public-url /static --hmr-port 3000",
-    "build": "parcel build storage/static/index.html -d storage/compiled",
+    "build": "parcel build storage/static/index.html -d storage/compiled  --public-url /static --hmr-port 3000",
     "test": ""
   },
   "dependencies": {

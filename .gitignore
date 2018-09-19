@@ -113,14 +113,8 @@ node_modules
 */coverage
 
 # production
-*/storage/compiled/*.js*
-*/storage/compiled/*.html
-*/storage/compiled/*.css
-*/storage/compiled/*.map
-*/storage/compiled/*.svg
-*/storage/compiled/*.ico
-*/storage/compiled/*.png
-*/storage/compiled/*.jpg
+storage/compiled/**
+!storage/compiled/__init__.py
 
 # misc
 .DS_Store

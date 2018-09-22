@@ -1,11 +1,17 @@
 import os
+import sys
 import pandas as pd
 import numpy as np
 import dateutil
 from datetime import datetime
 import re
 
-from scripts import raw_data
+project_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../'))
+if project_path not in sys.path:
+    sys.path.append(project_path)
+
+from scripts.data import raw_data
 
 
 BETTING_LABEL = 'afl_betting'

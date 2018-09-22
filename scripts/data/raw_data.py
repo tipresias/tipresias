@@ -7,7 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 import numpy as np
 
-project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+project_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../'))
 if project_path not in sys.path:
     sys.path.append(project_path)
 

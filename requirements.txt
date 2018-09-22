@@ -21,3 +21,4 @@ masonite>=2.0,<=2.0.99
 requests
 bs4
 pylint
+autopep8

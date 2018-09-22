@@ -11,8 +11,6 @@ project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 if project_path not in sys.path:
     sys.path.append(project_path)
 
-from src.data import clean_data
-
 
 BETTING_LABEL = 'afl_betting'
 MATCH_LABEL = 'ft_match_list'
@@ -28,6 +26,7 @@ def match_row(year, tr):
 
     return [year] + table_row
 
+
 def match_table(year, data_div):
     data_table = data_div.find('table')
 
@@ -36,17 +35,19 @@ def match_table(year, data_div):
 
     return [match_row(year, tr) for tr in data_table.find_all('tr')]
 
+
 def betting_row(tr):
-        table_row = list(tr.stripped_strings)
+    table_row = list(tr.stripped_strings)
 
-        # First two columns in data rows have rowspan="2", so empty cells need to be prepended
-        # to every-other data row. There doesn't seem to be a good way of identifying these rows
-        # apart from their length: 11 cells means the date is in the row, 9 means there's no date.
-        # Also have to check for attributes, because column label rows have 9 items but no attributes.
-        if len(table_row) == 9 and len(tr.attrs) > 0:
-            return ([np.nan] * 2) + table_row
+    # First two columns in data rows have rowspan="2", so empty cells need to be prepended
+    # to every-other data row. There doesn't seem to be a good way of identifying these rows
+    # apart from their length: 11 cells means the date is in the row, 9 means there's no date.
+    # Also have to check for attributes, because column label rows have 9 items but no attributes.
+    if len(table_row) == 9 and len(tr.attrs) > 0:
+        return ([np.nan] * 2) + table_row
 
-        return table_row
+    return table_row
+
 
 def betting_table(data_div):
     # afl_betting page nests the data table inside of an outer table
@@ -57,12 +58,14 @@ def betting_table(data_div):
 
     return [betting_row(tr) for tr in data_table.find_all('tr')]
 
+
 def fetch_page(page_path, year):
     page_url = urljoin(URL, page_path)
     res = requests.get(page_url, params={'year': str(year)})
     text = res.text
     # Have to use html5lib, because default HTML parser wasn't working for this site
     return BeautifulSoup(text, 'html5lib')
+
 
 def scrape_pages(page_path):
     today = datetime.now()
@@ -87,16 +90,17 @@ def scrape_pages(page_path):
     if len(data) > 0:
         max_length = len(max(data, key=len))
         # Add null cells, so all rows are same length for Pandas dataframe
-        padded_data = [list(row) + [None] * (max_length - len(row)) for row in data]
+        padded_data = [list(row) + [None] * (max_length - len(row))
+                       for row in data]
     else:
         padded_data = []
 
     return padded_data
 
+
 def main():
     return {page_path: scrape_pages(page_path) for page_path in PAGES}
 
-if __name__ == '__main__':
-    data = main()
 
-    clean_data.main(data, csv=True)
+if __name__ == '__main__':
+    main()

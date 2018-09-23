@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-from sklearn.base import BaseEstimator, TransformerMixin
 
 project_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../'))
@@ -20,7 +19,7 @@ class BettingDataReader():
         home_df = self.__split_home_away(data_frame, 'home')
         away_df = self.__split_home_away(data_frame, 'away')
 
-        return home_df.merge(away_df, on=self.index_cols).reset_index()
+        return home_df.merge(away_df, on=self.index_col).reset_index()
 
     def __split_home_away(self, data_frame, team_type):
         return (data_frame[data_frame['home'] == int(team_type == 'home')]

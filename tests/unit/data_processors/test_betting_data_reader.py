@@ -1,6 +1,7 @@
 import os
 import sys
 from unittest import TestCase
+import pandas as pd
 
 project_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../../'))
@@ -13,4 +14,14 @@ from app.data_processors import BettingDataReader
 
 class TestBettingDataReader(TestCase):
     def setUp(self):
-        self.described_class = BettingDataReader(filename='afl_betting.csv')
+        self.reader = BettingDataReader()
+
+    def test_transform(self):
+        df = self.reader.transform('afl_betting.csv')
+
+        self.assertIsInstance(df, pd.DataFrame)
+
+        home_columns = df.columns[df.columns.str.match(r'home_')]
+        away_columns = df.columns[df.columns.str.match(r'away_')]
+
+        self.assertEqual(len(home_columns), len(away_columns))

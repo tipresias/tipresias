@@ -25,4 +25,4 @@ pylint
 autopep8
 pytest==3.6.0 # Version number required by masonite
 pytest-env
-faker
+faker<0.8.0,>=0.7.0 # Version range required by orator

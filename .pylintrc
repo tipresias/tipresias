@@ -1,0 +1,8 @@
+[MESSAGES CONTROL]
+disable=
+    W0102, # Dangerous default value (list)
+    R0903, # Too few public methods
+    E1101, # Instance of generator has no <something> method (needed for Flake)
+    C0111, # Missing module docstring
+    C0413, # Local import should be placed at the top of the module
+    C0103 # Module doesn't follow snake case (needed due to masonite conventions)

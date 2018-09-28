@@ -113,7 +113,7 @@ node_modules
 */coverage
 
 # production
-storage/compiled/**
+**/storage/compiled/
 !storage/compiled/__init__.py
 
 # misc

@@ -1,9 +1,17 @@
 import os
+import sys
 import pandas as pd
 import numpy as np
 import dateutil
 from datetime import datetime
 import re
+
+project_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../'))
+if project_path not in sys.path:
+    sys.path.append(project_path)
+
+from scripts.data import raw_data
 
 
 BETTING_LABEL = 'afl_betting'
@@ -75,24 +83,30 @@ HOME_V_AWAY_LABELS = ['home_team', 'v', 'away_team']
 def translate_venue(venue):
     return VENUE_TRANSLATIONS[venue] if venue in VENUE_TRANSLATIONS.keys() else venue
 
+
 def translate_date(df):
     # year is a float, so we have to convert it to int, then str to concatenate
     # with the date string (date parser doesn't recognize years as floats)
     return (df['date'].astype(str) + ' ' + df['year'].astype(int).astype(str))
 
+
 def translate_score(idx):
     return lambda scores: float(scores[idx]) if type(scores) == list and len(scores) == 2 else None
+
 
 def get_score(idx):
     return lambda df: df['result'].str.split('-').map(translate_score(idx))
 
+
 def translate_home_team(df):
     return df['home_team'].map(lambda x: None if x in MATCH_STATUSES else x)
+
 
 def get_season_round(df):
     # Round label just appears at top of round in table,
     # so forward fill to apply it to all relevant matches
     return df['date'].str.extract(ROUND_REGEX, expand=True).ffill()
+
 
 def clean_match_data(data):
     # Ignore useless columns that are result of BeautifulSoup table parsing
@@ -118,41 +132,46 @@ def clean_match_data(data):
     return (df.assign(season_round=get_season_round,
                       home_team=translate_home_team,
                       venue=df['venue'].map(translate_venue))
-              # Check all columns except for round #, because round # would make all rows unique.
-              # Duplicate rows are from table labels/headers that are not useful
-              .drop_duplicates(subset=df.columns.values[:-1], keep=False)
-              # The only rows with NaNs are the round label rows that we no longer need
-              .dropna()
-              # Result column has format: 'home_score-away_score'
-              .assign(home_score=get_score(HOME_INDEX),
-                      away_score=get_score(AWAY_INDEX),
-                      date=translate_date)
-              .drop(['result', 'year', 'v'], axis=1)
-              .reset_index(drop=True))
+            # Check all columns except for round #, because round # would make all rows unique.
+            # Duplicate rows are from table labels/headers that are not useful
+            .drop_duplicates(subset=df.columns.values[:-1], keep=False)
+            # The only rows with NaNs are the round label rows that we no longer need
+            .dropna()
+            # Result column has format: 'home_score-away_score'
+            .assign(home_score=get_score(HOME_INDEX),
+                    away_score=get_score(AWAY_INDEX),
+                    date=translate_date)
+            .drop(['result', 'year', 'v'], axis=1)
+            .reset_index(drop=True))
+
 
 def translate_betting_teams(df):
     return df['team'].map(lambda x: BETTING_TEAM_TRANSLATIONS[x] if x in BETTING_TEAM_TRANSLATIONS.keys() else x)
 
+
 def clean_betting_data(data):
     # Ignore useless columns that are result of BeautifulSoup table parsing
     df = pd.DataFrame(data).iloc[:, BETTING_COL_INDICES]
-    df.columns = df.loc[COL_LABEL_ROW, :].map(lambda x: x.lower().replace(' ', '_')).rename(None)
+    df.columns = df.loc[COL_LABEL_ROW, :].map(
+        lambda x: x.lower().replace(' ', '_')).rename(None)
 
     df = (df.assign(team=translate_betting_teams,
                     date=lambda x: x['date'].ffill(),
                     venue=df['venue'].ffill().map(translate_venue))
-            .dropna()
-            # Duplicate rows are from table labels/headers that are not useful, so remove all
-            .drop_duplicates(keep=False)
-            .reset_index(drop=True)
-            # Save date parsing till the end to avoid ValueErrors
-            # .assign(date=lambda x: x['date'].apply(dateutil.parser.parse))
-            .drop(['score', 'win_paid', 'margin', 'line_paid'], axis=1))
+          .dropna()
+          # Duplicate rows are from table labels/headers that are not useful, so remove all
+          .drop_duplicates(keep=False)
+          .reset_index(drop=True)
+          # Save date parsing till the end to avoid ValueErrors
+          # .assign(date=lambda x: x['date'].apply(dateutil.parser.parse))
+          .drop(['score', 'win_paid', 'margin', 'line_paid'], axis=1))
 
     if len(df) % 2 != 0:
-        raise Exception(f'Betting DataFrame should have an even number of rows, but has {len(df)} instead')
+        raise Exception(
+            f'Betting DataFrame should have an even number of rows, but has {len(df)} instead')
 
     return df.assign(home=([1, 0] * int(len(df) / 2)))
+
 
 def main(data, csv=False):
     dfs = []
@@ -164,7 +183,8 @@ def main(data, csv=False):
             df = clean_match_data(value)
 
         if csv:
-            project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+            project_path = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '../../'))
             data_directory = os.path.join(project_path, 'data')
 
             if not os.path.isdir(data_directory):
@@ -175,3 +195,7 @@ def main(data, csv=False):
         dfs.append(df)
 
     return tuple(dfs)
+
+
+if __name__ == '__main__':
+    main(raw_data.main(), csv=True)

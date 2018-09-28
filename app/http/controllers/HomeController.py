@@ -1,8 +1,7 @@
-''' Welcome The User To Masonite '''
-
 class HomeController:
-    ''' Controller For Welcoming The User '''
+    """Controller root"""
 
-    def show(self):
-        ''' Show Welcome Template '''
-        return view('/storage/compiled/index')
+    def show(self, View):  # pylint: disable=R0201
+        """Show Welcome Template"""
+
+        return View('/storage/compiled/index')  # pylint: disable=E0602

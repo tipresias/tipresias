@@ -20,7 +20,7 @@ class DataConcatenator():
         shared_columns = reduce(np.intersect1d,
                                 (data_frame.columns for data_frame in data_frames))
 
-        if len(shared_columns) == 0:
+        if not any(shared_columns):
             raise ValueError('The data frames do not have any columns in common '
                              'and cannot be concatenated.')
 

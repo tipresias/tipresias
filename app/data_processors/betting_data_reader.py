@@ -1,18 +1,43 @@
 import os
 import pandas as pd
 
-project_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../'))
+PROJECT_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../')
+)
 
 
 class BettingDataReader():
+    """Read betting data from csv and turn into data frame.
+
+    Args:
+        index_col (int, iterable): Column label(s) to use as index(es) for data frame.
+            See pandas.read_csv().
+        parse_dates (boolean, list): Column to try to parse into dates for data frame.
+            See pandas.read_csv().
+
+    Attributes:
+        index_col (int, iterable): Column label(s) to use as index(es) for data frame.
+            See pandas.read_csv().
+        parse_dates (boolean, list): Column to try to parse into dates for data frame.
+            See pandas.read_csv().
+    """
+
     def __init__(self, index_col=('date', 'venue'),
                  parse_dates=['date']):
         self.index_col = index_col
         self.parse_dates = parse_dates
 
     def transform(self, filename='afl_betting.csv'):
-        data_frame = pd.read_csv(f'{project_path}/data/{filename}',
+        """Transform a csv file into a data frame.
+
+        Args:
+            filename (string): Name of the csv file.
+
+        Returns:
+            pandas.DataFrame
+        """
+
+        data_frame = pd.read_csv(f'{PROJECT_PATH}/data/{filename}',
                                  index_col=self.index_col,
                                  parse_dates=self.parse_dates)
 
@@ -26,5 +51,6 @@ class BettingDataReader():
                 .drop('home', axis=1)
                 .rename(columns=self.__rename_columns(team_type)))
 
-    def __rename_columns(self, team_type):
+    @staticmethod
+    def __rename_columns(team_type):
         return lambda column: f'{team_type}_{column}'

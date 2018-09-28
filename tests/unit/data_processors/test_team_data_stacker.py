@@ -5,35 +5,36 @@ from faker import Faker
 import pandas as pd
 import numpy as np
 
-project_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../../'))
+PROJECT_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../../')
+)
 
-if project_path not in sys.path:
-    sys.path.append(project_path)
+if PROJECT_PATH not in sys.path:
+    sys.path.append(PROJECT_PATH)
 
-from app.data_processors import DataTransformer
+from app.data_processors import TeamDataStacker
 
-fake = Faker()
+FAKE = Faker()
 
 
-class TestDataTransformer(TestCase):
+class TestTeamDataStacker(TestCase):
     def setUp(self):
-        self.transformer = DataTransformer()
+        self.transformer = TeamDataStacker()
 
     def test_transform(self):
         # DataFrame w/ minimum valid columns
         valid_data_frame = pd.DataFrame({
-            'home_team': [fake.company() for _ in range(10)],
-            'away_team': [fake.company() for _ in range(10)],
-            'year': [fake.year() for _ in range(10)],
+            'home_team': [FAKE.company() for _ in range(10)],
+            'away_team': [FAKE.company() for _ in range(10)],
+            'year': [FAKE.year() for _ in range(10)],
             'round_number': [np.random.randint(1, 24) for _ in range(10)],
             'home_score': [np.random.randint(50, 150) for _ in range(10)],
             'away_score': [np.random.randint(50, 150) for _ in range(10)]
         })
 
         invalid_data_frame = pd.DataFrame({
-            'home_team': [fake.company() for _ in range(10)],
-            'away_team': [fake.company() for _ in range(10)],
+            'home_team': [FAKE.company() for _ in range(10)],
+            'away_team': [FAKE.company() for _ in range(10)],
             'round_number': [np.random.randint(1, 24) for _ in range(10)],
             'home_score': [np.random.randint(50, 150) for _ in range(10)],
             'away_score': [np.random.randint(50, 150) for _ in range(10)]
@@ -43,7 +44,7 @@ class TestDataTransformer(TestCase):
             transformed_df = self.transformer.transform(valid_data_frame)
 
             self.assertIsInstance(transformed_df, pd.DataFrame)
-            # DataTransformer stacks home & away teams, so the new DF should have twice as many rows
+            # TeamDataStacker stacks home & away teams, so the new DF should have twice as many rows
             self.assertEqual(len(valid_data_frame) * 2, len(transformed_df))
             # 'home_'/'away_' columns become regular columns or 'oppo_' columns,
             # non-team-specific columns are unchanged, and we add 'at_home'

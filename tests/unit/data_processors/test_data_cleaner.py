@@ -5,26 +5,26 @@ import pandas as pd
 import numpy as np
 from faker import Faker
 
-project_path = os.path.abspath(
+PROJECT_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../../'))
 
-if project_path not in sys.path:
-    sys.path.append(project_path)
+if PROJECT_PATH not in sys.path:
+    sys.path.append(PROJECT_PATH)
 
 from app.data_processors import DataCleaner
 
 np.random.seed(42)
 
-fake = Faker()
+FAKE = Faker()
 
 
 class TestDataCleaner(TestCase):
     def setUp(self):
         # DataFrame w/ minimum valid columns
         self.data_frame = pd.DataFrame({
-            'venue': [fake.city() for _ in range(10)],
+            'venue': [FAKE.city() for _ in range(10)],
             'crowd': [np.random.randint(10000, high=40000) for _ in range(10)],
-            'datetime': [fake.date_time_this_century() for _ in range(10)],
+            'datetime': [FAKE.date_time_this_century() for _ in range(10)],
             'season_round': [f'round {np.random.randint(1, 24)}' for _ in range(10)]
         })
         self.array = self.data_frame.values
@@ -33,13 +33,14 @@ class TestDataCleaner(TestCase):
 
     def test_transform(self):
         with self.subTest(data_frame=self.data_frame):
-            df = self.cleaner.transform(self.data_frame)
+            data_frame = self.cleaner.transform(self.data_frame)
 
             self.assertTrue(
-                all((col in df.columns for col in ['round_number', 'year']))
+                all((col in data_frame.columns for col in [
+                    'round_number', 'year']))
             )
             self.assertFalse(
-                any((col in df.columns for col in
+                any((col in data_frame.columns for col in
                      ['datetime', 'season_round', 'venue', 'crowd']))
             )
 

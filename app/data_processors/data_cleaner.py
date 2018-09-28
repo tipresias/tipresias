@@ -1,6 +1,5 @@
 import re
 import pandas as pd
-import numpy as np
 
 DIGITS = re.compile(r'round\s+(\d+)$', flags=re.I)
 QUALIFYING = re.compile(r'qualifying', flags=re.I)
@@ -12,34 +11,57 @@ REQUIRED_COLUMNS = ['venue', 'crowd', 'datetime', 'season_round']
 
 
 class DataCleaner():
+    """Clean and format data in preparation of feature engineering.
+
+    Args:
+        min_year (integer): Minimum year (inclusive) for match data.
+        max_year (integer): Maximum year (inclusive) for match data.
+        drop_cols (string, list): Column(s) to drop at the end of transformation.
+
+    Attributes:
+        min_year (integer): Minimum year (inclusive) for match data.
+        max_year (integer): Maximum year (inclusive) for match data.
+        drop_cols (string, list): Column(s) to drop at the end of transformation.
+    """
+
     def __init__(self, min_year=1, max_year=2016, drop_cols=['venue', 'crowd']):
         self.min_year = min_year
         self.max_year = max_year
         self.drop_cols = drop_cols
 
-    # data_frame must have the following columns to be valid:
-    # venue, crowd, datetime, season_round
     def transform(self, data_frame):
-        if type(data_frame) is not pd.DataFrame:
-            raise TypeError(f'Must receive a pandas DataFrame as an argument, '
-                            'but got {type(data_frame)} instead.')
+        """Filter data frame by year, transform round_number & year,
+        and drop unneeded columns
+
+        Args:
+            data_frame (pandas.DataFrame): Data frame that will be cleaned
+
+        Returns:
+            pandas.DataFrame
+        """
+
+        if not isinstance(data_frame, pd.DataFrame):
+            raise TypeError('Must receive a pandas DataFrame as an argument, '
+                            f'but got {type(data_frame)} instead.')
 
         if any((req_col not in data_frame.columns for req_col in REQUIRED_COLUMNS)):
-            raise ValueError(f"data_frame argument must have the columns 'venue', "
+            raise ValueError("data_frame argument must have the columns 'venue', "
                              "'crowd', 'datetime', 'season_round', but the columns "
-                             "given are {data_frame.columns.values}")
+                             f"given are {data_frame.columns.values}")
 
-        df = data_frame.copy()
+        df_copy = data_frame.copy()
 
-        return (df[(df['datetime'] >= f'{self.min_year}-01-01') & (df['datetime'] <= f'{self.max_year}-12-31')]
+        return (df_copy[(df_copy['datetime'] >= f'{self.min_year}-01-01') &
+                        (df_copy['datetime'] <= f'{self.max_year}-12-31')]
                 .assign(round_number=self.__extract_round_number,
                         year=self.__extract_year)
                 .drop(self.drop_cols + ['datetime', 'season_round'], axis=1))
 
-    def __extract_round_number(self, df):
-        return df['season_round'].map(self.__match_round)
+    def __extract_round_number(self, data_frame):
+        return data_frame['season_round'].map(self.__match_round)
 
-    def __match_round(self, round_string):
+    @staticmethod
+    def __match_round(round_string):
         digits = DIGITS.search(round_string)
 
         if digits is not None:
@@ -58,5 +80,6 @@ class DataCleaner():
         raise ValueError(
             f"Round label {round_string} doesn't match any known patterns")
 
-    def __extract_year(self, df):
-        return df['datetime'].map(lambda date_time: date_time.year)
+    @staticmethod
+    def __extract_year(data_frame):
+        return data_frame['datetime'].map(lambda date_time: date_time.year)

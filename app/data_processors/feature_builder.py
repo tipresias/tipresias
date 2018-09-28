@@ -24,7 +24,7 @@ from app.data_processors.feature_functions import (
 INDEX_COLS = ['year', 'round_number', 'team']
 REQUIRED_COLS = INDEX_COLS + ['oppo_team']
 # This is just for convenience based on current needs; might remove it later
-DEFAULT_FEATURES = [
+DEFAULT_FEATURES = (
     add_last_week_result,
     add_last_week_score,
     add_cum_percent,
@@ -33,17 +33,17 @@ DEFAULT_FEATURES = [
     add_rolling_last_week_win_rate,
     add_ladder_position,
     add_win_streak
-]
+)
 
 
 class FeatureBuilder():
     """Add features to data frames.
 
     Args:
-        new_features (iterable): Iterable containing instances of Feature.
+        feature_funcs (iterable): Iterable containing instances of Feature.
 
     Attributes:
-        new_features (iterable): Iterable containing instances of Feature.
+        feature_funcs (iterable): Iterable containing instances of Feature.
     """
 
     def __init__(self, feature_funcs=DEFAULT_FEATURES):

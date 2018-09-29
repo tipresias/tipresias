@@ -9,25 +9,24 @@ services:
     stdin_open: true
     tty: true
     command: python3 manage.py runserver 0.0.0.0:8000
-
-  # client:
-  #   build:
-  #     context: .
-  #     dockerfile: client.Dockerfile
-  #   volumes:
-  #     - ./storage/:/app/storage/
-  #     - ./package.json:/app/package.json
-  #     - ./yarn.lock:/app/yarn.lock
-  #     - ./node_modules/:/app/node_modules
-  #   ports:
-  #       - "3000:3000"
-  #   environment:
-  #     - NODE_ENV=development
-  #   command: yarn run dev
-  # notebook:
-  #   image: tipresias_server:latest
-  #   volumes:
-  #     - .:/app
-  #   ports:
-  #     - "8888:8888"
-  #   command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+  client:
+    build:
+      context: .
+      dockerfile: client.Dockerfile
+    volumes:
+      - ./build/:/app/build/
+      - ./client/:/app/client/
+      - ./package.json:/app/package.json
+      - ./yarn.lock:/app/yarn.lock
+    ports:
+        - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: yarn start
+  notebook:
+    image: tipresias_server:latest
+    volumes:
+      - .:/app
+    ports:
+      - "8888:8888"
+    command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root

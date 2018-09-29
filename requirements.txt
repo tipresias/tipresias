@@ -13,16 +13,14 @@ jupyter
 seaborn
 matplotlib
 
-# App packages
-masonite-cli
-waitress==1.1.0
-masonite>=2.0,<=2.0.99
-cryptography==2.3 # Version number required by masonite
-
-django
-
+# Scraping
 requests
 bs4
+
+# App packages
+django
+
+# Testing/Linting
 pylint
 autopep8
 pytest==3.6.0 # Version number required by masonite

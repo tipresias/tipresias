@@ -19,6 +19,8 @@ waitress==1.1.0
 masonite>=2.0,<=2.0.99
 cryptography==2.3 # Version number required by masonite
 
+django
+
 requests
 bs4
 pylint

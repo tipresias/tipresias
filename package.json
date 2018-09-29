@@ -1,5 +1,5 @@
 {
-  "name": "tipresias_app",
+  "name": "tipresias",
   "version": "1.0.0",
   "main": "./storage/static/javascript/index.js",
   "license": "MIT",

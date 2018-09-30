@@ -1,27 +1,10 @@
 {
-  "name": "tipresias_app",
+  "name": "tipresias",
   "version": "1.0.0",
-  "main": "./storage/static/javascript/index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "yarn run parcel watch storage/static/index.html -d storage/compiled --public-url /static --hmr-port 3000",
-    "build": "yarn run parcel build storage/static/index.html -d storage/compiled  --public-url /static --hmr-port 3000",
-    "test": ""
-  },
-  "dependencies": {
-    "parcel": "^1.9.7",
-    "react": "^16.5.0",
-    "react-dom": "^16.5.0"
-  },
-  "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-eslint": "^9.0.0",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
-    "eslint": "^5.5.0",
-    "eslint-config-airbnb": "^17.1.0",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-jsx-a11y": "^6.1.1",
-    "eslint-plugin-react": "^7.11.1",
-    "prettier": "1.14.2"
+    "start": "cd client && yarn start",
+    "build": "cd client && yarn build",
+    "test": "cd client && yarn test"
   }
 }

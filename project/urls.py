@@ -17,7 +17,10 @@ from django.contrib import admin
 from django.urls import path, re_path
 from django.views.generic import TemplateView
 
+from server import views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('predictions', views.predictions, name='predictions'),
     re_path('.*', TemplateView.as_view(template_name='index.html')),
 ]

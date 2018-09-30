@@ -1,15 +1,12 @@
 # Use an official Python runtime as a parent image
 FROM node:8
 
-# Add package.json for js dependencies
-COPY package.json yarn.lock /app/
+# Add client files
+COPY ./client/ /app/
 WORKDIR /app/
 
 # Install any needed packages specified in package.json
 RUN yarn
-
-# Add the resources directory with frontent files
-COPY ./storage/ /app/storage/
 
 EXPOSE 3000
 

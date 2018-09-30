@@ -14,14 +14,13 @@ services:
       context: .
       dockerfile: client.Dockerfile
     volumes:
-      - ./build/:/app/build/
-      - ./client/:/app/client/
-      - ./package.json:/app/package.json
-      - ./yarn.lock:/app/yarn.lock
+      - ./client:/app
     ports:
         - "3000:3000"
     environment:
       - NODE_ENV=development
+    links:
+      - server
     command: yarn start
   notebook:
     image: tipresias_server:latest

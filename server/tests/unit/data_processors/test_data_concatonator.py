@@ -11,9 +11,7 @@ PROJECT_PATH = os.path.abspath(
 if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
-from app.data_processors import DataConcatenator
-
-np.random.seed(42)
+from server.data_processors import DataConcatenator
 
 FAKE = Faker()
 

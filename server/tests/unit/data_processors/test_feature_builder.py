@@ -12,7 +12,7 @@ PROJECT_PATH = os.path.abspath(
 if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
-from app.data_processors import FeatureBuilder
+from server.data_processors import FeatureBuilder
 
 FAKE = Faker()
 

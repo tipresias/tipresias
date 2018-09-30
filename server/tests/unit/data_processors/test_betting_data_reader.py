@@ -9,15 +9,15 @@ PROJECT_PATH = os.path.abspath(
 if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
-from app.data_processors import MatchDataReader
+from server.data_processors import BettingDataReader
 
 
-class TestMatchDataReader(TestCase):
+class TestBettingDataReader(TestCase):
     def setUp(self):
-        self.reader = MatchDataReader()
+        self.reader = BettingDataReader()
 
     def test_transform(self):
-        data_frame = self.reader.transform('ft_match_list.csv')
+        data_frame = self.reader.transform('afl_betting.csv')
 
         self.assertIsInstance(data_frame, pd.DataFrame)
 

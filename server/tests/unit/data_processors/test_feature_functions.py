@@ -12,7 +12,7 @@ PROJECT_PATH = os.path.abspath(
 if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
-from app.data_processors.feature_functions import (
+from server.data_processors.feature_functions import (
     add_last_week_result,
     add_last_week_score,
     add_cum_percent,

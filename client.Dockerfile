@@ -10,5 +10,6 @@ RUN yarn
 
 EXPOSE 3000
 
-# In production, we just need to build the compiled assets
-CMD yarn run build
+# The server uses build/index.html as a template, so we have to build
+# to make sure the server doesn't raise a template error
+RUN yarn run build

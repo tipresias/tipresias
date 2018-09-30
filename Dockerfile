@@ -13,10 +13,6 @@ RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
 # Add the rest of the code
 ADD . /app/
 
-# index.html is defined as a template, but doesn't exist until Webpack builds it,
-# causing errors in development
-RUN mkdir && touch mkdir/index.html
-
 # Install fitzRoy R package
 # RUN Rscript requirements.r
 

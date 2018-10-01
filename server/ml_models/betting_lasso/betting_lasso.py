@@ -1,5 +1,4 @@
 import os
-# import sys
 from functools import reduce
 import pandas as pd
 from sklearn.pipeline import make_pipeline
@@ -21,8 +20,11 @@ PROJECT_PATH = os.path.abspath(
 )
 
 DATA_FILES = ('afl_betting.csv', 'ft_match_list.csv')
+REQUIRED_COLS = ['year', 'score', 'oppo_score']
 
 
+# TODO: This will need a refactor, but I'll wait to see what other ML model classes
+# look like before making decisions about data & dependencies
 class BettingLasso():
     def __init__(self):
         data_transformers = [
@@ -43,6 +45,12 @@ class BettingLasso():
                          MatchDataReader().transform()])
             .dropna()
         )
+
+        if any([req_col not in self._data.columns for req_col in REQUIRED_COLS]):
+            raise ValueError('To fit model & predict, all required columns '
+                             f'({REQUIRED_COLS}) must be in the data frame, '
+                             f'but the columns given were {self._data.columns}')
+
         self._pipeline = make_pipeline(StandardScaler(), Lasso())
 
     def fit(self, min_year=1, max_year=2015):

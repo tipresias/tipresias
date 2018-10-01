@@ -106,11 +106,6 @@ class FeatureBuilder():
     def __oppo_feature(data_frame, col_name):
         """Add the same feature, but for the current opposition team"""
 
-        if col_name not in data_frame.columns:
-            raise ValueError(f'To calculate opposition column for {col_name}, '
-                             f'{col_name} must be in data frame, '
-                             f'but the columns given were {data_frame.columns}')
-
         return (data_frame
                 .loc[:, ['year', 'round_number', 'oppo_team', col_name]]
                 # We switch out oppo_team for team in the index,

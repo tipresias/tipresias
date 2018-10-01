@@ -13,6 +13,7 @@ if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
 from server.data_processors import FeatureBuilder
+from server.data_processors.feature_builder import REQUIRED_COLS
 
 FAKE = Faker()
 
@@ -29,7 +30,7 @@ class TestFeatureBuilder(TestCase):
         teams = [FAKE.company() for _ in range(10)]
         oppo_teams = list(reversed(teams))
 
-        data_frame = pd.DataFrame({
+        valid_data_frame = pd.DataFrame({
             'team': teams,
             'oppo_team': oppo_teams,
             'year': [2015 for _ in range(10)],
@@ -38,11 +39,37 @@ class TestFeatureBuilder(TestCase):
             'oppo_score': [np.random.randint(50, 150) for _ in range(10)]
         }).set_index(['year', 'round_number', 'team'], drop=False)
 
-        transformed_df = self.builder.transform(data_frame)
+        with self.subTest(data_frame=valid_data_frame):
+            data_frame = valid_data_frame
 
-        # FeatureBuilder adds 2 columns per function: 1 per the function
-        # and 1 opposition version of that column
-        self.assertEqual(len(data_frame.columns) + 4,
-                         len(transformed_df.columns))
-        self.assertIn('new_col', transformed_df.columns)
-        self.assertIn('newer_col', transformed_df.columns)
+            transformed_df = self.builder.transform(data_frame)
+
+            # FeatureBuilder adds 2 columns per function: 1 per the function
+            # and 1 opposition version of that column
+            self.assertEqual(len(data_frame.columns) + 4,
+                             len(transformed_df.columns))
+
+            # Should add the two new columns and their 'oppo_' equivalents
+            self.assertIn('new_col', transformed_df.columns)
+            self.assertIn('newer_col', transformed_df.columns)
+            self.assertIn('oppo_new_col', transformed_df.columns)
+            self.assertIn('oppo_newer_col', transformed_df.columns)
+
+            # Columns & their 'oppo_' equivalents should have the same values
+            self.assertEqual(
+                len(np.setdiff1d(transformed_df['new_col'],
+                                 transformed_df['oppo_new_col'])),
+                0
+            )
+            self.assertEqual(
+                len(np.setdiff1d(transformed_df['newer_col'],
+                                 transformed_df['oppo_newer_col'])),
+                0
+            )
+
+        for required_col in REQUIRED_COLS:
+            with self.subTest(data_frame=valid_data_frame.drop(required_col, axis=1)):
+                data_frame = valid_data_frame.drop(required_col, axis=1)
+
+                with self.assertRaises(ValueError):
+                    self.builder.transform(data_frame)

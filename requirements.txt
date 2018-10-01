@@ -6,6 +6,7 @@ scipy
 # tensorflow==1.10.1
 xgboost
 jupyter
+ipykernel<5.0.0 # Necessary for a Jupyter bug (30-9-18)
 # rpy2
 # tzlocal
 
@@ -23,6 +24,6 @@ django
 # Testing/Linting
 pylint
 autopep8
-pytest==3.6.0 # Version number required by masonite
+pytest
 pytest-env
-faker<0.8.0,>=0.7.0 # Version range required by orator
+faker

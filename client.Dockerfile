@@ -10,6 +10,6 @@ RUN yarn
 
 EXPOSE 3000
 
-# The server uses build/index.html as a template, so we have to build
-# to make sure the server doesn't raise a template error
+# Since backend serves the assets in production, it depends on build/ in development as well,
+# so we need to make sure build/index.html exists in all environments
 RUN yarn run build

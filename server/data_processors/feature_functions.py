@@ -16,7 +16,7 @@ TEAM_LEVEL = 0
 YEAR_LEVEL = 1
 WIN_POINTS = 4
 AVG_SEASON_LENGTH = 23
-INDEX_COLS = ['year', 'round_number', 'team']
+INDEX_COLS = ['team', 'year', 'round_number']
 
 
 def add_last_week_result(data_frame):

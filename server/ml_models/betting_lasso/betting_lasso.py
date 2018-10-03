@@ -21,18 +21,42 @@ PROJECT_PATH = os.path.abspath(
 
 DATA_FILES = ('afl_betting.csv', 'ft_match_list.csv')
 REQUIRED_COLS = ['year', 'score', 'oppo_score']
+DATA_TRANSFORMERS = [
+    DataConcatenator().transform,
+    DataCleaner().transform,
+    TeamDataStacker().transform,
+    FeatureBuilder().transform
+]
 
 
 # TODO: This will need a refactor, but I'll wait to see what other ML model classes
 # look like before making decisions about data & dependencies
 class BettingLasso():
     def __init__(self):
-        data_transformers = [
-            DataConcatenator().transform,
-            DataCleaner(max_year=2016).transform,
-            TeamDataStacker().transform,
-            FeatureBuilder().transform
-        ]
+        self._pipeline = make_pipeline(StandardScaler(), Lasso())
+
+    def fit(self, X, y):
+        self._pipeline.fit(X, y)
+
+    def predict(self, X):
+        y_pred = self._pipeline.predict(X)
+
+        return pd.DataFrame({'predicted_margin': y_pred}, index=X.index)
+
+    def save(self, filepath=f'{PROJECT_PATH}/server/ml_models/betting_lasso_model.pkl'):
+        joblib.dump(self._pipeline, filepath)
+
+    def load(self, filepath=f'{PROJECT_PATH}/server/ml_models/betting_lasso_model.pkl'):
+        self._pipeline = joblib.load(filepath)
+
+
+class BettingLassoData():
+    def __init__(self,
+                 data_transformers=DATA_TRANSFORMERS,
+                 training_years=(0, 2015),
+                 test_years=(2016, 2016)):
+        self.training_years = training_years
+        self.test_years = test_years
 
         # Need to reverse the transformation steps, because composition makes the output
         # of each new function the argument for the previous
@@ -46,42 +70,39 @@ class BettingLasso():
             .dropna()
         )
 
-        if any([req_col not in self._data.columns for req_col in REQUIRED_COLS]):
-            raise ValueError('To fit model & predict, all required columns '
-                             f'({REQUIRED_COLS}) must be in the data frame, '
-                             f'but the columns given were {self._data.columns}')
-
-        self._pipeline = make_pipeline(StandardScaler(), Lasso())
-
-    def fit(self, min_year=1, max_year=2015):
-        training_data = self._data[
-            (self._data['year'] >= min_year) & (self._data['year'] <= max_year)
+    def training_data(self):
+        data_train = self._data[
+            (self._data['year'] >= self.training_years[0]) &
+            (self._data['year'] <= self.training_years[1])
         ]
-        X_train = pd.get_dummies(
-            training_data.drop(['score', 'oppo_score'], axis=1)
-        )
-        y_train = training_data['score'] - training_data['oppo_score']
+        X_train = self.__X(data_train, train=True)
+        y_train = self.__y(data_train)
 
-        self._pipeline.fit(X_train, y_train)
+        return X_train, y_train
 
-    def predict(self, min_year=2016, max_year=2016):
-        test_data = self._data[
-            (self._data['year'] >= min_year) & (self._data['year'] <= max_year)
+    def test_data(self):
+        data_test = self._data[
+            (self._data['year'] >= self.test_years[0]) &
+            (self._data['year'] <= self.test_years[1])
         ]
-        X_test = test_data.drop(['score', 'oppo_score'], axis=1)
-        y_pred = self._pipeline.predict(X_test)
+        X_test = self.__X(data_test)
+        y_test = self.__y(data_test)
 
-        return pd.DataFrame({'predicted_margin': y_pred}, index=test_data.index)
-
-    def save(self):
-        joblib.dump(self._pipeline,
-                    f'{PROJECT_PATH}/server/ml_models/betting_lasso_model.pkl')
-
-    def load(self):
-        self._pipeline = joblib.load(
-            f'{PROJECT_PATH}/server/ml_models/betting_lasso_model.pkl'
-        )
+        return X_test, y_test
 
     @staticmethod
     def __compose_two(composed_func, func_element):
         return lambda x: composed_func(func_element(x))
+
+    @staticmethod
+    def __X(data_frame, train=False):
+        X_data = data_frame.drop(['score', 'oppo_score'], axis=1)
+
+        if train:
+            return pd.get_dummies(X_data)
+
+        return X_data
+
+    @staticmethod
+    def __y(data_frame):
+        return data_frame['score'] - data_frame['oppo_score']

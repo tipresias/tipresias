@@ -34,7 +34,7 @@ class TestBettingLasso(TestCase):
         self.model.fit(self.X, self.y)
         predictions = self.model.predict(self.X)
 
-        self.assertIsInstance(predictions, pd.DataFrame)
+        self.assertIsInstance(predictions, pd.Series)
 
 
 class TestBettingLassoData(TestCase):
@@ -47,8 +47,8 @@ class TestBettingLassoData(TestCase):
         })
         self.data = BettingLassoData()
 
-    def test_training_data(self):
-        X_train, y_train = self.data.training_data()
+    def test_train_data(self):
+        X_train, y_train = self.data.train_data()
 
         self.assertIsInstance(X_train, pd.DataFrame)
         self.assertIsInstance(y_train, pd.Series)
@@ -58,3 +58,21 @@ class TestBettingLassoData(TestCase):
         self.assertFalse(
             any([X_train[column].dtype == 'O' for column in X_train.columns])
         )
+
+    def test_test_data(self):
+        X_test, y_test = self.data.test_data()
+
+        self.assertIsInstance(X_test, pd.DataFrame)
+        self.assertIsInstance(y_test, pd.Series)
+        self.assertNotIn('score', X_test.columns)
+        self.assertNotIn('oppo_score', X_test.columns)
+        # No columns should be composed of strings
+        self.assertFalse(
+            any([X_test[column].dtype == 'O' for column in X_test.columns])
+        )
+
+    def test_train_test_data_compatibility(self):
+        X_train, _ = self.data.train_data()
+        X_test, _ = self.data.test_data()
+
+        self.assertListEqual(list(X_train.columns), list(X_test.columns))

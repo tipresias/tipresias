@@ -10,9 +10,7 @@ services:
     tty: true
     command: python3 manage.py runserver 0.0.0.0:8000
   client:
-    build:
-      context: .
-      dockerfile: client.Dockerfile
+    build: ./client
     volumes:
       - ./client:/app
     ports:

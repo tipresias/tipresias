@@ -11,7 +11,7 @@ WORKDIR /app/
 RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
 
 # Add the rest of the code
-ADD . /app/
+COPY . /app/
 
 # Install fitzRoy R package
 # RUN Rscript requirements.r

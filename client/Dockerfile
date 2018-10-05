@@ -1,12 +1,14 @@
 # Use an official Python runtime as a parent image
 FROM node:8
 
-# Add client files
-COPY ./client/ /app/
+# Install dependencies
+COPY package.json yarn.lock /app/
 WORKDIR /app/
 
-# Install any needed packages specified in package.json
 RUN yarn
+
+# Add rest of the client code
+COPY . /app/
 
 EXPOSE 3000
 

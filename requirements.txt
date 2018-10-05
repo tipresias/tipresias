@@ -3,7 +3,6 @@ numpy
 pandas
 scikit-learn
 scipy
-# tensorflow==1.10.1
 xgboost
 jupyter
 ipykernel<5.0.0 # Necessary for a Jupyter bug (as of 30-9-18): https://github.com/jupyter/notebook/issues/4050
@@ -27,3 +26,4 @@ autopep8
 pytest
 pytest-env
 faker
+mypy

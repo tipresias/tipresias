@@ -1,9 +1,9 @@
 import os
 import sys
 import pandas as pd
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpRequest
 
-PROJECT_PATH = os.path.abspath(
+PROJECT_PATH: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../')
 )
 
@@ -11,7 +11,7 @@ if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
 
-def predictions(request):  # pylint: disable=W0613
+def predictions(request: HttpRequest) -> JsonResponse:  # pylint: disable=W0613
     """Render JSON data of model predictions"""
 
     data_frame = pd.read_csv(f'{PROJECT_PATH}/data/model_predictions.csv')

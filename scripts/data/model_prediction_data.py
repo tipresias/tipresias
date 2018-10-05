@@ -1,8 +1,11 @@
+"""Script for generating prediction data (in the form of a CSV) for all available models."""
+
+from typing import Tuple
 import os
 import sys
 import pandas as pd
 
-PROJECT_PATH = os.path.abspath(
+PROJECT_PATH: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../')
 )
 if PROJECT_PATH not in sys.path:
@@ -14,10 +17,16 @@ from server.ml_models.betting_lasso import BettingLassoData
 from notebooks.src.data.data_builder import DataBuilder, BettingData, MatchData
 from notebooks.src.data.data_transformer import DataTransformer
 
-DATA_FILES = ('afl_betting.csv', 'ft_match_list.csv')
+DATA_FILES: Tuple[str, str] = ('afl_betting.csv', 'ft_match_list.csv')
 
 
-def tipresias_betting_predictions():
+def tipresias_betting_predictions() -> pd.DataFrame:
+    """Generate prediction data frame for estimator based on betting data
+
+    Returns:
+        pandas.DataFrame
+    """
+
     data = BettingLassoData(train_years=(None, None), test_years=(None, None))
     estimator = BettingLasso()
 
@@ -53,7 +62,16 @@ def tipresias_betting_predictions():
             .reset_index(drop=True))
 
 
-def oddsmakers_predictions(df):
+def oddsmakers_predictions(df: pd.DataFrame) -> pd.DataFrame:
+    """Generate prediction data frame based on raw betting odds
+
+    Args:
+        df (pandas.DataFrame): Cleaned betting & match data.
+
+    Returns:
+        pandas.DataFrame
+    """
+
     return (df.loc[:, ['year', 'round_number', 'home_team', 'away_team']]
             .assign(model='oddsmakers',
                     # Rounding predicted margin, because you can't actually
@@ -73,10 +91,6 @@ def oddsmakers_predictions(df):
                                          (x['draw'])).astype(int)))
 
 
-def prediction_df(df):
-    return oddsmakers_predictions(df)
-
-
 def main():
     csv_paths = [f'data/{data_file}' for data_file in DATA_FILES]
     data_classes = (BettingData, MatchData)
@@ -85,7 +99,7 @@ def main():
     transformer = DataTransformer(raw_df)
 
     pd.concat([
-        prediction_df(transformer.clean()),
+        oddsmakers_predictions(transformer.clean()),
         tipresias_betting_predictions()
     ]).to_csv(f'{PROJECT_PATH}/data/model_predictions.csv', index=False)
 

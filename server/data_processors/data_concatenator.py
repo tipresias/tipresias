@@ -1,3 +1,4 @@
+from typing import List
 from functools import reduce
 import numpy as np
 import pandas as pd
@@ -13,10 +14,10 @@ class DataConcatenator():
         drop_cols (string, list): Column(s) to drop at the end of transformation.
     """
 
-    def __init__(self, drop_cols=['date']):
+    def __init__(self, drop_cols: List[str] = ['date']) -> None:
         self.drop_cols = drop_cols
 
-    def transform(self, data_frames):
+    def transform(self, data_frames: pd.DataFrame) -> pd.DataFrame:
         """Concatenate the given data_frames
 
         Args:

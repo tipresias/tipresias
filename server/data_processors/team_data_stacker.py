@@ -1,8 +1,9 @@
+from typing import List, Callable
 import pandas as pd
 import numpy as np
 
-INDEX_COLS = ['team', 'year', 'round_number']
-REQUIRED_COLS = ['home_team', 'year', 'round_number']
+INDEX_COLS: List[str] = ['team', 'year', 'round_number']
+REQUIRED_COLS: List[str] = ['home_team', 'year', 'round_number']
 
 
 class TeamDataStacker():
@@ -15,10 +16,10 @@ class TeamDataStacker():
         index_cols (list): Column names to be used as a multi-index.
     """
 
-    def __init__(self, index_cols=INDEX_COLS):
+    def __init__(self, index_cols: List[str] = INDEX_COLS) -> None:
         self.index_cols = index_cols
 
-    def transform(self, data_frame):
+    def transform(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         """Stack home & away team data, and add 'oppo_' team columns.
 
         Args:
@@ -38,7 +39,7 @@ class TeamDataStacker():
 
         return pd.concat(team_dfs, join='inner').sort_index()
 
-    def __team_df(self, data_frame, team_type):
+    def __team_df(self, data_frame: pd.DataFrame, team_type: str) -> pd.DataFrame:
         is_at_home = team_type == 'home'
 
         if is_at_home:
@@ -57,7 +58,7 @@ class TeamDataStacker():
                 .drop_duplicates(subset=self.index_cols, keep='last'))
 
     @staticmethod
-    def __replace_col_names(team_type, oppo_team_type):
+    def __replace_col_names(team_type: str, oppo_team_type: str) -> Callable[[str], str]:
         return lambda col_name: (col_name
                                  .replace(f'{team_type}_', '')
                                  .replace(f'{oppo_team_type}_', 'oppo_'))

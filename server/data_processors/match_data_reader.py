@@ -1,7 +1,8 @@
+from typing import List
 import os
 import pandas as pd
 
-PROJECT_PATH = os.path.abspath(
+PROJECT_PATH: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../')
 )
 
@@ -18,10 +19,10 @@ class MatchDataReader():
             See pandas.read_csv().
     """
 
-    def __init__(self, parse_dates=['date']):
+    def __init__(self, parse_dates: List[str] = ['date']) -> None:
         self.parse_dates = parse_dates
 
-    def transform(self, filename='ft_match_list.csv'):
+    def transform(self, filename: str = 'ft_match_list.csv') -> pd.DataFrame:
         """Transform a csv file into a data frame.
 
         Args:
@@ -36,5 +37,5 @@ class MatchDataReader():
                 .assign(date=self.__convert_datetime_to_date))
 
     @staticmethod
-    def __convert_datetime_to_date(data_frame):
+    def __convert_datetime_to_date(data_frame: pd.DataFrame) -> pd.Series:
         return data_frame['datetime'].map(lambda date_time: date_time.date())

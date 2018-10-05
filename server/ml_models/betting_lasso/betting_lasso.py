@@ -1,12 +1,17 @@
+"""Module with wrapper class for Lasso model and its associated data class"""
+
+from typing import List, Tuple, Optional, Union
 import os
 from functools import reduce
 import pandas as pd
 import numpy as np
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Lasso
 from sklearn.externals import joblib
+from sklearn.base import BaseEstimator
 
+from server.types import FeatureFunctionType
 from server.data_processors import (
     DataConcatenator,
     DataCleaner,
@@ -16,11 +21,13 @@ from server.data_processors import (
     MatchDataReader
 )
 
-PROJECT_PATH = os.path.abspath(
+YearsType = Tuple[Optional[int], Optional[int]]
+
+PROJECT_PATH: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../../')
 )
 
-REQUIRED_COLS = ['year', 'score', 'oppo_score']
+REQUIRED_COLS: List[str] = ['year', 'score', 'oppo_score']
 DATA_TRANSFORMERS = [
     DataConcatenator().transform,
     DataCleaner().transform,
@@ -34,38 +41,103 @@ np.random.seed(42)
 # TODO: This will need a refactor, but I'll wait to see what other ML model classes
 # look like before making decisions about data & dependencies
 class BettingLasso():
-    def __init__(self):
-        self._pipeline = make_pipeline(StandardScaler(), Lasso())
+    """Create pipeline for for fitting/predicting with lasso model.
+
+    Attributes:
+        _pipeline (sklearn.pipeline.Pipeline): Scikit Learn pipeline
+            with transformers & Lasso estimator.
+        name (string): Name of final estimator in the pipeline ('Lasso').
+    """
+
+    def __init__(self) -> None:
+        self._pipeline: Pipeline = make_pipeline(StandardScaler(), Lasso())
         self.name = self.__name()
 
-    def fit(self, X, y):
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
+        """Fit estimator to the data.
+
+        Args:
+            X (pandas.DataFrame): Data features.
+            y (pandas.Series): Data labels.
+
+        Returns:
+            None.
+        """
+
         self._pipeline.fit(X, y)
 
-    def predict(self, X):
+    def predict(self, X: pd.DataFrame) -> pd.Series:
+        """Make predictions base on the data input.
+
+        Args:
+            X (pandas.DataFrame): Data features.
+
+        Returns:
+            pandas.Series: Estimator predictions.
+        """
+
         y_pred = self._pipeline.predict(X)
 
         return pd.Series(y_pred, name='predicted_margin', index=X.index)
 
     def save(self,
-             filepath=f'{PROJECT_PATH}/server/ml_models/betting_lasso/betting_lasso_model.pkl'):
+             filepath: str = (f'{PROJECT_PATH}/server/ml_models/betting_lasso/'
+                              'betting_lasso_model.pkl')) -> None:
+        """Save the pipeline as a pickle file.
+
+        Args:
+            filepath (string): The path where the pickle file is saved.
+
+        Returns:
+            None.
+        """
+
         joblib.dump(self._pipeline, filepath)
 
     def load(self,
-             filepath=f'{PROJECT_PATH}/server/ml_models/betting_lasso/betting_lasso_model.pkl'):
+             filepath: str = (f'{PROJECT_PATH}/server/ml_models/betting_lasso/'
+                              'betting_lasso_model.pkl')) -> None:
+        """Load the pipeline from a pickle file.
+
+        Args:
+            filepath (string): The path to the file to laod.
+
+        Returns:
+            None.
+        """
+
         self._pipeline = joblib.load(filepath)
 
-    def __name(self):
+    def __name(self) -> str:
         return self.__last_estimator()[0]
 
-    def __last_estimator(self):
+    def __last_estimator(self) -> Tuple[str, BaseEstimator]:
         return self._pipeline.steps[-1]
 
 
 class BettingLassoData():
+    """Load and clean data for the BettingLasso pipeline.
+
+    Args:
+        data_transformers (list[callable]): Functions that receive, transform,
+            and return data frames.
+        train_years (tuple[integer or None]): Minimum and maximum (inclusive) years
+            for the training data.
+        test_years (tuple[ingeter or None]): Minimum and maximum (inclusive) years
+            for the test data.
+
+    Attributes:
+        data (pandas.DataFrame): Cleaned, unfiltered data frame.
+        train_years (tuple[integer or None]): Minimum and maximum (inclusive) years
+            for the training data.
+        test_years (tuple[ingeter or None]): Minimum and maximum (inclusive) years
+            for the test data.
+    """
+
     def __init__(self,
-                 data_transformers=DATA_TRANSFORMERS,
-                 train_years=(None, 2015),
-                 test_years=(2016, 2016)):
+                 data_transformers: List[FeatureFunctionType] = DATA_TRANSFORMERS,
+                 train_years: YearsType = (None, 2015),
+                 test_years: YearsType = (2016, 2016)) -> None:
         self._train_years = train_years
         self._test_years = test_years
 
@@ -80,7 +152,13 @@ class BettingLassoData():
                      .dropna()
                      )
 
-    def train_data(self):
+    def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Filter data by year to produce training data.
+
+        Returns:
+            Tuple[pandas.DataFrame]: Training features and labels.
+        """
+
         data_train = self.data[
             (self.data['year'] >= self.__train_min()) &
             (self.data['year'] <= self.__train_max())
@@ -91,7 +169,13 @@ class BettingLassoData():
 
         return X_train, y_train
 
-    def test_data(self):
+    def test_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """Filter data by year to produce test data.
+
+        Returns:
+            Tuple[pandas.DataFrame]: Test features and labels.
+        """
+
         data_test = self.data[
             (self.data['year'] >= self.__test_min()) &
             (self.data['year'] <= self.__test_max())
@@ -102,34 +186,34 @@ class BettingLassoData():
         return X_test, y_test
 
     @property
-    def train_years(self):
+    def train_years(self) -> YearsType:
         return self._train_years
 
     @train_years.setter
-    def train_years(self, years):
+    def train_years(self, years: YearsType) -> None:
         self._train_years = years
 
     @property
-    def test_years(self):
+    def test_years(self) -> YearsType:
         return self._test_years
 
     @test_years.setter
-    def test_years(self, years):
+    def test_years(self, years: YearsType) -> None:
         self._test_years = years
 
-    def __train_min(self):
+    def __train_min(self) -> Union[int, float]:
         return self._train_years[0] or np.NINF
 
-    def __train_max(self):
+    def __train_max(self) -> Union[int, float]:
         return self._train_years[1] or np.Inf
 
-    def __test_min(self):
+    def __test_min(self) -> Union[int, float]:
         return self._test_years[0] or np.NINF
 
-    def __test_max(self):
+    def __test_max(self) -> Union[int, float]:
         return self._test_years[1] or np.Inf
 
-    def __X(self, data_frame):
+    def __X(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         data_dummies = pd.get_dummies(self.data.select_dtypes('O'))
         X_data = pd.get_dummies(
             data_frame.drop(['score', 'oppo_score'], axis=1)
@@ -145,9 +229,10 @@ class BettingLassoData():
         return pd.concat([X_data, missing_df], axis=1)
 
     @staticmethod
-    def __compose_two(composed_func, func_element):
+    def __compose_two(composed_func: FeatureFunctionType,
+                      func_element: FeatureFunctionType) -> FeatureFunctionType:
         return lambda x: composed_func(func_element(x))
 
     @staticmethod
-    def __y(data_frame):
+    def __y(data_frame: pd.DataFrame) -> pd.Series:
         return data_frame['score'] - data_frame['oppo_score']

@@ -1,7 +1,9 @@
+"""Script for generating the pickle file for the LassoBetting estimator"""
+
 import os
 import sys
 
-PROJECT_PATH = os.path.abspath(
+PROJECT_PATH: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../')
 )
 

@@ -1,13 +1,14 @@
 import re
+from typing import Pattern, List
 import pandas as pd
 
-DIGITS = re.compile(r'round\s+(\d+)$', flags=re.I)
-QUALIFYING = re.compile(r'qualifying', flags=re.I)
-ELIMINATION = re.compile(r'elimination', flags=re.I)
-SEMI = re.compile(r'semi', flags=re.I)
-PRELIMINARY = re.compile(r'preliminary', flags=re.I)
-GRAND = re.compile(r'grand', flags=re.I)
-REQUIRED_COLUMNS = ['venue', 'crowd', 'datetime', 'season_round']
+DIGITS: Pattern = re.compile(r'round\s+(\d+)$', flags=re.I)
+QUALIFYING: Pattern = re.compile(r'qualifying', flags=re.I)
+ELIMINATION: Pattern = re.compile(r'elimination', flags=re.I)
+SEMI: Pattern = re.compile(r'semi', flags=re.I)
+PRELIMINARY: Pattern = re.compile(r'preliminary', flags=re.I)
+GRAND: Pattern = re.compile(r'grand', flags=re.I)
+REQUIRED_COLUMNS: List[str] = ['venue', 'crowd', 'datetime', 'season_round']
 
 
 class DataCleaner():
@@ -24,12 +25,13 @@ class DataCleaner():
         drop_cols (string, list): Column(s) to drop at the end of transformation.
     """
 
-    def __init__(self, min_year=1, max_year=2016, drop_cols=['venue', 'crowd']):
+    def __init__(self, min_year: int = 1, max_year: int = 2016,
+                 drop_cols: List[str] = ['venue', 'crowd']) -> None:
         self.min_year = min_year
         self.max_year = max_year
         self.drop_cols = drop_cols
 
-    def transform(self, data_frame):
+    def transform(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         """Filter data frame by year, transform round_number & year,
         and drop unneeded columns
 
@@ -57,11 +59,11 @@ class DataCleaner():
                         year=self.__extract_year)
                 .drop(self.drop_cols + ['datetime', 'season_round'], axis=1))
 
-    def __extract_round_number(self, data_frame):
+    def __extract_round_number(self, data_frame: pd.DataFrame) -> pd.Series:
         return data_frame['season_round'].map(self.__match_round)
 
     @staticmethod
-    def __match_round(round_string):
+    def __match_round(round_string: str) -> int:
         digits = DIGITS.search(round_string)
 
         if digits is not None:
@@ -81,5 +83,5 @@ class DataCleaner():
             f"Round label {round_string} doesn't match any known patterns")
 
     @staticmethod
-    def __extract_year(data_frame):
+    def __extract_year(data_frame: pd.DataFrame) -> pd.Series:
         return data_frame['datetime'].map(lambda date_time: date_time.year)

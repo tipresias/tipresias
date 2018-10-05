@@ -1,15 +1,18 @@
+from typing import List, Sequence
 import os
 import sys
 from functools import reduce, partial
 import numpy as np
+import pandas as pd
 
-PROJECT_PATH = os.path.abspath(
+PROJECT_PATH: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../')
 )
 
 if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
+from server.types import FeatureFunctionType
 from server.data_processors.feature_functions import (
     add_last_week_result,
     add_last_week_score,
@@ -21,11 +24,11 @@ from server.data_processors.feature_functions import (
     add_win_streak
 )
 
-INDEX_COLS = ['team', 'year', 'round_number']
-REQUIRED_COLS = INDEX_COLS + ['oppo_team']
+INDEX_COLS: List[str] = ['team', 'year', 'round_number']
+REQUIRED_COLS: List[str] = INDEX_COLS + ['oppo_team']
 
 # This is just for convenience based on current needs; might remove it later
-DEFAULT_FEATURES = (
+DEFAULT_FEATURES: Sequence[FeatureFunctionType] = (
     add_last_week_result,
     add_last_week_score,
     add_cum_percent,
@@ -47,7 +50,7 @@ class FeatureBuilder():
         feature_funcs (iterable): Iterable containing instances of Feature.
     """
 
-    def __init__(self, feature_funcs=DEFAULT_FEATURES):
+    def __init__(self, feature_funcs: Sequence[FeatureFunctionType] = DEFAULT_FEATURES) -> None:
         self.feature_funcs = [
             self.__build_feature_function(feature_func) for feature_func in feature_funcs
         ]
@@ -55,7 +58,7 @@ class FeatureBuilder():
             self.__compose_two, reversed(self.feature_funcs), lambda x: x
         )
 
-    def transform(self, data_frame):
+    def transform(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         """Add new features to the given data frame."""
 
         if any((req_col not in data_frame.columns for req_col in REQUIRED_COLS)):
@@ -70,12 +73,13 @@ class FeatureBuilder():
             .sort_index()
         )
 
-    def __build_feature_function(self, feature_func):
+    def __build_feature_function(self, feature_func: FeatureFunctionType) -> FeatureFunctionType:
         """Build a partial function function with the given feature function argument set"""
 
         return partial(self.__add_feature, feature_func)
 
-    def __add_feature(self, feature_func, data_frame):
+    def __add_feature(self, feature_func: FeatureFunctionType,
+                      data_frame: pd.DataFrame) -> pd.DataFrame:
         """Use the given feature function to add the feature and opposition team feature
         to the data frame"""
 
@@ -99,11 +103,12 @@ class FeatureBuilder():
         return new_data_frame
 
     @staticmethod
-    def __compose_two(composed_func, func_element):
+    def __compose_two(composed_func: FeatureFunctionType,
+                      func_element: FeatureFunctionType) -> FeatureFunctionType:
         return lambda x: composed_func(func_element(x))
 
     @staticmethod
-    def __oppo_feature(data_frame, col_name):
+    def __oppo_feature(data_frame: pd.DataFrame, col_name: str) -> pd.DataFrame:
         """Add the same feature, but for the current opposition team"""
 
         return (data_frame

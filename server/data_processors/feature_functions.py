@@ -9,17 +9,18 @@ Returns:
     pandas.DataFrame
 """
 
+from typing import List
 import pandas as pd
 import numpy as np
 
-TEAM_LEVEL = 0
-YEAR_LEVEL = 1
-WIN_POINTS = 4
-AVG_SEASON_LENGTH = 23
-INDEX_COLS = ['team', 'year', 'round_number']
+TEAM_LEVEL: int = 0
+YEAR_LEVEL: int = 1
+WIN_POINTS: int = 4
+AVG_SEASON_LENGTH: int = 23
+INDEX_COLS: List[str] = ['team', 'year', 'round_number']
 
 
-def add_last_week_result(data_frame):
+def add_last_week_result(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's last week result (win, draw, loss) as float"""
 
     if 'score' not in data_frame.columns or 'oppo_score' not in data_frame.columns:
@@ -35,7 +36,7 @@ def add_last_week_result(data_frame):
     return data_frame.assign(last_week_result=last_week_result_col)
 
 
-def add_last_week_score(data_frame):
+def add_last_week_score(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's score from their previous match"""
 
     if 'score' not in data_frame.columns or 'oppo_score' not in data_frame.columns:
@@ -51,7 +52,7 @@ def add_last_week_score(data_frame):
     return data_frame.assign(last_week_score=last_week_score_col)
 
 
-def add_cum_percent(data_frame):
+def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative percent (cumulative score / cumulative opponents' score)"""
 
     if ('last_week_score' not in data_frame.columns or
@@ -70,7 +71,7 @@ def add_cum_percent(data_frame):
     return data_frame.assign(cum_percent=cum_last_week_score / cum_oppo_last_week_score)
 
 
-def add_cum_win_points(data_frame):
+def add_cum_win_points(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative win points (based on cumulative result)"""
 
     if 'last_week_result' not in data_frame.columns:
@@ -85,7 +86,7 @@ def add_cum_win_points(data_frame):
     return data_frame.assign(cum_win_points=cum_win_points_col)
 
 
-def add_rolling_pred_win_rate(data_frame):
+def add_rolling_pred_win_rate(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's predicted win rate per the betting odds"""
 
     odds_cols = ['win_odds', 'oppo_win_odds', 'line_odds', 'oppo_line_odds']
@@ -124,7 +125,7 @@ def add_rolling_pred_win_rate(data_frame):
     return data_frame.assign(rolling_pred_win_rate=expanding_rolling_pred_win_rate)
 
 
-def add_rolling_last_week_win_rate(data_frame):
+def add_rolling_last_week_win_rate(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's win rate through their previous match"""
 
     if 'last_week_result' not in data_frame.columns:
@@ -154,7 +155,7 @@ def add_rolling_last_week_win_rate(data_frame):
     return data_frame.assign(rolling_last_week_win_rate=expanding_rolling_win_rate)
 
 
-def add_ladder_position(data_frame):
+def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's current ladder position (based on cumulative win points and percent)"""
 
     required_cols = INDEX_COLS + ['cum_win_points', 'cum_percent']
@@ -208,7 +209,7 @@ def add_ladder_position(data_frame):
 # Calculate win/loss streaks. Positive result (win or draw) adds 1 (or 0.5);
 # negative result subtracts 1. Changes in direction (i.e. broken streak) result in
 # starting at 1 or -1.
-def add_win_streak(data_frame):
+def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's running win/loss streak through their previous match"""
 
     if 'last_week_result' not in data_frame.columns:
@@ -223,7 +224,7 @@ def add_win_streak(data_frame):
     streak_groups = []
 
     for team_group_key, team_group in last_week_win_groups:
-        streaks = []
+        streaks: List = []
 
         for idx, result in enumerate(team_group):
             # 1 represents win, 0.5 represents draw

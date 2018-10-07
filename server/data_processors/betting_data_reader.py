@@ -24,7 +24,7 @@ class BettingDataReader():
     """
 
     def __init__(self, index_col: Tuple[str, str] = ('date', 'venue'),
-                 parse_dates: List[str] = ['date', 'stuff']) -> None:
+                 parse_dates: List[str] = ['date']) -> None:
         self.index_col = index_col
         self.parse_dates = parse_dates
 

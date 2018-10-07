@@ -54,9 +54,9 @@ def tipresias_betting_predictions() -> pd.DataFrame:
                     home_margin=home_df['score'] - home_df['oppo_score'],
                     predicted_home_win=((home_df['predicted_margin'] > 0)
                                         .astype(int)),
-                    home_win=((home_df['score'] > home_df['score'])
+                    home_win=((home_df['score'] > home_df['oppo_score'])
                               .astype(int)),
-                    draw=(home_df['score'] == home_df['score']).astype(int))
+                    draw=(home_df['score'] == home_df['oppo_score']).astype(int))
             .assign(tip_point=lambda x: ((x['predicted_home_win'] == x['home_win']) |
                                          (x['draw'])).astype(int))
             .reset_index(drop=True))

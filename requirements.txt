@@ -1,7 +1,7 @@
 # Data packages
 numpy
 pandas
-scikit-learn
+scikit-learn==0.20.0
 scipy
 xgboost
 jupyter

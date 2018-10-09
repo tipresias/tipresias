@@ -165,8 +165,8 @@ class MatchXGBData():
 
     def __init__(self,
                  data_transformers: List[FeatureFunctionType] = DATA_TRANSFORMERS,
-                 train_years: YearsType=(None, 2015),
-                 test_years: YearsType=(2016, 2016)) -> None:
+                 train_years: YearsType = (None, 2015),
+                 test_years: YearsType = (2016, 2016)) -> None:
         self._train_years = train_years
         self._test_years = test_years
 

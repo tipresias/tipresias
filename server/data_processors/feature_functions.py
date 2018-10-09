@@ -427,21 +427,36 @@ def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_last_week_goals(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add the number of goals a team scored in their previous match."""
 
-    last_week_goals = data_frame['goals'].groupby(level=0).shift()
+    if any([req_col not in data_frame.columns for req_col in ['goals', 'oppo_goals']]):
+        raise ValueError("To calculate last week's goals, 'goals' and 'oppo_goals' "
+                         'must be in the data frame, but the columns given were '
+                         f'{data_frame.columns}')
 
-    return data_frame.assign(last_week_goals=last_week_goals).drop('goals', axis=1)
+    return (data_frame
+            .assign(last_week_goals=data_frame['goals'].groupby(level=0).shift())
+            .drop(['goals', 'oppo_goals'], axis=1))
 
 
 def add_last_week_behinds(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add the number of behinds a team scored in their previous match."""
 
-    last_week_behinds = data_frame['behinds'].groupby(level=0).shift()
+    if any([req_col not in data_frame.columns for req_col in ['behinds', 'oppo_behinds']]):
+        raise ValueError("To calculate last week's behinds, 'behinds' and 'oppo_behinds' "
+                         'must be in the data frame, but the columns given were '
+                         f'{data_frame.columns}')
 
-    return data_frame.assign(last_week_behinds=last_week_behinds).drop('behinds', axis=1)
+    return (data_frame
+            .assign(last_week_behinds=data_frame['behinds'].groupby(level=0).shift())
+            .drop(['behinds', 'oppo_behinds'], axis=1))
 
 
 def add_out_of_state(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add whether a team is playing out of their home state."""
+
+    if any([req_col not in data_frame.columns for req_col in ['venue', 'team']]):
+        raise ValueError("To calculate out of state matches, 'venue' and 'team' "
+                         'must be in the data frame, but the columns given were '
+                         f'{data_frame.columns}')
 
     venue_state = data_frame['venue'].map(
         lambda x: CITIES[VENUE_CITIES[x]]['state']
@@ -452,27 +467,34 @@ def add_out_of_state(data_frame: pd.DataFrame) -> pd.DataFrame:
 
     return data_frame.assign(out_of_state=(team_state != venue_state).astype(int))
 
+# Got the formula from https://www.movable-type.co.uk/scripts/latlong.html
+
+
+def _haversine_formula(lat_long1: Tuple[float, float], lat_long2: Tuple[float, float]) -> float:
+    """Formula for distance between two pairs of latitudes & longitudes"""
+
+    lat1, long1 = lat_long1
+    lat2, long2 = lat_long2
+    # Latitude & longitude are in degrees, so have to convert to radians for
+    # trigonometric functions
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = phi2 - phi1
+    delta_lambda = math.radians(long2 - long1)
+    a = (math.sin(delta_phi / 2)**2 +
+         (math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2)**2))
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return EARTH_RADIUS * c
+
 
 def add_travel_distance(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add distance between each team's home city and the venue city for the match"""
 
-    # https://www.movable-type.co.uk/scripts/latlong.html
-    def haversine_formula(lat_long1: Tuple[float, float], lat_long2: Tuple[float, float]) -> float:
-        """Formula for distance between two pairs of latitudes & longitudes"""
-
-        lat1, long1 = lat_long1
-        lat2, long2 = lat_long2
-        # Latitude & longitude are in degrees, so have to convert to radians for
-        # trigonometric functions
-        phi1 = math.radians(lat1)
-        phi2 = math.radians(lat2)
-        delta_phi = phi2 - phi1
-        delta_lambda = math.radians(long2 - long1)
-        a = (math.sin(delta_phi / 2)**2 +
-             (math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2)**2))
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-        return EARTH_RADIUS * c
+    if any([req_col not in data_frame.columns for req_col in ['venue', 'team']]):
+        raise ValueError("To calculate travel distance, 'venue' and 'team' "
+                         'must be in the data frame, but the columns given were '
+                         f'{data_frame.columns}')
 
     venue_lat_long = data_frame['venue'].map(
         lambda x: (CITIES[VENUE_CITIES[x]]['lat'],
@@ -484,5 +506,5 @@ def add_travel_distance(data_frame: pd.DataFrame) -> pd.DataFrame:
     )
 
     return data_frame.assign(travel_distance=[
-        haversine_formula(*lats_longs) for lats_longs in zip(venue_lat_long, team_lat_long)
+        _haversine_formula(*lats_longs) for lats_longs in zip(venue_lat_long, team_lat_long)
     ])

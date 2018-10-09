@@ -20,7 +20,11 @@ from server.data_processors.feature_functions import (
     add_rolling_pred_win_rate,
     add_rolling_last_week_win_rate,
     add_ladder_position,
-    add_win_streak
+    add_win_streak,
+    add_last_week_goals,
+    add_last_week_behinds,
+    add_out_of_state,
+    add_travel_distance
 )
 
 FAKE = Faker()
@@ -190,6 +194,138 @@ class TestFeatureFunctions(TestCase):
             self,
             column_name='win_streak',
             req_cols=('last_week_result',),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function
+        )
+
+    def test_add_last_week_goals(self):
+        feature_function = add_last_week_goals
+        valid_data_frame = self.data_frame.assign(
+            goals=np.random.randint(0, 10, 10),
+            oppo_goals=np.random.randint(0, 10, 10)
+        )
+
+        with self.subTest(data_frame=valid_data_frame):
+            data_frame = valid_data_frame
+            transformed_data_frame = feature_function(data_frame)
+
+            # Adding 'last_week_goals' drops 'goals' & 'oppo_goals', so subtracts
+            # one column in total
+            self.assertEqual(len(data_frame.columns) - 1,
+                             len(transformed_data_frame.columns))
+            self.assertIn('last_week_goals',
+                          transformed_data_frame.columns)
+
+        assert_required_columns(
+            self,
+            req_cols=('goals', 'oppo_goals'),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function
+        )
+
+    def test_add_last_week_behinds(self):
+        feature_function = add_last_week_behinds
+        valid_data_frame = self.data_frame.assign(
+            behinds=np.random.randint(0, 10, 10),
+            oppo_behinds=np.random.randint(0, 10, 10)
+        )
+
+        with self.subTest(data_frame=valid_data_frame):
+            data_frame = valid_data_frame
+            transformed_data_frame = feature_function(data_frame)
+
+            # Adding 'last_week_behinds' drops 'behinds' & 'oppo_behinds', so subtracts
+            # one column in total
+            self.assertEqual(len(data_frame.columns) - 1,
+                             len(transformed_data_frame.columns))
+            self.assertIn('last_week_behinds',
+                          transformed_data_frame.columns)
+
+        assert_required_columns(
+            self,
+            req_cols=('behinds', 'oppo_behinds'),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function
+        )
+
+    def test_add_out_of_state(self):
+        teams = [
+            'Adelaide',
+            'Brisbane Lions',
+            'Carlton',
+            'Collingwood',
+            'Essendon',
+            'Fitzroy',
+            'Footscray',
+            'Fremantle',
+            'GWS',
+            'Geelong',
+        ]
+        venues = [
+            'Football Park',
+            'S.C.G.',
+            'Windy Hill',
+            'Subiaco',
+            'Moorabbin Oval',
+            'M.C.G.',
+            'Kardinia Park',
+            'Victoria Park',
+            'Waverley Park',
+            'Princes Park',
+        ]
+
+        feature_function = add_out_of_state
+        valid_data_frame = self.data_frame.assign(
+            team=teams,
+            oppo_team=reversed(teams),
+            venue=venues
+        )
+
+        make_column_assertions(
+            self,
+            column_name='out_of_state',
+            req_cols=('venue', 'team'),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function
+        )
+
+    def test_add_travel_distance(self):
+        teams = [
+            'Adelaide',
+            'Brisbane Lions',
+            'Carlton',
+            'Collingwood',
+            'Essendon',
+            'Fitzroy',
+            'Footscray',
+            'Fremantle',
+            'GWS',
+            'Geelong',
+        ]
+        venues = [
+            'Football Park',
+            'S.C.G.',
+            'Windy Hill',
+            'Subiaco',
+            'Moorabbin Oval',
+            'M.C.G.',
+            'Kardinia Park',
+            'Victoria Park',
+            'Waverley Park',
+            'Princes Park',
+        ]
+
+        feature_function = add_travel_distance
+        valid_data_frame = self.data_frame.assign(
+            team=teams,
+            oppo_team=reversed(teams),
+            venue=venues
+        )
+
+        make_column_assertions(
+            self,
+            column_name='travel_distance',
+            req_cols=('venue', 'team'),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function
         )

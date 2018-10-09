@@ -89,6 +89,7 @@ class FeatureBuilder():
                              f'{data_frame.index.names}.')
 
         new_data_frame = feature_func(data_frame)
+
         # Get the new column label to add an 'oppo_' team version
         new_feature_label = np.setdiff1d(new_data_frame.columns,
                                          data_frame.columns)
@@ -96,8 +97,10 @@ class FeatureBuilder():
         if any(new_feature_label):
             feature_label = new_feature_label[0]
 
-            new_data_frame.loc[:, f'oppo_{feature_label}'] = (
-                self.__oppo_feature(new_data_frame, feature_label)
+            return pd.concat(
+                [new_data_frame,
+                 self.__oppo_feature(new_data_frame, feature_label)],
+                axis=1
             )
 
         return new_data_frame
@@ -111,11 +114,15 @@ class FeatureBuilder():
     def __oppo_feature(data_frame: pd.DataFrame, col_name: str) -> pd.DataFrame:
         """Add the same feature, but for the current opposition team"""
 
+        oppo_col_name = f'oppo_{col_name}'
+        column_translations = {'oppo_team': 'team',
+                               col_name: oppo_col_name}
+
         return (data_frame
                 .loc[:, ['year', 'round_number', 'oppo_team', col_name]]
                 # We switch out oppo_team for team in the index,
                 # then assign feature as oppo_{feature_column}
-                .rename(columns={'oppo_team': 'team'})
+                .rename(columns=column_translations)
                 .set_index(INDEX_COLS)
                 .sort_index()
-                .loc[:, col_name])
+                .loc[:, oppo_col_name])

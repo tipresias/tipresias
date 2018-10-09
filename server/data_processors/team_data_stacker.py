@@ -30,14 +30,22 @@ class TeamDataStacker():
         """
 
         if any((req_col not in data_frame.columns for req_col in REQUIRED_COLS)):
-            raise ValueError(f'All index columns {self.index_cols} must be in the data frame, '
+            raise ValueError(f'All required columns ({REQUIRED_COLS}) must be in the data frame, '
                              'but the given data frame has the following columns: '
                              f'{data_frame.columns}')
 
         team_dfs = [self.__team_df(data_frame, 'home'),
                     self.__team_df(data_frame, 'away')]
 
-        return pd.concat(team_dfs, join='inner').sort_index()
+        return (pd.concat(team_dfs, join='inner')
+                # Various finals matches have been draws and replayed,
+                # and sometimes home/away is switched requiring us to drop duplicates
+                # at the end.
+                # This eliminates some matches from Round 15 in 1897, because they
+                # played some sort of round-robin tournament for finals, but I'm
+                # not too worried about the loss of that data.
+                .drop_duplicates(subset=self.index_cols, keep='last')
+                .sort_index())
 
     def __team_df(self, data_frame: pd.DataFrame, team_type: str) -> pd.DataFrame:
         is_at_home = team_type == 'home'

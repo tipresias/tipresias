@@ -261,7 +261,7 @@ class MatchXGBData():
             {missing_col: 0 for missing_col in missing_cols}, index=X_data.index
         )
 
-        return pd.concat([X_data, missing_df], axis=1)
+        return pd.concat([X_data, missing_df], axis=1).astype(float)
 
     @staticmethod
     def __compose_two(composed_func: FeatureFunctionType,

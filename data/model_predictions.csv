@@ -2457,1181 +2457,1181 @@ year,round_number,home_team,away_team,model,predicted_home_margin,home_margin,pr
 2016.0,18,Western Bulldogs,St Kilda,tipresias_betting,20.0,-15.0,1,0,0,0
 2016.0,20,Western Bulldogs,North Melbourne,tipresias_betting,-7.0,14.0,0,1,0,0
 2016.0,21,Western Bulldogs,Collingwood,tipresias_betting,18.0,3.0,1,1,0,1
-2011.0,1,Adelaide,Hawthorn,tipresias_match,8.0,20.0,1,1,0,1
-2011.0,3,Adelaide,Fremantle,tipresias_match,19.0,-25.0,1,0,0,0
-2011.0,6,Adelaide,St Kilda,tipresias_match,20.0,19.0,1,1,0,1
-2011.0,8,Adelaide,Gold Coast,tipresias_match,25.0,57.0,1,1,0,1
-2011.0,10,Adelaide,Brisbane Lions,tipresias_match,6.0,-40.0,1,0,0,0
-2011.0,12,Adelaide,West Coast,tipresias_match,-12.0,-39.0,0,0,0,1
-2011.0,17,Adelaide,Essendon,tipresias_match,12.0,-11.0,1,0,0,0
-2011.0,19,Adelaide,Port Adelaide,tipresias_match,19.0,32.0,1,1,0,1
-2011.0,21,Adelaide,Geelong,tipresias_match,-6.0,-11.0,0,0,0,1
-2011.0,23,Adelaide,Richmond,tipresias_match,-27.0,-22.0,0,0,0,1
-2012.0,2,Adelaide,Footscray,tipresias_match,41.0,18.0,1,1,0,1
-2012.0,4,Adelaide,GWS,tipresias_match,60.0,46.0,1,1,0,1
-2012.0,5,Adelaide,Port Adelaide,tipresias_match,22.0,19.0,1,1,0,1
-2012.0,7,Adelaide,Geelong,tipresias_match,14.0,50.0,1,1,0,1
-2012.0,9,Adelaide,Collingwood,tipresias_match,14.0,-26.0,1,0,0,0
-2012.0,12,Adelaide,St Kilda,tipresias_match,-21.0,4.0,0,1,0,0
-2012.0,14,Adelaide,Richmond,tipresias_match,15.0,19.0,1,1,0,1
-2012.0,17,Adelaide,West Coast,tipresias_match,25.0,49.0,1,1,0,1
-2012.0,19,Adelaide,Essendon,tipresias_match,-1.0,4.0,0,1,0,0
-2012.0,20,Adelaide,Fremantle,tipresias_match,21.0,28.0,1,1,0,1
-2012.0,23,Adelaide,Gold Coast,tipresias_match,71.0,91.0,1,1,0,1
-2012.0,25,Adelaide,Fremantle,tipresias_match,33.0,10.0,1,1,0,1
-2013.0,1,Adelaide,Essendon,tipresias_match,-14.0,-35.0,0,0,0,1
-2013.0,4,Adelaide,Footscray,tipresias_match,82.0,52.0,1,1,0,1
-2013.0,6,Adelaide,Hawthorn,tipresias_match,3.0,-11.0,1,0,0,0
-2013.0,8,Adelaide,St Kilda,tipresias_match,56.0,40.0,1,1,0,1
-2013.0,10,Adelaide,Fremantle,tipresias_match,32.0,-7.0,1,0,0,0
-2013.0,11,Adelaide,Sydney,tipresias_match,-44.0,-77.0,0,0,0,1
-2013.0,17,Adelaide,Geelong,tipresias_match,2.0,2.0,1,1,0,1
-2013.0,19,Adelaide,Port Adelaide,tipresias_match,-18.0,-4.0,0,0,0,1
-2013.0,20,Adelaide,North Melbourne,tipresias_match,27.0,9.0,1,1,0,1
-2013.0,22,Adelaide,Melbourne,tipresias_match,64.0,68.0,1,1,0,1
-2014.0,3,Adelaide,Sydney,tipresias_match,-40.0,-63.0,0,0,0,1
-2014.0,5,Adelaide,GWS,tipresias_match,44.0,65.0,1,1,0,1
-2014.0,7,Adelaide,Melbourne,tipresias_match,51.0,-3.0,1,0,0,0
-2014.0,9,Adelaide,Collingwood,tipresias_match,30.0,21.0,1,1,0,1
-2014.0,11,Adelaide,Gold Coast,tipresias_match,15.0,32.0,1,1,0,1
-2014.0,13,Adelaide,North Melbourne,tipresias_match,11.0,36.0,1,1,0,1
-2014.0,17,Adelaide,Hawthorn,tipresias_match,-13.0,-12.0,0,0,0,1
-2014.0,19,Adelaide,West Coast,tipresias_match,-43.0,-31.0,0,0,0,1
-2014.0,21,Adelaide,Richmond,tipresias_match,19.0,-10.0,1,0,0,0
-2014.0,23,Adelaide,St Kilda,tipresias_match,58.0,79.0,1,1,0,1
-2015.0,1,Adelaide,North Melbourne,tipresias_match,38.0,77.0,1,1,0,1
-2015.0,3,Adelaide,Melbourne,tipresias_match,56.0,25.0,1,1,0,1
-2015.0,5,Adelaide,Port Adelaide,tipresias_match,-26.0,-24.0,0,0,0,1
-2015.0,7,Adelaide,St Kilda,tipresias_match,44.0,46.0,1,1,0,1
-2015.0,9,Adelaide,Fremantle,tipresias_match,24.0,-11.0,1,0,0,0
-2015.0,12,Adelaide,Hawthorn,tipresias_match,-28.0,-29.0,0,0,0,1
-2015.0,17,Adelaide,Gold Coast,tipresias_match,44.0,45.0,1,1,0,1
-2015.0,19,Adelaide,Richmond,tipresias_match,46.0,36.0,1,1,0,1
-2015.0,21,Adelaide,Brisbane Lions,tipresias_match,90.0,87.0,1,1,0,1
-2015.0,22,Adelaide,West Coast,tipresias_match,30.0,57.0,1,1,0,1
-2015.0,24,Adelaide,Footscray,tipresias_match,-8.0,7.0,0,1,0,0
-2016.0,2,Adelaide,Port Adelaide,tipresias_match,11.0,58.0,1,1,0,1
-2016.0,4,Adelaide,Sydney,tipresias_match,-9.0,10.0,0,1,0,0
-2016.0,6,Adelaide,Fremantle,tipresias_match,40.0,33.0,1,1,0,1
-2016.0,8,Adelaide,Geelong,tipresias_match,-10.0,-26.0,0,0,0,1
+2011.0,1,Adelaide,Hawthorn,tipresias_match,1.0,20.0,1,1,0,1
+2011.0,3,Adelaide,Fremantle,tipresias_match,11.0,-25.0,1,0,0,0
+2011.0,6,Adelaide,St Kilda,tipresias_match,-4.0,19.0,0,1,0,0
+2011.0,8,Adelaide,Gold Coast,tipresias_match,18.0,57.0,1,1,0,1
+2011.0,10,Adelaide,Brisbane Lions,tipresias_match,25.0,-40.0,1,0,0,0
+2011.0,12,Adelaide,West Coast,tipresias_match,17.0,-39.0,1,0,0,0
+2011.0,17,Adelaide,Essendon,tipresias_match,-0.0,-11.0,0,0,0,1
+2011.0,19,Adelaide,Port Adelaide,tipresias_match,6.0,32.0,1,1,0,1
+2011.0,21,Adelaide,Geelong,tipresias_match,-27.0,-11.0,0,0,0,1
+2011.0,23,Adelaide,Richmond,tipresias_match,7.0,-22.0,1,0,0,0
+2012.0,2,Adelaide,Footscray,tipresias_match,15.0,18.0,1,1,0,1
+2012.0,4,Adelaide,GWS,tipresias_match,27.0,46.0,1,1,0,1
+2012.0,5,Adelaide,Port Adelaide,tipresias_match,18.0,19.0,1,1,0,1
+2012.0,7,Adelaide,Geelong,tipresias_match,-4.0,50.0,0,1,0,0
+2012.0,9,Adelaide,Collingwood,tipresias_match,-3.0,-26.0,0,0,0,1
+2012.0,12,Adelaide,St Kilda,tipresias_match,0.0,4.0,1,1,0,1
+2012.0,14,Adelaide,Richmond,tipresias_match,16.0,19.0,1,1,0,1
+2012.0,17,Adelaide,West Coast,tipresias_match,23.0,49.0,1,1,0,1
+2012.0,19,Adelaide,Essendon,tipresias_match,13.0,4.0,1,1,0,1
+2012.0,20,Adelaide,Fremantle,tipresias_match,31.0,28.0,1,1,0,1
+2012.0,23,Adelaide,Gold Coast,tipresias_match,61.0,91.0,1,1,0,1
+2012.0,25,Adelaide,Fremantle,tipresias_match,19.0,10.0,1,1,0,1
+2013.0,1,Adelaide,Essendon,tipresias_match,30.0,-35.0,1,0,0,0
+2013.0,4,Adelaide,Footscray,tipresias_match,31.0,52.0,1,1,0,1
+2013.0,6,Adelaide,Hawthorn,tipresias_match,12.0,-11.0,1,0,0,0
+2013.0,8,Adelaide,St Kilda,tipresias_match,30.0,40.0,1,1,0,1
+2013.0,10,Adelaide,Fremantle,tipresias_match,0.0,-7.0,1,0,0,0
+2013.0,11,Adelaide,Sydney,tipresias_match,-2.0,-77.0,0,0,0,1
+2013.0,17,Adelaide,Geelong,tipresias_match,-14.0,2.0,0,1,0,0
+2013.0,19,Adelaide,Port Adelaide,tipresias_match,-3.0,-4.0,0,0,0,1
+2013.0,20,Adelaide,North Melbourne,tipresias_match,13.0,9.0,1,1,0,1
+2013.0,22,Adelaide,Melbourne,tipresias_match,31.0,68.0,1,1,0,1
+2014.0,3,Adelaide,Sydney,tipresias_match,1.0,-63.0,1,0,0,0
+2014.0,5,Adelaide,GWS,tipresias_match,27.0,65.0,1,1,0,1
+2014.0,7,Adelaide,Melbourne,tipresias_match,52.0,-3.0,1,0,0,0
+2014.0,9,Adelaide,Collingwood,tipresias_match,-4.0,21.0,0,1,0,0
+2014.0,11,Adelaide,Gold Coast,tipresias_match,6.0,32.0,1,1,0,1
+2014.0,13,Adelaide,North Melbourne,tipresias_match,5.0,36.0,1,1,0,1
+2014.0,17,Adelaide,Hawthorn,tipresias_match,4.0,-12.0,1,0,0,0
+2014.0,19,Adelaide,West Coast,tipresias_match,23.0,-31.0,1,0,0,0
+2014.0,21,Adelaide,Richmond,tipresias_match,17.0,-10.0,1,0,0,0
+2014.0,23,Adelaide,St Kilda,tipresias_match,33.0,79.0,1,1,0,1
+2015.0,1,Adelaide,North Melbourne,tipresias_match,7.0,77.0,1,1,0,1
+2015.0,3,Adelaide,Melbourne,tipresias_match,32.0,25.0,1,1,0,1
+2015.0,5,Adelaide,Port Adelaide,tipresias_match,9.0,-24.0,1,0,0,0
+2015.0,7,Adelaide,St Kilda,tipresias_match,37.0,46.0,1,1,0,1
+2015.0,9,Adelaide,Fremantle,tipresias_match,-4.0,-11.0,0,0,0,1
+2015.0,12,Adelaide,Hawthorn,tipresias_match,-3.0,-29.0,0,0,0,1
+2015.0,17,Adelaide,Gold Coast,tipresias_match,47.0,45.0,1,1,0,1
+2015.0,19,Adelaide,Richmond,tipresias_match,5.0,36.0,1,1,0,1
+2015.0,21,Adelaide,Brisbane Lions,tipresias_match,54.0,87.0,1,1,0,1
+2015.0,22,Adelaide,West Coast,tipresias_match,4.0,57.0,1,1,0,1
+2015.0,24,Adelaide,Footscray,tipresias_match,13.0,7.0,1,1,0,1
+2016.0,2,Adelaide,Port Adelaide,tipresias_match,2.0,58.0,1,1,0,1
+2016.0,4,Adelaide,Sydney,tipresias_match,8.0,10.0,1,1,0,1
+2016.0,6,Adelaide,Fremantle,tipresias_match,22.0,33.0,1,1,0,1
+2016.0,8,Adelaide,Geelong,tipresias_match,-1.0,-26.0,0,0,0,1
 2016.0,10,Adelaide,GWS,tipresias_match,16.0,22.0,1,1,0,1
-2016.0,11,Adelaide,St Kilda,tipresias_match,64.0,88.0,1,1,0,1
-2016.0,14,Adelaide,North Melbourne,tipresias_match,36.0,33.0,1,1,0,1
-2016.0,17,Adelaide,Collingwood,tipresias_match,44.0,28.0,1,1,0,1
-2016.0,19,Adelaide,Essendon,tipresias_match,63.0,82.0,1,1,0,1
-2016.0,20,Adelaide,Brisbane Lions,tipresias_match,91.0,138.0,1,1,0,1
-2016.0,23,Adelaide,West Coast,tipresias_match,-4.0,-29.0,0,0,0,1
-2016.0,24,Adelaide,North Melbourne,tipresias_match,29.0,62.0,1,1,0,1
-2011.0,1,Brisbane Lions,Fremantle,tipresias_match,-4.0,-2.0,0,0,0,1
-2011.0,5,Brisbane Lions,St Kilda,tipresias_match,4.0,-13.0,1,0,0,0
-2011.0,8,Brisbane Lions,Essendon,tipresias_match,-8.0,-36.0,0,0,0,1
-2011.0,9,Brisbane Lions,North Melbourne,tipresias_match,35.0,14.0,1,1,0,1
-2011.0,11,Brisbane Lions,Sydney,tipresias_match,-32.0,-65.0,0,0,0,1
-2011.0,13,Brisbane Lions,Richmond,tipresias_match,-39.0,-31.0,0,0,0,1
-2011.0,17,Brisbane Lions,Geelong,tipresias_match,-53.0,-29.0,0,0,0,1
-2011.0,20,Brisbane Lions,Adelaide,tipresias_match,-13.0,-5.0,0,0,0,1
-2011.0,21,Brisbane Lions,Gold Coast,tipresias_match,44.0,62.0,1,1,0,1
-2011.0,23,Brisbane Lions,West Coast,tipresias_match,-3.0,-8.0,0,0,0,1
-2012.0,2,Brisbane Lions,Carlton,tipresias_match,-74.0,-91.0,0,0,0,1
-2012.0,4,Brisbane Lions,Gold Coast,tipresias_match,49.0,65.0,1,1,0,1
-2012.0,5,Brisbane Lions,Geelong,tipresias_match,13.0,-38.0,1,0,0,0
-2012.0,7,Brisbane Lions,Collingwood,tipresias_match,-41.0,-58.0,0,0,0,1
-2012.0,8,Brisbane Lions,GWS,tipresias_match,50.0,92.0,1,1,0,1
-2012.0,10,Brisbane Lions,West Coast,tipresias_match,-17.0,2.0,0,1,0,0
-2012.0,14,Brisbane Lions,Melbourne,tipresias_match,44.0,61.0,1,1,0,1
-2012.0,16,Brisbane Lions,St Kilda,tipresias_match,-6.0,-13.0,0,0,0,1
-2012.0,19,Brisbane Lions,Richmond,tipresias_match,-38.0,-48.0,0,0,0,1
-2012.0,21,Brisbane Lions,Adelaide,tipresias_match,-2.0,10.0,0,1,0,0
-2012.0,23,Brisbane Lions,Footscray,tipresias_match,52.0,67.0,1,1,0,1
-2013.0,2,Brisbane Lions,Adelaide,tipresias_match,-4.0,-19.0,0,0,0,1
-2013.0,5,Brisbane Lions,Melbourne,tipresias_match,10.0,28.0,1,1,0,1
-2013.0,7,Brisbane Lions,West Coast,tipresias_match,-14.0,-26.0,0,0,0,1
-2013.0,9,Brisbane Lions,Carlton,tipresias_match,-2.0,-13.0,0,0,0,1
-2013.0,10,Brisbane Lions,Collingwood,tipresias_match,-9.0,-49.0,0,0,0,1
-2013.0,13,Brisbane Lions,Geelong,tipresias_match,-17.0,5.0,0,1,0,0
-2013.0,16,Brisbane Lions,North Melbourne,tipresias_match,-7.0,12.0,0,1,0,0
-2013.0,19,Brisbane Lions,St Kilda,tipresias_match,28.0,31.0,1,1,0,1
-2013.0,21,Brisbane Lions,GWS,tipresias_match,50.0,60.0,1,1,0,1
-2013.0,22,Brisbane Lions,Footscray,tipresias_match,15.0,7.0,1,1,0,1
-2014.0,2,Brisbane Lions,Geelong,tipresias_match,-3.0,-25.0,0,0,0,1
-2014.0,5,Brisbane Lions,Richmond,tipresias_match,-21.0,-43.0,0,0,0,1
-2014.0,7,Brisbane Lions,Sydney,tipresias_match,-42.0,-79.0,0,0,0,1
-2014.0,8,Brisbane Lions,Essendon,tipresias_match,21.0,-8.0,1,0,0,0
-2014.0,11,Brisbane Lions,Carlton,tipresias_match,-4.0,7.0,0,1,0,0
-2014.0,13,Brisbane Lions,GWS,tipresias_match,-18.0,-45.0,0,0,0,1
-2014.0,17,Brisbane Lions,West Coast,tipresias_match,21.0,-12.0,1,0,0,0
-2014.0,18,Brisbane Lions,Gold Coast,tipresias_match,40.0,54.0,1,1,0,1
-2014.0,20,Brisbane Lions,Adelaide,tipresias_match,-93.0,-105.0,0,0,0,1
-2014.0,22,Brisbane Lions,Fremantle,tipresias_match,-20.0,-58.0,0,0,0,1
-2015.0,1,Brisbane Lions,Collingwood,tipresias_match,2.0,-12.0,1,0,0,0
-2015.0,3,Brisbane Lions,Richmond,tipresias_match,-56.0,-79.0,0,0,0,1
-2015.0,4,Brisbane Lions,West Coast,tipresias_match,-40.0,-53.0,0,0,0,1
-2015.0,7,Brisbane Lions,Port Adelaide,tipresias_match,24.0,37.0,1,1,0,1
-2015.0,9,Brisbane Lions,St Kilda,tipresias_match,-12.0,-22.0,0,0,0,1
-2015.0,13,Brisbane Lions,Adelaide,tipresias_match,3.0,-13.0,1,0,0,0
-2015.0,17,Brisbane Lions,North Melbourne,tipresias_match,-31.0,-72.0,0,0,0,1
-2015.0,19,Brisbane Lions,Gold Coast,tipresias_match,-23.0,-14.0,0,0,0,1
-2015.0,20,Brisbane Lions,Carlton,tipresias_match,41.0,64.0,1,1,0,1
-2015.0,23,Brisbane Lions,Footscray,tipresias_match,-39.0,8.0,0,1,0,0
-2016.0,2,Brisbane Lions,North Melbourne,tipresias_match,-41.0,-34.0,0,0,0,1
-2016.0,4,Brisbane Lions,Gold Coast,tipresias_match,-4.0,13.0,0,1,0,0
-2016.0,6,Brisbane Lions,Sydney,tipresias_match,-17.0,-3.0,0,0,0,1
-2016.0,8,Brisbane Lions,Collingwood,tipresias_match,-69.0,-78.0,0,0,0,1
-2016.0,10,Brisbane Lions,Hawthorn,tipresias_match,-65.0,-48.0,0,0,0,1
-2016.0,12,Brisbane Lions,Fremantle,tipresias_match,-71.0,-83.0,0,0,0,1
-2016.0,13,Brisbane Lions,West Coast,tipresias_match,-61.0,-49.0,0,0,0,1
-2016.0,17,Brisbane Lions,GWS,tipresias_match,-73.0,-79.0,0,0,0,1
-2016.0,19,Brisbane Lions,Port Adelaide,tipresias_match,-115.0,-94.0,0,0,0,1
-2016.0,21,Brisbane Lions,Carlton,tipresias_match,-10.0,4.0,0,1,0,0
-2016.0,22,Brisbane Lions,Geelong,tipresias_match,-67.0,-60.0,0,0,0,1
-2011.0,1,Carlton,Richmond,tipresias_match,34.0,20.0,1,1,0,1
-2011.0,4,Carlton,Essendon,tipresias_match,21.0,0.0,1,0,1,1
-2011.0,5,Carlton,Adelaide,tipresias_match,30.0,6.0,1,1,0,1
-2011.0,9,Carlton,Geelong,tipresias_match,-7.0,-2.0,0,0,0,1
-2011.0,12,Carlton,Brisbane Lions,tipresias_match,61.0,61.0,1,1,0,1
-2011.0,13,Carlton,Sydney,tipresias_match,32.0,34.0,1,1,0,1
-2011.0,14,Carlton,West Coast,tipresias_match,5.0,-36.0,1,0,0,0
-2011.0,17,Carlton,Collingwood,tipresias_match,-6.0,-19.0,0,0,0,1
-2011.0,20,Carlton,Melbourne,tipresias_match,44.0,76.0,1,1,0,1
-2011.0,22,Carlton,Hawthorn,tipresias_match,19.0,-12.0,1,0,0,0
-2011.0,24,Carlton,St Kilda,tipresias_match,18.0,-20.0,1,0,0,0
-2011.0,25,Carlton,Essendon,tipresias_match,19.0,62.0,1,1,0,1
-2012.0,3,Carlton,Collingwood,tipresias_match,43.0,60.0,1,1,0,1
-2012.0,4,Carlton,Essendon,tipresias_match,-10.0,-30.0,0,0,0,1
-2012.0,6,Carlton,GWS,tipresias_match,72.0,67.0,1,1,0,1
-2012.0,8,Carlton,Adelaide,tipresias_match,-25.0,-69.0,0,0,0,1
-2012.0,9,Carlton,Melbourne,tipresias_match,60.0,58.0,1,1,0,1
-2012.0,11,Carlton,Geelong,tipresias_match,-7.0,-12.0,0,0,0,1
-2012.0,14,Carlton,Hawthorn,tipresias_match,-39.0,-50.0,0,0,0,1
-2012.0,18,Carlton,Richmond,tipresias_match,16.0,4.0,1,1,0,1
-2012.0,19,Carlton,Sydney,tipresias_match,-5.0,-22.0,0,0,0,1
-2012.0,20,Carlton,Brisbane Lions,tipresias_match,27.0,36.0,1,1,0,1
-2012.0,23,Carlton,St Kilda,tipresias_match,-10.0,-15.0,0,0,0,1
-2013.0,1,Carlton,Richmond,tipresias_match,-4.0,-5.0,0,0,0,1
-2013.0,5,Carlton,Adelaide,tipresias_match,10.0,32.0,1,1,0,1
-2013.0,6,Carlton,Melbourne,tipresias_match,52.0,61.0,1,1,0,1
-2013.0,8,Carlton,Port Adelaide,tipresias_match,7.0,18.0,1,1,0,1
-2013.0,10,Carlton,GWS,tipresias_match,70.0,94.0,1,1,0,1
-2013.0,12,Carlton,Hawthorn,tipresias_match,-16.0,-15.0,0,0,0,1
-2013.0,16,Carlton,St Kilda,tipresias_match,24.0,36.0,1,1,0,1
-2013.0,19,Carlton,Fremantle,tipresias_match,-26.0,-36.0,0,0,0,1
-2013.0,20,Carlton,Footscray,tipresias_match,-19.0,-28.0,0,0,0,1
-2013.0,22,Carlton,Essendon,tipresias_match,20.0,-6.0,1,0,0,0
-2013.0,24,Carlton,Richmond,tipresias_match,-7.0,20.0,0,1,0,0
-2014.0,1,Carlton,Port Adelaide,tipresias_match,-29.0,-33.0,0,0,0,1
-2014.0,4,Carlton,Melbourne,tipresias_match,31.0,-23.0,1,0,0,0
-2014.0,6,Carlton,West Coast,tipresias_match,11.0,3.0,1,1,0,1
-2014.0,7,Carlton,Collingwood,tipresias_match,-21.0,-34.0,0,0,0,1
-2014.0,10,Carlton,Adelaide,tipresias_match,21.0,5.0,1,1,0,1
-2014.0,13,Carlton,Hawthorn,tipresias_match,-32.0,-28.0,0,0,0,1
-2014.0,16,Carlton,St Kilda,tipresias_match,46.0,85.0,1,1,0,1
-2014.0,18,Carlton,North Melbourne,tipresias_match,2.0,23.0,1,1,0,1
-2014.0,20,Carlton,Gold Coast,tipresias_match,34.0,39.0,1,1,0,1
-2014.0,21,Carlton,Geelong,tipresias_match,4.0,-6.0,1,0,0,0
-2014.0,23,Carlton,Essendon,tipresias_match,-6.0,0.0,0,0,1,1
-2015.0,1,Carlton,Richmond,tipresias_match,-18.0,-27.0,0,0,0,1
-2015.0,3,Carlton,Essendon,tipresias_match,-21.0,-21.0,0,0,0,1
-2015.0,5,Carlton,Collingwood,tipresias_match,-35.0,-75.0,0,0,0,1
+2016.0,11,Adelaide,St Kilda,tipresias_match,34.0,88.0,1,1,0,1
+2016.0,14,Adelaide,North Melbourne,tipresias_match,17.0,33.0,1,1,0,1
+2016.0,17,Adelaide,Collingwood,tipresias_match,37.0,28.0,1,1,0,1
+2016.0,19,Adelaide,Essendon,tipresias_match,58.0,82.0,1,1,0,1
+2016.0,20,Adelaide,Brisbane Lions,tipresias_match,58.0,138.0,1,1,0,1
+2016.0,23,Adelaide,West Coast,tipresias_match,19.0,-29.0,1,0,0,0
+2016.0,24,Adelaide,North Melbourne,tipresias_match,35.0,62.0,1,1,0,1
+2011.0,1,Brisbane Lions,Fremantle,tipresias_match,7.0,-2.0,1,0,0,0
+2011.0,5,Brisbane Lions,St Kilda,tipresias_match,-11.0,-13.0,0,0,0,1
+2011.0,8,Brisbane Lions,Essendon,tipresias_match,-15.0,-36.0,0,0,0,1
+2011.0,9,Brisbane Lions,North Melbourne,tipresias_match,-10.0,14.0,0,1,0,0
+2011.0,11,Brisbane Lions,Sydney,tipresias_match,-14.0,-65.0,0,0,0,1
+2011.0,13,Brisbane Lions,Richmond,tipresias_match,2.0,-31.0,1,0,0,0
+2011.0,17,Brisbane Lions,Geelong,tipresias_match,-26.0,-29.0,0,0,0,1
+2011.0,20,Brisbane Lions,Adelaide,tipresias_match,2.0,-5.0,1,0,0,0
+2011.0,21,Brisbane Lions,Gold Coast,tipresias_match,5.0,62.0,1,1,0,1
+2011.0,23,Brisbane Lions,West Coast,tipresias_match,-30.0,-8.0,0,0,0,1
+2012.0,2,Brisbane Lions,Carlton,tipresias_match,-11.0,-91.0,0,0,0,1
+2012.0,4,Brisbane Lions,Gold Coast,tipresias_match,11.0,65.0,1,1,0,1
+2012.0,5,Brisbane Lions,Geelong,tipresias_match,-17.0,-38.0,0,0,0,1
+2012.0,7,Brisbane Lions,Collingwood,tipresias_match,-24.0,-58.0,0,0,0,1
+2012.0,8,Brisbane Lions,GWS,tipresias_match,2.0,92.0,1,1,0,1
+2012.0,10,Brisbane Lions,West Coast,tipresias_match,-26.0,2.0,0,1,0,0
+2012.0,14,Brisbane Lions,Melbourne,tipresias_match,12.0,61.0,1,1,0,1
+2012.0,16,Brisbane Lions,St Kilda,tipresias_match,8.0,-13.0,1,0,0,0
+2012.0,19,Brisbane Lions,Richmond,tipresias_match,13.0,-48.0,1,0,0,0
+2012.0,21,Brisbane Lions,Adelaide,tipresias_match,-20.0,10.0,0,1,0,0
+2012.0,23,Brisbane Lions,Footscray,tipresias_match,36.0,67.0,1,1,0,1
+2013.0,2,Brisbane Lions,Adelaide,tipresias_match,5.0,-19.0,1,0,0,0
+2013.0,5,Brisbane Lions,Melbourne,tipresias_match,3.0,28.0,1,1,0,1
+2013.0,7,Brisbane Lions,West Coast,tipresias_match,5.0,-26.0,1,0,0,0
+2013.0,9,Brisbane Lions,Carlton,tipresias_match,17.0,-13.0,1,0,0,0
+2013.0,10,Brisbane Lions,Collingwood,tipresias_match,7.0,-49.0,1,0,0,0
+2013.0,13,Brisbane Lions,Geelong,tipresias_match,-19.0,5.0,0,1,0,0
+2013.0,16,Brisbane Lions,North Melbourne,tipresias_match,9.0,12.0,1,1,0,1
+2013.0,19,Brisbane Lions,St Kilda,tipresias_match,29.0,31.0,1,1,0,1
+2013.0,21,Brisbane Lions,GWS,tipresias_match,34.0,60.0,1,1,0,1
+2013.0,22,Brisbane Lions,Footscray,tipresias_match,27.0,7.0,1,1,0,1
+2014.0,2,Brisbane Lions,Geelong,tipresias_match,-7.0,-25.0,0,0,0,1
+2014.0,5,Brisbane Lions,Richmond,tipresias_match,-13.0,-43.0,0,0,0,1
+2014.0,7,Brisbane Lions,Sydney,tipresias_match,-13.0,-79.0,0,0,0,1
+2014.0,8,Brisbane Lions,Essendon,tipresias_match,0.0,-8.0,1,0,0,0
+2014.0,11,Brisbane Lions,Carlton,tipresias_match,-11.0,7.0,0,1,0,0
+2014.0,13,Brisbane Lions,GWS,tipresias_match,36.0,-45.0,1,0,0,0
+2014.0,17,Brisbane Lions,West Coast,tipresias_match,5.0,-12.0,1,0,0,0
+2014.0,18,Brisbane Lions,Gold Coast,tipresias_match,-13.0,54.0,0,1,0,0
+2014.0,20,Brisbane Lions,Adelaide,tipresias_match,4.0,-105.0,1,0,0,0
+2014.0,22,Brisbane Lions,Fremantle,tipresias_match,-9.0,-58.0,0,0,0,1
+2015.0,1,Brisbane Lions,Collingwood,tipresias_match,4.0,-12.0,1,0,0,0
+2015.0,3,Brisbane Lions,Richmond,tipresias_match,-13.0,-79.0,0,0,0,1
+2015.0,4,Brisbane Lions,West Coast,tipresias_match,-15.0,-53.0,0,0,0,1
+2015.0,7,Brisbane Lions,Port Adelaide,tipresias_match,-2.0,37.0,0,1,0,0
+2015.0,9,Brisbane Lions,St Kilda,tipresias_match,26.0,-22.0,1,0,0,0
+2015.0,13,Brisbane Lions,Adelaide,tipresias_match,-9.0,-13.0,0,0,0,1
+2015.0,17,Brisbane Lions,North Melbourne,tipresias_match,-25.0,-72.0,0,0,0,1
+2015.0,19,Brisbane Lions,Gold Coast,tipresias_match,-6.0,-14.0,0,0,0,1
+2015.0,20,Brisbane Lions,Carlton,tipresias_match,11.0,64.0,1,1,0,1
+2015.0,23,Brisbane Lions,Footscray,tipresias_match,-27.0,8.0,0,1,0,0
+2016.0,2,Brisbane Lions,North Melbourne,tipresias_match,4.0,-34.0,1,0,0,0
+2016.0,4,Brisbane Lions,Gold Coast,tipresias_match,-7.0,13.0,0,1,0,0
+2016.0,6,Brisbane Lions,Sydney,tipresias_match,-26.0,-3.0,0,0,0,1
+2016.0,8,Brisbane Lions,Collingwood,tipresias_match,6.0,-78.0,1,0,0,0
+2016.0,10,Brisbane Lions,Hawthorn,tipresias_match,-33.0,-48.0,0,0,0,1
+2016.0,12,Brisbane Lions,Fremantle,tipresias_match,-6.0,-83.0,0,0,0,1
+2016.0,13,Brisbane Lions,West Coast,tipresias_match,-20.0,-49.0,0,0,0,1
+2016.0,17,Brisbane Lions,GWS,tipresias_match,-22.0,-79.0,0,0,0,1
+2016.0,19,Brisbane Lions,Port Adelaide,tipresias_match,-12.0,-94.0,0,0,0,1
+2016.0,21,Brisbane Lions,Carlton,tipresias_match,9.0,4.0,1,1,0,1
+2016.0,22,Brisbane Lions,Geelong,tipresias_match,-37.0,-60.0,0,0,0,1
+2011.0,1,Carlton,Richmond,tipresias_match,23.0,20.0,1,1,0,1
+2011.0,4,Carlton,Essendon,tipresias_match,10.0,0.0,1,0,1,1
+2011.0,5,Carlton,Adelaide,tipresias_match,21.0,6.0,1,1,0,1
+2011.0,9,Carlton,Geelong,tipresias_match,5.0,-2.0,1,0,0,0
+2011.0,12,Carlton,Brisbane Lions,tipresias_match,54.0,61.0,1,1,0,1
+2011.0,13,Carlton,Sydney,tipresias_match,9.0,34.0,1,1,0,1
+2011.0,14,Carlton,West Coast,tipresias_match,24.0,-36.0,1,0,0,0
+2011.0,17,Carlton,Collingwood,tipresias_match,-2.0,-19.0,0,0,0,1
+2011.0,20,Carlton,Melbourne,tipresias_match,28.0,76.0,1,1,0,1
+2011.0,22,Carlton,Hawthorn,tipresias_match,-5.0,-12.0,0,0,0,1
+2011.0,24,Carlton,St Kilda,tipresias_match,16.0,-20.0,1,0,0,0
+2011.0,25,Carlton,Essendon,tipresias_match,18.0,62.0,1,1,0,1
+2012.0,3,Carlton,Collingwood,tipresias_match,12.0,60.0,1,1,0,1
+2012.0,4,Carlton,Essendon,tipresias_match,17.0,-30.0,1,0,0,0
+2012.0,6,Carlton,GWS,tipresias_match,48.0,67.0,1,1,0,1
+2012.0,8,Carlton,Adelaide,tipresias_match,19.0,-69.0,1,0,0,0
+2012.0,9,Carlton,Melbourne,tipresias_match,38.0,58.0,1,1,0,1
+2012.0,11,Carlton,Geelong,tipresias_match,-1.0,-12.0,0,0,0,1
+2012.0,14,Carlton,Hawthorn,tipresias_match,-2.0,-50.0,0,0,0,1
+2012.0,18,Carlton,Richmond,tipresias_match,12.0,4.0,1,1,0,1
+2012.0,19,Carlton,Sydney,tipresias_match,-2.0,-22.0,0,0,0,1
+2012.0,20,Carlton,Brisbane Lions,tipresias_match,29.0,36.0,1,1,0,1
+2012.0,23,Carlton,St Kilda,tipresias_match,3.0,-15.0,1,0,0,0
+2013.0,1,Carlton,Richmond,tipresias_match,8.0,-5.0,1,0,0,0
+2013.0,5,Carlton,Adelaide,tipresias_match,-5.0,32.0,0,1,0,0
+2013.0,6,Carlton,Melbourne,tipresias_match,7.0,61.0,1,1,0,1
+2013.0,8,Carlton,Port Adelaide,tipresias_match,9.0,18.0,1,1,0,1
+2013.0,10,Carlton,GWS,tipresias_match,48.0,94.0,1,1,0,1
+2013.0,12,Carlton,Hawthorn,tipresias_match,-7.0,-15.0,0,0,0,1
+2013.0,16,Carlton,St Kilda,tipresias_match,18.0,36.0,1,1,0,1
+2013.0,19,Carlton,Fremantle,tipresias_match,11.0,-36.0,1,0,0,0
+2013.0,20,Carlton,Footscray,tipresias_match,27.0,-28.0,1,0,0,0
+2013.0,22,Carlton,Essendon,tipresias_match,11.0,-6.0,1,0,0,0
+2013.0,24,Carlton,Richmond,tipresias_match,-14.0,20.0,0,1,0,0
+2014.0,1,Carlton,Port Adelaide,tipresias_match,7.0,-33.0,1,0,0,0
+2014.0,4,Carlton,Melbourne,tipresias_match,38.0,-23.0,1,0,0,0
+2014.0,6,Carlton,West Coast,tipresias_match,16.0,3.0,1,1,0,1
+2014.0,7,Carlton,Collingwood,tipresias_match,-8.0,-34.0,0,0,0,1
+2014.0,10,Carlton,Adelaide,tipresias_match,4.0,5.0,1,1,0,1
+2014.0,13,Carlton,Hawthorn,tipresias_match,0.0,-28.0,1,0,0,0
+2014.0,16,Carlton,St Kilda,tipresias_match,16.0,85.0,1,1,0,1
+2014.0,18,Carlton,North Melbourne,tipresias_match,-9.0,23.0,0,1,0,0
+2014.0,20,Carlton,Gold Coast,tipresias_match,1.0,39.0,1,1,0,1
+2014.0,21,Carlton,Geelong,tipresias_match,-11.0,-6.0,0,0,0,1
+2014.0,23,Carlton,Essendon,tipresias_match,-17.0,0.0,0,0,1,1
+2015.0,1,Carlton,Richmond,tipresias_match,5.0,-27.0,1,0,0,0
+2015.0,3,Carlton,Essendon,tipresias_match,-11.0,-21.0,0,0,0,1
+2015.0,5,Carlton,Collingwood,tipresias_match,-7.0,-75.0,0,0,0,1
 2015.0,6,Carlton,Brisbane Lions,tipresias_match,17.0,-9.0,1,0,0,0
-2015.0,7,Carlton,GWS,tipresias_match,-59.0,-78.0,0,0,0,1
-2015.0,10,Carlton,Adelaide,tipresias_match,-17.0,-9.0,0,0,0,1
-2015.0,12,Carlton,Port Adelaide,tipresias_match,-17.0,4.0,0,1,0,0
-2015.0,13,Carlton,Gold Coast,tipresias_match,34.0,34.0,1,1,0,1
-2015.0,17,Carlton,Hawthorn,tipresias_match,-100.0,-138.0,0,0,0,1
-2015.0,18,Carlton,North Melbourne,tipresias_match,-40.0,-64.0,0,0,0,1
-2015.0,21,Carlton,Melbourne,tipresias_match,45.0,23.0,1,1,0,1
-2016.0,2,Carlton,Sydney,tipresias_match,-58.0,-60.0,0,0,0,1
-2016.0,4,Carlton,Footscray,tipresias_match,0.0,-36.0,1,0,0,0
-2016.0,6,Carlton,Essendon,tipresias_match,51.0,15.0,1,1,0,1
-2016.0,8,Carlton,Port Adelaide,tipresias_match,0.0,2.0,1,1,0,1
-2016.0,10,Carlton,Geelong,tipresias_match,-9.0,19.0,0,1,0,0
-2016.0,11,Carlton,Brisbane Lions,tipresias_match,47.0,38.0,1,1,0,1
-2016.0,16,Carlton,Adelaide,tipresias_match,-28.0,-60.0,0,0,0,1
-2016.0,17,Carlton,West Coast,tipresias_match,-1.0,-7.0,0,0,0,1
-2016.0,20,Carlton,St Kilda,tipresias_match,-40.0,-71.0,0,0,0,1
-2016.0,22,Carlton,Melbourne,tipresias_match,32.0,20.0,1,1,0,1
-2011.0,1,Collingwood,Port Adelaide,tipresias_match,29.0,75.0,1,1,0,1
-2011.0,3,Collingwood,Carlton,tipresias_match,35.0,28.0,1,1,0,1
-2011.0,6,Collingwood,Footscray,tipresias_match,49.0,48.0,1,1,0,1
-2011.0,9,Collingwood,Adelaide,tipresias_match,11.0,43.0,1,1,0,1
-2011.0,10,Collingwood,West Coast,tipresias_match,58.0,52.0,1,1,0,1
-2011.0,11,Collingwood,St Kilda,tipresias_match,52.0,57.0,1,1,0,1
-2011.0,16,Collingwood,North Melbourne,tipresias_match,53.0,117.0,1,1,0,1
-2011.0,19,Collingwood,Essendon,tipresias_match,21.0,74.0,1,1,0,1
-2011.0,22,Collingwood,Brisbane Lions,tipresias_match,47.0,18.0,1,1,0,1
-2011.0,24,Collingwood,Geelong,tipresias_match,-48.0,-96.0,0,0,0,1
-2011.0,25,Collingwood,West Coast,tipresias_match,32.0,20.0,1,1,0,1
-2011.0,27,Collingwood,Hawthorn,tipresias_match,31.0,3.0,1,1,0,1
-2012.0,2,Collingwood,Richmond,tipresias_match,54.0,21.0,1,1,0,1
-2012.0,4,Collingwood,Port Adelaide,tipresias_match,36.0,24.0,1,1,0,1
-2012.0,5,Collingwood,Essendon,tipresias_match,23.0,1.0,1,1,0,1
-2012.0,8,Collingwood,Geelong,tipresias_match,20.0,12.0,1,1,0,1
-2012.0,10,Collingwood,Gold Coast,tipresias_match,70.0,97.0,1,1,0,1
-2012.0,13,Collingwood,West Coast,tipresias_match,19.0,3.0,1,1,0,1
-2012.0,14,Collingwood,Fremantle,tipresias_match,40.0,29.0,1,1,0,1
-2012.0,17,Collingwood,Hawthorn,tipresias_match,-49.0,-47.0,0,0,0,1
-2012.0,19,Collingwood,St Kilda,tipresias_match,33.0,6.0,1,1,0,1
-2012.0,21,Collingwood,North Melbourne,tipresias_match,8.0,-30.0,1,0,0,0
-2012.0,25,Collingwood,West Coast,tipresias_match,44.0,13.0,1,1,0,1
-2013.0,2,Collingwood,Carlton,tipresias_match,8.0,17.0,1,1,0,1
-2013.0,3,Collingwood,Hawthorn,tipresias_match,-51.0,-55.0,0,0,0,1
-2013.0,6,Collingwood,St Kilda,tipresias_match,35.0,26.0,1,1,0,1
-2013.0,8,Collingwood,Geelong,tipresias_match,-1.0,6.0,0,1,0,0
-2013.0,9,Collingwood,Sydney,tipresias_match,-6.0,-47.0,0,0,0,1
-2013.0,12,Collingwood,Footscray,tipresias_match,56.0,34.0,1,1,0,1
-2013.0,16,Collingwood,Adelaide,tipresias_match,15.0,27.0,1,1,0,1
-2013.0,18,Collingwood,GWS,tipresias_match,66.0,40.0,1,1,0,1
-2013.0,19,Collingwood,Essendon,tipresias_match,44.0,79.0,1,1,0,1
-2013.0,22,Collingwood,West Coast,tipresias_match,64.0,62.0,1,1,0,1
-2013.0,23,Collingwood,North Melbourne,tipresias_match,-23.0,-11.0,0,0,0,1
-2014.0,1,Collingwood,Fremantle,tipresias_match,-29.0,-70.0,0,0,0,1
-2014.0,3,Collingwood,Geelong,tipresias_match,5.0,-11.0,1,0,0,0
-2014.0,5,Collingwood,North Melbourne,tipresias_match,40.0,35.0,1,1,0,1
-2014.0,6,Collingwood,Essendon,tipresias_match,45.0,23.0,1,1,0,1
-2014.0,10,Collingwood,West Coast,tipresias_match,-0.0,8.0,0,1,0,0
-2014.0,13,Collingwood,Footscray,tipresias_match,0.0,-8.0,1,0,0,0
-2014.0,18,Collingwood,Adelaide,tipresias_match,-7.0,-16.0,0,0,0,1
-2014.0,19,Collingwood,Port Adelaide,tipresias_match,20.0,6.0,1,1,0,1
-2014.0,21,Collingwood,Brisbane Lions,tipresias_match,-32.0,-67.0,0,0,0,1
-2014.0,23,Collingwood,Hawthorn,tipresias_match,-39.0,-65.0,0,0,0,1
-2015.0,2,Collingwood,Adelaide,tipresias_match,0.0,-27.0,1,0,0,0
-2015.0,3,Collingwood,St Kilda,tipresias_match,43.0,74.0,1,1,0,1
-2015.0,6,Collingwood,Geelong,tipresias_match,-2.0,-41.0,0,0,0,1
-2015.0,9,Collingwood,North Melbourne,tipresias_match,-4.0,17.0,0,1,0,0
-2015.0,11,Collingwood,GWS,tipresias_match,20.0,42.0,1,1,0,1
-2015.0,14,Collingwood,Hawthorn,tipresias_match,-19.0,-10.0,0,0,0,1
-2015.0,16,Collingwood,West Coast,tipresias_match,-2.0,-31.0,0,0,0,1
-2015.0,18,Collingwood,Melbourne,tipresias_match,12.0,-37.0,1,0,0,0
-2015.0,19,Collingwood,Carlton,tipresias_match,19.0,18.0,1,1,0,1
-2015.0,21,Collingwood,Richmond,tipresias_match,-65.0,-91.0,0,0,0,1
-2015.0,23,Collingwood,Essendon,tipresias_match,16.0,-3.0,1,0,0,0
-2016.0,2,Collingwood,Richmond,tipresias_match,1.0,1.0,1,1,0,1
-2016.0,4,Collingwood,Melbourne,tipresias_match,1.0,-35.0,1,0,0,0
-2016.0,5,Collingwood,Essendon,tipresias_match,37.0,69.0,1,1,0,1
-2016.0,7,Collingwood,Carlton,tipresias_match,-4.0,-15.0,0,0,0,1
-2016.0,9,Collingwood,Geelong,tipresias_match,6.0,24.0,1,1,0,1
-2016.0,10,Collingwood,Footscray,tipresias_match,22.0,-21.0,1,0,0,0
-2016.0,11,Collingwood,Port Adelaide,tipresias_match,-50.0,-67.0,0,0,0,1
-2016.0,14,Collingwood,Fremantle,tipresias_match,51.0,48.0,1,1,0,1
-2016.0,18,Collingwood,North Melbourne,tipresias_match,-51.0,-40.0,0,0,0,1
-2016.0,19,Collingwood,West Coast,tipresias_match,18.0,19.0,1,1,0,1
-2016.0,22,Collingwood,Gold Coast,tipresias_match,54.0,71.0,1,1,0,1
-2011.0,1,Essendon,Footscray,tipresias_match,35.0,55.0,1,1,0,1
-2011.0,5,Essendon,Collingwood,tipresias_match,-19.0,-30.0,0,0,0,1
-2011.0,6,Essendon,Gold Coast,tipresias_match,48.0,139.0,1,1,0,1
-2011.0,7,Essendon,West Coast,tipresias_match,14.0,16.0,1,1,0,1
-2011.0,11,Essendon,Melbourne,tipresias_match,5.0,-33.0,1,0,0,0
-2011.0,13,Essendon,North Melbourne,tipresias_match,-18.0,-21.0,0,0,0,1
-2011.0,16,Essendon,Richmond,tipresias_match,26.0,39.0,1,1,0,1
-2011.0,18,Essendon,Carlton,tipresias_match,-62.0,-74.0,0,0,0,1
-2011.0,20,Essendon,Sydney,tipresias_match,-14.0,1.0,0,1,0,0
-2011.0,23,Essendon,Port Adelaide,tipresias_match,-0.0,7.0,0,1,0,0
-2012.0,2,Essendon,Port Adelaide,tipresias_match,28.0,25.0,1,1,0,1
-2012.0,6,Essendon,Brisbane Lions,tipresias_match,51.0,67.0,1,1,0,1
-2012.0,7,Essendon,West Coast,tipresias_match,39.0,61.0,1,1,0,1
-2012.0,8,Essendon,Richmond,tipresias_match,-11.0,19.0,0,1,0,0
-2012.0,10,Essendon,Melbourne,tipresias_match,64.0,-6.0,1,0,0,0
-2012.0,11,Essendon,Sydney,tipresias_match,9.0,-4.0,1,0,0,0
-2012.0,14,Essendon,Footscray,tipresias_match,57.0,84.0,1,1,0,1
-2012.0,18,Essendon,Hawthorn,tipresias_match,-94.0,-94.0,0,0,0,1
-2012.0,20,Essendon,North Melbourne,tipresias_match,-3.0,-24.0,0,0,0,1
-2012.0,21,Essendon,Carlton,tipresias_match,-59.0,-96.0,0,0,0,1
-2012.0,23,Essendon,Collingwood,tipresias_match,-19.0,-32.0,0,0,0,1
-2013.0,2,Essendon,Melbourne,tipresias_match,73.0,148.0,1,1,0,1
-2013.0,5,Essendon,Collingwood,tipresias_match,21.0,46.0,1,1,0,1
-2013.0,6,Essendon,GWS,tipresias_match,45.0,39.0,1,1,0,1
-2013.0,8,Essendon,Brisbane Lions,tipresias_match,10.0,-10.0,1,0,0,0
-2013.0,11,Essendon,Carlton,tipresias_match,20.0,5.0,1,1,0,1
-2013.0,12,Essendon,Gold Coast,tipresias_match,37.0,43.0,1,1,0,1
-2013.0,18,Essendon,Hawthorn,tipresias_match,-58.0,-56.0,0,0,0,1
-2013.0,20,Essendon,West Coast,tipresias_match,-25.0,-53.0,0,0,0,1
-2013.0,21,Essendon,North Melbourne,tipresias_match,-17.0,-45.0,0,0,0,1
-2013.0,23,Essendon,Richmond,tipresias_match,-12.0,-39.0,0,0,0,1
-2014.0,2,Essendon,Hawthorn,tipresias_match,6.0,-4.0,1,0,0,0
-2014.0,3,Essendon,Carlton,tipresias_match,50.0,81.0,1,1,0,1
-2014.0,5,Essendon,St Kilda,tipresias_match,24.0,-16.0,1,0,0,0
-2014.0,7,Essendon,Footscray,tipresias_match,36.0,8.0,1,1,0,1
-2014.0,9,Essendon,Sydney,tipresias_match,-27.0,-50.0,0,0,0,1
-2014.0,11,Essendon,Richmond,tipresias_match,36.0,50.0,1,1,0,1
+2015.0,7,Carlton,GWS,tipresias_match,11.0,-78.0,1,0,0,0
+2015.0,10,Carlton,Adelaide,tipresias_match,-13.0,-9.0,0,0,0,1
+2015.0,12,Carlton,Port Adelaide,tipresias_match,-10.0,4.0,0,1,0,0
+2015.0,13,Carlton,Gold Coast,tipresias_match,18.0,34.0,1,1,0,1
+2015.0,17,Carlton,Hawthorn,tipresias_match,-25.0,-138.0,0,0,0,1
+2015.0,18,Carlton,North Melbourne,tipresias_match,-16.0,-64.0,0,0,0,1
+2015.0,21,Carlton,Melbourne,tipresias_match,3.0,23.0,1,1,0,1
+2016.0,2,Carlton,Sydney,tipresias_match,-29.0,-60.0,0,0,0,1
+2016.0,4,Carlton,Footscray,tipresias_match,-28.0,-36.0,0,0,0,1
+2016.0,6,Carlton,Essendon,tipresias_match,15.0,15.0,1,1,0,1
+2016.0,8,Carlton,Port Adelaide,tipresias_match,-8.0,2.0,0,1,0,0
+2016.0,10,Carlton,Geelong,tipresias_match,-22.0,19.0,0,1,0,0
+2016.0,11,Carlton,Brisbane Lions,tipresias_match,37.0,38.0,1,1,0,1
+2016.0,16,Carlton,Adelaide,tipresias_match,-26.0,-60.0,0,0,0,1
+2016.0,17,Carlton,West Coast,tipresias_match,-20.0,-7.0,0,0,0,1
+2016.0,20,Carlton,St Kilda,tipresias_match,-12.0,-71.0,0,0,0,1
+2016.0,22,Carlton,Melbourne,tipresias_match,-18.0,20.0,0,1,0,0
+2011.0,1,Collingwood,Port Adelaide,tipresias_match,26.0,75.0,1,1,0,1
+2011.0,3,Collingwood,Carlton,tipresias_match,17.0,28.0,1,1,0,1
+2011.0,6,Collingwood,Footscray,tipresias_match,21.0,48.0,1,1,0,1
+2011.0,9,Collingwood,Adelaide,tipresias_match,24.0,43.0,1,1,0,1
+2011.0,10,Collingwood,West Coast,tipresias_match,30.0,52.0,1,1,0,1
+2011.0,11,Collingwood,St Kilda,tipresias_match,21.0,57.0,1,1,0,1
+2011.0,16,Collingwood,North Melbourne,tipresias_match,27.0,117.0,1,1,0,1
+2011.0,19,Collingwood,Essendon,tipresias_match,31.0,74.0,1,1,0,1
+2011.0,22,Collingwood,Brisbane Lions,tipresias_match,53.0,18.0,1,1,0,1
+2011.0,24,Collingwood,Geelong,tipresias_match,23.0,-96.0,1,0,0,0
+2011.0,25,Collingwood,West Coast,tipresias_match,14.0,20.0,1,1,0,1
+2011.0,27,Collingwood,Hawthorn,tipresias_match,14.0,3.0,1,1,0,1
+2012.0,2,Collingwood,Richmond,tipresias_match,35.0,21.0,1,1,0,1
+2012.0,4,Collingwood,Port Adelaide,tipresias_match,42.0,24.0,1,1,0,1
+2012.0,5,Collingwood,Essendon,tipresias_match,16.0,1.0,1,1,0,1
+2012.0,8,Collingwood,Geelong,tipresias_match,19.0,12.0,1,1,0,1
+2012.0,10,Collingwood,Gold Coast,tipresias_match,69.0,97.0,1,1,0,1
+2012.0,13,Collingwood,West Coast,tipresias_match,18.0,3.0,1,1,0,1
+2012.0,14,Collingwood,Fremantle,tipresias_match,47.0,29.0,1,1,0,1
+2012.0,17,Collingwood,Hawthorn,tipresias_match,42.0,-47.0,1,0,0,0
+2012.0,19,Collingwood,St Kilda,tipresias_match,39.0,6.0,1,1,0,1
+2012.0,21,Collingwood,North Melbourne,tipresias_match,24.0,-30.0,1,0,0,0
+2012.0,25,Collingwood,West Coast,tipresias_match,13.0,13.0,1,1,0,1
+2013.0,2,Collingwood,Carlton,tipresias_match,27.0,17.0,1,1,0,1
+2013.0,3,Collingwood,Hawthorn,tipresias_match,41.0,-55.0,1,0,0,0
+2013.0,6,Collingwood,St Kilda,tipresias_match,30.0,26.0,1,1,0,1
+2013.0,8,Collingwood,Geelong,tipresias_match,2.0,6.0,1,1,0,1
+2013.0,9,Collingwood,Sydney,tipresias_match,3.0,-47.0,1,0,0,0
+2013.0,12,Collingwood,Footscray,tipresias_match,37.0,34.0,1,1,0,1
+2013.0,16,Collingwood,Adelaide,tipresias_match,17.0,27.0,1,1,0,1
+2013.0,18,Collingwood,GWS,tipresias_match,58.0,40.0,1,1,0,1
+2013.0,19,Collingwood,Essendon,tipresias_match,14.0,79.0,1,1,0,1
+2013.0,22,Collingwood,West Coast,tipresias_match,32.0,62.0,1,1,0,1
+2013.0,23,Collingwood,North Melbourne,tipresias_match,35.0,-11.0,1,0,0,0
+2014.0,1,Collingwood,Fremantle,tipresias_match,4.0,-70.0,1,0,0,0
+2014.0,3,Collingwood,Geelong,tipresias_match,-1.0,-11.0,0,0,0,1
+2014.0,5,Collingwood,North Melbourne,tipresias_match,11.0,35.0,1,1,0,1
+2014.0,6,Collingwood,Essendon,tipresias_match,18.0,23.0,1,1,0,1
+2014.0,10,Collingwood,West Coast,tipresias_match,20.0,8.0,1,1,0,1
+2014.0,13,Collingwood,Footscray,tipresias_match,34.0,-8.0,1,0,0,0
+2014.0,18,Collingwood,Adelaide,tipresias_match,5.0,-16.0,1,0,0,0
+2014.0,19,Collingwood,Port Adelaide,tipresias_match,-11.0,6.0,0,1,0,0
+2014.0,21,Collingwood,Brisbane Lions,tipresias_match,29.0,-67.0,1,0,0,0
+2014.0,23,Collingwood,Hawthorn,tipresias_match,1.0,-65.0,1,0,0,0
+2015.0,2,Collingwood,Adelaide,tipresias_match,5.0,-27.0,1,0,0,0
+2015.0,3,Collingwood,St Kilda,tipresias_match,27.0,74.0,1,1,0,1
+2015.0,6,Collingwood,Geelong,tipresias_match,20.0,-41.0,1,0,0,0
+2015.0,9,Collingwood,North Melbourne,tipresias_match,5.0,17.0,1,1,0,1
+2015.0,11,Collingwood,GWS,tipresias_match,15.0,42.0,1,1,0,1
+2015.0,14,Collingwood,Hawthorn,tipresias_match,-7.0,-10.0,0,0,0,1
+2015.0,16,Collingwood,West Coast,tipresias_match,-7.0,-31.0,0,0,0,1
+2015.0,18,Collingwood,Melbourne,tipresias_match,20.0,-37.0,1,0,0,0
+2015.0,19,Collingwood,Carlton,tipresias_match,22.0,18.0,1,1,0,1
+2015.0,21,Collingwood,Richmond,tipresias_match,-8.0,-91.0,0,0,0,1
+2015.0,23,Collingwood,Essendon,tipresias_match,34.0,-3.0,1,0,0,0
+2016.0,2,Collingwood,Richmond,tipresias_match,-9.0,1.0,0,1,0,0
+2016.0,4,Collingwood,Melbourne,tipresias_match,11.0,-35.0,1,0,0,0
+2016.0,5,Collingwood,Essendon,tipresias_match,20.0,69.0,1,1,0,1
+2016.0,7,Collingwood,Carlton,tipresias_match,11.0,-15.0,1,0,0,0
+2016.0,9,Collingwood,Geelong,tipresias_match,-16.0,24.0,0,1,0,0
+2016.0,10,Collingwood,Footscray,tipresias_match,-12.0,-21.0,0,0,0,1
+2016.0,11,Collingwood,Port Adelaide,tipresias_match,-4.0,-67.0,0,0,0,1
+2016.0,14,Collingwood,Fremantle,tipresias_match,-1.0,48.0,0,1,0,0
+2016.0,18,Collingwood,North Melbourne,tipresias_match,-8.0,-40.0,0,0,0,1
+2016.0,19,Collingwood,West Coast,tipresias_match,-16.0,19.0,0,1,0,0
+2016.0,22,Collingwood,Gold Coast,tipresias_match,17.0,71.0,1,1,0,1
+2011.0,1,Essendon,Footscray,tipresias_match,-12.0,55.0,0,1,0,0
+2011.0,5,Essendon,Collingwood,tipresias_match,-16.0,-30.0,0,0,0,1
+2011.0,6,Essendon,Gold Coast,tipresias_match,16.0,139.0,1,1,0,1
+2011.0,7,Essendon,West Coast,tipresias_match,31.0,16.0,1,1,0,1
+2011.0,11,Essendon,Melbourne,tipresias_match,20.0,-33.0,1,0,0,0
+2011.0,13,Essendon,North Melbourne,tipresias_match,-5.0,-21.0,0,0,0,1
+2011.0,16,Essendon,Richmond,tipresias_match,-5.0,39.0,0,1,0,0
+2011.0,18,Essendon,Carlton,tipresias_match,3.0,-74.0,1,0,0,0
+2011.0,20,Essendon,Sydney,tipresias_match,-12.0,1.0,0,1,0,0
+2011.0,23,Essendon,Port Adelaide,tipresias_match,36.0,7.0,1,1,0,1
+2012.0,2,Essendon,Port Adelaide,tipresias_match,21.0,25.0,1,1,0,1
+2012.0,6,Essendon,Brisbane Lions,tipresias_match,33.0,67.0,1,1,0,1
+2012.0,7,Essendon,West Coast,tipresias_match,4.0,61.0,1,1,0,1
+2012.0,8,Essendon,Richmond,tipresias_match,19.0,19.0,1,1,0,1
+2012.0,10,Essendon,Melbourne,tipresias_match,44.0,-6.0,1,0,0,0
+2012.0,11,Essendon,Sydney,tipresias_match,11.0,-4.0,1,0,0,0
+2012.0,14,Essendon,Footscray,tipresias_match,22.0,84.0,1,1,0,1
+2012.0,18,Essendon,Hawthorn,tipresias_match,22.0,-94.0,1,0,0,0
+2012.0,20,Essendon,North Melbourne,tipresias_match,4.0,-24.0,1,0,0,0
+2012.0,21,Essendon,Carlton,tipresias_match,12.0,-96.0,1,0,0,0
+2012.0,23,Essendon,Collingwood,tipresias_match,-13.0,-32.0,0,0,0,1
+2013.0,2,Essendon,Melbourne,tipresias_match,13.0,148.0,1,1,0,1
+2013.0,5,Essendon,Collingwood,tipresias_match,4.0,46.0,1,1,0,1
+2013.0,6,Essendon,GWS,tipresias_match,50.0,39.0,1,1,0,1
+2013.0,8,Essendon,Brisbane Lions,tipresias_match,31.0,-10.0,1,0,0,0
+2013.0,11,Essendon,Carlton,tipresias_match,1.0,5.0,1,1,0,1
+2013.0,12,Essendon,Gold Coast,tipresias_match,25.0,43.0,1,1,0,1
+2013.0,18,Essendon,Hawthorn,tipresias_match,17.0,-56.0,1,0,0,0
+2013.0,20,Essendon,West Coast,tipresias_match,15.0,-53.0,1,0,0,0
+2013.0,21,Essendon,North Melbourne,tipresias_match,22.0,-45.0,1,0,0,0
+2013.0,23,Essendon,Richmond,tipresias_match,-6.0,-39.0,0,0,0,1
+2014.0,2,Essendon,Hawthorn,tipresias_match,7.0,-4.0,1,0,0,0
+2014.0,3,Essendon,Carlton,tipresias_match,16.0,81.0,1,1,0,1
+2014.0,5,Essendon,St Kilda,tipresias_match,22.0,-16.0,1,0,0,0
+2014.0,7,Essendon,Footscray,tipresias_match,11.0,8.0,1,1,0,1
+2014.0,9,Essendon,Sydney,tipresias_match,-3.0,-50.0,0,0,0,1
+2014.0,11,Essendon,Richmond,tipresias_match,-5.0,50.0,0,1,0,0
 2014.0,13,Essendon,Melbourne,tipresias_match,33.0,-1.0,1,0,0,0
-2014.0,14,Essendon,Adelaide,tipresias_match,8.0,9.0,1,1,0,1
-2014.0,17,Essendon,Collingwood,tipresias_match,47.0,64.0,1,1,0,1
-2014.0,21,Essendon,West Coast,tipresias_match,28.0,3.0,1,1,0,1
-2014.0,22,Essendon,Gold Coast,tipresias_match,7.0,19.0,1,1,0,1
-2015.0,2,Essendon,Hawthorn,tipresias_match,11.0,2.0,1,1,0,1
-2015.0,4,Essendon,Collingwood,tipresias_match,30.0,-20.0,1,0,0,0
-2015.0,7,Essendon,North Melbourne,tipresias_match,-2.0,-11.0,0,0,0,1
-2015.0,8,Essendon,Brisbane Lions,tipresias_match,35.0,58.0,1,1,0,1
-2015.0,10,Essendon,Geelong,tipresias_match,-35.0,-69.0,0,0,0,1
-2015.0,14,Essendon,St Kilda,tipresias_match,-71.0,-110.0,0,0,0,1
-2015.0,17,Essendon,Port Adelaide,tipresias_match,-37.0,-13.0,0,0,0,1
-2015.0,18,Essendon,Footscray,tipresias_match,-43.0,-87.0,0,0,0,1
-2015.0,20,Essendon,Adelaide,tipresias_match,-84.0,-112.0,0,0,0,1
-2015.0,22,Essendon,Richmond,tipresias_match,15.0,-27.0,1,0,0,0
-2016.0,2,Essendon,Melbourne,tipresias_match,25.0,13.0,1,1,0,1
-2016.0,4,Essendon,Geelong,tipresias_match,9.0,-30.0,1,0,0,0
-2016.0,8,Essendon,North Melbourne,tipresias_match,0.0,-14.0,1,0,0,0
-2016.0,10,Essendon,Richmond,tipresias_match,-25.0,-38.0,0,0,0,1
-2016.0,12,Essendon,Hawthorn,tipresias_match,-94.0,-108.0,0,0,0,1
-2016.0,13,Essendon,GWS,tipresias_match,-49.0,-27.0,0,0,0,1
-2016.0,16,Essendon,St Kilda,tipresias_match,-21.0,-11.0,0,0,0,1
-2016.0,18,Essendon,Brisbane Lions,tipresias_match,-37.0,-37.0,0,0,0,1
-2016.0,21,Essendon,Gold Coast,tipresias_match,19.0,6.0,1,1,0,1
-2016.0,22,Essendon,Footscray,tipresias_match,-13.0,-40.0,0,0,0,1
-2016.0,23,Essendon,Carlton,tipresias_match,9.0,24.0,1,1,0,1
-2011.0,2,Footscray,Brisbane Lions,tipresias_match,60.0,78.0,1,1,0,1
-2011.0,3,Footscray,Gold Coast,tipresias_match,69.0,71.0,1,1,0,1
-2011.0,7,Footscray,Sydney,tipresias_match,22.0,-8.0,1,0,0,0
-2011.0,8,Footscray,Richmond,tipresias_match,-21.0,35.0,0,1,0,0
-2011.0,10,Footscray,Hawthorn,tipresias_match,-7.0,-29.0,0,0,0,1
-2011.0,13,Footscray,Adelaide,tipresias_match,23.0,30.0,1,1,0,1
-2011.0,16,Footscray,Carlton,tipresias_match,22.0,27.0,1,1,0,1
-2011.0,19,Footscray,West Coast,tipresias_match,-9.0,-8.0,0,0,0,1
-2011.0,21,Footscray,Essendon,tipresias_match,-63.0,-49.0,0,0,0,1
-2011.0,24,Footscray,Fremantle,tipresias_match,37.0,46.0,1,1,0,1
-2012.0,1,Footscray,West Coast,tipresias_match,-48.0,-49.0,0,0,0,1
-2012.0,3,Footscray,St Kilda,tipresias_match,-11.0,-63.0,0,0,0,1
-2012.0,6,Footscray,Collingwood,tipresias_match,-5.0,-21.0,0,0,0,1
-2012.0,8,Footscray,Gold Coast,tipresias_match,71.0,38.0,1,1,0,1
-2012.0,9,Footscray,Geelong,tipresias_match,-5.0,-20.0,0,0,0,1
-2012.0,12,Footscray,Port Adelaide,tipresias_match,43.0,38.0,1,1,0,1
-2012.0,13,Footscray,Brisbane Lions,tipresias_match,-8.0,-58.0,0,0,0,1
-2012.0,16,Footscray,Hawthorn,tipresias_match,-38.0,-72.0,0,0,0,1
-2012.0,17,Footscray,Carlton,tipresias_match,-4.0,-18.0,0,0,0,1
-2012.0,19,Footscray,North Melbourne,tipresias_match,-36.0,-54.0,0,0,0,1
-2012.0,21,Footscray,Sydney,tipresias_match,-87.0,-82.0,0,0,0,1
-2013.0,1,Footscray,Brisbane Lions,tipresias_match,22.0,68.0,1,1,0,1
-2013.0,2,Footscray,Fremantle,tipresias_match,-12.0,-28.0,0,0,0,1
-2013.0,5,Footscray,Geelong,tipresias_match,-33.0,-21.0,0,0,0,1
-2013.0,7,Footscray,North Melbourne,tipresias_match,-77.0,-54.0,0,0,0,1
-2013.0,10,Footscray,Port Adelaide,tipresias_match,31.0,9.0,1,1,0,1
-2013.0,13,Footscray,Richmond,tipresias_match,-43.0,-60.0,0,0,0,1
-2013.0,16,Footscray,Essendon,tipresias_match,-42.0,-31.0,0,0,0,1
-2013.0,18,Footscray,West Coast,tipresias_match,2.0,22.0,1,1,0,1
-2013.0,19,Footscray,Sydney,tipresias_match,-53.0,-35.0,0,0,0,1
-2013.0,21,Footscray,Adelaide,tipresias_match,-22.0,17.0,0,1,0,0
-2013.0,23,Footscray,Melbourne,tipresias_match,30.0,20.0,1,1,0,1
-2014.0,2,Footscray,North Melbourne,tipresias_match,10.0,-29.0,1,0,0,0
-2014.0,3,Footscray,Richmond,tipresias_match,-8.0,2.0,0,1,0,0
-2014.0,5,Footscray,Carlton,tipresias_match,-25.0,-28.0,0,0,0,1
-2014.0,6,Footscray,Adelaide,tipresias_match,0.0,-9.0,1,0,0,0
-2014.0,11,Footscray,Fremantle,tipresias_match,1.0,-38.0,1,0,0,0
-2014.0,12,Footscray,Brisbane Lions,tipresias_match,7.0,-8.0,1,0,0,0
-2014.0,17,Footscray,Gold Coast,tipresias_match,16.0,28.0,1,1,0,1
-2014.0,18,Footscray,Essendon,tipresias_match,-8.0,-7.0,0,0,0,1
-2014.0,22,Footscray,Sydney,tipresias_match,-48.0,-63.0,0,0,0,1
-2014.0,23,Footscray,GWS,tipresias_match,-13.0,-6.0,0,0,0,1
-2015.0,1,Footscray,West Coast,tipresias_match,12.0,10.0,1,1,0,1
-2015.0,4,Footscray,Adelaide,tipresias_match,19.0,57.0,1,1,0,1
-2015.0,6,Footscray,St Kilda,tipresias_match,14.0,-7.0,1,0,0,0
-2015.0,7,Footscray,Fremantle,tipresias_match,-21.0,-13.0,0,0,0,1
-2015.0,9,Footscray,GWS,tipresias_match,24.0,45.0,1,1,0,1
-2015.0,12,Footscray,Brisbane Lions,tipresias_match,30.0,72.0,1,1,0,1
-2015.0,14,Footscray,Carlton,tipresias_match,43.0,11.0,1,1,0,1
-2015.0,17,Footscray,Collingwood,tipresias_match,13.0,18.0,1,1,0,1
-2015.0,19,Footscray,Port Adelaide,tipresias_match,35.0,64.0,1,1,0,1
-2015.0,20,Footscray,Melbourne,tipresias_match,64.0,98.0,1,1,0,1
-2016.0,1,Footscray,Fremantle,tipresias_match,62.0,65.0,1,1,0,1
-2016.0,3,Footscray,Hawthorn,tipresias_match,1.0,-3.0,1,0,0,0
-2016.0,5,Footscray,Brisbane Lions,tipresias_match,50.0,53.0,1,1,0,1
-2016.0,7,Footscray,Adelaide,tipresias_match,-22.0,15.0,0,1,0,0
-2016.0,11,Footscray,West Coast,tipresias_match,19.0,8.0,1,1,0,1
-2016.0,13,Footscray,Geelong,tipresias_match,-7.0,-57.0,0,0,0,1
-2016.0,16,Footscray,Richmond,tipresias_match,25.0,10.0,1,1,0,1
-2016.0,17,Footscray,Gold Coast,tipresias_match,53.0,48.0,1,1,0,1
-2016.0,18,Footscray,St Kilda,tipresias_match,39.0,-15.0,1,0,0,0
-2016.0,20,Footscray,North Melbourne,tipresias_match,47.0,14.0,1,1,0,1
-2016.0,21,Footscray,Collingwood,tipresias_match,10.0,3.0,1,1,0,1
-2016.0,24,Footscray,West Coast,tipresias_match,32.0,47.0,1,1,0,1
+2014.0,14,Essendon,Adelaide,tipresias_match,11.0,9.0,1,1,0,1
+2014.0,17,Essendon,Collingwood,tipresias_match,2.0,64.0,1,1,0,1
+2014.0,21,Essendon,West Coast,tipresias_match,10.0,3.0,1,1,0,1
+2014.0,22,Essendon,Gold Coast,tipresias_match,16.0,19.0,1,1,0,1
+2015.0,2,Essendon,Hawthorn,tipresias_match,-2.0,2.0,0,1,0,0
+2015.0,4,Essendon,Collingwood,tipresias_match,10.0,-20.0,1,0,0,0
+2015.0,7,Essendon,North Melbourne,tipresias_match,8.0,-11.0,1,0,0,0
+2015.0,8,Essendon,Brisbane Lions,tipresias_match,24.0,58.0,1,1,0,1
+2015.0,10,Essendon,Geelong,tipresias_match,10.0,-69.0,1,0,0,0
+2015.0,14,Essendon,St Kilda,tipresias_match,13.0,-110.0,1,0,0,0
+2015.0,17,Essendon,Port Adelaide,tipresias_match,4.0,-13.0,1,0,0,0
+2015.0,18,Essendon,Footscray,tipresias_match,-13.0,-87.0,0,0,0,1
+2015.0,20,Essendon,Adelaide,tipresias_match,-24.0,-112.0,0,0,0,1
+2015.0,22,Essendon,Richmond,tipresias_match,-31.0,-27.0,0,0,0,1
+2016.0,2,Essendon,Melbourne,tipresias_match,2.0,13.0,1,1,0,1
+2016.0,4,Essendon,Geelong,tipresias_match,-15.0,-30.0,0,0,0,1
+2016.0,8,Essendon,North Melbourne,tipresias_match,-39.0,-14.0,0,0,0,1
+2016.0,10,Essendon,Richmond,tipresias_match,-31.0,-38.0,0,0,0,1
+2016.0,12,Essendon,Hawthorn,tipresias_match,-52.0,-108.0,0,0,0,1
+2016.0,13,Essendon,GWS,tipresias_match,-31.0,-27.0,0,0,0,1
+2016.0,16,Essendon,St Kilda,tipresias_match,-15.0,-11.0,0,0,0,1
+2016.0,18,Essendon,Brisbane Lions,tipresias_match,9.0,-37.0,1,0,0,0
+2016.0,21,Essendon,Gold Coast,tipresias_match,-15.0,6.0,0,1,0,0
+2016.0,22,Essendon,Footscray,tipresias_match,-32.0,-40.0,0,0,0,1
+2016.0,23,Essendon,Carlton,tipresias_match,-4.0,24.0,0,1,0,0
+2011.0,2,Footscray,Brisbane Lions,tipresias_match,27.0,78.0,1,1,0,1
+2011.0,3,Footscray,Gold Coast,tipresias_match,36.0,71.0,1,1,0,1
+2011.0,7,Footscray,Sydney,tipresias_match,10.0,-8.0,1,0,0,0
+2011.0,8,Footscray,Richmond,tipresias_match,4.0,35.0,1,1,0,1
+2011.0,10,Footscray,Hawthorn,tipresias_match,-20.0,-29.0,0,0,0,1
+2011.0,13,Footscray,Adelaide,tipresias_match,7.0,30.0,1,1,0,1
+2011.0,16,Footscray,Carlton,tipresias_match,-4.0,27.0,0,1,0,0
+2011.0,19,Footscray,West Coast,tipresias_match,-3.0,-8.0,0,0,0,1
+2011.0,21,Footscray,Essendon,tipresias_match,-9.0,-49.0,0,0,0,1
+2011.0,24,Footscray,Fremantle,tipresias_match,16.0,46.0,1,1,0,1
+2012.0,1,Footscray,West Coast,tipresias_match,0.0,-49.0,1,0,0,0
+2012.0,3,Footscray,St Kilda,tipresias_match,-13.0,-63.0,0,0,0,1
+2012.0,6,Footscray,Collingwood,tipresias_match,-19.0,-21.0,0,0,0,1
+2012.0,8,Footscray,Gold Coast,tipresias_match,26.0,38.0,1,1,0,1
+2012.0,9,Footscray,Geelong,tipresias_match,-3.0,-20.0,0,0,0,1
+2012.0,12,Footscray,Port Adelaide,tipresias_match,18.0,38.0,1,1,0,1
+2012.0,13,Footscray,Brisbane Lions,tipresias_match,29.0,-58.0,1,0,0,0
+2012.0,16,Footscray,Hawthorn,tipresias_match,-2.0,-72.0,0,0,0,1
+2012.0,17,Footscray,Carlton,tipresias_match,-0.0,-18.0,0,0,0,1
+2012.0,19,Footscray,North Melbourne,tipresias_match,-33.0,-54.0,0,0,0,1
+2012.0,21,Footscray,Sydney,tipresias_match,-29.0,-82.0,0,0,0,1
+2013.0,1,Footscray,Brisbane Lions,tipresias_match,-6.0,68.0,0,1,0,0
+2013.0,2,Footscray,Fremantle,tipresias_match,-3.0,-28.0,0,0,0,1
+2013.0,5,Footscray,Geelong,tipresias_match,-25.0,-21.0,0,0,0,1
+2013.0,7,Footscray,North Melbourne,tipresias_match,-9.0,-54.0,0,0,0,1
+2013.0,10,Footscray,Port Adelaide,tipresias_match,-9.0,9.0,0,1,0,0
+2013.0,13,Footscray,Richmond,tipresias_match,-20.0,-60.0,0,0,0,1
+2013.0,16,Footscray,Essendon,tipresias_match,-35.0,-31.0,0,0,0,1
+2013.0,18,Footscray,West Coast,tipresias_match,-17.0,22.0,0,1,0,0
+2013.0,19,Footscray,Sydney,tipresias_match,-36.0,-35.0,0,0,0,1
+2013.0,21,Footscray,Adelaide,tipresias_match,-6.0,17.0,0,1,0,0
+2013.0,23,Footscray,Melbourne,tipresias_match,9.0,20.0,1,1,0,1
+2014.0,2,Footscray,North Melbourne,tipresias_match,9.0,-29.0,1,0,0,0
+2014.0,3,Footscray,Richmond,tipresias_match,-19.0,2.0,0,1,0,0
+2014.0,5,Footscray,Carlton,tipresias_match,7.0,-28.0,1,0,0,0
+2014.0,6,Footscray,Adelaide,tipresias_match,-2.0,-9.0,0,0,0,1
+2014.0,11,Footscray,Fremantle,tipresias_match,-8.0,-38.0,0,0,0,1
+2014.0,12,Footscray,Brisbane Lions,tipresias_match,16.0,-8.0,1,0,0,0
+2014.0,17,Footscray,Gold Coast,tipresias_match,-18.0,28.0,0,1,0,0
+2014.0,18,Footscray,Essendon,tipresias_match,-4.0,-7.0,0,0,0,1
+2014.0,22,Footscray,Sydney,tipresias_match,-22.0,-63.0,0,0,0,1
+2014.0,23,Footscray,GWS,tipresias_match,14.0,-6.0,1,0,0,0
+2015.0,1,Footscray,West Coast,tipresias_match,-5.0,10.0,0,1,0,0
+2015.0,4,Footscray,Adelaide,tipresias_match,-10.0,57.0,0,1,0,0
+2015.0,6,Footscray,St Kilda,tipresias_match,29.0,-7.0,1,0,0,0
+2015.0,7,Footscray,Fremantle,tipresias_match,-13.0,-13.0,0,0,0,1
+2015.0,9,Footscray,GWS,tipresias_match,-5.0,45.0,0,1,0,0
+2015.0,12,Footscray,Brisbane Lions,tipresias_match,23.0,72.0,1,1,0,1
+2015.0,14,Footscray,Carlton,tipresias_match,17.0,11.0,1,1,0,1
+2015.0,17,Footscray,Collingwood,tipresias_match,12.0,18.0,1,1,0,1
+2015.0,19,Footscray,Port Adelaide,tipresias_match,17.0,64.0,1,1,0,1
+2015.0,20,Footscray,Melbourne,tipresias_match,29.0,98.0,1,1,0,1
+2016.0,1,Footscray,Fremantle,tipresias_match,7.0,65.0,1,1,0,1
+2016.0,3,Footscray,Hawthorn,tipresias_match,10.0,-3.0,1,0,0,0
+2016.0,5,Footscray,Brisbane Lions,tipresias_match,39.0,53.0,1,1,0,1
+2016.0,7,Footscray,Adelaide,tipresias_match,4.0,15.0,1,1,0,1
+2016.0,11,Footscray,West Coast,tipresias_match,6.0,8.0,1,1,0,1
+2016.0,13,Footscray,Geelong,tipresias_match,11.0,-57.0,1,0,0,0
+2016.0,16,Footscray,Richmond,tipresias_match,13.0,10.0,1,1,0,1
+2016.0,17,Footscray,Gold Coast,tipresias_match,31.0,48.0,1,1,0,1
+2016.0,18,Footscray,St Kilda,tipresias_match,27.0,-15.0,1,0,0,0
+2016.0,20,Footscray,North Melbourne,tipresias_match,8.0,14.0,1,1,0,1
+2016.0,21,Footscray,Collingwood,tipresias_match,20.0,3.0,1,1,0,1
+2016.0,24,Footscray,West Coast,tipresias_match,-11.0,47.0,0,1,0,0
 2016.0,25,Footscray,Hawthorn,tipresias_match,15.0,23.0,1,1,0,1
-2016.0,26,Footscray,GWS,tipresias_match,11.0,6.0,1,1,0,1
-2016.0,27,Footscray,Sydney,tipresias_match,33.0,22.0,1,1,0,1
-2011.0,2,Fremantle,Geelong,tipresias_match,11.0,-11.0,1,0,0,0
-2011.0,4,Fremantle,North Melbourne,tipresias_match,9.0,29.0,1,1,0,1
-2011.0,5,Fremantle,Footscray,tipresias_match,31.0,7.0,1,1,0,1
-2011.0,10,Fremantle,St Kilda,tipresias_match,5.0,-46.0,1,0,0,0
-2011.0,12,Fremantle,Essendon,tipresias_match,35.0,34.0,1,1,0,1
-2011.0,14,Fremantle,Brisbane Lions,tipresias_match,47.0,23.0,1,1,0,1
-2011.0,18,Fremantle,West Coast,tipresias_match,28.0,-1.0,1,0,0,0
-2011.0,19,Fremantle,Hawthorn,tipresias_match,-10.0,-51.0,0,0,0,1
-2011.0,21,Fremantle,Carlton,tipresias_match,-28.0,-30.0,0,0,0,1
-2011.0,23,Fremantle,Collingwood,tipresias_match,-50.0,-80.0,0,0,0,1
-2012.0,1,Fremantle,Geelong,tipresias_match,-10.0,4.0,0,1,0,0
-2012.0,3,Fremantle,Brisbane Lions,tipresias_match,68.0,29.0,1,1,0,1
-2012.0,5,Fremantle,Carlton,tipresias_match,31.0,-8.0,1,0,0,0
-2012.0,7,Fremantle,Port Adelaide,tipresias_match,64.0,40.0,1,1,0,1
-2012.0,10,Fremantle,Adelaide,tipresias_match,-17.0,-29.0,0,0,0,1
-2012.0,13,Fremantle,Essendon,tipresias_match,-23.0,-24.0,0,0,0,1
-2012.0,17,Fremantle,GWS,tipresias_match,79.0,95.0,1,1,0,1
-2012.0,19,Fremantle,West Coast,tipresias_match,33.0,65.0,1,1,0,1
-2012.0,21,Fremantle,Richmond,tipresias_match,32.0,22.0,1,1,0,1
-2012.0,23,Fremantle,Melbourne,tipresias_match,79.0,61.0,1,1,0,1
-2012.0,24,Fremantle,Geelong,tipresias_match,15.0,16.0,1,1,0,1
-2013.0,1,Fremantle,West Coast,tipresias_match,23.0,28.0,1,1,0,1
-2013.0,3,Fremantle,Essendon,tipresias_match,30.0,-4.0,1,0,0,0
-2013.0,5,Fremantle,Richmond,tipresias_match,25.0,1.0,1,1,0,1
-2013.0,7,Fremantle,Collingwood,tipresias_match,24.0,27.0,1,1,0,1
-2013.0,9,Fremantle,Melbourne,tipresias_match,81.0,90.0,1,1,0,1
-2013.0,12,Fremantle,Brisbane Lions,tipresias_match,56.0,40.0,1,1,0,1
-2013.0,13,Fremantle,North Melbourne,tipresias_match,64.0,38.0,1,1,0,1
-2013.0,18,Fremantle,Adelaide,tipresias_match,48.0,22.0,1,1,0,1
-2013.0,20,Fremantle,GWS,tipresias_match,88.0,113.0,1,1,0,1
-2013.0,22,Fremantle,Port Adelaide,tipresias_match,52.0,74.0,1,1,0,1
-2013.0,24,Fremantle,Geelong,tipresias_match,15.0,15.0,1,1,0,1
-2013.0,26,Fremantle,Sydney,tipresias_match,31.0,25.0,1,1,0,1
-2014.0,2,Fremantle,Gold Coast,tipresias_match,58.0,48.0,1,1,0,1
-2014.0,4,Fremantle,Essendon,tipresias_match,45.0,53.0,1,1,0,1
-2014.0,6,Fremantle,North Melbourne,tipresias_match,29.0,-13.0,1,0,0,0
-2014.0,9,Fremantle,Geelong,tipresias_match,29.0,32.0,1,1,0,1
-2014.0,12,Fremantle,Adelaide,tipresias_match,57.0,40.0,1,1,0,1
-2014.0,14,Fremantle,Brisbane Lions,tipresias_match,73.0,83.0,1,1,0,1
-2014.0,17,Fremantle,GWS,tipresias_match,66.0,76.0,1,1,0,1
-2014.0,19,Fremantle,Carlton,tipresias_match,29.0,5.0,1,1,0,1
-2014.0,21,Fremantle,Hawthorn,tipresias_match,7.0,19.0,1,1,0,1
-2014.0,23,Fremantle,Port Adelaide,tipresias_match,6.0,8.0,1,1,0,1
-2015.0,1,Fremantle,Port Adelaide,tipresias_match,38.0,7.0,1,1,0,1
-2015.0,4,Fremantle,Sydney,tipresias_match,36.0,14.0,1,1,0,1
-2015.0,6,Fremantle,Essendon,tipresias_match,48.0,28.0,1,1,0,1
-2015.0,8,Fremantle,North Melbourne,tipresias_match,53.0,73.0,1,1,0,1
-2015.0,10,Fremantle,Richmond,tipresias_match,2.0,-27.0,1,0,0,0
-2015.0,13,Fremantle,Collingwood,tipresias_match,30.0,7.0,1,1,0,1
-2015.0,14,Fremantle,Brisbane Lions,tipresias_match,73.0,36.0,1,1,0,1
-2015.0,16,Fremantle,Carlton,tipresias_match,69.0,42.0,1,1,0,1
-2015.0,18,Fremantle,GWS,tipresias_match,45.0,21.0,1,1,0,1
-2015.0,20,Fremantle,West Coast,tipresias_match,-9.0,-24.0,0,0,0,1
-2015.0,22,Fremantle,Melbourne,tipresias_match,70.0,54.0,1,1,0,1
-2015.0,24,Fremantle,Sydney,tipresias_match,25.0,9.0,1,1,0,1
-2016.0,2,Fremantle,Gold Coast,tipresias_match,-29.0,-26.0,0,0,0,1
-2016.0,5,Fremantle,Carlton,tipresias_match,47.0,-4.0,1,0,0,0
-2016.0,7,Fremantle,GWS,tipresias_match,-4.0,-18.0,0,0,0,1
-2016.0,9,Fremantle,Richmond,tipresias_match,7.0,-38.0,1,0,0,0
-2016.0,11,Fremantle,Essendon,tipresias_match,51.0,79.0,1,1,0,1
-2016.0,13,Fremantle,Port Adelaide,tipresias_match,28.0,17.0,1,1,0,1
-2016.0,17,Fremantle,Geelong,tipresias_match,-2.0,-17.0,0,0,0,1
-2016.0,19,Fremantle,Sydney,tipresias_match,-69.0,-90.0,0,0,0,1
-2016.0,20,Fremantle,West Coast,tipresias_match,-34.0,-46.0,0,0,0,1
-2016.0,21,Fremantle,Adelaide,tipresias_match,-83.0,-72.0,0,0,0,1
-2016.0,23,Fremantle,Footscray,tipresias_match,14.0,20.0,1,1,0,1
-2012.0,3,GWS,West Coast,tipresias_match,-76.0,-81.0,0,0,0,1
-2012.0,5,GWS,Footscray,tipresias_match,-14.0,-42.0,0,0,0,1
-2012.0,7,GWS,Gold Coast,tipresias_match,29.0,27.0,1,1,0,1
-2012.0,9,GWS,Essendon,tipresias_match,-38.0,-66.0,0,0,0,1
-2012.0,12,GWS,Richmond,tipresias_match,2.0,-12.0,1,0,0,0
-2012.0,16,GWS,Adelaide,tipresias_match,-101.0,-119.0,0,0,0,1
-2012.0,18,GWS,Collingwood,tipresias_match,-106.0,-120.0,0,0,0,1
-2012.0,19,GWS,Port Adelaide,tipresias_match,19.0,34.0,1,1,0,1
-2012.0,21,GWS,Melbourne,tipresias_match,11.0,-25.0,1,0,0,0
-2012.0,23,GWS,North Melbourne,tipresias_match,-19.0,-28.0,0,0,0,1
-2013.0,1,GWS,Sydney,tipresias_match,-23.0,-30.0,0,0,0,1
-2013.0,3,GWS,St Kilda,tipresias_match,-59.0,-72.0,0,0,0,1
-2013.0,5,GWS,Gold Coast,tipresias_match,-66.0,-44.0,0,0,0,1
-2013.0,7,GWS,Adelaide,tipresias_match,-110.0,-135.0,0,0,0,1
-2013.0,9,GWS,West Coast,tipresias_match,-84.0,-100.0,0,0,0,1
-2013.0,11,GWS,Geelong,tipresias_match,-85.0,-59.0,0,0,0,1
-2013.0,12,GWS,Port Adelaide,tipresias_match,-38.0,-75.0,0,0,0,1
-2013.0,17,GWS,Essendon,tipresias_match,-34.0,-39.0,0,0,0,1
-2013.0,19,GWS,Melbourne,tipresias_match,3.0,37.0,1,1,0,1
-2013.0,22,GWS,Richmond,tipresias_match,-94.0,-121.0,0,0,0,1
-2014.0,1,GWS,Sydney,tipresias_match,18.0,32.0,1,1,0,1
-2014.0,3,GWS,Melbourne,tipresias_match,69.0,32.0,1,1,0,1
-2014.0,4,GWS,Footscray,tipresias_match,-10.0,-27.0,0,0,0,1
-2014.0,7,GWS,Port Adelaide,tipresias_match,-51.0,-35.0,0,0,0,1
-2014.0,10,GWS,Richmond,tipresias_match,-70.0,-113.0,0,0,0,1
-2014.0,12,GWS,Essendon,tipresias_match,8.0,-15.0,1,0,0,0
-2014.0,14,GWS,Carlton,tipresias_match,5.0,8.0,1,1,0,1
-2014.0,16,GWS,Adelaide,tipresias_match,-60.0,-68.0,0,0,0,1
-2014.0,18,GWS,Geelong,tipresias_match,-22.0,-7.0,0,0,0,1
-2014.0,20,GWS,North Melbourne,tipresias_match,-47.0,-75.0,0,0,0,1
-2014.0,22,GWS,Collingwood,tipresias_match,22.0,-8.0,1,0,0,0
-2015.0,2,GWS,Melbourne,tipresias_match,50.0,45.0,1,1,0,1
-2015.0,4,GWS,Gold Coast,tipresias_match,50.0,66.0,1,1,0,1
-2015.0,6,GWS,Hawthorn,tipresias_match,-19.0,10.0,0,1,0,0
-2015.0,8,GWS,Adelaide,tipresias_match,8.0,24.0,1,1,0,1
-2015.0,10,GWS,Brisbane Lions,tipresias_match,37.0,30.0,1,1,0,1
-2015.0,12,GWS,North Melbourne,tipresias_match,-30.0,-56.0,0,0,0,1
-2015.0,17,GWS,Geelong,tipresias_match,23.0,-27.0,1,0,0,0
-2015.0,19,GWS,Essendon,tipresias_match,44.0,32.0,1,1,0,1
-2015.0,21,GWS,Sydney,tipresias_match,-50.0,-89.0,0,0,0,1
-2015.0,22,GWS,Carlton,tipresias_match,55.0,81.0,1,1,0,1
-2016.0,2,GWS,Geelong,tipresias_match,13.0,13.0,1,1,0,1
-2016.0,4,GWS,Port Adelaide,tipresias_match,21.0,86.0,1,1,0,1
-2016.0,6,GWS,Hawthorn,tipresias_match,4.0,75.0,1,1,0,1
-2016.0,8,GWS,Gold Coast,tipresias_match,56.0,91.0,1,1,0,1
-2016.0,9,GWS,Footscray,tipresias_match,18.0,25.0,1,1,0,1
-2016.0,12,GWS,Sydney,tipresias_match,27.0,42.0,1,1,0,1
-2016.0,14,GWS,Carlton,tipresias_match,37.0,62.0,1,1,0,1
-2016.0,16,GWS,Collingwood,tipresias_match,-25.0,-32.0,0,0,0,1
-2016.0,19,GWS,Richmond,tipresias_match,63.0,88.0,1,1,0,1
-2016.0,21,GWS,West Coast,tipresias_match,2.0,-1.0,1,0,0,0
-2016.0,22,GWS,Fremantle,tipresias_match,88.0,92.0,1,1,0,1
-2016.0,24,GWS,Sydney,tipresias_match,37.0,36.0,1,1,0,1
-2011.0,1,Geelong,St Kilda,tipresias_match,45.0,1.0,1,1,0,1
-2011.0,3,Geelong,Port Adelaide,tipresias_match,66.0,79.0,1,1,0,1
-2011.0,7,Geelong,North Melbourne,tipresias_match,56.0,66.0,1,1,0,1
-2011.0,8,Geelong,Collingwood,tipresias_match,33.0,3.0,1,1,0,1
-2011.0,11,Geelong,Footscray,tipresias_match,31.0,61.0,1,1,0,1
-2011.0,12,Geelong,Hawthorn,tipresias_match,17.0,5.0,1,1,0,1
-2011.0,14,Geelong,Adelaide,tipresias_match,45.0,52.0,1,1,0,1
-2011.0,18,Geelong,Richmond,tipresias_match,65.0,62.0,1,1,0,1
-2011.0,19,Geelong,Melbourne,tipresias_match,66.0,186.0,1,1,0,1
-2011.0,20,Geelong,Gold Coast,tipresias_match,104.0,150.0,1,1,0,1
-2011.0,23,Geelong,Sydney,tipresias_match,8.0,-13.0,1,0,0,0
-2011.0,25,Geelong,Hawthorn,tipresias_match,31.0,31.0,1,1,0,1
-2011.0,27,Geelong,West Coast,tipresias_match,31.0,48.0,1,1,0,1
-2011.0,28,Geelong,Collingwood,tipresias_match,20.0,38.0,1,1,0,1
-2012.0,2,Geelong,Hawthorn,tipresias_match,14.0,2.0,1,1,0,1
-2012.0,4,Geelong,Richmond,tipresias_match,52.0,10.0,1,1,0,1
-2012.0,6,Geelong,Melbourne,tipresias_match,41.0,43.0,1,1,0,1
-2012.0,10,Geelong,GWS,tipresias_match,64.0,65.0,1,1,0,1
-2012.0,14,Geelong,Port Adelaide,tipresias_match,57.0,38.0,1,1,0,1
-2012.0,16,Geelong,Collingwood,tipresias_match,-14.0,-31.0,0,0,0,1
-2012.0,17,Geelong,Essendon,tipresias_match,31.0,67.0,1,1,0,1
-2012.0,18,Geelong,Adelaide,tipresias_match,29.0,27.0,1,1,0,1
-2012.0,21,Geelong,St Kilda,tipresias_match,30.0,42.0,1,1,0,1
-2012.0,22,Geelong,Footscray,tipresias_match,59.0,34.0,1,1,0,1
-2012.0,23,Geelong,Sydney,tipresias_match,25.0,34.0,1,1,0,1
-2013.0,2,Geelong,North Melbourne,tipresias_match,-8.0,4.0,0,1,0,0
-2013.0,3,Geelong,Carlton,tipresias_match,7.0,16.0,1,1,0,1
-2013.0,7,Geelong,Essendon,tipresias_match,15.0,28.0,1,1,0,1
-2013.0,10,Geelong,Gold Coast,tipresias_match,49.0,52.0,1,1,0,1
-2013.0,14,Geelong,Fremantle,tipresias_match,52.0,41.0,1,1,0,1
-2013.0,16,Geelong,Melbourne,tipresias_match,84.0,68.0,1,1,0,1
-2013.0,18,Geelong,St Kilda,tipresias_match,76.0,101.0,1,1,0,1
-2013.0,20,Geelong,Port Adelaide,tipresias_match,3.0,25.0,1,1,0,1
-2013.0,22,Geelong,Sydney,tipresias_match,52.0,44.0,1,1,0,1
-2013.0,23,Geelong,Brisbane Lions,tipresias_match,-9.0,1.0,0,1,0,0
-2013.0,25,Geelong,Port Adelaide,tipresias_match,23.0,16.0,1,1,0,1
-2014.0,1,Geelong,Adelaide,tipresias_match,26.0,38.0,1,1,0,1
-2014.0,4,Geelong,West Coast,tipresias_match,57.0,75.0,1,1,0,1
-2014.0,5,Geelong,Hawthorn,tipresias_match,11.0,19.0,1,1,0,1
-2014.0,7,Geelong,Richmond,tipresias_match,30.0,5.0,1,1,0,1
-2014.0,10,Geelong,North Melbourne,tipresias_match,9.0,20.0,1,1,0,1
-2014.0,12,Geelong,Carlton,tipresias_match,-3.0,5.0,0,1,0,0
-2014.0,13,Geelong,St Kilda,tipresias_match,79.0,96.0,1,1,0,1
-2014.0,16,Geelong,Footscray,tipresias_match,55.0,13.0,1,1,0,1
-2014.0,20,Geelong,Fremantle,tipresias_match,24.0,2.0,1,1,0,1
-2014.0,23,Geelong,Brisbane Lions,tipresias_match,35.0,62.0,1,1,0,1
-2015.0,2,Geelong,Fremantle,tipresias_match,-10.0,-44.0,0,0,0,1
-2015.0,3,Geelong,Gold Coast,tipresias_match,-0.0,9.0,0,1,0,0
-2015.0,4,Geelong,North Melbourne,tipresias_match,19.0,-16.0,1,0,0,0
-2015.0,8,Geelong,Carlton,tipresias_match,51.0,77.0,1,1,0,1
-2015.0,12,Geelong,Melbourne,tipresias_match,-4.0,-24.0,0,0,0,1
-2015.0,16,Geelong,Footscray,tipresias_match,33.0,8.0,1,1,0,1
-2015.0,18,Geelong,Brisbane Lions,tipresias_match,65.0,56.0,1,1,0,1
-2015.0,19,Geelong,Sydney,tipresias_match,37.0,32.0,1,1,0,1
-2015.0,20,Geelong,Hawthorn,tipresias_match,-32.0,-36.0,0,0,0,1
-2015.0,22,Geelong,Collingwood,tipresias_match,-5.0,-48.0,0,0,0,1
-2015.0,23,Geelong,Adelaide,tipresias_match,10.0,39.0,1,1,0,1
-2016.0,1,Geelong,Hawthorn,tipresias_match,8.0,30.0,1,1,0,1
-2016.0,3,Geelong,Brisbane Lions,tipresias_match,54.0,69.0,1,1,0,1
-2016.0,6,Geelong,Gold Coast,tipresias_match,71.0,120.0,1,1,0,1
-2016.0,7,Geelong,West Coast,tipresias_match,25.0,44.0,1,1,0,1
-2016.0,11,Geelong,GWS,tipresias_match,14.0,10.0,1,1,0,1
-2016.0,12,Geelong,North Melbourne,tipresias_match,23.0,31.0,1,1,0,1
-2016.0,16,Geelong,Sydney,tipresias_match,-0.0,-38.0,0,0,0,1
-2016.0,18,Geelong,Adelaide,tipresias_match,34.0,30.0,1,1,0,1
+2016.0,26,Footscray,GWS,tipresias_match,9.0,6.0,1,1,0,1
+2016.0,27,Footscray,Sydney,tipresias_match,14.0,22.0,1,1,0,1
+2011.0,2,Fremantle,Geelong,tipresias_match,13.0,-11.0,1,0,0,0
+2011.0,4,Fremantle,North Melbourne,tipresias_match,29.0,29.0,1,1,0,1
+2011.0,5,Fremantle,Footscray,tipresias_match,24.0,7.0,1,1,0,1
+2011.0,10,Fremantle,St Kilda,tipresias_match,24.0,-46.0,1,0,0,0
+2011.0,12,Fremantle,Essendon,tipresias_match,10.0,34.0,1,1,0,1
+2011.0,14,Fremantle,Brisbane Lions,tipresias_match,37.0,23.0,1,1,0,1
+2011.0,18,Fremantle,West Coast,tipresias_match,9.0,-1.0,1,0,0,0
+2011.0,19,Fremantle,Hawthorn,tipresias_match,-13.0,-51.0,0,0,0,1
+2011.0,21,Fremantle,Carlton,tipresias_match,-5.0,-30.0,0,0,0,1
+2011.0,23,Fremantle,Collingwood,tipresias_match,-15.0,-80.0,0,0,0,1
+2012.0,1,Fremantle,Geelong,tipresias_match,-12.0,4.0,0,1,0,0
+2012.0,3,Fremantle,Brisbane Lions,tipresias_match,24.0,29.0,1,1,0,1
+2012.0,5,Fremantle,Carlton,tipresias_match,2.0,-8.0,1,0,0,0
+2012.0,7,Fremantle,Port Adelaide,tipresias_match,39.0,40.0,1,1,0,1
+2012.0,10,Fremantle,Adelaide,tipresias_match,4.0,-29.0,1,0,0,0
+2012.0,13,Fremantle,Essendon,tipresias_match,-2.0,-24.0,0,0,0,1
+2012.0,17,Fremantle,GWS,tipresias_match,45.0,95.0,1,1,0,1
+2012.0,19,Fremantle,West Coast,tipresias_match,-12.0,65.0,0,1,0,0
+2012.0,21,Fremantle,Richmond,tipresias_match,8.0,22.0,1,1,0,1
+2012.0,23,Fremantle,Melbourne,tipresias_match,47.0,61.0,1,1,0,1
+2012.0,24,Fremantle,Geelong,tipresias_match,-0.0,16.0,0,1,0,0
+2013.0,1,Fremantle,West Coast,tipresias_match,3.0,28.0,1,1,0,1
+2013.0,3,Fremantle,Essendon,tipresias_match,0.0,-4.0,1,0,0,0
+2013.0,5,Fremantle,Richmond,tipresias_match,8.0,1.0,1,1,0,1
+2013.0,7,Fremantle,Collingwood,tipresias_match,5.0,27.0,1,1,0,1
+2013.0,9,Fremantle,Melbourne,tipresias_match,33.0,90.0,1,1,0,1
+2013.0,12,Fremantle,Brisbane Lions,tipresias_match,39.0,40.0,1,1,0,1
+2013.0,13,Fremantle,North Melbourne,tipresias_match,43.0,38.0,1,1,0,1
+2013.0,18,Fremantle,Adelaide,tipresias_match,29.0,22.0,1,1,0,1
+2013.0,20,Fremantle,GWS,tipresias_match,59.0,113.0,1,1,0,1
+2013.0,22,Fremantle,Port Adelaide,tipresias_match,26.0,74.0,1,1,0,1
+2013.0,24,Fremantle,Geelong,tipresias_match,-5.0,15.0,0,1,0,0
+2013.0,26,Fremantle,Sydney,tipresias_match,19.0,25.0,1,1,0,1
+2014.0,2,Fremantle,Gold Coast,tipresias_match,24.0,48.0,1,1,0,1
+2014.0,4,Fremantle,Essendon,tipresias_match,15.0,53.0,1,1,0,1
+2014.0,6,Fremantle,North Melbourne,tipresias_match,27.0,-13.0,1,0,0,0
+2014.0,9,Fremantle,Geelong,tipresias_match,2.0,32.0,1,1,0,1
+2014.0,12,Fremantle,Adelaide,tipresias_match,28.0,40.0,1,1,0,1
+2014.0,14,Fremantle,Brisbane Lions,tipresias_match,41.0,83.0,1,1,0,1
+2014.0,17,Fremantle,GWS,tipresias_match,50.0,76.0,1,1,0,1
+2014.0,19,Fremantle,Carlton,tipresias_match,33.0,5.0,1,1,0,1
+2014.0,21,Fremantle,Hawthorn,tipresias_match,19.0,19.0,1,1,0,1
+2014.0,23,Fremantle,Port Adelaide,tipresias_match,14.0,8.0,1,1,0,1
+2015.0,1,Fremantle,Port Adelaide,tipresias_match,13.0,7.0,1,1,0,1
+2015.0,4,Fremantle,Sydney,tipresias_match,5.0,14.0,1,1,0,1
+2015.0,6,Fremantle,Essendon,tipresias_match,24.0,28.0,1,1,0,1
+2015.0,8,Fremantle,North Melbourne,tipresias_match,28.0,73.0,1,1,0,1
+2015.0,10,Fremantle,Richmond,tipresias_match,25.0,-27.0,1,0,0,0
+2015.0,13,Fremantle,Collingwood,tipresias_match,23.0,7.0,1,1,0,1
+2015.0,14,Fremantle,Brisbane Lions,tipresias_match,51.0,36.0,1,1,0,1
+2015.0,16,Fremantle,Carlton,tipresias_match,44.0,42.0,1,1,0,1
+2015.0,18,Fremantle,GWS,tipresias_match,37.0,21.0,1,1,0,1
+2015.0,20,Fremantle,West Coast,tipresias_match,14.0,-24.0,1,0,0,0
+2015.0,22,Fremantle,Melbourne,tipresias_match,40.0,54.0,1,1,0,1
+2015.0,24,Fremantle,Sydney,tipresias_match,3.0,9.0,1,1,0,1
+2016.0,2,Fremantle,Gold Coast,tipresias_match,17.0,-26.0,1,0,0,0
+2016.0,5,Fremantle,Carlton,tipresias_match,37.0,-4.0,1,0,0,0
+2016.0,7,Fremantle,GWS,tipresias_match,2.0,-18.0,1,0,0,0
+2016.0,9,Fremantle,Richmond,tipresias_match,-6.0,-38.0,0,0,0,1
+2016.0,11,Fremantle,Essendon,tipresias_match,34.0,79.0,1,1,0,1
+2016.0,13,Fremantle,Port Adelaide,tipresias_match,9.0,17.0,1,1,0,1
+2016.0,17,Fremantle,Geelong,tipresias_match,-20.0,-17.0,0,0,0,1
+2016.0,19,Fremantle,Sydney,tipresias_match,-30.0,-90.0,0,0,0,1
+2016.0,20,Fremantle,West Coast,tipresias_match,-39.0,-46.0,0,0,0,1
+2016.0,21,Fremantle,Adelaide,tipresias_match,-47.0,-72.0,0,0,0,1
+2016.0,23,Fremantle,Footscray,tipresias_match,-39.0,20.0,0,1,0,0
+2012.0,3,GWS,West Coast,tipresias_match,-53.0,-81.0,0,0,0,1
+2012.0,5,GWS,Footscray,tipresias_match,-13.0,-42.0,0,0,0,1
+2012.0,7,GWS,Gold Coast,tipresias_match,9.0,27.0,1,1,0,1
+2012.0,9,GWS,Essendon,tipresias_match,-31.0,-66.0,0,0,0,1
+2012.0,12,GWS,Richmond,tipresias_match,-15.0,-12.0,0,0,0,1
+2012.0,16,GWS,Adelaide,tipresias_match,-40.0,-119.0,0,0,0,1
+2012.0,18,GWS,Collingwood,tipresias_match,-48.0,-120.0,0,0,0,1
+2012.0,19,GWS,Port Adelaide,tipresias_match,-9.0,34.0,0,1,0,0
+2012.0,21,GWS,Melbourne,tipresias_match,4.0,-25.0,1,0,0,0
+2012.0,23,GWS,North Melbourne,tipresias_match,-34.0,-28.0,0,0,0,1
+2013.0,1,GWS,Sydney,tipresias_match,-37.0,-30.0,0,0,0,1
+2013.0,3,GWS,St Kilda,tipresias_match,-18.0,-72.0,0,0,0,1
+2013.0,5,GWS,Gold Coast,tipresias_match,-0.0,-44.0,0,0,0,1
+2013.0,7,GWS,Adelaide,tipresias_match,-35.0,-135.0,0,0,0,1
+2013.0,9,GWS,West Coast,tipresias_match,-31.0,-100.0,0,0,0,1
+2013.0,11,GWS,Geelong,tipresias_match,-52.0,-59.0,0,0,0,1
+2013.0,12,GWS,Port Adelaide,tipresias_match,-14.0,-75.0,0,0,0,1
+2013.0,17,GWS,Essendon,tipresias_match,-48.0,-39.0,0,0,0,1
+2013.0,19,GWS,Melbourne,tipresias_match,-21.0,37.0,0,1,0,0
+2013.0,22,GWS,Richmond,tipresias_match,-41.0,-121.0,0,0,0,1
+2014.0,1,GWS,Sydney,tipresias_match,-35.0,32.0,0,1,0,0
+2014.0,3,GWS,Melbourne,tipresias_match,29.0,32.0,1,1,0,1
+2014.0,4,GWS,Footscray,tipresias_match,5.0,-27.0,1,0,0,0
+2014.0,7,GWS,Port Adelaide,tipresias_match,-26.0,-35.0,0,0,0,1
+2014.0,10,GWS,Richmond,tipresias_match,-24.0,-113.0,0,0,0,1
+2014.0,12,GWS,Essendon,tipresias_match,-25.0,-15.0,0,0,0,1
+2014.0,14,GWS,Carlton,tipresias_match,-5.0,8.0,0,1,0,0
+2014.0,16,GWS,Adelaide,tipresias_match,-2.0,-68.0,0,0,0,1
+2014.0,18,GWS,Geelong,tipresias_match,-34.0,-7.0,0,0,0,1
+2014.0,20,GWS,North Melbourne,tipresias_match,-33.0,-75.0,0,0,0,1
+2014.0,22,GWS,Collingwood,tipresias_match,-5.0,-8.0,0,0,0,1
+2015.0,2,GWS,Melbourne,tipresias_match,16.0,45.0,1,1,0,1
+2015.0,4,GWS,Gold Coast,tipresias_match,10.0,66.0,1,1,0,1
+2015.0,6,GWS,Hawthorn,tipresias_match,-16.0,10.0,0,1,0,0
+2015.0,8,GWS,Adelaide,tipresias_match,2.0,24.0,1,1,0,1
+2015.0,10,GWS,Brisbane Lions,tipresias_match,27.0,30.0,1,1,0,1
+2015.0,12,GWS,North Melbourne,tipresias_match,10.0,-56.0,1,0,0,0
+2015.0,17,GWS,Geelong,tipresias_match,9.0,-27.0,1,0,0,0
+2015.0,19,GWS,Essendon,tipresias_match,23.0,32.0,1,1,0,1
+2015.0,21,GWS,Sydney,tipresias_match,-8.0,-89.0,0,0,0,1
+2015.0,22,GWS,Carlton,tipresias_match,22.0,81.0,1,1,0,1
+2016.0,2,GWS,Geelong,tipresias_match,-1.0,13.0,0,1,0,0
+2016.0,4,GWS,Port Adelaide,tipresias_match,-8.0,86.0,0,1,0,0
+2016.0,6,GWS,Hawthorn,tipresias_match,5.0,75.0,1,1,0,1
+2016.0,8,GWS,Gold Coast,tipresias_match,34.0,91.0,1,1,0,1
+2016.0,9,GWS,Footscray,tipresias_match,5.0,25.0,1,1,0,1
+2016.0,12,GWS,Sydney,tipresias_match,-12.0,42.0,0,1,0,0
+2016.0,14,GWS,Carlton,tipresias_match,24.0,62.0,1,1,0,1
+2016.0,16,GWS,Collingwood,tipresias_match,38.0,-32.0,1,0,0,0
+2016.0,19,GWS,Richmond,tipresias_match,25.0,88.0,1,1,0,1
+2016.0,21,GWS,West Coast,tipresias_match,25.0,-1.0,1,0,0,0
+2016.0,22,GWS,Fremantle,tipresias_match,57.0,92.0,1,1,0,1
+2016.0,24,GWS,Sydney,tipresias_match,12.0,36.0,1,1,0,1
+2011.0,1,Geelong,St Kilda,tipresias_match,6.0,1.0,1,1,0,1
+2011.0,3,Geelong,Port Adelaide,tipresias_match,36.0,79.0,1,1,0,1
+2011.0,7,Geelong,North Melbourne,tipresias_match,26.0,66.0,1,1,0,1
+2011.0,8,Geelong,Collingwood,tipresias_match,6.0,3.0,1,1,0,1
+2011.0,11,Geelong,Footscray,tipresias_match,39.0,61.0,1,1,0,1
+2011.0,12,Geelong,Hawthorn,tipresias_match,10.0,5.0,1,1,0,1
+2011.0,14,Geelong,Adelaide,tipresias_match,44.0,52.0,1,1,0,1
+2011.0,18,Geelong,Richmond,tipresias_match,30.0,62.0,1,1,0,1
+2011.0,19,Geelong,Melbourne,tipresias_match,34.0,186.0,1,1,0,1
+2011.0,20,Geelong,Gold Coast,tipresias_match,80.0,150.0,1,1,0,1
+2011.0,23,Geelong,Sydney,tipresias_match,23.0,-13.0,1,0,0,0
+2011.0,25,Geelong,Hawthorn,tipresias_match,13.0,31.0,1,1,0,1
+2011.0,27,Geelong,West Coast,tipresias_match,20.0,48.0,1,1,0,1
+2011.0,28,Geelong,Collingwood,tipresias_match,10.0,38.0,1,1,0,1
+2012.0,2,Geelong,Hawthorn,tipresias_match,24.0,2.0,1,1,0,1
+2012.0,4,Geelong,Richmond,tipresias_match,38.0,10.0,1,1,0,1
+2012.0,6,Geelong,Melbourne,tipresias_match,46.0,43.0,1,1,0,1
+2012.0,10,Geelong,GWS,tipresias_match,62.0,65.0,1,1,0,1
+2012.0,14,Geelong,Port Adelaide,tipresias_match,55.0,38.0,1,1,0,1
+2012.0,16,Geelong,Collingwood,tipresias_match,8.0,-31.0,1,0,0,0
+2012.0,17,Geelong,Essendon,tipresias_match,12.0,67.0,1,1,0,1
+2012.0,18,Geelong,Adelaide,tipresias_match,24.0,27.0,1,1,0,1
+2012.0,21,Geelong,St Kilda,tipresias_match,23.0,42.0,1,1,0,1
+2012.0,22,Geelong,Footscray,tipresias_match,58.0,34.0,1,1,0,1
+2012.0,23,Geelong,Sydney,tipresias_match,29.0,34.0,1,1,0,1
+2013.0,2,Geelong,North Melbourne,tipresias_match,-0.0,4.0,0,1,0,0
+2013.0,3,Geelong,Carlton,tipresias_match,8.0,16.0,1,1,0,1
+2013.0,7,Geelong,Essendon,tipresias_match,-2.0,28.0,0,1,0,0
+2013.0,10,Geelong,Gold Coast,tipresias_match,29.0,52.0,1,1,0,1
+2013.0,14,Geelong,Fremantle,tipresias_match,6.0,41.0,1,1,0,1
+2013.0,16,Geelong,Melbourne,tipresias_match,18.0,68.0,1,1,0,1
+2013.0,18,Geelong,St Kilda,tipresias_match,25.0,101.0,1,1,0,1
+2013.0,20,Geelong,Port Adelaide,tipresias_match,11.0,25.0,1,1,0,1
+2013.0,22,Geelong,Sydney,tipresias_match,7.0,44.0,1,1,0,1
+2013.0,23,Geelong,Brisbane Lions,tipresias_match,27.0,1.0,1,1,0,1
+2013.0,25,Geelong,Port Adelaide,tipresias_match,11.0,16.0,1,1,0,1
+2014.0,1,Geelong,Adelaide,tipresias_match,4.0,38.0,1,1,0,1
+2014.0,4,Geelong,West Coast,tipresias_match,16.0,75.0,1,1,0,1
+2014.0,5,Geelong,Hawthorn,tipresias_match,5.0,19.0,1,1,0,1
+2014.0,7,Geelong,Richmond,tipresias_match,11.0,5.0,1,1,0,1
+2014.0,10,Geelong,North Melbourne,tipresias_match,17.0,20.0,1,1,0,1
+2014.0,12,Geelong,Carlton,tipresias_match,7.0,5.0,1,1,0,1
+2014.0,13,Geelong,St Kilda,tipresias_match,42.0,96.0,1,1,0,1
+2014.0,16,Geelong,Footscray,tipresias_match,33.0,13.0,1,1,0,1
+2014.0,20,Geelong,Fremantle,tipresias_match,7.0,2.0,1,1,0,1
+2014.0,23,Geelong,Brisbane Lions,tipresias_match,36.0,62.0,1,1,0,1
+2015.0,2,Geelong,Fremantle,tipresias_match,-3.0,-44.0,0,0,0,1
+2015.0,3,Geelong,Gold Coast,tipresias_match,29.0,9.0,1,1,0,1
+2015.0,4,Geelong,North Melbourne,tipresias_match,-7.0,-16.0,0,0,0,1
+2015.0,8,Geelong,Carlton,tipresias_match,19.0,77.0,1,1,0,1
+2015.0,12,Geelong,Melbourne,tipresias_match,12.0,-24.0,1,0,0,0
+2015.0,16,Geelong,Footscray,tipresias_match,7.0,8.0,1,1,0,1
+2015.0,18,Geelong,Brisbane Lions,tipresias_match,49.0,56.0,1,1,0,1
+2015.0,19,Geelong,Sydney,tipresias_match,-4.0,32.0,0,1,0,0
+2015.0,20,Geelong,Hawthorn,tipresias_match,0.0,-36.0,1,0,0,0
+2015.0,22,Geelong,Collingwood,tipresias_match,-7.0,-48.0,0,0,0,1
+2015.0,23,Geelong,Adelaide,tipresias_match,-25.0,39.0,0,1,0,0
+2016.0,1,Geelong,Hawthorn,tipresias_match,-3.0,30.0,0,1,0,0
+2016.0,3,Geelong,Brisbane Lions,tipresias_match,27.0,69.0,1,1,0,1
+2016.0,6,Geelong,Gold Coast,tipresias_match,33.0,120.0,1,1,0,1
+2016.0,7,Geelong,West Coast,tipresias_match,20.0,44.0,1,1,0,1
+2016.0,11,Geelong,GWS,tipresias_match,22.0,10.0,1,1,0,1
+2016.0,12,Geelong,North Melbourne,tipresias_match,5.0,31.0,1,1,0,1
+2016.0,16,Geelong,Sydney,tipresias_match,11.0,-38.0,1,0,0,0
+2016.0,18,Geelong,Adelaide,tipresias_match,5.0,30.0,1,1,0,1
 2016.0,19,Geelong,Footscray,tipresias_match,19.0,25.0,1,1,0,1
-2016.0,20,Geelong,Essendon,tipresias_match,79.0,66.0,1,1,0,1
-2016.0,23,Geelong,Melbourne,tipresias_match,68.0,111.0,1,1,0,1
-2016.0,24,Geelong,Hawthorn,tipresias_match,16.0,2.0,1,1,0,1
-2011.0,4,Gold Coast,Melbourne,tipresias_match,-79.0,-90.0,0,0,0,1
-2011.0,7,Gold Coast,Brisbane Lions,tipresias_match,-20.0,8.0,0,1,0,0
-2011.0,10,Gold Coast,Geelong,tipresias_match,-58.0,-66.0,0,0,0,1
-2011.0,12,Gold Coast,North Melbourne,tipresias_match,-34.0,-59.0,0,0,0,1
-2011.0,14,Gold Coast,Footscray,tipresias_match,-15.0,-22.0,0,0,0,1
+2016.0,20,Geelong,Essendon,tipresias_match,54.0,66.0,1,1,0,1
+2016.0,23,Geelong,Melbourne,tipresias_match,22.0,111.0,1,1,0,1
+2016.0,24,Geelong,Hawthorn,tipresias_match,13.0,2.0,1,1,0,1
+2011.0,4,Gold Coast,Melbourne,tipresias_match,-2.0,-90.0,0,0,0,1
+2011.0,7,Gold Coast,Brisbane Lions,tipresias_match,16.0,8.0,1,1,0,1
+2011.0,10,Gold Coast,Geelong,tipresias_match,-11.0,-66.0,0,0,0,1
+2011.0,12,Gold Coast,North Melbourne,tipresias_match,-2.0,-59.0,0,0,0,1
+2011.0,14,Gold Coast,Footscray,tipresias_match,-7.0,-22.0,0,0,0,1
 2011.0,16,Gold Coast,Sydney,tipresias_match,-24.0,-70.0,0,0,0,1
-2011.0,18,Gold Coast,Collingwood,tipresias_match,-55.0,-54.0,0,0,0,1
-2011.0,19,Gold Coast,St Kilda,tipresias_match,15.0,-20.0,1,0,0,0
-2011.0,22,Gold Coast,Adelaide,tipresias_match,-34.0,-61.0,0,0,0,1
-2011.0,24,Gold Coast,Hawthorn,tipresias_match,-21.0,-9.0,0,0,0,1
-2012.0,1,Gold Coast,Adelaide,tipresias_match,-51.0,-69.0,0,0,0,1
-2012.0,3,Gold Coast,Essendon,tipresias_match,-23.0,-17.0,0,0,0,1
-2012.0,6,Gold Coast,Fremantle,tipresias_match,6.0,-7.0,1,0,0,0
-2012.0,9,Gold Coast,Port Adelaide,tipresias_match,-31.0,-48.0,0,0,0,1
-2012.0,11,Gold Coast,St Kilda,tipresias_match,-69.0,-95.0,0,0,0,1
-2012.0,12,Gold Coast,North Melbourne,tipresias_match,-6.0,-7.0,0,0,0,1
-2012.0,17,Gold Coast,Brisbane Lions,tipresias_match,41.0,-11.0,1,0,0,0
-2012.0,18,Gold Coast,Sydney,tipresias_match,-49.0,-72.0,0,0,0,1
-2012.0,20,Gold Coast,GWS,tipresias_match,30.0,30.0,1,1,0,1
-2012.0,22,Gold Coast,Carlton,tipresias_match,1.0,12.0,1,1,0,1
-2013.0,1,Gold Coast,St Kilda,tipresias_match,8.0,13.0,1,1,0,1
-2013.0,3,Gold Coast,Brisbane Lions,tipresias_match,-8.0,-2.0,0,0,0,1
-2013.0,4,Gold Coast,Port Adelaide,tipresias_match,1.0,-38.0,1,0,0,0
-2013.0,6,Gold Coast,Fremantle,tipresias_match,-3.0,-45.0,0,0,0,1
-2013.0,8,Gold Coast,Footscray,tipresias_match,54.0,32.0,1,1,0,1
-2013.0,11,Gold Coast,North Melbourne,tipresias_match,47.0,15.0,1,1,0,1
-2013.0,14,Gold Coast,Adelaide,tipresias_match,-23.0,-28.0,0,0,0,1
-2013.0,17,Gold Coast,Collingwood,tipresias_match,9.0,7.0,1,1,0,1
-2013.0,18,Gold Coast,Carlton,tipresias_match,-34.0,-43.0,0,0,0,1
-2013.0,20,Gold Coast,Melbourne,tipresias_match,29.0,13.0,1,1,0,1
-2013.0,23,Gold Coast,GWS,tipresias_match,50.0,83.0,1,1,0,1
-2014.0,1,Gold Coast,Richmond,tipresias_match,28.0,18.0,1,1,0,1
-2014.0,3,Gold Coast,Brisbane Lions,tipresias_match,35.0,53.0,1,1,0,1
-2014.0,4,Gold Coast,Hawthorn,tipresias_match,-67.0,-99.0,0,0,0,1
-2014.0,6,Gold Coast,GWS,tipresias_match,10.0,40.0,1,1,0,1
-2014.0,10,Gold Coast,Footscray,tipresias_match,31.0,45.0,1,1,0,1
-2014.0,12,Gold Coast,Sydney,tipresias_match,-18.0,-35.0,0,0,0,1
-2014.0,14,Gold Coast,Geelong,tipresias_match,10.0,40.0,1,1,0,1
-2014.0,16,Gold Coast,Collingwood,tipresias_match,25.0,5.0,1,1,0,1
-2014.0,19,Gold Coast,St Kilda,tipresias_match,41.0,53.0,1,1,0,1
-2014.0,21,Gold Coast,Port Adelaide,tipresias_match,27.0,-9.0,1,0,0,0
-2014.0,23,Gold Coast,West Coast,tipresias_match,-62.0,-52.0,0,0,0,1
-2015.0,2,Gold Coast,St Kilda,tipresias_match,9.0,-28.0,1,0,0,0
-2015.0,5,Gold Coast,Brisbane Lions,tipresias_match,51.0,64.0,1,1,0,1
-2015.0,6,Gold Coast,Adelaide,tipresias_match,-34.0,-41.0,0,0,0,1
-2015.0,8,Gold Coast,Collingwood,tipresias_match,-49.0,-69.0,0,0,0,1
-2015.0,10,Gold Coast,Sydney,tipresias_match,-22.0,-52.0,0,0,0,1
-2015.0,11,Gold Coast,Fremantle,tipresias_match,18.0,-7.0,1,0,0,0
-2015.0,14,Gold Coast,North Melbourne,tipresias_match,17.0,55.0,1,1,0,1
-2015.0,16,Gold Coast,GWS,tipresias_match,-6.0,-15.0,0,0,0,1
-2015.0,18,Gold Coast,West Coast,tipresias_match,-6.0,0.0,0,0,1,1
-2015.0,21,Gold Coast,Essendon,tipresias_match,1.0,2.0,1,1,0,1
-2015.0,22,Gold Coast,Port Adelaide,tipresias_match,0.0,-37.0,1,0,0,0
-2016.0,1,Gold Coast,Essendon,tipresias_match,43.0,61.0,1,1,0,1
-2016.0,3,Gold Coast,Carlton,tipresias_match,65.0,54.0,1,1,0,1
-2016.0,5,Gold Coast,North Melbourne,tipresias_match,-47.0,-38.0,0,0,0,1
-2016.0,7,Gold Coast,Melbourne,tipresias_match,-85.0,-73.0,0,0,0,1
-2016.0,9,Gold Coast,Adelaide,tipresias_match,-82.0,-75.0,0,0,0,1
-2016.0,11,Gold Coast,Sydney,tipresias_match,-1.0,-38.0,0,0,0,1
-2016.0,16,Gold Coast,Brisbane Lions,tipresias_match,-23.0,26.0,0,1,0,0
-2016.0,18,Gold Coast,Fremantle,tipresias_match,18.0,24.0,1,1,0,1
-2016.0,20,Gold Coast,GWS,tipresias_match,-6.0,-8.0,0,0,0,1
-2016.0,23,Gold Coast,Port Adelaide,tipresias_match,3.0,-23.0,1,0,0,0
-2011.0,2,Hawthorn,Melbourne,tipresias_match,39.0,45.0,1,1,0,1
-2011.0,4,Hawthorn,West Coast,tipresias_match,52.0,7.0,1,1,0,1
-2011.0,5,Hawthorn,Geelong,tipresias_match,-29.0,-19.0,0,0,0,1
-2011.0,8,Hawthorn,St Kilda,tipresias_match,41.0,30.0,1,1,0,1
-2011.0,11,Hawthorn,Fremantle,tipresias_match,20.0,22.0,1,1,0,1
-2011.0,13,Hawthorn,Gold Coast,tipresias_match,57.0,71.0,1,1,0,1
-2011.0,14,Hawthorn,Essendon,tipresias_match,42.0,65.0,1,1,0,1
-2011.0,16,Hawthorn,Brisbane Lions,tipresias_match,63.0,42.0,1,1,0,1
-2011.0,20,Hawthorn,North Melbourne,tipresias_match,25.0,17.0,1,1,0,1
-2011.0,21,Hawthorn,Port Adelaide,tipresias_match,84.0,165.0,1,1,0,1
-2011.0,23,Hawthorn,Footscray,tipresias_match,48.0,46.0,1,1,0,1
-2011.0,26,Hawthorn,Sydney,tipresias_match,17.0,36.0,1,1,0,1
-2012.0,1,Hawthorn,Collingwood,tipresias_match,-21.0,22.0,0,1,0,0
-2012.0,3,Hawthorn,Adelaide,tipresias_match,25.0,56.0,1,1,0,1
-2012.0,5,Hawthorn,Sydney,tipresias_match,-11.0,-37.0,0,0,0,1
-2012.0,8,Hawthorn,Fremantle,tipresias_match,44.0,56.0,1,1,0,1
-2012.0,10,Hawthorn,North Melbourne,tipresias_match,45.0,115.0,1,1,0,1
-2012.0,12,Hawthorn,Brisbane Lions,tipresias_match,59.0,65.0,1,1,0,1
-2012.0,19,Hawthorn,Geelong,tipresias_match,-23.0,-2.0,0,0,0,1
-2012.0,20,Hawthorn,Port Adelaide,tipresias_match,32.0,72.0,1,1,0,1
-2012.0,21,Hawthorn,Gold Coast,tipresias_match,67.0,64.0,1,1,0,1
-2012.0,23,Hawthorn,West Coast,tipresias_match,34.0,25.0,1,1,0,1
-2012.0,24,Hawthorn,Collingwood,tipresias_match,7.0,38.0,1,1,0,1
-2012.0,26,Hawthorn,Adelaide,tipresias_match,14.0,5.0,1,1,0,1
-2013.0,1,Hawthorn,Geelong,tipresias_match,10.0,-7.0,1,0,0,0
-2013.0,4,Hawthorn,Fremantle,tipresias_match,32.0,42.0,1,1,0,1
-2013.0,5,Hawthorn,North Melbourne,tipresias_match,9.0,3.0,1,1,0,1
-2013.0,7,Hawthorn,Sydney,tipresias_match,15.0,37.0,1,1,0,1
-2013.0,8,Hawthorn,GWS,tipresias_match,76.0,83.0,1,1,0,1
-2013.0,9,Hawthorn,Gold Coast,tipresias_match,25.0,26.0,1,1,0,1
-2013.0,13,Hawthorn,West Coast,tipresias_match,7.0,20.0,1,1,0,1
-2013.0,14,Hawthorn,Brisbane Lions,tipresias_match,25.0,58.0,1,1,0,1
-2013.0,17,Hawthorn,Footscray,tipresias_match,54.0,19.0,1,1,0,1
-2013.0,19,Hawthorn,Richmond,tipresias_match,-2.0,-41.0,0,0,0,1
-2013.0,21,Hawthorn,Collingwood,tipresias_match,22.0,35.0,1,1,0,1
-2013.0,24,Hawthorn,Sydney,tipresias_match,47.0,54.0,1,1,0,1
+2011.0,18,Gold Coast,Collingwood,tipresias_match,-29.0,-54.0,0,0,0,1
+2011.0,19,Gold Coast,St Kilda,tipresias_match,-9.0,-20.0,0,0,0,1
+2011.0,22,Gold Coast,Adelaide,tipresias_match,9.0,-61.0,1,0,0,0
+2011.0,24,Gold Coast,Hawthorn,tipresias_match,-34.0,-9.0,0,0,0,1
+2012.0,1,Gold Coast,Adelaide,tipresias_match,-13.0,-69.0,0,0,0,1
+2012.0,3,Gold Coast,Essendon,tipresias_match,-14.0,-17.0,0,0,0,1
+2012.0,6,Gold Coast,Fremantle,tipresias_match,3.0,-7.0,1,0,0,0
+2012.0,9,Gold Coast,Port Adelaide,tipresias_match,-32.0,-48.0,0,0,0,1
+2012.0,11,Gold Coast,St Kilda,tipresias_match,-31.0,-95.0,0,0,0,1
+2012.0,12,Gold Coast,North Melbourne,tipresias_match,-41.0,-7.0,0,0,0,1
+2012.0,17,Gold Coast,Brisbane Lions,tipresias_match,-9.0,-11.0,0,0,0,1
+2012.0,18,Gold Coast,Sydney,tipresias_match,-31.0,-72.0,0,0,0,1
+2012.0,20,Gold Coast,GWS,tipresias_match,-15.0,30.0,0,1,0,0
+2012.0,22,Gold Coast,Carlton,tipresias_match,-18.0,12.0,0,1,0,0
+2013.0,1,Gold Coast,St Kilda,tipresias_match,-9.0,13.0,0,1,0,0
+2013.0,3,Gold Coast,Brisbane Lions,tipresias_match,-2.0,-2.0,0,0,0,1
+2013.0,4,Gold Coast,Port Adelaide,tipresias_match,3.0,-38.0,1,0,0,0
+2013.0,6,Gold Coast,Fremantle,tipresias_match,-6.0,-45.0,0,0,0,1
+2013.0,8,Gold Coast,Footscray,tipresias_match,24.0,32.0,1,1,0,1
+2013.0,11,Gold Coast,North Melbourne,tipresias_match,-3.0,15.0,0,1,0,0
+2013.0,14,Gold Coast,Adelaide,tipresias_match,7.0,-28.0,1,0,0,0
+2013.0,17,Gold Coast,Collingwood,tipresias_match,-12.0,7.0,0,1,0,0
+2013.0,18,Gold Coast,Carlton,tipresias_match,-3.0,-43.0,0,0,0,1
+2013.0,20,Gold Coast,Melbourne,tipresias_match,3.0,13.0,1,1,0,1
+2013.0,23,Gold Coast,GWS,tipresias_match,27.0,83.0,1,1,0,1
+2014.0,1,Gold Coast,Richmond,tipresias_match,2.0,18.0,1,1,0,1
+2014.0,3,Gold Coast,Brisbane Lions,tipresias_match,14.0,53.0,1,1,0,1
+2014.0,4,Gold Coast,Hawthorn,tipresias_match,-0.0,-99.0,0,0,0,1
+2014.0,6,Gold Coast,GWS,tipresias_match,34.0,40.0,1,1,0,1
+2014.0,10,Gold Coast,Footscray,tipresias_match,21.0,45.0,1,1,0,1
+2014.0,12,Gold Coast,Sydney,tipresias_match,2.0,-35.0,1,0,0,0
+2014.0,14,Gold Coast,Geelong,tipresias_match,-11.0,40.0,0,1,0,0
+2014.0,16,Gold Coast,Collingwood,tipresias_match,12.0,5.0,1,1,0,1
+2014.0,19,Gold Coast,St Kilda,tipresias_match,24.0,53.0,1,1,0,1
+2014.0,21,Gold Coast,Port Adelaide,tipresias_match,5.0,-9.0,1,0,0,0
+2014.0,23,Gold Coast,West Coast,tipresias_match,18.0,-52.0,1,0,0,0
+2015.0,2,Gold Coast,St Kilda,tipresias_match,22.0,-28.0,1,0,0,0
+2015.0,5,Gold Coast,Brisbane Lions,tipresias_match,14.0,64.0,1,1,0,1
+2015.0,6,Gold Coast,Adelaide,tipresias_match,-6.0,-41.0,0,0,0,1
+2015.0,8,Gold Coast,Collingwood,tipresias_match,-10.0,-69.0,0,0,0,1
+2015.0,10,Gold Coast,Sydney,tipresias_match,-32.0,-52.0,0,0,0,1
+2015.0,11,Gold Coast,Fremantle,tipresias_match,-30.0,-7.0,0,0,0,1
+2015.0,14,Gold Coast,North Melbourne,tipresias_match,-22.0,55.0,0,1,0,0
+2015.0,16,Gold Coast,GWS,tipresias_match,1.0,-15.0,1,0,0,0
+2015.0,18,Gold Coast,West Coast,tipresias_match,-35.0,0.0,0,0,1,1
+2015.0,21,Gold Coast,Essendon,tipresias_match,7.0,2.0,1,1,0,1
+2015.0,22,Gold Coast,Port Adelaide,tipresias_match,-8.0,-37.0,0,0,0,1
+2016.0,1,Gold Coast,Essendon,tipresias_match,4.0,61.0,1,1,0,1
+2016.0,3,Gold Coast,Carlton,tipresias_match,27.0,54.0,1,1,0,1
+2016.0,5,Gold Coast,North Melbourne,tipresias_match,-16.0,-38.0,0,0,0,1
+2016.0,7,Gold Coast,Melbourne,tipresias_match,5.0,-73.0,1,0,0,0
+2016.0,9,Gold Coast,Adelaide,tipresias_match,-10.0,-75.0,0,0,0,1
+2016.0,11,Gold Coast,Sydney,tipresias_match,-27.0,-38.0,0,0,0,1
+2016.0,16,Gold Coast,Brisbane Lions,tipresias_match,11.0,26.0,1,1,0,1
+2016.0,18,Gold Coast,Fremantle,tipresias_match,19.0,24.0,1,1,0,1
+2016.0,20,Gold Coast,GWS,tipresias_match,-18.0,-8.0,0,0,0,1
+2016.0,23,Gold Coast,Port Adelaide,tipresias_match,-9.0,-23.0,0,0,0,1
+2011.0,2,Hawthorn,Melbourne,tipresias_match,10.0,45.0,1,1,0,1
+2011.0,4,Hawthorn,West Coast,tipresias_match,37.0,7.0,1,1,0,1
+2011.0,5,Hawthorn,Geelong,tipresias_match,8.0,-19.0,1,0,0,0
+2011.0,8,Hawthorn,St Kilda,tipresias_match,20.0,30.0,1,1,0,1
+2011.0,11,Hawthorn,Fremantle,tipresias_match,34.0,22.0,1,1,0,1
+2011.0,13,Hawthorn,Gold Coast,tipresias_match,46.0,71.0,1,1,0,1
+2011.0,14,Hawthorn,Essendon,tipresias_match,34.0,65.0,1,1,0,1
+2011.0,16,Hawthorn,Brisbane Lions,tipresias_match,56.0,42.0,1,1,0,1
+2011.0,20,Hawthorn,North Melbourne,tipresias_match,32.0,17.0,1,1,0,1
+2011.0,21,Hawthorn,Port Adelaide,tipresias_match,50.0,165.0,1,1,0,1
+2011.0,23,Hawthorn,Footscray,tipresias_match,32.0,46.0,1,1,0,1
+2011.0,26,Hawthorn,Sydney,tipresias_match,18.0,36.0,1,1,0,1
+2012.0,1,Hawthorn,Collingwood,tipresias_match,6.0,22.0,1,1,0,1
+2012.0,3,Hawthorn,Adelaide,tipresias_match,26.0,56.0,1,1,0,1
+2012.0,5,Hawthorn,Sydney,tipresias_match,5.0,-37.0,1,0,0,0
+2012.0,8,Hawthorn,Fremantle,tipresias_match,28.0,56.0,1,1,0,1
+2012.0,10,Hawthorn,North Melbourne,tipresias_match,26.0,115.0,1,1,0,1
+2012.0,12,Hawthorn,Brisbane Lions,tipresias_match,50.0,65.0,1,1,0,1
+2012.0,19,Hawthorn,Geelong,tipresias_match,18.0,-2.0,1,0,0,0
+2012.0,20,Hawthorn,Port Adelaide,tipresias_match,42.0,72.0,1,1,0,1
+2012.0,21,Hawthorn,Gold Coast,tipresias_match,60.0,64.0,1,1,0,1
+2012.0,23,Hawthorn,West Coast,tipresias_match,22.0,25.0,1,1,0,1
+2012.0,24,Hawthorn,Collingwood,tipresias_match,13.0,38.0,1,1,0,1
+2012.0,26,Hawthorn,Adelaide,tipresias_match,23.0,5.0,1,1,0,1
+2013.0,1,Hawthorn,Geelong,tipresias_match,8.0,-7.0,1,0,0,0
+2013.0,4,Hawthorn,Fremantle,tipresias_match,8.0,42.0,1,1,0,1
+2013.0,5,Hawthorn,North Melbourne,tipresias_match,17.0,3.0,1,1,0,1
+2013.0,7,Hawthorn,Sydney,tipresias_match,9.0,37.0,1,1,0,1
+2013.0,8,Hawthorn,GWS,tipresias_match,39.0,83.0,1,1,0,1
+2013.0,9,Hawthorn,Gold Coast,tipresias_match,30.0,26.0,1,1,0,1
+2013.0,13,Hawthorn,West Coast,tipresias_match,25.0,20.0,1,1,0,1
+2013.0,14,Hawthorn,Brisbane Lions,tipresias_match,22.0,58.0,1,1,0,1
+2013.0,17,Hawthorn,Footscray,tipresias_match,30.0,19.0,1,1,0,1
+2013.0,19,Hawthorn,Richmond,tipresias_match,8.0,-41.0,1,0,0,0
+2013.0,21,Hawthorn,Collingwood,tipresias_match,3.0,35.0,1,1,0,1
+2013.0,24,Hawthorn,Sydney,tipresias_match,15.0,54.0,1,1,0,1
 2013.0,26,Hawthorn,Geelong,tipresias_match,5.0,5.0,1,1,0,1
-2013.0,27,Hawthorn,Fremantle,tipresias_match,39.0,15.0,1,1,0,1
-2014.0,1,Hawthorn,Brisbane Lions,tipresias_match,12.0,48.0,1,1,0,1
-2014.0,3,Hawthorn,Fremantle,tipresias_match,18.0,58.0,1,1,0,1
-2014.0,7,Hawthorn,St Kilda,tipresias_match,77.0,145.0,1,1,0,1
-2014.0,11,Hawthorn,GWS,tipresias_match,36.0,7.0,1,1,0,1
-2014.0,12,Hawthorn,West Coast,tipresias_match,37.0,44.0,1,1,0,1
-2014.0,14,Hawthorn,Collingwood,tipresias_match,21.0,29.0,1,1,0,1
-2014.0,18,Hawthorn,Sydney,tipresias_match,6.0,10.0,1,1,0,1
-2014.0,19,Hawthorn,Footscray,tipresias_match,64.0,62.0,1,1,0,1
-2014.0,20,Hawthorn,Melbourne,tipresias_match,65.0,50.0,1,1,0,1
-2014.0,22,Hawthorn,Geelong,tipresias_match,33.0,23.0,1,1,0,1
-2014.0,24,Hawthorn,Geelong,tipresias_match,38.0,36.0,1,1,0,1
-2014.0,26,Hawthorn,Port Adelaide,tipresias_match,4.0,3.0,1,1,0,1
-2014.0,27,Hawthorn,Sydney,tipresias_match,29.0,63.0,1,1,0,1
-2015.0,1,Hawthorn,Geelong,tipresias_match,45.0,62.0,1,1,0,1
-2015.0,3,Hawthorn,Footscray,tipresias_match,48.0,70.0,1,1,0,1
-2015.0,7,Hawthorn,Melbourne,tipresias_match,70.0,105.0,1,1,0,1
-2015.0,8,Hawthorn,Sydney,tipresias_match,30.0,-4.0,1,0,0,0
-2015.0,9,Hawthorn,Gold Coast,tipresias_match,76.0,53.0,1,1,0,1
-2015.0,13,Hawthorn,Essendon,tipresias_match,32.0,38.0,1,1,0,1
-2015.0,18,Hawthorn,Richmond,tipresias_match,34.0,-18.0,1,0,0,0
-2015.0,21,Hawthorn,Port Adelaide,tipresias_match,0.0,-22.0,1,0,0,0
-2015.0,22,Hawthorn,Brisbane Lions,tipresias_match,65.0,72.0,1,1,0,1
-2015.0,23,Hawthorn,Carlton,tipresias_match,75.0,57.0,1,1,0,1
-2015.0,25,Hawthorn,Adelaide,tipresias_match,38.0,74.0,1,1,0,1
-2015.0,26,Hawthorn,Fremantle,tipresias_match,33.0,27.0,1,1,0,1
-2015.0,27,Hawthorn,West Coast,tipresias_match,33.0,46.0,1,1,0,1
-2016.0,2,Hawthorn,West Coast,tipresias_match,45.0,46.0,1,1,0,1
-2016.0,4,Hawthorn,St Kilda,tipresias_match,29.0,3.0,1,1,0,1
-2016.0,5,Hawthorn,Adelaide,tipresias_match,-16.0,3.0,0,1,0,0
-2016.0,8,Hawthorn,Fremantle,tipresias_match,38.0,41.0,1,1,0,1
-2016.0,9,Hawthorn,Sydney,tipresias_match,33.0,-14.0,1,0,0,0
-2016.0,11,Hawthorn,Melbourne,tipresias_match,47.0,18.0,1,1,0,1
-2016.0,14,Hawthorn,Gold Coast,tipresias_match,59.0,26.0,1,1,0,1
-2016.0,18,Hawthorn,Richmond,tipresias_match,57.0,70.0,1,1,0,1
-2016.0,19,Hawthorn,Carlton,tipresias_match,63.0,19.0,1,1,0,1
-2016.0,21,Hawthorn,North Melbourne,tipresias_match,48.0,39.0,1,1,0,1
-2016.0,23,Hawthorn,Collingwood,tipresias_match,-11.0,1.0,0,1,0,0
-2011.0,1,Melbourne,Sydney,tipresias_match,11.0,0.0,1,0,1,1
-2011.0,3,Melbourne,Brisbane Lions,tipresias_match,41.0,11.0,1,1,0,1
-2011.0,7,Melbourne,Adelaide,tipresias_match,38.0,96.0,1,1,0,1
-2011.0,10,Melbourne,Carlton,tipresias_match,-8.0,-47.0,0,0,0,1
-2011.0,12,Melbourne,Collingwood,tipresias_match,-49.0,-88.0,0,0,0,1
-2011.0,13,Melbourne,Fremantle,tipresias_match,28.0,89.0,1,1,0,1
-2011.0,17,Melbourne,Port Adelaide,tipresias_match,20.0,21.0,1,1,0,1
-2011.0,18,Melbourne,Hawthorn,tipresias_match,-48.0,-54.0,0,0,0,1
-2011.0,21,Melbourne,West Coast,tipresias_match,-19.0,-48.0,0,0,0,1
-2011.0,22,Melbourne,Richmond,tipresias_match,-26.0,-7.0,0,0,0,1
-2011.0,23,Melbourne,Gold Coast,tipresias_match,29.0,30.0,1,1,0,1
-2012.0,1,Melbourne,Brisbane Lions,tipresias_match,-24.0,-41.0,0,0,0,1
-2012.0,4,Melbourne,Footscray,tipresias_match,14.0,-21.0,1,0,0,0
-2012.0,5,Melbourne,St Kilda,tipresias_match,6.0,-18.0,1,0,0,0
-2012.0,7,Melbourne,Hawthorn,tipresias_match,-35.0,-66.0,0,0,0,1
-2012.0,11,Melbourne,Collingwood,tipresias_match,-59.0,-42.0,0,0,0,1
-2012.0,13,Melbourne,GWS,tipresias_match,59.0,78.0,1,1,0,1
-2012.0,16,Melbourne,Fremantle,tipresias_match,-23.0,-34.0,0,0,0,1
-2012.0,17,Melbourne,Port Adelaide,tipresias_match,19.0,-28.0,1,0,0,0
-2012.0,19,Melbourne,Gold Coast,tipresias_match,34.0,42.0,1,1,0,1
-2012.0,22,Melbourne,Adelaide,tipresias_match,-75.0,-69.0,0,0,0,1
-2013.0,1,Melbourne,Port Adelaide,tipresias_match,-52.0,-79.0,0,0,0,1
-2013.0,3,Melbourne,West Coast,tipresias_match,-97.0,-94.0,0,0,0,1
-2013.0,4,Melbourne,GWS,tipresias_match,-2.0,41.0,0,1,0,0
-2013.0,7,Melbourne,Gold Coast,tipresias_match,-29.0,-60.0,0,0,0,1
-2013.0,10,Melbourne,Hawthorn,tipresias_match,-75.0,-95.0,0,0,0,1
-2013.0,11,Melbourne,Collingwood,tipresias_match,-50.0,-83.0,0,0,0,1
-2013.0,14,Melbourne,Footscray,tipresias_match,-0.0,3.0,0,1,0,0
-2013.0,17,Melbourne,Brisbane Lions,tipresias_match,-16.0,-19.0,0,0,0,1
-2013.0,18,Melbourne,North Melbourne,tipresias_match,-75.0,-122.0,0,0,0,1
-2013.0,21,Melbourne,Fremantle,tipresias_match,-57.0,-95.0,0,0,0,1
-2014.0,2,Melbourne,West Coast,tipresias_match,-40.0,-93.0,0,0,0,1
-2014.0,5,Melbourne,Gold Coast,tipresias_match,-3.0,-8.0,0,0,0,1
-2014.0,6,Melbourne,Sydney,tipresias_match,21.0,-31.0,1,0,0,0
-2014.0,8,Melbourne,Footscray,tipresias_match,-3.0,-16.0,0,0,0,1
-2014.0,11,Melbourne,Port Adelaide,tipresias_match,-21.0,-20.0,0,0,0,1
-2014.0,12,Melbourne,Collingwood,tipresias_match,21.0,-33.0,1,0,0,0
-2014.0,14,Melbourne,North Melbourne,tipresias_match,-25.0,-41.0,0,0,0,1
-2014.0,16,Melbourne,Fremantle,tipresias_match,-16.0,-63.0,0,0,0,1
+2013.0,27,Hawthorn,Fremantle,tipresias_match,5.0,15.0,1,1,0,1
+2014.0,1,Hawthorn,Brisbane Lions,tipresias_match,24.0,48.0,1,1,0,1
+2014.0,3,Hawthorn,Fremantle,tipresias_match,12.0,58.0,1,1,0,1
+2014.0,7,Hawthorn,St Kilda,tipresias_match,29.0,145.0,1,1,0,1
+2014.0,11,Hawthorn,GWS,tipresias_match,52.0,7.0,1,1,0,1
+2014.0,12,Hawthorn,West Coast,tipresias_match,38.0,44.0,1,1,0,1
+2014.0,14,Hawthorn,Collingwood,tipresias_match,14.0,29.0,1,1,0,1
+2014.0,18,Hawthorn,Sydney,tipresias_match,12.0,10.0,1,1,0,1
+2014.0,19,Hawthorn,Footscray,tipresias_match,31.0,62.0,1,1,0,1
+2014.0,20,Hawthorn,Melbourne,tipresias_match,58.0,50.0,1,1,0,1
+2014.0,22,Hawthorn,Geelong,tipresias_match,8.0,23.0,1,1,0,1
+2014.0,24,Hawthorn,Geelong,tipresias_match,13.0,36.0,1,1,0,1
+2014.0,26,Hawthorn,Port Adelaide,tipresias_match,14.0,3.0,1,1,0,1
+2014.0,27,Hawthorn,Sydney,tipresias_match,7.0,63.0,1,1,0,1
+2015.0,1,Hawthorn,Geelong,tipresias_match,24.0,62.0,1,1,0,1
+2015.0,3,Hawthorn,Footscray,tipresias_match,20.0,70.0,1,1,0,1
+2015.0,7,Hawthorn,Melbourne,tipresias_match,35.0,105.0,1,1,0,1
+2015.0,8,Hawthorn,Sydney,tipresias_match,7.0,-4.0,1,0,0,0
+2015.0,9,Hawthorn,Gold Coast,tipresias_match,37.0,53.0,1,1,0,1
+2015.0,13,Hawthorn,Essendon,tipresias_match,24.0,38.0,1,1,0,1
+2015.0,18,Hawthorn,Richmond,tipresias_match,19.0,-18.0,1,0,0,0
+2015.0,21,Hawthorn,Port Adelaide,tipresias_match,25.0,-22.0,1,0,0,0
+2015.0,22,Hawthorn,Brisbane Lions,tipresias_match,46.0,72.0,1,1,0,1
+2015.0,23,Hawthorn,Carlton,tipresias_match,38.0,57.0,1,1,0,1
+2015.0,25,Hawthorn,Adelaide,tipresias_match,10.0,74.0,1,1,0,1
+2015.0,26,Hawthorn,Fremantle,tipresias_match,-3.0,27.0,0,1,0,0
+2015.0,27,Hawthorn,West Coast,tipresias_match,10.0,46.0,1,1,0,1
+2016.0,2,Hawthorn,West Coast,tipresias_match,3.0,46.0,1,1,0,1
+2016.0,4,Hawthorn,St Kilda,tipresias_match,40.0,3.0,1,1,0,1
+2016.0,5,Hawthorn,Adelaide,tipresias_match,9.0,3.0,1,1,0,1
+2016.0,8,Hawthorn,Fremantle,tipresias_match,30.0,41.0,1,1,0,1
+2016.0,9,Hawthorn,Sydney,tipresias_match,15.0,-14.0,1,0,0,0
+2016.0,11,Hawthorn,Melbourne,tipresias_match,23.0,18.0,1,1,0,1
+2016.0,14,Hawthorn,Gold Coast,tipresias_match,45.0,26.0,1,1,0,1
+2016.0,18,Hawthorn,Richmond,tipresias_match,26.0,70.0,1,1,0,1
+2016.0,19,Hawthorn,Carlton,tipresias_match,47.0,19.0,1,1,0,1
+2016.0,21,Hawthorn,North Melbourne,tipresias_match,22.0,39.0,1,1,0,1
+2016.0,23,Hawthorn,Collingwood,tipresias_match,24.0,1.0,1,1,0,1
+2011.0,1,Melbourne,Sydney,tipresias_match,-10.0,0.0,0,0,1,1
+2011.0,3,Melbourne,Brisbane Lions,tipresias_match,19.0,11.0,1,1,0,1
+2011.0,7,Melbourne,Adelaide,tipresias_match,5.0,96.0,1,1,0,1
+2011.0,10,Melbourne,Carlton,tipresias_match,-13.0,-47.0,0,0,0,1
+2011.0,12,Melbourne,Collingwood,tipresias_match,-20.0,-88.0,0,0,0,1
+2011.0,13,Melbourne,Fremantle,tipresias_match,6.0,89.0,1,1,0,1
+2011.0,17,Melbourne,Port Adelaide,tipresias_match,33.0,21.0,1,1,0,1
+2011.0,18,Melbourne,Hawthorn,tipresias_match,-13.0,-54.0,0,0,0,1
+2011.0,21,Melbourne,West Coast,tipresias_match,-6.0,-48.0,0,0,0,1
+2011.0,22,Melbourne,Richmond,tipresias_match,7.0,-7.0,1,0,0,0
+2011.0,23,Melbourne,Gold Coast,tipresias_match,24.0,30.0,1,1,0,1
+2012.0,1,Melbourne,Brisbane Lions,tipresias_match,22.0,-41.0,1,0,0,0
+2012.0,4,Melbourne,Footscray,tipresias_match,5.0,-21.0,1,0,0,0
+2012.0,5,Melbourne,St Kilda,tipresias_match,-15.0,-18.0,0,0,0,1
+2012.0,7,Melbourne,Hawthorn,tipresias_match,-2.0,-66.0,0,0,0,1
+2012.0,11,Melbourne,Collingwood,tipresias_match,-34.0,-42.0,0,0,0,1
+2012.0,13,Melbourne,GWS,tipresias_match,22.0,78.0,1,1,0,1
+2012.0,16,Melbourne,Fremantle,tipresias_match,15.0,-34.0,1,0,0,0
+2012.0,17,Melbourne,Port Adelaide,tipresias_match,4.0,-28.0,1,0,0,0
+2012.0,19,Melbourne,Gold Coast,tipresias_match,12.0,42.0,1,1,0,1
+2012.0,22,Melbourne,Adelaide,tipresias_match,-23.0,-69.0,0,0,0,1
+2013.0,1,Melbourne,Port Adelaide,tipresias_match,-3.0,-79.0,0,0,0,1
+2013.0,3,Melbourne,West Coast,tipresias_match,-16.0,-94.0,0,0,0,1
+2013.0,4,Melbourne,GWS,tipresias_match,24.0,41.0,1,1,0,1
+2013.0,7,Melbourne,Gold Coast,tipresias_match,9.0,-60.0,1,0,0,0
+2013.0,10,Melbourne,Hawthorn,tipresias_match,-51.0,-95.0,0,0,0,1
+2013.0,11,Melbourne,Collingwood,tipresias_match,-28.0,-83.0,0,0,0,1
+2013.0,14,Melbourne,Footscray,tipresias_match,3.0,3.0,1,1,0,1
+2013.0,17,Melbourne,Brisbane Lions,tipresias_match,-12.0,-19.0,0,0,0,1
+2013.0,18,Melbourne,North Melbourne,tipresias_match,9.0,-122.0,1,0,0,0
+2013.0,21,Melbourne,Fremantle,tipresias_match,-40.0,-95.0,0,0,0,1
+2014.0,2,Melbourne,West Coast,tipresias_match,-25.0,-93.0,0,0,0,1
+2014.0,5,Melbourne,Gold Coast,tipresias_match,-2.0,-8.0,0,0,0,1
+2014.0,6,Melbourne,Sydney,tipresias_match,-13.0,-31.0,0,0,0,1
+2014.0,8,Melbourne,Footscray,tipresias_match,1.0,-16.0,1,0,0,0
+2014.0,11,Melbourne,Port Adelaide,tipresias_match,-39.0,-20.0,0,0,0,1
+2014.0,12,Melbourne,Collingwood,tipresias_match,-33.0,-33.0,0,0,0,1
+2014.0,14,Melbourne,North Melbourne,tipresias_match,-5.0,-41.0,0,0,0,1
+2014.0,16,Melbourne,Fremantle,tipresias_match,-40.0,-63.0,0,0,0,1
 2014.0,17,Melbourne,Geelong,tipresias_match,-29.0,-66.0,0,0,0,1
-2014.0,19,Melbourne,Brisbane Lions,tipresias_match,31.0,-23.0,1,0,0,0
-2014.0,21,Melbourne,GWS,tipresias_match,5.0,-64.0,1,0,0,0
-2015.0,1,Melbourne,Gold Coast,tipresias_match,6.0,26.0,1,1,0,1
-2015.0,5,Melbourne,Fremantle,tipresias_match,-42.0,-68.0,0,0,0,1
-2015.0,6,Melbourne,Sydney,tipresias_match,-8.0,-38.0,0,0,0,1
-2015.0,8,Melbourne,Footscray,tipresias_match,30.0,39.0,1,1,0,1
-2015.0,9,Melbourne,Port Adelaide,tipresias_match,-23.0,-61.0,0,0,0,1
-2015.0,10,Melbourne,Collingwood,tipresias_match,-21.0,-25.0,0,0,0,1
-2015.0,14,Melbourne,West Coast,tipresias_match,-47.0,-54.0,0,0,0,1
-2015.0,16,Melbourne,Brisbane Lions,tipresias_match,56.0,24.0,1,1,0,1
-2015.0,17,Melbourne,St Kilda,tipresias_match,15.0,-37.0,1,0,0,0
-2015.0,19,Melbourne,North Melbourne,tipresias_match,-50.0,-35.0,0,0,0,1
-2015.0,23,Melbourne,GWS,tipresias_match,14.0,26.0,1,1,0,1
-2016.0,1,Melbourne,GWS,tipresias_match,18.0,2.0,1,1,0,1
-2016.0,5,Melbourne,Richmond,tipresias_match,-6.0,33.0,0,1,0,0
-2016.0,6,Melbourne,St Kilda,tipresias_match,-47.0,-39.0,0,0,0,1
-2016.0,8,Melbourne,Footscray,tipresias_match,-30.0,-32.0,0,0,0,1
-2016.0,9,Melbourne,Brisbane Lions,tipresias_match,39.0,63.0,1,1,0,1
-2016.0,10,Melbourne,Port Adelaide,tipresias_match,-37.0,-45.0,0,0,0,1
-2016.0,12,Melbourne,Collingwood,tipresias_match,46.0,46.0,1,1,0,1
-2016.0,16,Melbourne,Fremantle,tipresias_match,49.0,32.0,1,1,0,1
-2016.0,19,Melbourne,Gold Coast,tipresias_match,38.0,2.0,1,1,0,1
-2016.0,20,Melbourne,Hawthorn,tipresias_match,2.0,29.0,1,1,0,1
-2011.0,2,North Melbourne,Collingwood,tipresias_match,-62.0,-87.0,0,0,0,1
-2011.0,5,North Melbourne,Richmond,tipresias_match,-5.0,-9.0,0,0,0,1
-2011.0,6,North Melbourne,Port Adelaide,tipresias_match,31.0,60.0,1,1,0,1
-2011.0,8,North Melbourne,Melbourne,tipresias_match,13.0,41.0,1,1,0,1
-2011.0,10,North Melbourne,Sydney,tipresias_match,17.0,-1.0,1,0,0,0
-2011.0,11,North Melbourne,Adelaide,tipresias_match,30.0,47.0,1,1,0,1
-2011.0,17,North Melbourne,Footscray,tipresias_match,-18.0,31.0,0,1,0,0
-2011.0,18,North Melbourne,Brisbane Lions,tipresias_match,45.0,45.0,1,1,0,1
-2011.0,19,North Melbourne,Carlton,tipresias_match,20.0,-18.0,1,0,0,0
-2011.0,22,North Melbourne,Fremantle,tipresias_match,53.0,98.0,1,1,0,1
-2012.0,1,North Melbourne,Essendon,tipresias_match,-7.0,-2.0,0,0,0,1
-2012.0,2,North Melbourne,GWS,tipresias_match,60.0,129.0,1,1,0,1
-2012.0,3,North Melbourne,Geelong,tipresias_match,-23.0,17.0,0,1,0,0
-2012.0,5,North Melbourne,Gold Coast,tipresias_match,18.0,34.0,1,1,0,1
-2012.0,7,North Melbourne,Footscray,tipresias_match,3.0,-18.0,1,0,0,0
+2014.0,19,Melbourne,Brisbane Lions,tipresias_match,1.0,-23.0,1,0,0,0
+2014.0,21,Melbourne,GWS,tipresias_match,13.0,-64.0,1,0,0,0
+2015.0,1,Melbourne,Gold Coast,tipresias_match,-10.0,26.0,0,1,0,0
+2015.0,5,Melbourne,Fremantle,tipresias_match,-17.0,-68.0,0,0,0,1
+2015.0,6,Melbourne,Sydney,tipresias_match,-19.0,-38.0,0,0,0,1
+2015.0,8,Melbourne,Footscray,tipresias_match,-2.0,39.0,0,1,0,0
+2015.0,9,Melbourne,Port Adelaide,tipresias_match,-4.0,-61.0,0,0,0,1
+2015.0,10,Melbourne,Collingwood,tipresias_match,-15.0,-25.0,0,0,0,1
+2015.0,14,Melbourne,West Coast,tipresias_match,-37.0,-54.0,0,0,0,1
+2015.0,16,Melbourne,Brisbane Lions,tipresias_match,15.0,24.0,1,1,0,1
+2015.0,17,Melbourne,St Kilda,tipresias_match,6.0,-37.0,1,0,0,0
+2015.0,19,Melbourne,North Melbourne,tipresias_match,-19.0,-35.0,0,0,0,1
+2015.0,23,Melbourne,GWS,tipresias_match,-5.0,26.0,0,1,0,0
+2016.0,1,Melbourne,GWS,tipresias_match,4.0,2.0,1,1,0,1
+2016.0,5,Melbourne,Richmond,tipresias_match,-1.0,33.0,0,1,0,0
+2016.0,6,Melbourne,St Kilda,tipresias_match,27.0,-39.0,1,0,0,0
+2016.0,8,Melbourne,Footscray,tipresias_match,-4.0,-32.0,0,0,0,1
+2016.0,9,Melbourne,Brisbane Lions,tipresias_match,37.0,63.0,1,1,0,1
+2016.0,10,Melbourne,Port Adelaide,tipresias_match,5.0,-45.0,1,0,0,0
+2016.0,12,Melbourne,Collingwood,tipresias_match,9.0,46.0,1,1,0,1
+2016.0,16,Melbourne,Fremantle,tipresias_match,14.0,32.0,1,1,0,1
+2016.0,19,Melbourne,Gold Coast,tipresias_match,17.0,2.0,1,1,0,1
+2016.0,20,Melbourne,Hawthorn,tipresias_match,-8.0,29.0,0,1,0,0
+2011.0,2,North Melbourne,Collingwood,tipresias_match,-10.0,-87.0,0,0,0,1
+2011.0,5,North Melbourne,Richmond,tipresias_match,16.0,-9.0,1,0,0,0
+2011.0,6,North Melbourne,Port Adelaide,tipresias_match,9.0,60.0,1,1,0,1
+2011.0,8,North Melbourne,Melbourne,tipresias_match,1.0,41.0,1,1,0,1
+2011.0,10,North Melbourne,Sydney,tipresias_match,-1.0,-1.0,0,0,0,1
+2011.0,11,North Melbourne,Adelaide,tipresias_match,8.0,47.0,1,1,0,1
+2011.0,17,North Melbourne,Footscray,tipresias_match,5.0,31.0,1,1,0,1
+2011.0,18,North Melbourne,Brisbane Lions,tipresias_match,46.0,45.0,1,1,0,1
+2011.0,19,North Melbourne,Carlton,tipresias_match,3.0,-18.0,1,0,0,0
+2011.0,22,North Melbourne,Fremantle,tipresias_match,17.0,98.0,1,1,0,1
+2012.0,1,North Melbourne,Essendon,tipresias_match,12.0,-2.0,1,0,0,0
+2012.0,2,North Melbourne,GWS,tipresias_match,29.0,129.0,1,1,0,1
+2012.0,3,North Melbourne,Geelong,tipresias_match,3.0,17.0,1,1,0,1
+2012.0,5,North Melbourne,Gold Coast,tipresias_match,37.0,34.0,1,1,0,1
+2012.0,7,North Melbourne,Footscray,tipresias_match,16.0,-18.0,1,0,0,0
 2012.0,9,North Melbourne,Brisbane Lions,tipresias_match,14.0,16.0,1,1,0,1
-2012.0,13,North Melbourne,Adelaide,tipresias_match,6.0,32.0,1,1,0,1
-2012.0,16,North Melbourne,Carlton,tipresias_match,7.0,53.0,1,1,0,1
-2012.0,18,North Melbourne,Melbourne,tipresias_match,53.0,54.0,1,1,0,1
-2012.0,22,North Melbourne,Fremantle,tipresias_match,-28.0,-53.0,0,0,0,1
-2013.0,1,North Melbourne,Collingwood,tipresias_match,-5.0,-16.0,0,0,0,1
-2013.0,3,North Melbourne,Sydney,tipresias_match,-45.0,-39.0,0,0,0,1
-2013.0,4,North Melbourne,Brisbane Lions,tipresias_match,47.0,63.0,1,1,0,1
-2013.0,6,North Melbourne,Port Adelaide,tipresias_match,17.0,10.0,1,1,0,1
-2013.0,9,North Melbourne,Adelaide,tipresias_match,-39.0,-1.0,0,0,0,1
-2013.0,10,North Melbourne,St Kilda,tipresias_match,47.0,68.0,1,1,0,1
-2013.0,14,North Melbourne,GWS,tipresias_match,72.0,86.0,1,1,0,1
-2013.0,17,North Melbourne,Carlton,tipresias_match,-12.0,-1.0,0,0,0,1
-2013.0,19,North Melbourne,Geelong,tipresias_match,12.0,10.0,1,1,0,1
-2013.0,22,North Melbourne,Hawthorn,tipresias_match,-36.0,-14.0,0,0,0,1
-2014.0,1,North Melbourne,Essendon,tipresias_match,-2.0,-39.0,0,0,0,1
-2014.0,3,North Melbourne,Port Adelaide,tipresias_match,0.0,7.0,1,1,0,1
-2014.0,7,North Melbourne,Gold Coast,tipresias_match,-26.0,-43.0,0,0,0,1
-2014.0,9,North Melbourne,Brisbane Lions,tipresias_match,67.0,87.0,1,1,0,1
-2014.0,12,North Melbourne,Richmond,tipresias_match,8.0,28.0,1,1,0,1
+2012.0,13,North Melbourne,Adelaide,tipresias_match,8.0,32.0,1,1,0,1
+2012.0,16,North Melbourne,Carlton,tipresias_match,22.0,53.0,1,1,0,1
+2012.0,18,North Melbourne,Melbourne,tipresias_match,37.0,54.0,1,1,0,1
+2012.0,22,North Melbourne,Fremantle,tipresias_match,32.0,-53.0,1,0,0,0
+2013.0,1,North Melbourne,Collingwood,tipresias_match,3.0,-16.0,1,0,0,0
+2013.0,3,North Melbourne,Sydney,tipresias_match,-10.0,-39.0,0,0,0,1
+2013.0,4,North Melbourne,Brisbane Lions,tipresias_match,15.0,63.0,1,1,0,1
+2013.0,6,North Melbourne,Port Adelaide,tipresias_match,13.0,10.0,1,1,0,1
+2013.0,9,North Melbourne,Adelaide,tipresias_match,5.0,-1.0,1,0,0,0
+2013.0,10,North Melbourne,St Kilda,tipresias_match,17.0,68.0,1,1,0,1
+2013.0,14,North Melbourne,GWS,tipresias_match,36.0,86.0,1,1,0,1
+2013.0,17,North Melbourne,Carlton,tipresias_match,5.0,-1.0,1,0,0,0
+2013.0,19,North Melbourne,Geelong,tipresias_match,-14.0,10.0,0,1,0,0
+2013.0,22,North Melbourne,Hawthorn,tipresias_match,0.0,-14.0,1,0,0,0
+2014.0,1,North Melbourne,Essendon,tipresias_match,1.0,-39.0,1,0,0,0
+2014.0,3,North Melbourne,Port Adelaide,tipresias_match,1.0,7.0,1,1,0,1
+2014.0,7,North Melbourne,Gold Coast,tipresias_match,9.0,-43.0,1,0,0,0
+2014.0,9,North Melbourne,Brisbane Lions,tipresias_match,28.0,87.0,1,1,0,1
+2014.0,12,North Melbourne,Richmond,tipresias_match,7.0,28.0,1,1,0,1
 2014.0,16,North Melbourne,Hawthorn,tipresias_match,7.0,20.0,1,1,0,1
-2014.0,17,North Melbourne,St Kilda,tipresias_match,70.0,59.0,1,1,0,1
-2014.0,19,North Melbourne,Geelong,tipresias_match,-25.0,-32.0,0,0,0,1
-2014.0,21,North Melbourne,Footscray,tipresias_match,51.0,50.0,1,1,0,1
-2014.0,22,North Melbourne,Adelaide,tipresias_match,7.0,7.0,1,1,0,1
-2014.0,23,North Melbourne,Melbourne,tipresias_match,35.0,30.0,1,1,0,1
-2014.0,24,North Melbourne,Essendon,tipresias_match,24.0,12.0,1,1,0,1
-2014.0,25,North Melbourne,Geelong,tipresias_match,7.0,6.0,1,1,0,1
-2015.0,2,North Melbourne,Brisbane Lions,tipresias_match,61.0,82.0,1,1,0,1
-2015.0,3,North Melbourne,Port Adelaide,tipresias_match,-14.0,-8.0,0,0,0,1
-2015.0,5,North Melbourne,Hawthorn,tipresias_match,-47.0,-60.0,0,0,0,1
-2015.0,6,North Melbourne,Richmond,tipresias_match,24.0,35.0,1,1,0,1
-2015.0,10,North Melbourne,West Coast,tipresias_match,15.0,10.0,1,1,0,1
-2015.0,11,North Melbourne,Sydney,tipresias_match,4.0,-16.0,1,0,0,0
-2015.0,16,North Melbourne,Essendon,tipresias_match,34.0,25.0,1,1,0,1
-2015.0,20,North Melbourne,St Kilda,tipresias_match,29.0,37.0,1,1,0,1
-2015.0,21,North Melbourne,Fremantle,tipresias_match,16.0,11.0,1,1,0,1
-2015.0,22,North Melbourne,Footscray,tipresias_match,8.0,-23.0,1,0,0,0
-2015.0,24,North Melbourne,Richmond,tipresias_match,12.0,17.0,1,1,0,1
-2015.0,25,North Melbourne,Sydney,tipresias_match,44.0,26.0,1,1,0,1
-2016.0,1,North Melbourne,Adelaide,tipresias_match,-4.0,10.0,0,1,0,0
-2016.0,3,North Melbourne,Melbourne,tipresias_match,-32.0,5.0,0,1,0,0
-2016.0,4,North Melbourne,Fremantle,tipresias_match,-4.0,31.0,0,1,0,0
-2016.0,6,North Melbourne,Footscray,tipresias_match,47.0,16.0,1,1,0,1
-2016.0,9,North Melbourne,Carlton,tipresias_match,62.0,67.0,1,1,0,1
-2016.0,11,North Melbourne,Richmond,tipresias_match,42.0,70.0,1,1,0,1
-2016.0,13,North Melbourne,Hawthorn,tipresias_match,-1.0,-9.0,0,0,0,1
-2016.0,17,North Melbourne,Port Adelaide,tipresias_match,-9.0,-28.0,0,0,0,1
-2016.0,19,North Melbourne,St Kilda,tipresias_match,48.0,23.0,1,1,0,1
-2016.0,22,North Melbourne,Sydney,tipresias_match,3.0,-9.0,1,0,0,0
-2016.0,23,North Melbourne,GWS,tipresias_match,-9.0,-37.0,0,0,0,1
-2011.0,2,Port Adelaide,West Coast,tipresias_match,-21.0,-18.0,0,0,0,1
-2011.0,4,Port Adelaide,Adelaide,tipresias_match,20.0,32.0,1,1,0,1
-2011.0,5,Port Adelaide,Gold Coast,tipresias_match,6.0,-3.0,1,0,0,0
-2011.0,7,Port Adelaide,Hawthorn,tipresias_match,-17.0,-32.0,0,0,0,1
-2011.0,9,Port Adelaide,Fremantle,tipresias_match,-55.0,-52.0,0,0,0,1
-2011.0,11,Port Adelaide,Carlton,tipresias_match,-23.0,-62.0,0,0,0,1
-2011.0,14,Port Adelaide,North Melbourne,tipresias_match,-46.0,-45.0,0,0,0,1
-2011.0,16,Port Adelaide,St Kilda,tipresias_match,-13.0,-56.0,0,0,0,1
-2011.0,20,Port Adelaide,Collingwood,tipresias_match,-86.0,-138.0,0,0,0,1
-2011.0,22,Port Adelaide,Footscray,tipresias_match,-64.0,-60.0,0,0,0,1
-2011.0,24,Port Adelaide,Melbourne,tipresias_match,-11.0,8.0,0,1,0,0
-2012.0,1,Port Adelaide,St Kilda,tipresias_match,15.0,4.0,1,1,0,1
-2012.0,3,Port Adelaide,Sydney,tipresias_match,-16.0,-22.0,0,0,0,1
-2012.0,6,Port Adelaide,Richmond,tipresias_match,7.0,-37.0,1,0,0,0
-2012.0,8,Port Adelaide,North Melbourne,tipresias_match,-7.0,2.0,0,1,0,0
-2012.0,10,Port Adelaide,Carlton,tipresias_match,40.0,54.0,1,1,0,1
-2012.0,11,Port Adelaide,Hawthorn,tipresias_match,-20.0,-46.0,0,0,0,1
-2012.0,16,Port Adelaide,Essendon,tipresias_match,-46.0,-50.0,0,0,0,1
-2012.0,18,Port Adelaide,Fremantle,tipresias_match,23.0,-27.0,1,0,0,0
-2012.0,21,Port Adelaide,West Coast,tipresias_match,-14.0,-48.0,0,0,0,1
-2012.0,22,Port Adelaide,Brisbane Lions,tipresias_match,-6.0,-11.0,0,0,0,1
-2013.0,2,Port Adelaide,GWS,tipresias_match,38.0,56.0,1,1,0,1
-2013.0,3,Port Adelaide,Adelaide,tipresias_match,-19.0,9.0,0,1,0,0
-2013.0,5,Port Adelaide,West Coast,tipresias_match,17.0,5.0,1,1,0,1
-2013.0,7,Port Adelaide,Richmond,tipresias_match,-18.0,-41.0,0,0,0,1
-2013.0,9,Port Adelaide,Geelong,tipresias_match,-27.0,-48.0,0,0,0,1
-2013.0,13,Port Adelaide,Sydney,tipresias_match,39.0,18.0,1,1,0,1
-2013.0,14,Port Adelaide,Collingwood,tipresias_match,35.0,35.0,1,1,0,1
-2013.0,16,Port Adelaide,Hawthorn,tipresias_match,-45.0,-45.0,0,0,0,1
-2013.0,18,Port Adelaide,Brisbane Lions,tipresias_match,41.0,9.0,1,1,0,1
-2013.0,21,Port Adelaide,Gold Coast,tipresias_match,10.0,17.0,1,1,0,1
-2013.0,23,Port Adelaide,Carlton,tipresias_match,-7.0,-1.0,0,0,0,1
-2013.0,24,Port Adelaide,Collingwood,tipresias_match,36.0,24.0,1,1,0,1
-2014.0,2,Port Adelaide,Adelaide,tipresias_match,37.0,54.0,1,1,0,1
-2014.0,4,Port Adelaide,Brisbane Lions,tipresias_match,58.0,113.0,1,1,0,1
-2014.0,6,Port Adelaide,Geelong,tipresias_match,19.0,40.0,1,1,0,1
-2014.0,8,Port Adelaide,Fremantle,tipresias_match,22.0,18.0,1,1,0,1
-2014.0,10,Port Adelaide,Hawthorn,tipresias_match,15.0,14.0,1,1,0,1
-2014.0,12,Port Adelaide,St Kilda,tipresias_match,65.0,70.0,1,1,0,1
-2014.0,14,Port Adelaide,Footscray,tipresias_match,66.0,72.0,1,1,0,1
-2014.0,16,Port Adelaide,Essendon,tipresias_match,49.0,-2.0,1,0,0,0
-2014.0,18,Port Adelaide,Melbourne,tipresias_match,58.0,3.0,1,1,0,1
-2014.0,20,Port Adelaide,Sydney,tipresias_match,14.0,-26.0,1,0,0,0
-2014.0,22,Port Adelaide,Carlton,tipresias_match,62.0,103.0,1,1,0,1
-2014.0,24,Port Adelaide,Richmond,tipresias_match,35.0,57.0,1,1,0,1
-2014.0,25,Port Adelaide,Fremantle,tipresias_match,14.0,22.0,1,1,0,1
-2015.0,2,Port Adelaide,Sydney,tipresias_match,5.0,-48.0,1,0,0,0
-2015.0,4,Port Adelaide,Hawthorn,tipresias_match,6.0,8.0,1,1,0,1
-2015.0,6,Port Adelaide,West Coast,tipresias_match,27.0,-10.0,1,0,0,0
-2015.0,8,Port Adelaide,Richmond,tipresias_match,24.0,-33.0,1,0,0,0
-2015.0,10,Port Adelaide,Footscray,tipresias_match,44.0,38.0,1,1,0,1
+2014.0,17,North Melbourne,St Kilda,tipresias_match,50.0,59.0,1,1,0,1
+2014.0,19,North Melbourne,Geelong,tipresias_match,-1.0,-32.0,0,0,0,1
+2014.0,21,North Melbourne,Footscray,tipresias_match,24.0,50.0,1,1,0,1
+2014.0,22,North Melbourne,Adelaide,tipresias_match,17.0,7.0,1,1,0,1
+2014.0,23,North Melbourne,Melbourne,tipresias_match,62.0,30.0,1,1,0,1
+2014.0,24,North Melbourne,Essendon,tipresias_match,12.0,12.0,1,1,0,1
+2014.0,25,North Melbourne,Geelong,tipresias_match,18.0,6.0,1,1,0,1
+2015.0,2,North Melbourne,Brisbane Lions,tipresias_match,31.0,82.0,1,1,0,1
+2015.0,3,North Melbourne,Port Adelaide,tipresias_match,21.0,-8.0,1,0,0,0
+2015.0,5,North Melbourne,Hawthorn,tipresias_match,9.0,-60.0,1,0,0,0
+2015.0,6,North Melbourne,Richmond,tipresias_match,16.0,35.0,1,1,0,1
+2015.0,10,North Melbourne,West Coast,tipresias_match,-3.0,10.0,0,1,0,0
+2015.0,11,North Melbourne,Sydney,tipresias_match,-6.0,-16.0,0,0,0,1
+2015.0,16,North Melbourne,Essendon,tipresias_match,23.0,25.0,1,1,0,1
+2015.0,20,North Melbourne,St Kilda,tipresias_match,40.0,37.0,1,1,0,1
+2015.0,21,North Melbourne,Fremantle,tipresias_match,9.0,11.0,1,1,0,1
+2015.0,22,North Melbourne,Footscray,tipresias_match,14.0,-23.0,1,0,0,0
+2015.0,24,North Melbourne,Richmond,tipresias_match,-3.0,17.0,0,1,0,0
+2015.0,25,North Melbourne,Sydney,tipresias_match,4.0,26.0,1,1,0,1
+2016.0,1,North Melbourne,Adelaide,tipresias_match,3.0,10.0,1,1,0,1
+2016.0,3,North Melbourne,Melbourne,tipresias_match,28.0,5.0,1,1,0,1
+2016.0,4,North Melbourne,Fremantle,tipresias_match,26.0,31.0,1,1,0,1
+2016.0,6,North Melbourne,Footscray,tipresias_match,12.0,16.0,1,1,0,1
+2016.0,9,North Melbourne,Carlton,tipresias_match,38.0,67.0,1,1,0,1
+2016.0,11,North Melbourne,Richmond,tipresias_match,22.0,70.0,1,1,0,1
+2016.0,13,North Melbourne,Hawthorn,tipresias_match,10.0,-9.0,1,0,0,0
+2016.0,17,North Melbourne,Port Adelaide,tipresias_match,16.0,-28.0,1,0,0,0
+2016.0,19,North Melbourne,St Kilda,tipresias_match,19.0,23.0,1,1,0,1
+2016.0,22,North Melbourne,Sydney,tipresias_match,-1.0,-9.0,0,0,0,1
+2016.0,23,North Melbourne,GWS,tipresias_match,-3.0,-37.0,0,0,0,1
+2011.0,2,Port Adelaide,West Coast,tipresias_match,24.0,-18.0,1,0,0,0
+2011.0,4,Port Adelaide,Adelaide,tipresias_match,0.0,32.0,1,1,0,1
+2011.0,5,Port Adelaide,Gold Coast,tipresias_match,35.0,-3.0,1,0,0,0
+2011.0,7,Port Adelaide,Hawthorn,tipresias_match,-9.0,-32.0,0,0,0,1
+2011.0,9,Port Adelaide,Fremantle,tipresias_match,4.0,-52.0,1,0,0,0
+2011.0,11,Port Adelaide,Carlton,tipresias_match,-7.0,-62.0,0,0,0,1
+2011.0,14,Port Adelaide,North Melbourne,tipresias_match,-7.0,-45.0,0,0,0,1
+2011.0,16,Port Adelaide,St Kilda,tipresias_match,-3.0,-56.0,0,0,0,1
+2011.0,20,Port Adelaide,Collingwood,tipresias_match,-35.0,-138.0,0,0,0,1
+2011.0,22,Port Adelaide,Footscray,tipresias_match,-8.0,-60.0,0,0,0,1
+2011.0,24,Port Adelaide,Melbourne,tipresias_match,-7.0,8.0,0,1,0,0
+2012.0,1,Port Adelaide,St Kilda,tipresias_match,1.0,4.0,1,1,0,1
+2012.0,3,Port Adelaide,Sydney,tipresias_match,-13.0,-22.0,0,0,0,1
+2012.0,6,Port Adelaide,Richmond,tipresias_match,-4.0,-37.0,0,0,0,1
+2012.0,8,Port Adelaide,North Melbourne,tipresias_match,-18.0,2.0,0,1,0,0
+2012.0,10,Port Adelaide,Carlton,tipresias_match,-14.0,54.0,0,1,0,0
+2012.0,11,Port Adelaide,Hawthorn,tipresias_match,-10.0,-46.0,0,0,0,1
+2012.0,16,Port Adelaide,Essendon,tipresias_match,-31.0,-50.0,0,0,0,1
+2012.0,18,Port Adelaide,Fremantle,tipresias_match,-8.0,-27.0,0,0,0,1
+2012.0,21,Port Adelaide,West Coast,tipresias_match,-15.0,-48.0,0,0,0,1
+2012.0,22,Port Adelaide,Brisbane Lions,tipresias_match,-9.0,-11.0,0,0,0,1
+2013.0,2,Port Adelaide,GWS,tipresias_match,39.0,56.0,1,1,0,1
+2013.0,3,Port Adelaide,Adelaide,tipresias_match,-5.0,9.0,0,1,0,0
+2013.0,5,Port Adelaide,West Coast,tipresias_match,6.0,5.0,1,1,0,1
+2013.0,7,Port Adelaide,Richmond,tipresias_match,11.0,-41.0,1,0,0,0
+2013.0,9,Port Adelaide,Geelong,tipresias_match,-9.0,-48.0,0,0,0,1
+2013.0,13,Port Adelaide,Sydney,tipresias_match,-18.0,18.0,0,1,0,0
+2013.0,14,Port Adelaide,Collingwood,tipresias_match,-6.0,35.0,0,1,0,0
+2013.0,16,Port Adelaide,Hawthorn,tipresias_match,-3.0,-45.0,0,0,0,1
+2013.0,18,Port Adelaide,Brisbane Lions,tipresias_match,15.0,9.0,1,1,0,1
+2013.0,21,Port Adelaide,Gold Coast,tipresias_match,18.0,17.0,1,1,0,1
+2013.0,23,Port Adelaide,Carlton,tipresias_match,13.0,-1.0,1,0,0,0
+2013.0,24,Port Adelaide,Collingwood,tipresias_match,-0.0,24.0,0,1,0,0
+2014.0,2,Port Adelaide,Adelaide,tipresias_match,12.0,54.0,1,1,0,1
+2014.0,4,Port Adelaide,Brisbane Lions,tipresias_match,24.0,113.0,1,1,0,1
+2014.0,6,Port Adelaide,Geelong,tipresias_match,0.0,40.0,1,1,0,1
+2014.0,8,Port Adelaide,Fremantle,tipresias_match,18.0,18.0,1,1,0,1
+2014.0,10,Port Adelaide,Hawthorn,tipresias_match,25.0,14.0,1,1,0,1
+2014.0,12,Port Adelaide,St Kilda,tipresias_match,47.0,70.0,1,1,0,1
+2014.0,14,Port Adelaide,Footscray,tipresias_match,36.0,72.0,1,1,0,1
+2014.0,16,Port Adelaide,Essendon,tipresias_match,28.0,-2.0,1,0,0,0
+2014.0,18,Port Adelaide,Melbourne,tipresias_match,48.0,3.0,1,1,0,1
+2014.0,20,Port Adelaide,Sydney,tipresias_match,9.0,-26.0,1,0,0,0
+2014.0,22,Port Adelaide,Carlton,tipresias_match,26.0,103.0,1,1,0,1
+2014.0,24,Port Adelaide,Richmond,tipresias_match,24.0,57.0,1,1,0,1
+2014.0,25,Port Adelaide,Fremantle,tipresias_match,3.0,22.0,1,1,0,1
+2015.0,2,Port Adelaide,Sydney,tipresias_match,-10.0,-48.0,0,0,0,1
+2015.0,4,Port Adelaide,Hawthorn,tipresias_match,1.0,8.0,1,1,0,1
+2015.0,6,Port Adelaide,West Coast,tipresias_match,17.0,-10.0,1,0,0,0
+2015.0,8,Port Adelaide,Richmond,tipresias_match,7.0,-33.0,1,0,0,0
+2015.0,10,Port Adelaide,Footscray,tipresias_match,9.0,38.0,1,1,0,1
 2015.0,11,Port Adelaide,Geelong,tipresias_match,4.0,-23.0,1,0,0,0
-2015.0,16,Port Adelaide,Adelaide,tipresias_match,-23.0,-3.0,0,0,0,1
-2015.0,18,Port Adelaide,St Kilda,tipresias_match,52.0,63.0,1,1,0,1
-2015.0,20,Port Adelaide,GWS,tipresias_match,1.0,21.0,1,1,0,1
-2015.0,23,Port Adelaide,Fremantle,tipresias_match,40.0,69.0,1,1,0,1
-2016.0,1,Port Adelaide,St Kilda,tipresias_match,6.0,33.0,1,1,0,1
-2016.0,3,Port Adelaide,Essendon,tipresias_match,55.0,61.0,1,1,0,1
-2016.0,5,Port Adelaide,Geelong,tipresias_match,-20.0,-48.0,0,0,0,1
-2016.0,7,Port Adelaide,Brisbane Lions,tipresias_match,48.0,77.0,1,1,0,1
-2016.0,9,Port Adelaide,West Coast,tipresias_match,-7.0,-8.0,0,0,0,1
-2016.0,12,Port Adelaide,Footscray,tipresias_match,-11.0,-3.0,0,0,0,1
-2016.0,16,Port Adelaide,Hawthorn,tipresias_match,-20.0,-22.0,0,0,0,1
-2016.0,18,Port Adelaide,GWS,tipresias_match,20.0,-19.0,1,0,0,0
-2016.0,21,Port Adelaide,Melbourne,tipresias_match,-5.0,-40.0,0,0,0,1
-2016.0,22,Port Adelaide,Adelaide,tipresias_match,-32.0,-15.0,0,0,0,1
-2011.0,3,Richmond,Hawthorn,tipresias_match,-22.0,-63.0,0,0,0,1
-2011.0,4,Richmond,Collingwood,tipresias_match,-85.0,-71.0,0,0,0,1
-2011.0,6,Richmond,Brisbane Lions,tipresias_match,8.0,26.0,1,1,0,1
-2011.0,7,Richmond,Fremantle,tipresias_match,-7.0,49.0,0,1,0,0
-2011.0,9,Richmond,Essendon,tipresias_match,6.0,16.0,1,1,0,1
-2011.0,10,Richmond,Port Adelaide,tipresias_match,23.0,-15.0,1,0,0,0
-2011.0,14,Richmond,Melbourne,tipresias_match,-23.0,-27.0,0,0,0,1
-2011.0,17,Richmond,Gold Coast,tipresias_match,20.0,-15.0,1,0,0,0
-2011.0,21,Richmond,Sydney,tipresias_match,22.0,43.0,1,1,0,1
-2011.0,24,Richmond,North Melbourne,tipresias_match,-11.0,-13.0,0,0,0,1
-2012.0,1,Richmond,Carlton,tipresias_match,-42.0,-44.0,0,0,0,1
-2012.0,3,Richmond,Melbourne,tipresias_match,34.0,59.0,1,1,0,1
-2012.0,5,Richmond,West Coast,tipresias_match,-20.0,-10.0,0,0,0,1
-2012.0,7,Richmond,Sydney,tipresias_match,26.0,29.0,1,1,0,1
-2012.0,9,Richmond,Hawthorn,tipresias_match,14.0,62.0,1,1,0,1
-2012.0,11,Richmond,Fremantle,tipresias_match,32.0,-12.0,1,0,0,0
-2012.0,16,Richmond,Gold Coast,tipresias_match,24.0,-2.0,1,0,0,0
-2012.0,17,Richmond,North Melbourne,tipresias_match,-15.0,-4.0,0,0,0,1
-2012.0,20,Richmond,Footscray,tipresias_match,32.0,70.0,1,1,0,1
-2012.0,22,Richmond,Essendon,tipresias_match,40.0,45.0,1,1,0,1
-2012.0,23,Richmond,Port Adelaide,tipresias_match,8.0,0.0,1,0,1,1
-2013.0,3,Richmond,Footscray,tipresias_match,46.0,67.0,1,1,0,1
-2013.0,4,Richmond,Collingwood,tipresias_match,-22.0,-34.0,0,0,0,1
-2013.0,6,Richmond,Geelong,tipresias_match,-49.0,-44.0,0,0,0,1
-2013.0,8,Richmond,Melbourne,tipresias_match,50.0,34.0,1,1,0,1
-2013.0,9,Richmond,Essendon,tipresias_match,11.0,-29.0,1,0,0,0
-2013.0,12,Richmond,Adelaide,tipresias_match,28.0,38.0,1,1,0,1
-2013.0,14,Richmond,St Kilda,tipresias_match,57.0,64.0,1,1,0,1
-2013.0,16,Richmond,Gold Coast,tipresias_match,70.0,9.0,1,1,0,1
-2013.0,17,Richmond,Fremantle,tipresias_match,38.0,27.0,1,1,0,1
-2013.0,20,Richmond,Brisbane Lions,tipresias_match,46.0,23.0,1,1,0,1
-2013.0,21,Richmond,Carlton,tipresias_match,1.0,-10.0,1,0,0,0
-2014.0,2,Richmond,Carlton,tipresias_match,20.0,12.0,1,1,0,1
-2014.0,4,Richmond,Collingwood,tipresias_match,-9.0,-38.0,0,0,0,1
-2014.0,6,Richmond,Hawthorn,tipresias_match,-26.0,-66.0,0,0,0,1
-2014.0,9,Richmond,Melbourne,tipresias_match,24.0,-17.0,1,0,0,0
-2014.0,13,Richmond,Fremantle,tipresias_match,-14.0,-20.0,0,0,0,1
-2014.0,14,Richmond,Sydney,tipresias_match,32.0,-11.0,1,0,0,0
-2014.0,16,Richmond,Brisbane Lions,tipresias_match,35.0,25.0,1,1,0,1
-2014.0,17,Richmond,Port Adelaide,tipresias_match,-19.0,20.0,0,1,0,0
-2014.0,19,Richmond,GWS,tipresias_match,44.0,27.0,1,1,0,1
-2014.0,20,Richmond,Essendon,tipresias_match,20.0,18.0,1,1,0,1
-2014.0,22,Richmond,St Kilda,tipresias_match,40.0,26.0,1,1,0,1
-2015.0,2,Richmond,Footscray,tipresias_match,21.0,-19.0,1,0,0,0
-2015.0,4,Richmond,Melbourne,tipresias_match,32.0,-32.0,1,0,0,0
-2015.0,5,Richmond,Geelong,tipresias_match,8.0,-9.0,1,0,0,0
-2015.0,7,Richmond,Collingwood,tipresias_match,-9.0,5.0,0,1,0,0
-2015.0,9,Richmond,Essendon,tipresias_match,37.0,13.0,1,1,0,1
-2015.0,12,Richmond,West Coast,tipresias_match,4.0,-20.0,1,0,0,0
-2015.0,14,Richmond,GWS,tipresias_match,34.0,9.0,1,1,0,1
-2015.0,17,Richmond,Fremantle,tipresias_match,11.0,-4.0,1,0,0,0
-2015.0,20,Richmond,Gold Coast,tipresias_match,65.0,83.0,1,1,0,1
-2015.0,23,Richmond,North Melbourne,tipresias_match,39.0,41.0,1,1,0,1
-2016.0,1,Richmond,Carlton,tipresias_match,30.0,9.0,1,1,0,1
-2016.0,3,Richmond,Adelaide,tipresias_match,-42.0,-36.0,0,0,0,1
-2016.0,6,Richmond,Port Adelaide,tipresias_match,1.0,-35.0,1,0,0,0
-2016.0,7,Richmond,Hawthorn,tipresias_match,-59.0,-46.0,0,0,0,1
-2016.0,8,Richmond,Sydney,tipresias_match,-15.0,1.0,0,1,0,0
-2016.0,12,Richmond,Gold Coast,tipresias_match,6.0,17.0,1,1,0,1
-2016.0,14,Richmond,Brisbane Lions,tipresias_match,46.0,42.0,1,1,0,1
-2016.0,17,Richmond,Essendon,tipresias_match,20.0,19.0,1,1,0,1
-2016.0,20,Richmond,Collingwood,tipresias_match,17.0,15.0,1,1,0,1
-2016.0,21,Richmond,Geelong,tipresias_match,2.0,-4.0,1,0,0,0
-2016.0,22,Richmond,St Kilda,tipresias_match,36.0,-9.0,1,0,0,0
-2011.0,2,St Kilda,Richmond,tipresias_match,21.0,0.0,1,0,1,1
-2011.0,3,St Kilda,Essendon,tipresias_match,-30.0,-52.0,0,0,0,1
-2011.0,7,St Kilda,Carlton,tipresias_match,11.0,-3.0,1,0,0,0
-2011.0,9,St Kilda,Melbourne,tipresias_match,28.0,20.0,1,1,0,1
-2011.0,12,St Kilda,Footscray,tipresias_match,39.0,24.0,1,1,0,1
-2011.0,13,St Kilda,Geelong,tipresias_match,-11.0,-28.0,0,0,0,1
-2011.0,17,St Kilda,West Coast,tipresias_match,38.0,21.0,1,1,0,1
-2011.0,18,St Kilda,Adelaide,tipresias_match,63.0,103.0,1,1,0,1
+2015.0,16,Port Adelaide,Adelaide,tipresias_match,-5.0,-3.0,0,0,0,1
+2015.0,18,Port Adelaide,St Kilda,tipresias_match,19.0,63.0,1,1,0,1
+2015.0,20,Port Adelaide,GWS,tipresias_match,8.0,21.0,1,1,0,1
+2015.0,23,Port Adelaide,Fremantle,tipresias_match,-1.0,69.0,0,1,0,0
+2016.0,1,Port Adelaide,St Kilda,tipresias_match,31.0,33.0,1,1,0,1
+2016.0,3,Port Adelaide,Essendon,tipresias_match,21.0,61.0,1,1,0,1
+2016.0,5,Port Adelaide,Geelong,tipresias_match,2.0,-48.0,1,0,0,0
+2016.0,7,Port Adelaide,Brisbane Lions,tipresias_match,36.0,77.0,1,1,0,1
+2016.0,9,Port Adelaide,West Coast,tipresias_match,-5.0,-8.0,0,0,0,1
+2016.0,12,Port Adelaide,Footscray,tipresias_match,-1.0,-3.0,0,0,0,1
+2016.0,16,Port Adelaide,Hawthorn,tipresias_match,1.0,-22.0,1,0,0,0
+2016.0,18,Port Adelaide,GWS,tipresias_match,5.0,-19.0,1,0,0,0
+2016.0,21,Port Adelaide,Melbourne,tipresias_match,6.0,-40.0,1,0,0,0
+2016.0,22,Port Adelaide,Adelaide,tipresias_match,-18.0,-15.0,0,0,0,1
+2011.0,3,Richmond,Hawthorn,tipresias_match,-14.0,-63.0,0,0,0,1
+2011.0,4,Richmond,Collingwood,tipresias_match,-28.0,-71.0,0,0,0,1
+2011.0,6,Richmond,Brisbane Lions,tipresias_match,26.0,26.0,1,1,0,1
+2011.0,7,Richmond,Fremantle,tipresias_match,1.0,49.0,1,1,0,1
+2011.0,9,Richmond,Essendon,tipresias_match,-7.0,16.0,0,1,0,0
+2011.0,10,Richmond,Port Adelaide,tipresias_match,27.0,-15.0,1,0,0,0
+2011.0,14,Richmond,Melbourne,tipresias_match,5.0,-27.0,1,0,0,0
+2011.0,17,Richmond,Gold Coast,tipresias_match,28.0,-15.0,1,0,0,0
+2011.0,21,Richmond,Sydney,tipresias_match,-23.0,43.0,0,1,0,0
+2011.0,24,Richmond,North Melbourne,tipresias_match,3.0,-13.0,1,0,0,0
+2012.0,1,Richmond,Carlton,tipresias_match,-13.0,-44.0,0,0,0,1
+2012.0,3,Richmond,Melbourne,tipresias_match,12.0,59.0,1,1,0,1
+2012.0,5,Richmond,West Coast,tipresias_match,-15.0,-10.0,0,0,0,1
+2012.0,7,Richmond,Sydney,tipresias_match,-6.0,29.0,0,1,0,0
+2012.0,9,Richmond,Hawthorn,tipresias_match,-11.0,62.0,0,1,0,0
+2012.0,11,Richmond,Fremantle,tipresias_match,30.0,-12.0,1,0,0,0
+2012.0,16,Richmond,Gold Coast,tipresias_match,41.0,-2.0,1,0,0,0
+2012.0,17,Richmond,North Melbourne,tipresias_match,-16.0,-4.0,0,0,0,1
+2012.0,20,Richmond,Footscray,tipresias_match,25.0,70.0,1,1,0,1
+2012.0,22,Richmond,Essendon,tipresias_match,2.0,45.0,1,1,0,1
+2012.0,23,Richmond,Port Adelaide,tipresias_match,34.0,0.0,1,0,1,1
+2013.0,3,Richmond,Footscray,tipresias_match,20.0,67.0,1,1,0,1
+2013.0,4,Richmond,Collingwood,tipresias_match,7.0,-34.0,1,0,0,0
+2013.0,6,Richmond,Geelong,tipresias_match,-9.0,-44.0,0,0,0,1
+2013.0,8,Richmond,Melbourne,tipresias_match,10.0,34.0,1,1,0,1
+2013.0,9,Richmond,Essendon,tipresias_match,13.0,-29.0,1,0,0,0
+2013.0,12,Richmond,Adelaide,tipresias_match,12.0,38.0,1,1,0,1
+2013.0,14,Richmond,St Kilda,tipresias_match,25.0,64.0,1,1,0,1
+2013.0,16,Richmond,Gold Coast,tipresias_match,29.0,9.0,1,1,0,1
+2013.0,17,Richmond,Fremantle,tipresias_match,12.0,27.0,1,1,0,1
+2013.0,20,Richmond,Brisbane Lions,tipresias_match,37.0,23.0,1,1,0,1
+2013.0,21,Richmond,Carlton,tipresias_match,29.0,-10.0,1,0,0,0
+2014.0,2,Richmond,Carlton,tipresias_match,9.0,12.0,1,1,0,1
+2014.0,4,Richmond,Collingwood,tipresias_match,11.0,-38.0,1,0,0,0
+2014.0,6,Richmond,Hawthorn,tipresias_match,7.0,-66.0,1,0,0,0
+2014.0,9,Richmond,Melbourne,tipresias_match,22.0,-17.0,1,0,0,0
+2014.0,13,Richmond,Fremantle,tipresias_match,-12.0,-20.0,0,0,0,1
+2014.0,14,Richmond,Sydney,tipresias_match,-17.0,-11.0,0,0,0,1
+2014.0,16,Richmond,Brisbane Lions,tipresias_match,2.0,25.0,1,1,0,1
+2014.0,17,Richmond,Port Adelaide,tipresias_match,-18.0,20.0,0,1,0,0
+2014.0,19,Richmond,GWS,tipresias_match,28.0,27.0,1,1,0,1
+2014.0,20,Richmond,Essendon,tipresias_match,4.0,18.0,1,1,0,1
+2014.0,22,Richmond,St Kilda,tipresias_match,41.0,26.0,1,1,0,1
+2015.0,2,Richmond,Footscray,tipresias_match,12.0,-19.0,1,0,0,0
+2015.0,4,Richmond,Melbourne,tipresias_match,27.0,-32.0,1,0,0,0
+2015.0,5,Richmond,Geelong,tipresias_match,4.0,-9.0,1,0,0,0
+2015.0,7,Richmond,Collingwood,tipresias_match,1.0,5.0,1,1,0,1
+2015.0,9,Richmond,Essendon,tipresias_match,2.0,13.0,1,1,0,1
+2015.0,12,Richmond,West Coast,tipresias_match,10.0,-20.0,1,0,0,0
+2015.0,14,Richmond,GWS,tipresias_match,18.0,9.0,1,1,0,1
+2015.0,17,Richmond,Fremantle,tipresias_match,7.0,-4.0,1,0,0,0
+2015.0,20,Richmond,Gold Coast,tipresias_match,40.0,83.0,1,1,0,1
+2015.0,23,Richmond,North Melbourne,tipresias_match,17.0,41.0,1,1,0,1
+2016.0,1,Richmond,Carlton,tipresias_match,28.0,9.0,1,1,0,1
+2016.0,3,Richmond,Adelaide,tipresias_match,6.0,-36.0,1,0,0,0
+2016.0,6,Richmond,Port Adelaide,tipresias_match,7.0,-35.0,1,0,0,0
+2016.0,7,Richmond,Hawthorn,tipresias_match,-21.0,-46.0,0,0,0,1
+2016.0,8,Richmond,Sydney,tipresias_match,-14.0,1.0,0,1,0,0
+2016.0,12,Richmond,Gold Coast,tipresias_match,28.0,17.0,1,1,0,1
+2016.0,14,Richmond,Brisbane Lions,tipresias_match,51.0,42.0,1,1,0,1
+2016.0,17,Richmond,Essendon,tipresias_match,41.0,19.0,1,1,0,1
+2016.0,20,Richmond,Collingwood,tipresias_match,2.0,15.0,1,1,0,1
+2016.0,21,Richmond,Geelong,tipresias_match,-8.0,-4.0,0,0,0,1
+2016.0,22,Richmond,St Kilda,tipresias_match,6.0,-9.0,1,0,0,0
+2011.0,2,St Kilda,Richmond,tipresias_match,38.0,0.0,1,0,1,1
+2011.0,3,St Kilda,Essendon,tipresias_match,21.0,-52.0,1,0,0,0
+2011.0,7,St Kilda,Carlton,tipresias_match,5.0,-3.0,1,0,0,0
+2011.0,9,St Kilda,Melbourne,tipresias_match,17.0,20.0,1,1,0,1
+2011.0,12,St Kilda,Footscray,tipresias_match,12.0,24.0,1,1,0,1
+2011.0,13,St Kilda,Geelong,tipresias_match,-8.0,-28.0,0,0,0,1
+2011.0,17,St Kilda,West Coast,tipresias_match,9.0,21.0,1,1,0,1
+2011.0,18,St Kilda,Adelaide,tipresias_match,26.0,103.0,1,1,0,1
 2011.0,20,St Kilda,Fremantle,tipresias_match,36.0,41.0,1,1,0,1
-2011.0,21,St Kilda,Collingwood,tipresias_match,10.0,-19.0,1,0,0,0
-2011.0,23,St Kilda,North Melbourne,tipresias_match,24.0,65.0,1,1,0,1
-2012.0,2,St Kilda,Gold Coast,tipresias_match,62.0,92.0,1,1,0,1
-2012.0,4,St Kilda,Fremantle,tipresias_match,22.0,-13.0,1,0,0,0
-2012.0,6,St Kilda,Hawthorn,tipresias_match,-37.0,-35.0,0,0,0,1
-2012.0,7,St Kilda,Carlton,tipresias_match,-7.0,24.0,0,1,0,0
-2012.0,9,St Kilda,Sydney,tipresias_match,9.0,28.0,1,1,0,1
-2012.0,10,St Kilda,Richmond,tipresias_match,-17.0,-8.0,0,0,0,1
-2012.0,14,St Kilda,North Melbourne,tipresias_match,-47.0,-33.0,0,0,0,1
-2012.0,18,St Kilda,Footscray,tipresias_match,62.0,76.0,1,1,0,1
-2012.0,20,St Kilda,Melbourne,tipresias_match,25.0,25.0,1,1,0,1
-2012.0,22,St Kilda,GWS,tipresias_match,78.0,128.0,1,1,0,1
-2013.0,2,St Kilda,Richmond,tipresias_match,-1.0,-17.0,0,0,0,1
-2013.0,4,St Kilda,Essendon,tipresias_match,-41.0,-37.0,0,0,0,1
-2013.0,5,St Kilda,Sydney,tipresias_match,8.0,-16.0,1,0,0,0
-2013.0,7,St Kilda,Carlton,tipresias_match,26.0,9.0,1,1,0,1
-2013.0,9,St Kilda,Footscray,tipresias_match,-3.0,-9.0,0,0,0,1
-2013.0,11,St Kilda,West Coast,tipresias_match,9.0,-4.0,1,0,0,0
-2013.0,13,St Kilda,Melbourne,tipresias_match,39.0,35.0,1,1,0,1
-2013.0,17,St Kilda,Port Adelaide,tipresias_match,-6.0,-5.0,0,0,0,1
-2013.0,20,St Kilda,Hawthorn,tipresias_match,-23.0,-46.0,0,0,0,1
-2013.0,22,St Kilda,Gold Coast,tipresias_match,22.0,46.0,1,1,0,1
-2013.0,23,St Kilda,Fremantle,tipresias_match,40.0,71.0,1,1,0,1
-2014.0,1,St Kilda,Melbourne,tipresias_match,63.0,17.0,1,1,0,1
-2014.0,2,St Kilda,GWS,tipresias_match,18.0,7.0,1,1,0,1
-2014.0,4,St Kilda,Adelaide,tipresias_match,-53.0,-86.0,0,0,0,1
-2014.0,6,St Kilda,Brisbane Lions,tipresias_match,18.0,-3.0,1,0,0,0
-2014.0,8,St Kilda,Carlton,tipresias_match,-12.0,-32.0,0,0,0,1
-2014.0,9,St Kilda,Gold Coast,tipresias_match,-35.0,-38.0,0,0,0,1
-2014.0,11,St Kilda,Collingwood,tipresias_match,-58.0,-86.0,0,0,0,1
-2014.0,14,St Kilda,West Coast,tipresias_match,-10.0,-33.0,0,0,0,1
-2014.0,18,St Kilda,Fremantle,tipresias_match,22.0,58.0,1,1,0,1
-2014.0,20,St Kilda,Footscray,tipresias_match,-35.0,-23.0,0,0,0,1
-2015.0,1,St Kilda,GWS,tipresias_match,1.0,-9.0,1,0,0,0
-2015.0,4,St Kilda,Carlton,tipresias_match,-36.0,-40.0,0,0,0,1
-2015.0,5,St Kilda,Essendon,tipresias_match,5.0,-2.0,1,0,0,0
-2015.0,8,St Kilda,West Coast,tipresias_match,-53.0,-53.0,0,0,0,1
-2015.0,10,St Kilda,Hawthorn,tipresias_match,-53.0,-63.0,0,0,0,1
-2015.0,11,St Kilda,Melbourne,tipresias_match,15.0,2.0,1,1,0,1
-2015.0,13,St Kilda,Footscray,tipresias_match,34.0,-6.0,1,0,0,0
-2015.0,16,St Kilda,Richmond,tipresias_match,-3.0,-16.0,0,0,0,1
-2015.0,19,St Kilda,Fremantle,tipresias_match,-13.0,-37.0,0,0,0,1
-2015.0,21,St Kilda,Geelong,tipresias_match,-6.0,0.0,0,0,1,1
-2015.0,22,St Kilda,Sydney,tipresias_match,-60.0,-97.0,0,0,0,1
-2016.0,2,St Kilda,Footscray,tipresias_match,-13.0,-57.0,0,0,0,1
-2016.0,3,St Kilda,Collingwood,tipresias_match,-4.0,29.0,0,1,0,0
-2016.0,5,St Kilda,GWS,tipresias_match,-48.0,-47.0,0,0,0,1
-2016.0,7,St Kilda,North Melbourne,tipresias_match,-1.0,-7.0,0,0,0,1
-2016.0,9,St Kilda,Essendon,tipresias_match,43.0,46.0,1,1,0,1
-2016.0,10,St Kilda,Fremantle,tipresias_match,40.0,34.0,1,1,0,1
-2016.0,12,St Kilda,Carlton,tipresias_match,15.0,32.0,1,1,0,1
-2016.0,14,St Kilda,Geelong,tipresias_match,-8.0,3.0,0,1,0,0
-2016.0,17,St Kilda,Melbourne,tipresias_match,31.0,36.0,1,1,0,1
-2016.0,21,St Kilda,Sydney,tipresias_match,-70.0,-70.0,0,0,0,1
-2016.0,23,St Kilda,Brisbane Lions,tipresias_match,-2.0,58.0,0,1,0,0
-2011.0,2,Sydney,Essendon,tipresias_match,14.0,5.0,1,1,0,1
-2011.0,4,Sydney,Geelong,tipresias_match,18.0,-27.0,1,0,0,0
-2011.0,6,Sydney,Carlton,tipresias_match,9.0,-16.0,1,0,0,0
-2011.0,8,Sydney,Port Adelaide,tipresias_match,48.0,62.0,1,1,0,1
-2011.0,9,Sydney,Hawthorn,tipresias_match,-15.0,-46.0,0,0,0,1
-2011.0,12,Sydney,Richmond,tipresias_match,47.0,10.0,1,1,0,1
-2011.0,14,Sydney,Collingwood,tipresias_match,-10.0,-6.0,0,0,0,1
-2011.0,17,Sydney,Fremantle,tipresias_match,14.0,-11.0,1,0,0,0
-2011.0,18,Sydney,Footscray,tipresias_match,34.0,39.0,1,1,0,1
-2011.0,22,Sydney,St Kilda,tipresias_match,32.0,15.0,1,1,0,1
-2011.0,24,Sydney,Brisbane Lions,tipresias_match,57.0,52.0,1,1,0,1
-2011.0,25,Sydney,St Kilda,tipresias_match,41.0,25.0,1,1,0,1
-2012.0,2,Sydney,Fremantle,tipresias_match,33.0,13.0,1,1,0,1
-2012.0,4,Sydney,North Melbourne,tipresias_match,22.0,36.0,1,1,0,1
-2012.0,6,Sydney,Adelaide,tipresias_match,9.0,-5.0,1,0,0,0
-2012.0,8,Sydney,Melbourne,tipresias_match,73.0,101.0,1,1,0,1
-2012.0,10,Sydney,Footscray,tipresias_match,58.0,92.0,1,1,0,1
-2012.0,13,Sydney,Geelong,tipresias_match,25.0,6.0,1,1,0,1
-2012.0,14,Sydney,GWS,tipresias_match,82.0,94.0,1,1,0,1
-2012.0,17,Sydney,St Kilda,tipresias_match,30.0,29.0,1,1,0,1
-2012.0,20,Sydney,Collingwood,tipresias_match,22.0,-8.0,1,0,0,0
-2012.0,22,Sydney,Hawthorn,tipresias_match,-3.0,-7.0,0,0,0,1
-2012.0,24,Sydney,Adelaide,tipresias_match,38.0,29.0,1,1,0,1
-2012.0,26,Sydney,Collingwood,tipresias_match,23.0,26.0,1,1,0,1
-2012.0,27,Sydney,Hawthorn,tipresias_match,17.0,10.0,1,1,0,1
-2013.0,2,Sydney,Gold Coast,tipresias_match,52.0,41.0,1,1,0,1
-2013.0,4,Sydney,Geelong,tipresias_match,-33.0,-21.0,0,0,0,1
-2013.0,6,Sydney,Brisbane Lions,tipresias_match,53.0,60.0,1,1,0,1
-2013.0,8,Sydney,Fremantle,tipresias_match,27.0,0.0,1,0,1,1
-2013.0,10,Sydney,Essendon,tipresias_match,35.0,44.0,1,1,0,1
-2013.0,14,Sydney,Carlton,tipresias_match,55.0,22.0,1,1,0,1
-2013.0,16,Sydney,GWS,tipresias_match,81.0,129.0,1,1,0,1
-2013.0,18,Sydney,Richmond,tipresias_match,39.0,47.0,1,1,0,1
-2013.0,20,Sydney,Collingwood,tipresias_match,4.0,-29.0,1,0,0,0
-2013.0,21,Sydney,St Kilda,tipresias_match,64.0,59.0,1,1,0,1
-2013.0,23,Sydney,Hawthorn,tipresias_match,-22.0,-12.0,0,0,0,1
-2013.0,25,Sydney,Carlton,tipresias_match,38.0,24.0,1,1,0,1
-2014.0,2,Sydney,Collingwood,tipresias_match,12.0,-20.0,1,0,0,0
-2014.0,4,Sydney,North Melbourne,tipresias_match,12.0,-43.0,1,0,0,0
-2014.0,5,Sydney,Fremantle,tipresias_match,15.0,17.0,1,1,0,1
-2014.0,8,Sydney,Hawthorn,tipresias_match,8.0,19.0,1,1,0,1
-2014.0,11,Sydney,Geelong,tipresias_match,53.0,110.0,1,1,0,1
-2014.0,13,Sydney,Port Adelaide,tipresias_match,-2.0,4.0,0,1,0,0
-2014.0,17,Sydney,Carlton,tipresias_match,57.0,71.0,1,1,0,1
-2014.0,19,Sydney,Essendon,tipresias_match,49.0,22.0,1,1,0,1
-2014.0,21,Sydney,St Kilda,tipresias_match,69.0,71.0,1,1,0,1
-2014.0,23,Sydney,Richmond,tipresias_match,44.0,-3.0,1,0,0,0
-2014.0,24,Sydney,Fremantle,tipresias_match,29.0,24.0,1,1,0,1
-2014.0,26,Sydney,North Melbourne,tipresias_match,32.0,71.0,1,1,0,1
-2015.0,1,Sydney,Essendon,tipresias_match,44.0,12.0,1,1,0,1
-2015.0,3,Sydney,GWS,tipresias_match,12.0,21.0,1,1,0,1
-2015.0,5,Sydney,Footscray,tipresias_match,27.0,-4.0,1,0,0,0
-2015.0,7,Sydney,Geelong,tipresias_match,27.0,43.0,1,1,0,1
-2015.0,9,Sydney,Carlton,tipresias_match,56.0,60.0,1,1,0,1
-2015.0,13,Sydney,Richmond,tipresias_match,4.0,-18.0,1,0,0,0
-2015.0,14,Sydney,Port Adelaide,tipresias_match,21.0,10.0,1,1,0,1
-2015.0,16,Sydney,Hawthorn,tipresias_match,-60.0,-89.0,0,0,0,1
-2015.0,18,Sydney,Adelaide,tipresias_match,30.0,52.0,1,1,0,1
-2015.0,20,Sydney,Collingwood,tipresias_match,25.0,11.0,1,1,0,1
-2015.0,23,Sydney,Gold Coast,tipresias_match,64.0,63.0,1,1,0,1
-2016.0,1,Sydney,Collingwood,tipresias_match,46.0,80.0,1,1,0,1
-2016.0,3,Sydney,GWS,tipresias_match,44.0,25.0,1,1,0,1
-2016.0,5,Sydney,West Coast,tipresias_match,53.0,39.0,1,1,0,1
-2016.0,7,Sydney,Essendon,tipresias_match,62.0,81.0,1,1,0,1
-2016.0,10,Sydney,North Melbourne,tipresias_match,29.0,26.0,1,1,0,1
-2016.0,13,Sydney,Melbourne,tipresias_match,61.0,55.0,1,1,0,1
-2016.0,17,Sydney,Hawthorn,tipresias_match,21.0,-5.0,1,0,0,0
-2016.0,18,Sydney,Carlton,tipresias_match,49.0,6.0,1,1,0,1
-2016.0,20,Sydney,Port Adelaide,tipresias_match,66.0,67.0,1,1,0,1
-2016.0,23,Sydney,Richmond,tipresias_match,56.0,113.0,1,1,0,1
-2016.0,25,Sydney,Adelaide,tipresias_match,13.0,36.0,1,1,0,1
-2016.0,26,Sydney,Geelong,tipresias_match,34.0,37.0,1,1,0,1
-2011.0,1,West Coast,North Melbourne,tipresias_match,2.0,4.0,1,1,0,1
-2011.0,3,West Coast,Sydney,tipresias_match,-3.0,-13.0,0,0,0,1
-2011.0,6,West Coast,Melbourne,tipresias_match,30.0,54.0,1,1,0,1
-2011.0,8,West Coast,Fremantle,tipresias_match,27.0,33.0,1,1,0,1
-2011.0,9,West Coast,Footscray,tipresias_match,50.0,123.0,1,1,0,1
-2011.0,11,West Coast,Gold Coast,tipresias_match,40.0,18.0,1,1,0,1
-2011.0,13,West Coast,Port Adelaide,tipresias_match,23.0,22.0,1,1,0,1
-2011.0,16,West Coast,Geelong,tipresias_match,2.0,8.0,1,1,0,1
-2011.0,20,West Coast,Richmond,tipresias_match,29.0,57.0,1,1,0,1
-2011.0,22,West Coast,Essendon,tipresias_match,34.0,57.0,1,1,0,1
-2011.0,24,West Coast,Adelaide,tipresias_match,64.0,95.0,1,1,0,1
-2011.0,26,West Coast,Carlton,tipresias_match,4.0,3.0,1,1,0,1
-2012.0,2,West Coast,Melbourne,tipresias_match,63.0,108.0,1,1,0,1
-2012.0,4,West Coast,Hawthorn,tipresias_match,51.0,5.0,1,1,0,1
-2012.0,6,West Coast,North Melbourne,tipresias_match,14.0,25.0,1,1,0,1
-2012.0,8,West Coast,St Kilda,tipresias_match,12.0,30.0,1,1,0,1
-2012.0,9,West Coast,Fremantle,tipresias_match,73.0,48.0,1,1,0,1
-2012.0,12,West Coast,Carlton,tipresias_match,36.0,10.0,1,1,0,1
-2012.0,14,West Coast,Gold Coast,tipresias_match,78.0,126.0,1,1,0,1
-2012.0,16,West Coast,Sydney,tipresias_match,-27.0,-52.0,0,0,0,1
-2012.0,18,West Coast,Brisbane Lions,tipresias_match,42.0,98.0,1,1,0,1
-2012.0,20,West Coast,Geelong,tipresias_match,-1.0,5.0,0,1,0,0
-2012.0,22,West Coast,Collingwood,tipresias_match,40.0,49.0,1,1,0,1
-2012.0,24,West Coast,North Melbourne,tipresias_match,32.0,96.0,1,1,0,1
-2013.0,2,West Coast,Hawthorn,tipresias_match,-61.0,-50.0,0,0,0,1
-2013.0,4,West Coast,Carlton,tipresias_match,26.0,-24.0,1,0,0,0
-2013.0,6,West Coast,Footscray,tipresias_match,46.0,70.0,1,1,0,1
-2013.0,8,West Coast,North Melbourne,tipresias_match,6.0,2.0,1,1,0,1
-2013.0,10,West Coast,Richmond,tipresias_match,0.0,-41.0,1,0,0,0
-2013.0,14,West Coast,Essendon,tipresias_match,-0.0,-7.0,0,0,0,1
-2013.0,16,West Coast,Fremantle,tipresias_match,-34.0,-28.0,0,0,0,1
-2013.0,17,West Coast,Sydney,tipresias_match,-29.0,-34.0,0,0,0,1
-2013.0,19,West Coast,Gold Coast,tipresias_match,-12.0,17.0,0,1,0,0
-2013.0,21,West Coast,Geelong,tipresias_match,-17.0,-66.0,0,0,0,1
-2013.0,23,West Coast,Adelaide,tipresias_match,-44.0,-86.0,0,0,0,1
-2014.0,1,West Coast,Footscray,tipresias_match,37.0,65.0,1,1,0,1
-2014.0,3,West Coast,St Kilda,tipresias_match,50.0,25.0,1,1,0,1
-2014.0,5,West Coast,Port Adelaide,tipresias_match,18.0,-14.0,1,0,0,0
-2014.0,7,West Coast,Fremantle,tipresias_match,24.0,-19.0,1,0,0,0
-2014.0,8,West Coast,GWS,tipresias_match,31.0,111.0,1,1,0,1
-2014.0,11,West Coast,North Melbourne,tipresias_match,14.0,-38.0,1,0,0,0
-2014.0,13,West Coast,Gold Coast,tipresias_match,-12.0,3.0,0,1,0,0
-2014.0,16,West Coast,Sydney,tipresias_match,6.0,-28.0,1,0,0,0
-2014.0,18,West Coast,Richmond,tipresias_match,33.0,-17.0,1,0,0,0
-2014.0,20,West Coast,Collingwood,tipresias_match,35.0,60.0,1,1,0,1
-2014.0,22,West Coast,Melbourne,tipresias_match,65.0,66.0,1,1,0,1
-2015.0,2,West Coast,Carlton,tipresias_match,48.0,69.0,1,1,0,1
-2015.0,3,West Coast,Fremantle,tipresias_match,-20.0,-30.0,0,0,0,1
-2015.0,5,West Coast,GWS,tipresias_match,59.0,87.0,1,1,0,1
-2015.0,7,West Coast,Gold Coast,tipresias_match,60.0,92.0,1,1,0,1
-2015.0,9,West Coast,Geelong,tipresias_match,42.0,56.0,1,1,0,1
-2015.0,11,West Coast,Essendon,tipresias_match,49.0,50.0,1,1,0,1
-2015.0,17,West Coast,Sydney,tipresias_match,45.0,52.0,1,1,0,1
-2015.0,19,West Coast,Hawthorn,tipresias_match,11.0,-14.0,1,0,0,0
-2015.0,21,West Coast,Footscray,tipresias_match,21.0,77.0,1,1,0,1
-2015.0,23,West Coast,St Kilda,tipresias_match,79.0,95.0,1,1,0,1
-2015.0,24,West Coast,Hawthorn,tipresias_match,34.0,32.0,1,1,0,1
-2015.0,26,West Coast,North Melbourne,tipresias_match,41.0,25.0,1,1,0,1
-2016.0,1,West Coast,Brisbane Lions,tipresias_match,6.0,64.0,1,1,0,1
-2016.0,3,West Coast,Fremantle,tipresias_match,43.0,33.0,1,1,0,1
-2016.0,4,West Coast,Richmond,tipresias_match,53.0,68.0,1,1,0,1
-2016.0,6,West Coast,Collingwood,tipresias_match,43.0,62.0,1,1,0,1
-2016.0,8,West Coast,St Kilda,tipresias_match,67.0,103.0,1,1,0,1
-2016.0,10,West Coast,Gold Coast,tipresias_match,58.0,77.0,1,1,0,1
-2016.0,12,West Coast,Adelaide,tipresias_match,-19.0,-29.0,0,0,0,1
-2016.0,16,West Coast,North Melbourne,tipresias_match,32.0,32.0,1,1,0,1
-2016.0,18,West Coast,Melbourne,tipresias_match,45.0,6.0,1,1,0,1
-2016.0,22,West Coast,Hawthorn,tipresias_match,35.0,25.0,1,1,0,1
+2011.0,21,St Kilda,Collingwood,tipresias_match,-6.0,-19.0,0,0,0,1
+2011.0,23,St Kilda,North Melbourne,tipresias_match,-2.0,65.0,0,1,0,0
+2012.0,2,St Kilda,Gold Coast,tipresias_match,27.0,92.0,1,1,0,1
+2012.0,4,St Kilda,Fremantle,tipresias_match,27.0,-13.0,1,0,0,0
+2012.0,6,St Kilda,Hawthorn,tipresias_match,10.0,-35.0,1,0,0,0
+2012.0,7,St Kilda,Carlton,tipresias_match,-6.0,24.0,0,1,0,0
+2012.0,9,St Kilda,Sydney,tipresias_match,4.0,28.0,1,1,0,1
+2012.0,10,St Kilda,Richmond,tipresias_match,19.0,-8.0,1,0,0,0
+2012.0,14,St Kilda,North Melbourne,tipresias_match,4.0,-33.0,1,0,0,0
+2012.0,18,St Kilda,Footscray,tipresias_match,25.0,76.0,1,1,0,1
+2012.0,20,St Kilda,Melbourne,tipresias_match,22.0,25.0,1,1,0,1
+2012.0,22,St Kilda,GWS,tipresias_match,40.0,128.0,1,1,0,1
+2013.0,2,St Kilda,Richmond,tipresias_match,4.0,-17.0,1,0,0,0
+2013.0,4,St Kilda,Essendon,tipresias_match,-0.0,-37.0,0,0,0,1
+2013.0,5,St Kilda,Sydney,tipresias_match,-10.0,-16.0,0,0,0,1
+2013.0,7,St Kilda,Carlton,tipresias_match,-0.0,9.0,0,1,0,0
+2013.0,9,St Kilda,Footscray,tipresias_match,20.0,-9.0,1,0,0,0
+2013.0,11,St Kilda,West Coast,tipresias_match,2.0,-4.0,1,0,0,0
+2013.0,13,St Kilda,Melbourne,tipresias_match,1.0,35.0,1,1,0,1
+2013.0,17,St Kilda,Port Adelaide,tipresias_match,1.0,-5.0,1,0,0,0
+2013.0,20,St Kilda,Hawthorn,tipresias_match,-24.0,-46.0,0,0,0,1
+2013.0,22,St Kilda,Gold Coast,tipresias_match,-14.0,46.0,0,1,0,0
+2013.0,23,St Kilda,Fremantle,tipresias_match,-26.0,71.0,0,1,0,0
+2014.0,1,St Kilda,Melbourne,tipresias_match,35.0,17.0,1,1,0,1
+2014.0,2,St Kilda,GWS,tipresias_match,24.0,7.0,1,1,0,1
+2014.0,4,St Kilda,Adelaide,tipresias_match,5.0,-86.0,1,0,0,0
+2014.0,6,St Kilda,Brisbane Lions,tipresias_match,16.0,-3.0,1,0,0,0
+2014.0,8,St Kilda,Carlton,tipresias_match,-3.0,-32.0,0,0,0,1
+2014.0,9,St Kilda,Gold Coast,tipresias_match,-6.0,-38.0,0,0,0,1
+2014.0,11,St Kilda,Collingwood,tipresias_match,-19.0,-86.0,0,0,0,1
+2014.0,14,St Kilda,West Coast,tipresias_match,-7.0,-33.0,0,0,0,1
+2014.0,18,St Kilda,Fremantle,tipresias_match,-53.0,58.0,0,1,0,0
+2014.0,20,St Kilda,Footscray,tipresias_match,-4.0,-23.0,0,0,0,1
+2015.0,1,St Kilda,GWS,tipresias_match,10.0,-9.0,1,0,0,0
+2015.0,4,St Kilda,Carlton,tipresias_match,-1.0,-40.0,0,0,0,1
+2015.0,5,St Kilda,Essendon,tipresias_match,-23.0,-2.0,0,0,0,1
+2015.0,8,St Kilda,West Coast,tipresias_match,-20.0,-53.0,0,0,0,1
+2015.0,10,St Kilda,Hawthorn,tipresias_match,-23.0,-63.0,0,0,0,1
+2015.0,11,St Kilda,Melbourne,tipresias_match,12.0,2.0,1,1,0,1
+2015.0,13,St Kilda,Footscray,tipresias_match,-9.0,-6.0,0,0,0,1
+2015.0,16,St Kilda,Richmond,tipresias_match,-24.0,-16.0,0,0,0,1
+2015.0,19,St Kilda,Fremantle,tipresias_match,-27.0,-37.0,0,0,0,1
+2015.0,21,St Kilda,Geelong,tipresias_match,-13.0,0.0,0,0,1,1
+2015.0,22,St Kilda,Sydney,tipresias_match,-22.0,-97.0,0,0,0,1
+2016.0,2,St Kilda,Footscray,tipresias_match,-22.0,-57.0,0,0,0,1
+2016.0,3,St Kilda,Collingwood,tipresias_match,-17.0,29.0,0,1,0,0
+2016.0,5,St Kilda,GWS,tipresias_match,-9.0,-47.0,0,0,0,1
+2016.0,7,St Kilda,North Melbourne,tipresias_match,-20.0,-7.0,0,0,0,1
+2016.0,9,St Kilda,Essendon,tipresias_match,12.0,46.0,1,1,0,1
+2016.0,10,St Kilda,Fremantle,tipresias_match,17.0,34.0,1,1,0,1
+2016.0,12,St Kilda,Carlton,tipresias_match,-1.0,32.0,0,1,0,0
+2016.0,14,St Kilda,Geelong,tipresias_match,-19.0,3.0,0,1,0,0
+2016.0,17,St Kilda,Melbourne,tipresias_match,1.0,36.0,1,1,0,1
+2016.0,21,St Kilda,Sydney,tipresias_match,-15.0,-70.0,0,0,0,1
+2016.0,23,St Kilda,Brisbane Lions,tipresias_match,34.0,58.0,1,1,0,1
+2011.0,2,Sydney,Essendon,tipresias_match,21.0,5.0,1,1,0,1
+2011.0,4,Sydney,Geelong,tipresias_match,10.0,-27.0,1,0,0,0
+2011.0,6,Sydney,Carlton,tipresias_match,6.0,-16.0,1,0,0,0
+2011.0,8,Sydney,Port Adelaide,tipresias_match,20.0,62.0,1,1,0,1
+2011.0,9,Sydney,Hawthorn,tipresias_match,1.0,-46.0,1,0,0,0
+2011.0,12,Sydney,Richmond,tipresias_match,28.0,10.0,1,1,0,1
+2011.0,14,Sydney,Collingwood,tipresias_match,-3.0,-6.0,0,0,0,1
+2011.0,17,Sydney,Fremantle,tipresias_match,29.0,-11.0,1,0,0,0
+2011.0,18,Sydney,Footscray,tipresias_match,22.0,39.0,1,1,0,1
+2011.0,22,Sydney,St Kilda,tipresias_match,11.0,15.0,1,1,0,1
+2011.0,24,Sydney,Brisbane Lions,tipresias_match,42.0,52.0,1,1,0,1
+2011.0,25,Sydney,St Kilda,tipresias_match,15.0,25.0,1,1,0,1
+2012.0,2,Sydney,Fremantle,tipresias_match,28.0,13.0,1,1,0,1
+2012.0,4,Sydney,North Melbourne,tipresias_match,13.0,36.0,1,1,0,1
+2012.0,6,Sydney,Adelaide,tipresias_match,27.0,-5.0,1,0,0,0
+2012.0,8,Sydney,Melbourne,tipresias_match,35.0,101.0,1,1,0,1
+2012.0,10,Sydney,Footscray,tipresias_match,24.0,92.0,1,1,0,1
+2012.0,13,Sydney,Geelong,tipresias_match,10.0,6.0,1,1,0,1
+2012.0,14,Sydney,GWS,tipresias_match,55.0,94.0,1,1,0,1
+2012.0,17,Sydney,St Kilda,tipresias_match,34.0,29.0,1,1,0,1
+2012.0,20,Sydney,Collingwood,tipresias_match,10.0,-8.0,1,0,0,0
+2012.0,22,Sydney,Hawthorn,tipresias_match,29.0,-7.0,1,0,0,0
+2012.0,24,Sydney,Adelaide,tipresias_match,3.0,29.0,1,1,0,1
+2012.0,26,Sydney,Collingwood,tipresias_match,7.0,26.0,1,1,0,1
+2012.0,27,Sydney,Hawthorn,tipresias_match,14.0,10.0,1,1,0,1
+2013.0,2,Sydney,Gold Coast,tipresias_match,40.0,41.0,1,1,0,1
+2013.0,4,Sydney,Geelong,tipresias_match,16.0,-21.0,1,0,0,0
+2013.0,6,Sydney,Brisbane Lions,tipresias_match,23.0,60.0,1,1,0,1
+2013.0,8,Sydney,Fremantle,tipresias_match,18.0,0.0,1,0,1,1
+2013.0,10,Sydney,Essendon,tipresias_match,23.0,44.0,1,1,0,1
+2013.0,14,Sydney,Carlton,tipresias_match,30.0,22.0,1,1,0,1
+2013.0,16,Sydney,GWS,tipresias_match,67.0,129.0,1,1,0,1
+2013.0,18,Sydney,Richmond,tipresias_match,13.0,47.0,1,1,0,1
+2013.0,20,Sydney,Collingwood,tipresias_match,21.0,-29.0,1,0,0,0
+2013.0,21,Sydney,St Kilda,tipresias_match,47.0,59.0,1,1,0,1
+2013.0,23,Sydney,Hawthorn,tipresias_match,16.0,-12.0,1,0,0,0
+2013.0,25,Sydney,Carlton,tipresias_match,19.0,24.0,1,1,0,1
+2014.0,2,Sydney,Collingwood,tipresias_match,11.0,-20.0,1,0,0,0
+2014.0,4,Sydney,North Melbourne,tipresias_match,16.0,-43.0,1,0,0,0
+2014.0,5,Sydney,Fremantle,tipresias_match,-1.0,17.0,0,1,0,0
+2014.0,8,Sydney,Hawthorn,tipresias_match,11.0,19.0,1,1,0,1
+2014.0,11,Sydney,Geelong,tipresias_match,5.0,110.0,1,1,0,1
+2014.0,13,Sydney,Port Adelaide,tipresias_match,0.0,4.0,1,1,0,1
+2014.0,17,Sydney,Carlton,tipresias_match,37.0,71.0,1,1,0,1
+2014.0,19,Sydney,Essendon,tipresias_match,16.0,22.0,1,1,0,1
+2014.0,21,Sydney,St Kilda,tipresias_match,42.0,71.0,1,1,0,1
+2014.0,23,Sydney,Richmond,tipresias_match,33.0,-3.0,1,0,0,0
+2014.0,24,Sydney,Fremantle,tipresias_match,13.0,24.0,1,1,0,1
+2014.0,26,Sydney,North Melbourne,tipresias_match,11.0,71.0,1,1,0,1
+2015.0,1,Sydney,Essendon,tipresias_match,12.0,12.0,1,1,0,1
+2015.0,3,Sydney,GWS,tipresias_match,22.0,21.0,1,1,0,1
+2015.0,5,Sydney,Footscray,tipresias_match,19.0,-4.0,1,0,0,0
+2015.0,7,Sydney,Geelong,tipresias_match,24.0,43.0,1,1,0,1
+2015.0,9,Sydney,Carlton,tipresias_match,39.0,60.0,1,1,0,1
+2015.0,13,Sydney,Richmond,tipresias_match,21.0,-18.0,1,0,0,0
+2015.0,14,Sydney,Port Adelaide,tipresias_match,30.0,10.0,1,1,0,1
+2015.0,16,Sydney,Hawthorn,tipresias_match,2.0,-89.0,1,0,0,0
+2015.0,18,Sydney,Adelaide,tipresias_match,8.0,52.0,1,1,0,1
+2015.0,20,Sydney,Collingwood,tipresias_match,21.0,11.0,1,1,0,1
+2015.0,23,Sydney,Gold Coast,tipresias_match,52.0,63.0,1,1,0,1
+2016.0,1,Sydney,Collingwood,tipresias_match,13.0,80.0,1,1,0,1
+2016.0,3,Sydney,GWS,tipresias_match,24.0,25.0,1,1,0,1
+2016.0,5,Sydney,West Coast,tipresias_match,7.0,39.0,1,1,0,1
+2016.0,7,Sydney,Essendon,tipresias_match,44.0,81.0,1,1,0,1
+2016.0,10,Sydney,North Melbourne,tipresias_match,6.0,26.0,1,1,0,1
+2016.0,13,Sydney,Melbourne,tipresias_match,26.0,55.0,1,1,0,1
+2016.0,17,Sydney,Hawthorn,tipresias_match,12.0,-5.0,1,0,0,0
+2016.0,18,Sydney,Carlton,tipresias_match,42.0,6.0,1,1,0,1
+2016.0,20,Sydney,Port Adelaide,tipresias_match,25.0,67.0,1,1,0,1
+2016.0,23,Sydney,Richmond,tipresias_match,36.0,113.0,1,1,0,1
+2016.0,25,Sydney,Adelaide,tipresias_match,10.0,36.0,1,1,0,1
+2016.0,26,Sydney,Geelong,tipresias_match,6.0,37.0,1,1,0,1
+2011.0,1,West Coast,North Melbourne,tipresias_match,-18.0,4.0,0,1,0,0
+2011.0,3,West Coast,Sydney,tipresias_match,6.0,-13.0,1,0,0,0
+2011.0,6,West Coast,Melbourne,tipresias_match,-10.0,54.0,0,1,0,0
+2011.0,8,West Coast,Fremantle,tipresias_match,-10.0,33.0,0,1,0,0
+2011.0,9,West Coast,Footscray,tipresias_match,3.0,123.0,1,1,0,1
+2011.0,11,West Coast,Gold Coast,tipresias_match,26.0,18.0,1,1,0,1
+2011.0,13,West Coast,Port Adelaide,tipresias_match,30.0,22.0,1,1,0,1
+2011.0,16,West Coast,Geelong,tipresias_match,1.0,8.0,1,1,0,1
+2011.0,20,West Coast,Richmond,tipresias_match,40.0,57.0,1,1,0,1
+2011.0,22,West Coast,Essendon,tipresias_match,26.0,57.0,1,1,0,1
+2011.0,24,West Coast,Adelaide,tipresias_match,45.0,95.0,1,1,0,1
+2011.0,26,West Coast,Carlton,tipresias_match,14.0,3.0,1,1,0,1
+2012.0,2,West Coast,Melbourne,tipresias_match,36.0,108.0,1,1,0,1
+2012.0,4,West Coast,Hawthorn,tipresias_match,29.0,5.0,1,1,0,1
+2012.0,6,West Coast,North Melbourne,tipresias_match,27.0,25.0,1,1,0,1
+2012.0,8,West Coast,St Kilda,tipresias_match,24.0,30.0,1,1,0,1
+2012.0,9,West Coast,Fremantle,tipresias_match,32.0,48.0,1,1,0,1
+2012.0,12,West Coast,Carlton,tipresias_match,25.0,10.0,1,1,0,1
+2012.0,14,West Coast,Gold Coast,tipresias_match,63.0,126.0,1,1,0,1
+2012.0,16,West Coast,Sydney,tipresias_match,18.0,-52.0,1,0,0,0
+2012.0,18,West Coast,Brisbane Lions,tipresias_match,36.0,98.0,1,1,0,1
+2012.0,20,West Coast,Geelong,tipresias_match,6.0,5.0,1,1,0,1
+2012.0,22,West Coast,Collingwood,tipresias_match,14.0,49.0,1,1,0,1
+2012.0,24,West Coast,North Melbourne,tipresias_match,15.0,96.0,1,1,0,1
+2013.0,2,West Coast,Hawthorn,tipresias_match,24.0,-50.0,1,0,0,0
+2013.0,4,West Coast,Carlton,tipresias_match,46.0,-24.0,1,0,0,0
+2013.0,6,West Coast,Footscray,tipresias_match,29.0,70.0,1,1,0,1
+2013.0,8,West Coast,North Melbourne,tipresias_match,10.0,2.0,1,1,0,1
+2013.0,10,West Coast,Richmond,tipresias_match,22.0,-41.0,1,0,0,0
+2013.0,14,West Coast,Essendon,tipresias_match,7.0,-7.0,1,0,0,0
+2013.0,16,West Coast,Fremantle,tipresias_match,-14.0,-28.0,0,0,0,1
+2013.0,17,West Coast,Sydney,tipresias_match,-19.0,-34.0,0,0,0,1
+2013.0,19,West Coast,Gold Coast,tipresias_match,15.0,17.0,1,1,0,1
+2013.0,21,West Coast,Geelong,tipresias_match,-2.0,-66.0,0,0,0,1
+2013.0,23,West Coast,Adelaide,tipresias_match,0.0,-86.0,1,0,0,0
+2014.0,1,West Coast,Footscray,tipresias_match,8.0,65.0,1,1,0,1
+2014.0,3,West Coast,St Kilda,tipresias_match,22.0,25.0,1,1,0,1
+2014.0,5,West Coast,Port Adelaide,tipresias_match,-2.0,-14.0,0,0,0,1
+2014.0,7,West Coast,Fremantle,tipresias_match,-11.0,-19.0,0,0,0,1
+2014.0,8,West Coast,GWS,tipresias_match,28.0,111.0,1,1,0,1
+2014.0,11,West Coast,North Melbourne,tipresias_match,13.0,-38.0,1,0,0,0
+2014.0,13,West Coast,Gold Coast,tipresias_match,-3.0,3.0,0,1,0,0
+2014.0,16,West Coast,Sydney,tipresias_match,-11.0,-28.0,0,0,0,1
+2014.0,18,West Coast,Richmond,tipresias_match,9.0,-17.0,1,0,0,0
+2014.0,20,West Coast,Collingwood,tipresias_match,15.0,60.0,1,1,0,1
+2014.0,22,West Coast,Melbourne,tipresias_match,35.0,66.0,1,1,0,1
+2015.0,2,West Coast,Carlton,tipresias_match,17.0,69.0,1,1,0,1
+2015.0,3,West Coast,Fremantle,tipresias_match,-3.0,-30.0,0,0,0,1
+2015.0,5,West Coast,GWS,tipresias_match,18.0,87.0,1,1,0,1
+2015.0,7,West Coast,Gold Coast,tipresias_match,24.0,92.0,1,1,0,1
+2015.0,9,West Coast,Geelong,tipresias_match,25.0,56.0,1,1,0,1
+2015.0,11,West Coast,Essendon,tipresias_match,24.0,50.0,1,1,0,1
+2015.0,17,West Coast,Sydney,tipresias_match,19.0,52.0,1,1,0,1
+2015.0,19,West Coast,Hawthorn,tipresias_match,23.0,-14.0,1,0,0,0
+2015.0,21,West Coast,Footscray,tipresias_match,24.0,77.0,1,1,0,1
+2015.0,23,West Coast,St Kilda,tipresias_match,42.0,95.0,1,1,0,1
+2015.0,24,West Coast,Hawthorn,tipresias_match,16.0,32.0,1,1,0,1
+2015.0,26,West Coast,North Melbourne,tipresias_match,26.0,25.0,1,1,0,1
+2016.0,1,West Coast,Brisbane Lions,tipresias_match,31.0,64.0,1,1,0,1
+2016.0,3,West Coast,Fremantle,tipresias_match,4.0,33.0,1,1,0,1
+2016.0,4,West Coast,Richmond,tipresias_match,25.0,68.0,1,1,0,1
+2016.0,6,West Coast,Collingwood,tipresias_match,21.0,62.0,1,1,0,1
+2016.0,8,West Coast,St Kilda,tipresias_match,34.0,103.0,1,1,0,1
+2016.0,10,West Coast,Gold Coast,tipresias_match,49.0,77.0,1,1,0,1
+2016.0,12,West Coast,Adelaide,tipresias_match,4.0,-29.0,1,0,0,0
+2016.0,16,West Coast,North Melbourne,tipresias_match,17.0,32.0,1,1,0,1
+2016.0,18,West Coast,Melbourne,tipresias_match,27.0,6.0,1,1,0,1
+2016.0,22,West Coast,Hawthorn,tipresias_match,24.0,25.0,1,1,0,1

@@ -1,11 +1,10 @@
 import os
 import sys
 import math
-import pandas as pd
 from rpy2.robjects import packages, pandas2ri
 
-PROJECT_PATH = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '../../../')
+PROJECT_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../../')
 )
 
 if PROJECT_PATH not in sys.path:
@@ -218,13 +217,13 @@ def r_to_pandas(df):
 def add_last_week_goals(data_frame):
     last_week_goals = data_frame['goals'].groupby(level=0).shift()
 
-    return data_frame.assign(last_week_goals=last_week_goals).drop('goals', axis=1)
+    return data_frame.assign(last_week_goals=last_week_goals).drop(['goals', 'oppo_goals'], axis=1)
 
 
 def add_last_week_behinds(data_frame):
     last_week_behinds = data_frame['behinds'].groupby(level=0).shift()
 
-    return data_frame.assign(last_week_behinds=last_week_behinds).drop('behinds', axis=1)
+    return data_frame.assign(last_week_behinds=last_week_behinds).drop(['behinds', 'oppo_behinds'], axis=1)
 
 
 def add_out_of_state(data_frame):

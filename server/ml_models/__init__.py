@@ -1,1 +1,2 @@
-from .betting_lasso.betting_lasso import BettingLasso
+from .betting_lasso import BettingLasso
+from .match_xgb import MatchXGB

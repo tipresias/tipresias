@@ -1,25 +1,35 @@
-"""Module with wrapper class for Lasso model and its associated data class"""
+"""Module with wrapper class for XGBoost model and its associated data class"""
 
-from typing import List, Tuple, Optional, Union
+from typing import List, Tuple, Optional, Union, Sequence
 import os
 from functools import reduce
 import pandas as pd
 import numpy as np
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import Lasso
 from sklearn.externals import joblib
 from sklearn.base import BaseEstimator
+from xgboost import XGBRegressor
 
 from server.types import FeatureFunctionType
 from server.data_processors import (
-    DataConcatenator,
-    DataCleaner,
     TeamDataStacker,
     FeatureBuilder,
-    BettingDataReader,
-    MatchDataReader
 )
+from server.data_processors.feature_functions import (
+    add_last_week_result,
+    add_last_week_score,
+    add_cum_percent,
+    add_cum_win_points,
+    add_rolling_last_week_win_rate,
+    add_ladder_position,
+    add_win_streak,
+    add_out_of_state,
+    add_travel_distance,
+    add_last_week_goals,
+    add_last_week_behinds,
+)
+from server.data_processors.fitzroy_data_reader import fitzroy, r_to_pandas
 
 YearsType = Tuple[Optional[int], Optional[int]]
 
@@ -27,31 +37,53 @@ PROJECT_PATH: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../../')
 )
 
+
+COL_TRANSLATIONS = {
+    'home_points': 'home_score',
+    'away_points': 'away_score',
+    'margin': 'home_margin',
+    'season': 'year'
+}
+INDEX_COLS = ['team', 'year', 'round_number']
 REQUIRED_COLS: List[str] = ['year', 'score', 'oppo_score']
-DATA_TRANSFORMERS = [
-    DataConcatenator().transform,
-    DataCleaner().transform,
-    TeamDataStacker().transform,
-    FeatureBuilder().transform
+FEATURE_FUNCS: Sequence[FeatureFunctionType] = [
+    add_out_of_state,
+    add_travel_distance,
+    add_last_week_goals,
+    add_last_week_behinds,
+    add_last_week_result,
+    add_last_week_score,
+    add_cum_percent,
+    add_cum_win_points,
+    add_rolling_last_week_win_rate,
+    add_ladder_position,
+    add_win_streak
+]
+DATA_TRANSFORMERS: List[FeatureFunctionType] = [
+    TeamDataStacker(index_cols=INDEX_COLS).transform,
+    FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform
 ]
 
 np.random.seed(42)
 
 
-# TODO: This will need a refactor, but I'll wait to see what other ML model classes
-# look like before making decisions about data & dependencies
-class BettingLasso():
+class MatchXGB():
     """Create pipeline for for fitting/predicting with lasso model.
 
     Attributes:
         _pipeline (sklearn.pipeline.Pipeline): Scikit Learn pipeline
             with transformers & Lasso estimator.
-        name (string): Name of final estimator in the pipeline ('Lasso').
+        name (string): Name of final estimator in the pipeline ('XGBoost').
     """
 
     def __init__(self) -> None:
-        self._pipeline: Pipeline = make_pipeline(StandardScaler(), Lasso())
-        self.name = self.__name()
+        self._pipeline: Pipeline = make_pipeline(
+            StandardScaler(), XGBRegressor()
+        )
+
+    @property
+    def name(self) -> str:
+        return self.__last_estimator()[0]
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
         """Fit estimator to the data.
@@ -81,8 +113,8 @@ class BettingLasso():
         return pd.Series(y_pred, name='predicted_margin', index=X.index)
 
     def save(self,
-             filepath: str = (f'{PROJECT_PATH}/server/ml_models/betting_lasso/'
-                              'betting_lasso_model.pkl')) -> None:
+             filepath: str = (f'{PROJECT_PATH}/server/ml_models/match_xgb/'
+                              'match_xgb_model.pkl')) -> None:
         """Save the pipeline as a pickle file.
 
         Args:
@@ -95,8 +127,8 @@ class BettingLasso():
         joblib.dump(self._pipeline, filepath)
 
     def load(self,
-             filepath: str = (f'{PROJECT_PATH}/server/ml_models/betting_lasso/'
-                              'betting_lasso_model.pkl')) -> None:
+             filepath: str = (f'{PROJECT_PATH}/server/ml_models/match_xgb/'
+                              'match_xgb_model.pkl')) -> None:
         """Load the pipeline from a pickle file.
 
         Args:
@@ -108,15 +140,12 @@ class BettingLasso():
 
         self._pipeline = joblib.load(filepath)
 
-    def __name(self) -> str:
-        return self.__last_estimator()[0]
-
     def __last_estimator(self) -> Tuple[str, BaseEstimator]:
         return self._pipeline.steps[-1]
 
 
-class BettingLassoData():
-    """Load and clean data for the BettingLasso pipeline.
+class MatchXGBData():
+    """Load and clean data for the XGB pipeline.
 
     Args:
         data_transformers (list[callable]): Functions that receive, transform,
@@ -147,10 +176,16 @@ class BettingLassoData():
             self.__compose_two, reversed(data_transformers), lambda x: x
         )
 
-        self.data = (compose_all([BettingDataReader().transform(),
-                                  MatchDataReader().transform()])
-                     .dropna()
-                     )
+        data_frame = (r_to_pandas(fitzroy().get_match_results())
+                      .rename(columns=COL_TRANSLATIONS)
+                      .drop(['round', 'game', 'date'], axis=1))
+
+        # There was some sort of round-robin finals round in 1897 and figuring out
+        # a way to clean it up that makes sense is more trouble than just dropping a few rows
+        data_frame = data_frame[(data_frame['year'] != 1897) &
+                                (data_frame['round_number'] != 15)]
+
+        self.data = compose_all(data_frame).drop('venue', axis=1).dropna()
 
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data.

@@ -21,7 +21,7 @@ services:
       - NODE_ENV=development
     depends_on:
       - server
-    command: yarn start
+    command: yarn build && yarn start
   notebook:
     image: tipresias_server:latest
     volumes:

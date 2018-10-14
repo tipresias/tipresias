@@ -4,14 +4,14 @@ FROM python:3
 # Install R to use rpy2 for access to R packages
 RUN apt-get update && apt-get -y install r-base
 
-# Install dependencies
-COPY requirements.txt /app/
 WORKDIR /app/
 
-RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
-
+# Install dependencies
 COPY requirements.r /app/
 RUN Rscript requirements.r
+
+COPY requirements.txt /app/
+RUN pip3 install --upgrade pip --trusted-host pypi.python.org -r requirements.txt
 
 # Add the rest of the code
 COPY . /app/

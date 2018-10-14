@@ -1,4 +1,4 @@
-# Use an official Python runtime as a parent image
+# Use an official node runtime as a parent image
 FROM node:8
 
 # Install dependencies
@@ -14,4 +14,4 @@ EXPOSE 3000
 
 # Since backend serves the assets in production, it depends on build/ in development as well,
 # so we need to make sure build/index.html exists in all environments
-RUN yarn run build
+CMD yarn run build

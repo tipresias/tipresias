@@ -19,7 +19,7 @@ STATS_COLS = ['player_id', 'kicks', 'marks', 'handballs', 'goals', 'behinds', 'h
               'one_percenters', 'bounces', 'goal_assists', 'time_on_ground']
 MATCH_COLS = ['year', 'home_team', 'home_score', 'away_team', 'away_score',
               'round_number', 'match_id']
-MATCH_STATS_COLS = ['at_home', 'match_id', 'score', 'oppo_score']
+MATCH_STATS_COLS = ['at_home', 'score', 'oppo_score']
 
 
 def id_col(df):

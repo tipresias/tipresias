@@ -26,11 +26,11 @@ def id_col(df):
     return df['player_id'].astype(str) + df['match_id'].astype(str) + df['year'].astype(str)
 
 
-def player_data(aggregate=True):
+def player_data(start_date='1965-01-01', end_date='2016-12-31', aggregate=True):
     # Player data matches have weird round labelling system (lots of strings for finals matches),
     # so using round numbers from match_results
     match_df = r_to_pandas(r('fitzRoy::match_results'))
-    player_df = (r_to_pandas(fitzroy().get_afltables_stats(start_date='1965-01-01', end_date='2016-12-31'))
+    player_df = (r_to_pandas(fitzroy().get_afltables_stats(start_date=start_date, end_date=end_date))
                  # Some player data venues have trailing spaces
                  .assign(venue=lambda x: x['venue'].str.strip())
                  # Player data match IDs are wrong for recent years.
@@ -73,8 +73,10 @@ def player_data(aggregate=True):
 
     rolling_stats = player_groups.rolling(window=23).mean()
     expanding_stats = player_groups.expanding(1).mean()
-    expanding_rolling_stats = rolling_stats.fillna(
-        expanding_stats).sort_index()
+    expanding_rolling_stats = (rolling_stats
+                               .fillna(expanding_stats)
+                               .drop('player_id', axis=1)
+                               .sort_index())
 
     brownlow_last_year = (player_df[['player_id', 'year', 'brownlow_votes']]
                           .groupby(['player_id', 'year'], group_keys=True)
@@ -110,7 +112,7 @@ def player_data(aggregate=True):
                 .concat([home_stats[home_stats.columns.sort_values()],
                          away_stats[away_stats.columns.sort_values()]],
                         sort=True)
-                .drop(['player_id', 'player_name', 'match_id'], axis=1))
+                .drop(['player_name', 'match_id'], axis=1))
 
     # Filter out player_id & add brownlow stats
     player_aggs = {

@@ -5,33 +5,39 @@ import './App.css';
 import BarChart from './components/BarChart';
 
 class App extends Component {
-  state = { 
+  state = {
     isLoading: true,
     year: 2011,
-    years: [2011, 2012, 2013, 2014]
+    years: [2011, 2012, 2013, 2014],
   };
 
   componentDidMount() {
-    axios.get(`/predictions`)
-      .then( response => {
-        this.setState({ 
+    axios.get('/predictions')
+      .then((response) => {
+        this.setState({
           games: response.data.data,
           isLoading: false,
         });
       });
   }
-  
+
   updateYear = (event) => {
-    this.setState({year: event.target.value})
+    this.setState({ year: event.target.value });
   }
 
   render() {
-    const isLoading = this.state.isLoading;
+    const {
+      isLoading,
+      games,
+      year,
+      years,
+    } = this.state;
+
     let contentComponent;
     if (isLoading) {
       contentComponent = <div>Loading content!...</div>;
     } else {
-      contentComponent = <BarChart data = { this.state.games } />
+      contentComponent = <BarChart year={year} data={games} />;
     }
     return (
       <div className="App">
@@ -40,19 +46,18 @@ class App extends Component {
           <h1 className="App-title">Welcome to Tipresias</h1>
         </header>
         <div>
-        <p className="App-intro">
-          Peace among worlds!
-        </p>
-        <select value = { this.state.year } name = "year" onChange = { this.updateYear }>
-          { 
-            this.state.years.map(item => (
-            <option key = { item } value = { item }>
-              { item }
-            </option>)
-            )
-          }
-        </select>
-        { contentComponent }         
+          <p className="App-intro">
+            Peace among worlds!
+          </p>
+          <select value={year} name="year" onChange={this.updateYear}>
+            {
+              years.map(item => (
+                <option key={item} value={item}>
+                  {item}
+                </option>))
+            }
+          </select>
+          {contentComponent}
         </div>
       </div>
     );

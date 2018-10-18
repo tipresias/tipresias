@@ -30,7 +30,8 @@ def player_data(start_date='1965-01-01', end_date='2016-12-31', aggregate=True):
     # Player data matches have weird round labelling system (lots of strings for finals matches),
     # so using round numbers from match_results
     match_df = r_to_pandas(r('fitzRoy::match_results'))
-    player_df = (r_to_pandas(fitzroy().get_afltables_stats(start_date=start_date, end_date=end_date))
+    player_df = (r_to_pandas(fitzroy().get_afltables_stats(start_date=start_date,
+                                                           end_date=end_date))
                  # Some player data venues have trailing spaces
                  .assign(venue=lambda x: x['venue'].str.strip())
                  # Player data match IDs are wrong for recent years.
@@ -114,7 +115,6 @@ def player_data(start_date='1965-01-01', end_date='2016-12-31', aggregate=True):
                         sort=True)
                 .drop(['player_name', 'match_id'], axis=1))
 
-    # Filter out player_id & add brownlow stats
     player_aggs = {
         col: 'sum' for col in STATS_COLS[1:] + ['last_year_brownlow_votes']}
     # Since match stats are the same across player rows, taking the mean

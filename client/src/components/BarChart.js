@@ -10,20 +10,19 @@ class BarChart extends Component {
   componentDidMount() {
     const { data, year } = this.props;
     const height = 400;
-    const width = 650;
+    const width = 800;
 
     // 1. map to x position from round to screen pixels
-    const xExtent = d3.extent(data, d => d.round_number);
+    const [xMin, xMax] = d3.extent(data, d => d.round_number);
     const xScale = d3.scaleLinear()
-      .domain(xExtent)
+      .domain([xMin, xMax + 1])
       .range([0, width]);
+    console.log('>>>', xScale(28));
 
     // get the ccumulative tip points
     // select data for selected year
     // const filteredData = data.filter(item => item.year === year && item.model === 'oddsmakers');
     const filteredDataByYear = data.filter(item => item.year === year);
-    // console.log(filteredDataByYear);
-
 
     const ROUND_MIN = 1;
     const ROUND_MAX = 28;
@@ -49,7 +48,6 @@ class BarChart extends Component {
       }
     });
     // calculate cumulative values:
-    // console.log(collection);
     const totals = models.map((model) => {
       const collectionFilteredByModel = collection.filter(item => item.model === model);
       const total = collectionFilteredByModel.reduce((acc, currentItem) => {
@@ -70,31 +68,37 @@ class BarChart extends Component {
     const colorScale = d3.scaleSequential(d3.interpolateSpectral)
       .domain([0, max]);
 
+
     const bars = collection.map((d) => {
       let strokeColor;
+      let x;
+
       if (d.model === 'oddsmakers') {
-        strokeColor = 'red';
+        strokeColor = 'pink';
+        x = xScale(d.round_number);
       }
       if (d.model === 'tipresias_betting') {
-        strokeColor = 'blue';
+        strokeColor = 'lightblue';
+        x = xScale(d.round_number) + 10;
       }
       if (d.model === 'tipresias_match') {
-        strokeColor = 'yellow';
+        strokeColor = 'coral';
+        x = xScale(d.round_number) + 20;
       }
 
       const y = yScale(d.cumulativeTipPoint);
       const h = yScale(0) - yScale(d.cumulativeTipPoint);
 
       return ({
-        key: d.round_number + d.model,
+        key: `${d.model}-${d.round_number}`,
         round: d.round_number,
-        x: xScale(d.round_number),
+        x,
         y,
         height: h,
-        width: 10,
-        fill: colorScale(d.cumulativeTipPoint),
+        width: 6,
+        fill: strokeColor,
         stroke: strokeColor,
-        strokeWidth: 3,
+        strokeWidth: 1,
       });
     });
 
@@ -116,7 +120,7 @@ class BarChart extends Component {
         </p>
         {
           !calculating && (
-            <svg width="650" height="400" style={{ border: '1px solid black' }}>
+            <svg width="800" height="400" style={{ border: '1px solid black' }}>
               {
                 bars.map(item => (<rect
                   key={item.key}

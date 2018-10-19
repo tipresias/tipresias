@@ -60,29 +60,26 @@ class BarChart extends Component {
     console.log(totals);
 
     const [min, max] = d3.extent(collection, d => d.cumulativeTipPoint);
-
     const yScale = d3.scaleLinear()
       .domain([0, max])
       .range([height, 0]);
 
-    const colorScale = d3.scaleSequential(d3.interpolateSpectral)
-      .domain([0, max]);
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
+    for (let i = ROUND_MIN; i <= ROUND_MAX; i += 1) {
+      console.log(i);
+    }
 
     const bars = collection.map((d) => {
-      let strokeColor;
       let x;
 
       if (d.model === 'oddsmakers') {
-        strokeColor = 'pink';
         x = xScale(d.round_number);
       }
       if (d.model === 'tipresias_betting') {
-        strokeColor = 'lightblue';
         x = xScale(d.round_number) + 10;
       }
       if (d.model === 'tipresias_match') {
-        strokeColor = 'coral';
         x = xScale(d.round_number) + 20;
       }
 
@@ -96,9 +93,7 @@ class BarChart extends Component {
         y,
         height: h,
         width: 6,
-        fill: strokeColor,
-        stroke: strokeColor,
-        strokeWidth: 1,
+        fill: colorScale(d.model),
       });
     });
 

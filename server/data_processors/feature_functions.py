@@ -441,7 +441,7 @@ def add_last_week_behinds(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add the number of behinds a team scored in their previous match."""
 
     if any([req_col not in data_frame.columns for req_col in ['behinds', 'oppo_behinds']]):
-        raise ValueError("To calculate last week's behinds, 'behinds' and 'oppo_behinds' "
+        raise ValueError("To calculate last week's behinds, 'behinds' "
                          'must be in the data frame, but the columns given were '
                          f'{data_frame.columns}')
 
@@ -508,3 +508,70 @@ def add_travel_distance(data_frame: pd.DataFrame) -> pd.DataFrame:
     return data_frame.assign(travel_distance=[
         _haversine_formula(*lats_longs) for lats_longs in zip(venue_lat_long, team_lat_long)
     ])
+
+
+def add_last_year_brownlow_votes(data_frame: pd.DataFrame):
+    """Add column for a player's total brownlow votes from the previous season"""
+
+    REQUIRED_COLS = ['player_id', 'year', 'brownlow_votes']
+
+    if any([req_col not in data_frame.columns for req_col in REQUIRED_COLS]):
+        raise ValueError(f'To calculate yearly brownlow votes, the columns {REQUIRED_COLS} '
+                         'must be in the data frame, but the columns given were '
+                         f'{data_frame.columns}')
+
+    brownlow_last_year = (data_frame[['player_id', 'year', 'brownlow_votes']]
+                          .groupby(['player_id', 'year'], group_keys=True)
+                          .sum()
+                          # Grouping by player to shift by year
+                          .groupby(level=0)
+                          .shift()
+                          .fillna(0)
+                          .rename(columns={'brownlow_votes': 'last_year_brownlow_votes'}))
+    return (data_frame
+            .drop('brownlow_votes', axis=1)
+            .merge(brownlow_last_year, on=['player_id', 'year'], how='left')
+            .set_index(data_frame.index))
+
+
+def add_rolling_player_stats(data_frame: pd.DataFrame):
+    """Replace players' invidual match stats with rolling averages of those stats"""
+
+    STATS_COLS = ['player_id', 'kicks', 'marks', 'handballs', 'goals', 'behinds',
+                  'hit_outs', 'tackles', 'rebounds', 'inside_50s', 'clearances',
+                  'clangers', 'frees_for', 'frees_against', 'contested_possessions',
+                  'uncontested_possessions', 'contested_marks', 'marks_inside_50',
+                  'one_percenters', 'bounces', 'goal_assists', 'time_on_ground']
+    rolling_stats_cols = {
+        stats_col: f'rolling_{stats_col}' for stats_col in STATS_COLS if stats_col != 'player_id'
+    }
+
+    if any([req_col not in data_frame.columns for req_col in STATS_COLS]):
+        raise ValueError('To calculate rolling player stats, the stats columns '
+                         f'{STATS_COLS} must be in the data frame, but the columns'
+                         f'given were {list(data_frame.columns)}')
+
+    player_groups = (data_frame[STATS_COLS]
+                     .groupby('player_id', group_keys=False))
+
+    rolling_stats = player_groups.rolling(window=23).mean()
+    expanding_stats = player_groups.expanding(1).mean()
+    player_stats = (rolling_stats
+                    .fillna(expanding_stats)
+                    .drop('player_id', axis=1)
+                    .sort_index())
+
+    return (data_frame
+            .assign(**player_stats.to_dict('series'))
+            .rename(columns=rolling_stats_cols))
+
+
+def add_cum_matches_played(data_frame: pd.DataFrame):
+    """Add cumulative number of matches each player has played"""
+
+    if 'player_id' not in data_frame.columns:
+        raise ValueError("To calculate cum_matches_played, 'player_id' must be "
+                         'in the data frame, but the columns given were '
+                         f'{list(data_frame.columns)}')
+
+    return data_frame.assign(cum_matches_played=data_frame.groupby('player_id').cumcount())

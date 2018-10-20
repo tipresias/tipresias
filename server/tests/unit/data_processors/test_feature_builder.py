@@ -44,28 +44,13 @@ class TestFeatureBuilder(TestCase):
 
             transformed_df = self.builder.transform(data_frame)
 
-            # FeatureBuilder adds 2 columns per function: 1 per the function
-            # and 1 opposition version of that column
-            self.assertEqual(len(data_frame.columns) + 4,
+            # FeatureBuilder adds 1 column per function
+            self.assertEqual(len(data_frame.columns) + 2,
                              len(transformed_df.columns))
 
             # Should add the two new columns and their 'oppo_' equivalents
             self.assertIn('new_col', transformed_df.columns)
             self.assertIn('newer_col', transformed_df.columns)
-            self.assertIn('oppo_new_col', transformed_df.columns)
-            self.assertIn('oppo_newer_col', transformed_df.columns)
-
-            # Columns & their 'oppo_' equivalents should have the same values
-            self.assertEqual(
-                len(np.setdiff1d(transformed_df['new_col'],
-                                 transformed_df['oppo_new_col'])),
-                0
-            )
-            self.assertEqual(
-                len(np.setdiff1d(transformed_df['newer_col'],
-                                 transformed_df['oppo_newer_col'])),
-                0
-            )
 
         for required_col in REQUIRED_COLS:
             with self.subTest(data_frame=valid_data_frame.drop(required_col, axis=1)):

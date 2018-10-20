@@ -20,7 +20,7 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ```
 notebook_1  | [I 03:01:38.909 NotebookApp] The Jupyter Notebook is running at:
-notebook_1  | [I 03:01:38.909 NotebookApp] http://(ea7b71b85805 or 127.0.0.1):8888/?token=**dhf7674ururrtuuf8968lhhjdrfjghicty57t69t85e6dhfj**
+notebook_1  | [I 03:01:38.909 NotebookApp] http://(ea7b71b85805 or 127.0.0.1):8888/?token=dhf7674ururrtuuf8968lhhjdrfjghicty57t69t85e6dhfj
 notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
 ```
 

@@ -1,6 +1,6 @@
 """Module with wrapper class for XGBoost model and its associated data class"""
 
-from typing import List, Tuple, Optional, Union, Sequence
+from typing import List, Tuple, Optional, Union, Sequence, Callable
 import os
 from functools import reduce
 import pandas as pd
@@ -10,19 +10,20 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.externals import joblib
 from sklearn.base import BaseEstimator
 from xgboost import XGBRegressor
-from rpy2.robjects import r
 
 from server.types import FeatureFunctionType
 from server.data_processors import (
     FeatureBuilder,
-    PlayerDataStacker
+    PlayerDataStacker,
+    PlayerDataAggregator,
+    OppoFeatureBuilder
 )
 from server.data_processors.feature_functions import (
     add_last_year_brownlow_votes,
     add_rolling_player_stats,
     add_cum_matches_played
 )
-from server.data_processors.fitzroy_data_reader import fitzroy, r_to_pandas
+from server.data_processors import FitzroyDataReader
 
 YearsType = Tuple[Optional[int], Optional[int]]
 
@@ -31,6 +32,8 @@ PROJECT_PATH: str = os.path.abspath(
 )
 
 
+MATCH_STATS_COLS = ['at_home', 'score', 'oppo_score', 'team', 'oppo_team', 'year',
+                    'round_number']
 COL_TRANSLATIONS = {
     'season': 'year',
     'time_on_ground__': 'time_on_ground',
@@ -43,8 +46,19 @@ FEATURE_FUNCS: Sequence[FeatureFunctionType] = [
     add_cum_matches_played
 ]
 DATA_TRANSFORMERS: List[FeatureFunctionType] = [
-    FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform,
-    PlayerDataStacker().transform
+    PlayerDataStacker().transform,
+    FeatureBuilder(
+        feature_funcs=FEATURE_FUNCS,
+        index_cols=['team', 'year', 'round_number', 'player_id']
+    ).transform,
+    PlayerDataAggregator().transform,
+    OppoFeatureBuilder(match_cols=MATCH_STATS_COLS).transform
+]
+
+fitzroy = FitzroyDataReader()
+DATA_READERS: List[Callable] = [
+    fitzroy.get_afltables_stats,
+    fitzroy.match_results
 ]
 
 np.random.seed(42)
@@ -61,7 +75,8 @@ class PlayerXGB():
 
     def __init__(self) -> None:
         self._pipeline: Pipeline = make_pipeline(
-            StandardScaler(), XGBRegressor()
+            StandardScaler(),
+            XGBRegressor()
         )
 
     @property
@@ -96,8 +111,8 @@ class PlayerXGB():
         return pd.Series(y_pred, name='predicted_margin', index=X.index)
 
     def save(self,
-             filepath: str = (f'{PROJECT_PATH}/server/ml_models/match_xgb/'
-                              'match_xgb_model.pkl')) -> None:
+             filepath: str = (f'{PROJECT_PATH}/server/ml_models/player_xgb/'
+                              'player_xgb_model.pkl')) -> None:
         """Save the pipeline as a pickle file.
 
         Args:
@@ -147,6 +162,7 @@ class PlayerXGBData():
     """
 
     def __init__(self,
+                 data_readers: List[Callable] = DATA_READERS,
                  data_transformers: List[FeatureFunctionType] = DATA_TRANSFORMERS,
                  train_years: YearsType = (None, 2015),
                  test_years: YearsType = (2016, 2016),
@@ -161,21 +177,13 @@ class PlayerXGBData():
             self.__compose_two, reversed(data_transformers), lambda x: x
         )
 
-        # Player data matches have weird round labelling system (lots of strings
-        # for finals matches), so using round numbers from match_results
-        match_data_frame = r_to_pandas(r('fitzRoy::match_results'))
-        player_data_frame = (
-            r_to_pandas(fitzroy().get_afltables_stats(
-                start_date=start_date, end_date=end_date
-            ))
-        )
-        data_frame = (player_data_frame
+        data_frame = (data_readers[0](start_date=start_date, end_date=end_date)
                       # Some player data venues have trailing spaces
                       .assign(venue=lambda x: x['venue'].str.strip())
                       # Player data match IDs are wrong for recent years.
                       # The easiest way to add correct ones is to graft on the IDs
                       # from match_results. Also, match_results round_numbers are more useful.
-                      .merge(match_data_frame[['date', 'venue', 'round_number', 'game']],
+                      .merge(data_readers[1]()[['date', 'venue', 'round_number', 'game']],
                              on=['date', 'venue'],
                              how='left')
                       # As of 11-10-2018, match_results is still missing finals data from 2018.

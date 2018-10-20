@@ -1,6 +1,6 @@
 """Module with wrapper class for XGBoost model and its associated data class"""
 
-from typing import List, Tuple, Optional, Union, Sequence
+from typing import List, Tuple, Optional, Union, Sequence, Callable
 import os
 from functools import reduce
 import pandas as pd
@@ -15,6 +15,7 @@ from server.types import FeatureFunctionType
 from server.data_processors import (
     TeamDataStacker,
     FeatureBuilder,
+    OppoFeatureBuilder
 )
 from server.data_processors.feature_functions import (
     add_last_week_result,
@@ -29,7 +30,7 @@ from server.data_processors.feature_functions import (
     add_last_week_goals,
     add_last_week_behinds,
 )
-from server.data_processors.fitzroy_data_reader import fitzroy, r_to_pandas
+from server.data_processors import FitzroyDataReader
 
 YearsType = Tuple[Optional[int], Optional[int]]
 
@@ -53,16 +54,23 @@ FEATURE_FUNCS: Sequence[FeatureFunctionType] = [
     add_last_week_behinds,
     add_last_week_result,
     add_last_week_score,
-    add_cum_percent,
     add_cum_win_points,
     add_rolling_last_week_win_rate,
-    add_ladder_position,
     add_win_streak
 ]
 DATA_TRANSFORMERS: List[FeatureFunctionType] = [
     TeamDataStacker(index_cols=INDEX_COLS).transform,
-    FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform
+    FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform,
+    OppoFeatureBuilder(
+        match_cols=['team', 'year', 'round_number', 'score', 'oppo_score',
+                    'out_of_state', 'at_home', 'oppo_team', 'venue', 'round_type']
+    ).transform,
+    # Features dependent on oppo columns
+    FeatureBuilder(
+        feature_funcs=[add_cum_percent, add_ladder_position]
+    ).transform
 ]
+DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
 
 np.random.seed(42)
 
@@ -164,6 +172,7 @@ class MatchXGBData():
     """
 
     def __init__(self,
+                 data_readers: List[Callable] = DATA_READERS,
                  data_transformers: List[FeatureFunctionType] = DATA_TRANSFORMERS,
                  train_years: YearsType = (None, 2015),
                  test_years: YearsType = (2016, 2016)) -> None:
@@ -176,7 +185,7 @@ class MatchXGBData():
             self.__compose_two, reversed(data_transformers), lambda x: x
         )
 
-        data_frame = (r_to_pandas(fitzroy().get_match_results())
+        data_frame = (data_readers[0]()
                       .rename(columns=COL_TRANSLATIONS)
                       .drop(['round', 'game', 'date'], axis=1))
 

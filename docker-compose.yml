@@ -15,13 +15,15 @@ services:
     build: ./client
     volumes:
       - ./client:/app
+      - /app/node_modules
+      - /app/build
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
     depends_on:
       - server
-    command: yarn build && yarn start
+    command: yarn start
   notebook:
     image: tipresias_server:latest
     volumes:

@@ -2,8 +2,9 @@
 numpy
 pandas
 scikit-learn==0.20.0
+tensorflow==1.11.0
 scipy
-xgboost
+xgboost==0.80
 jupyter
 ipykernel<5.0.0 # Necessary for a Jupyter bug (as of 30-9-18): https://github.com/jupyter/notebook/issues/4050
 rpy2

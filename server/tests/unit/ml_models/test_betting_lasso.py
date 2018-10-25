@@ -47,7 +47,8 @@ class TestBettingLassoData(TestCase):
             'score': np.random.randint(50, 150, 10),
             'oppo_score': np.random.randint(50, 150, 10)
         })
-        self.data = BettingLassoData()
+        self.data = BettingLassoData(train_years=(2015, 2015),
+                                     test_years=(2016, 2016))
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()

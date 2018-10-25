@@ -1,12 +1,13 @@
 import os
 import sys
 from unittest import TestCase
+from unittest.mock import Mock
 import pandas as pd
 import numpy as np
 from faker import Faker
 
 PROJECT_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../')
+    os.path.join(os.path.dirname(__file__), '../../../../')
 )
 
 if PROJECT_PATH not in sys.path:
@@ -14,8 +15,18 @@ if PROJECT_PATH not in sys.path:
 
 from server.ml_models import PlayerXGB
 from server.ml_models.player_xgb import PlayerXGBData
+from server.data_processors import FitzroyDataReader
 
 FAKE = Faker()
+
+get_afltables_stats_df = pd.read_csv(
+    f'{PROJECT_PATH}/server/tests/fixtures/fitzroy_get_afltables_stats.csv'
+)
+match_results_df = pd.read_csv(
+    f'{PROJECT_PATH}/server/tests/fixtures/fitzroy_match_results.csv'
+)
+get_afltables_stats_mock = Mock(return_value=get_afltables_stats_df)
+match_results_mock = Mock(return_value=match_results_df)
 
 
 class TestPlayerXGB(TestCase):
@@ -42,7 +53,8 @@ class TestPlayerXGB(TestCase):
 
 class TestPlayerXGBData(TestCase):
     def setUp(self):
-        self.data = PlayerXGBData(start_date='2015-01-01')
+        self.data = PlayerXGBData(data_readers=[get_afltables_stats_mock,
+                                                match_results_mock])
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()

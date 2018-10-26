@@ -1,23 +1,37 @@
 import React, { Component } from 'react';
 import * as d3 from 'd3';
 
+const height = 400;
+const width = 800;
+const margin = {
+  top: 20,
+  right: 5,
+  bottom: 20,
+  left: 35,
+};
+
 class BarChart extends Component {
   state = {
     bars: [],
     calculating: true,
   }
 
+  xAxisRef = React.createRef();
+
+  yAxisRef = React.createRef();
+
+  xAxis = d3.axisBottom().tickFormat(d => d);
+
+  yAxis = d3.axisLeft().tickFormat(d => d);
+
   componentDidMount() {
     const { data, year } = this.props;
-    const height = 400;
-    const width = 800;
 
     // 1. map to x position from round to screen pixels
     const [xMin, xMax] = d3.extent(data, d => d.round_number);
     const xScale = d3.scaleLinear()
       .domain([xMin, xMax + 1])
-      .range([0, width]);
-    console.log('>>>', xScale(28));
+      .range([margin.left, width - margin.right]);
 
     // get the ccumulative tip points
     // select data for selected year
@@ -62,7 +76,7 @@ class BarChart extends Component {
     const [min, max] = d3.extent(collection, d => d.cumulativeTipPoint);
     const yScale = d3.scaleLinear()
       .domain([0, max])
-      .range([height, 0]);
+      .range([height - margin.bottom, margin.top]);
 
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -99,14 +113,30 @@ class BarChart extends Component {
 
     this.setState({
       bars,
+      xScale,
+      yScale,
       calculating: false,
     });
   }
 
+  componentDidUpdate() {
+    const { xScale, yScale } = this.state;
+    this.xAxis.scale(xScale);
+    d3.select(this.xAxisRef.current).call(this.xAxis);
+    this.yAxis.scale(yScale);
+    d3.select(this.yAxisRef.current).call(this.yAxis);
+  }
+
   render() {
-    const { bars, calculating } = this.state;
+    const {
+      bars,
+      calculating,
+    } = this.state;
+
     const { year } = this.props;
 
+    const xAxisTranslate = `translate(0, ${height - margin.bottom})`;
+    const yAxisTranslate = `translate(${margin.left},0)`;
     return (
       <div>
         <p>
@@ -129,6 +159,8 @@ class BarChart extends Component {
                 />
                 ))
               }
+              <g ref={this.xAxisRef} transform={xAxisTranslate} />
+              <g ref={this.yAxisRef} transform={yAxisTranslate} />
             </svg>)
         }
       </div>

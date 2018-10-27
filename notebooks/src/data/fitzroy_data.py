@@ -275,7 +275,7 @@ def fr_match_data():
                   #   .assign(date=lambda x: pd.to_datetime(x['date'], unit='D'))
                   .drop(['round', 'game', 'date'], axis=1))
 
-    data_frame = data_frame[((data_frame['year'] != 1897) &
+    data_frame = data_frame[((data_frame['year'] != 1897) |
                              (data_frame['round_number'] != 15)) &
                             (data_frame['year'] <= 2016)]
 

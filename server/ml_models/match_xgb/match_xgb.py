@@ -191,7 +191,7 @@ class MatchXGBData():
 
         # There was some sort of round-robin finals round in 1897 and figuring out
         # a way to clean it up that makes sense is more trouble than just dropping a few rows
-        data_frame = data_frame[(data_frame['year'] != 1897) &
+        data_frame = data_frame[(data_frame['year'] != 1897) |
                                 (data_frame['round_number'] != 15)]
 
         self.data = compose_all(data_frame).drop('venue', axis=1).dropna()

@@ -66,8 +66,8 @@ def player_data(start_date='1965-01-01', end_date='2016-12-31', aggregate=True):
                  .sort_index())
     # There were some weird round-robin rounds in the early days, and it's easier to
     # drop them rather than figure out how to split up the rounds.
-    player_df = player_df[((player_df['year'] != 1897) & (player_df['round_number'] != 15)) &
-                          ((player_df['year'] != 1924) & (player_df['round_number'] != 19))]
+    player_df = player_df[((player_df['year'] != 1897) | (player_df['round_number'] != 15)) &
+                          ((player_df['year'] != 1924) | (player_df['round_number'] != 19))]
 
     player_groups = player_df[STATS_COLS].groupby(
         'player_id', group_keys=False)

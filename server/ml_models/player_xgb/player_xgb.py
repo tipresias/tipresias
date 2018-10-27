@@ -219,8 +219,8 @@ class PlayerXGBData():
         # There were some weird round-robin rounds in the early days, and it's easier to
         # drop them rather than figure out how to split up the rounds.
         data_frame = data_frame[
-            ((data_frame['year'] != 1897) & (data_frame['round_number'] != 15)) &
-            ((data_frame['year'] != 1924) & (data_frame['round_number'] != 19)) &
+            ((data_frame['year'] != 1897) | (data_frame['round_number'] != 15)) &
+            ((data_frame['year'] != 1924) | (data_frame['round_number'] != 19)) &
             (~data_frame['match_id'].isin(duplicate_matches))
         ]
 

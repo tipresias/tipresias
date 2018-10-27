@@ -208,11 +208,20 @@ class PlayerXGBData():
                       .set_index('id')
                       .sort_index())
 
+        # Drawn finals get replayed, which screws up my indexing and a bunch of other
+        # data munging, so getting match_ids for the repeat matches, and filtering
+        # them out of the data frame
+        duplicate_matches = (data_frame
+                             [data_frame.duplicated(subset=['year', 'round_number', 'player_id'],
+                                                    keep='last')]
+                             ['match_id'])
+
         # There were some weird round-robin rounds in the early days, and it's easier to
         # drop them rather than figure out how to split up the rounds.
         data_frame = data_frame[
             ((data_frame['year'] != 1897) & (data_frame['round_number'] != 15)) &
-            ((data_frame['year'] != 1924) & (data_frame['round_number'] != 19))
+            ((data_frame['year'] != 1924) & (data_frame['round_number'] != 19)) &
+            (~data_frame['match_id'].isin(duplicate_matches))
         ]
 
         self.data = compose_all(data_frame)

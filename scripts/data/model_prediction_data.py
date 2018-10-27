@@ -53,7 +53,7 @@ def tipresias_player_predictions() -> pd.DataFrame:
     return (home_df.loc[:, ['year', 'round_number', 'team', 'oppo_team']]
             .rename(columns={'team': 'home_team', 'oppo_team': 'away_team'})
             .assign(model='tipresias_player',
-                    predicted_home_margin=(home_df['predicted_margin']
+                        predicted_home_margin=(home_df['predicted_margin']
                                            .round()),
                     home_margin=home_df['score'] - home_df['oppo_score'],
                     predicted_home_win=((home_df['predicted_margin'] > 0)

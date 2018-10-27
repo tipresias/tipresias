@@ -10,6 +10,8 @@ ipykernel<5.0.0 # Necessary for a Jupyter bug (as of 30-9-18): https://github.co
 rpy2
 tzlocal
 dask[complete]
+mlxtend
+category_encoders
 
 # Data vis packages
 seaborn

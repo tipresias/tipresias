@@ -1,4 +1,4 @@
-"""Module with wrapper class for XGBoost model and its associated data class"""
+"""Module with wrapper class for Ridge model and its associated data class"""
 
 from typing import List, Tuple, Optional, Union, Sequence, Callable
 import os
@@ -9,26 +9,19 @@ from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.externals import joblib
 from sklearn.base import BaseEstimator
-from xgboost import XGBRegressor
+from sklearn.linear_model import Ridge
 
 from server.types import FeatureFunctionType
 from server.data_processors import (
-    TeamDataStacker,
     FeatureBuilder,
+    PlayerDataStacker,
+    PlayerDataAggregator,
     OppoFeatureBuilder
 )
 from server.data_processors.feature_functions import (
-    add_last_week_result,
-    add_last_week_score,
-    add_cum_percent,
-    add_cum_win_points,
-    add_rolling_last_week_win_rate,
-    add_ladder_position,
-    add_win_streak,
-    add_out_of_state,
-    add_travel_distance,
-    add_last_week_goals,
-    add_last_week_behinds,
+    add_last_year_brownlow_votes,
+    add_rolling_player_stats,
+    add_cum_matches_played
 )
 from server.data_processors import FitzroyDataReader
 
@@ -39,54 +32,51 @@ PROJECT_PATH: str = os.path.abspath(
 )
 
 
+MATCH_STATS_COLS = ['at_home', 'score', 'oppo_score', 'team', 'oppo_team', 'year',
+                    'round_number']
 COL_TRANSLATIONS = {
-    'home_points': 'home_score',
-    'away_points': 'away_score',
-    'margin': 'home_margin',
-    'season': 'year'
+    'season': 'year',
+    'time_on_ground__': 'time_on_ground',
+    'id': 'player_id',
+    'game': 'match_id'
 }
-INDEX_COLS = ['team', 'year', 'round_number']
-REQUIRED_COLS: List[str] = ['year', 'score', 'oppo_score']
 FEATURE_FUNCS: Sequence[FeatureFunctionType] = [
-    add_out_of_state,
-    add_travel_distance,
-    add_last_week_goals,
-    add_last_week_behinds,
-    add_last_week_result,
-    add_last_week_score,
-    add_cum_win_points,
-    add_rolling_last_week_win_rate,
-    add_win_streak
+    add_last_year_brownlow_votes,
+    add_rolling_player_stats,
+    add_cum_matches_played
 ]
 DATA_TRANSFORMERS: List[FeatureFunctionType] = [
-    TeamDataStacker(index_cols=INDEX_COLS).transform,
-    FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform,
-    OppoFeatureBuilder(
-        match_cols=['team', 'year', 'round_number', 'score', 'oppo_score',
-                    'out_of_state', 'at_home', 'oppo_team', 'venue', 'round_type']
-    ).transform,
-    # Features dependent on oppo columns
+    PlayerDataStacker().transform,
     FeatureBuilder(
-        feature_funcs=[add_cum_percent, add_ladder_position]
-    ).transform
+        feature_funcs=FEATURE_FUNCS,
+        index_cols=['team', 'year', 'round_number', 'player_id']
+    ).transform,
+    PlayerDataAggregator().transform,
+    OppoFeatureBuilder(match_cols=MATCH_STATS_COLS).transform
 ]
-DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
+
+fitzroy = FitzroyDataReader()
+DATA_READERS: List[Callable] = [
+    fitzroy.get_afltables_stats,
+    fitzroy.match_results
+]
 
 np.random.seed(42)
 
 
-class MatchXGB():
+class PlayerRidge():
     """Create pipeline for for fitting/predicting with lasso model.
 
     Attributes:
         _pipeline (sklearn.pipeline.Pipeline): Scikit Learn pipeline
             with transformers & Lasso estimator.
-        name (string): Name of final estimator in the pipeline ('XGBoost').
+        name (string): Name of final estimator in the pipeline ('Ridge').
     """
 
     def __init__(self) -> None:
         self._pipeline: Pipeline = make_pipeline(
-            StandardScaler(), XGBRegressor()
+            StandardScaler(),
+            Ridge()
         )
 
     @property
@@ -121,8 +111,8 @@ class MatchXGB():
         return pd.Series(y_pred, name='predicted_margin', index=X.index)
 
     def save(self,
-             filepath: str = (f'{PROJECT_PATH}/server/ml_models/match_xgb/'
-                              'match_xgb_model.pkl')) -> None:
+             filepath: str = (f'{PROJECT_PATH}/server/ml_models/player_ridge/'
+                              'player_ridge_model.pkl')) -> None:
         """Save the pipeline as a pickle file.
 
         Args:
@@ -135,8 +125,8 @@ class MatchXGB():
         joblib.dump(self._pipeline, filepath)
 
     def load(self,
-             filepath: str = (f'{PROJECT_PATH}/server/ml_models/match_xgb/'
-                              'match_xgb_model.pkl')) -> None:
+             filepath: str = (f'{PROJECT_PATH}/server/ml_models/player_ridge/'
+                              'player_ridge_model.pkl')) -> None:
         """Load the pipeline from a pickle file.
 
         Args:
@@ -152,8 +142,8 @@ class MatchXGB():
         return self._pipeline.steps[-1]
 
 
-class MatchXGBData():
-    """Load and clean data for the XGB pipeline.
+class PlayerRidgeData():
+    """Load and clean data for the Ridge pipeline.
 
     Args:
         data_transformers (list[callable]): Functions that receive, transform,
@@ -175,7 +165,9 @@ class MatchXGBData():
                  data_readers: List[Callable] = DATA_READERS,
                  data_transformers: List[FeatureFunctionType] = DATA_TRANSFORMERS,
                  train_years: YearsType = (None, 2015),
-                 test_years: YearsType = (2016, 2016)) -> None:
+                 test_years: YearsType = (2016, 2016),
+                 start_date='1965-01-01',
+                 end_date='2016-12-31') -> None:
         self._train_years = train_years
         self._test_years = test_years
 
@@ -185,16 +177,54 @@ class MatchXGBData():
             self.__compose_two, reversed(data_transformers), lambda x: x
         )
 
-        data_frame = (data_readers[0]()
+        data_frame = (data_readers[0](start_date=start_date, end_date=end_date)
+                      # Some player data venues have trailing spaces
+                      .assign(venue=lambda x: x['venue'].str.strip())
+                      # Player data match IDs are wrong for recent years.
+                      # The easiest way to add correct ones is to graft on the IDs
+                      # from match_results. Also, match_results round_numbers are more useful.
+                      .merge(data_readers[1]()[['date', 'venue', 'round_number', 'game']],
+                             on=['date', 'venue'],
+                             how='left')
+                      # As of 11-10-2018, match_results is still missing finals data from 2018.
+                      # Joining on date/venue leaves two duplicates played at M.C.G.
+                      # on 29-4-1986 & 9-8-1986, but that's an acceptable loss of data
+                      # and easier than munging team names
+                      .dropna()
                       .rename(columns=COL_TRANSLATIONS)
-                      .drop(['round', 'game', 'date'], axis=1))
+                      .astype({'year': int, 'match_id': int})
+                      .assign(player_name=lambda x: x['first_name'] + ' ' + x['surname'],
+                              # Need to add year to ID, because there are some
+                              # player_id/match_id combos, decades apart, that by chance overlap
+                              id=self.__id_col)
+                      .drop(['first_name', 'surname', 'round', 'local_start_time',
+                             'attendance', 'hq1g', 'hq1b', 'hq2g', 'hq2b', 'hq3g',
+                             'hq3b', 'hq4g', 'hq4b', 'aq1g', 'aq1b', 'aq2g', 'aq2b',
+                             'aq3g', 'aq3b', 'aq4g', 'aq4b', 'jumper_no_', 'umpire_1',
+                             'umpire_2', 'umpire_3', 'umpire_4', 'substitute', 'group_id',
+                             'date', 'venue'], axis=1)
+                      # Some early matches (1800s) have fully-duplicated rows
+                      .drop_duplicates()
+                      .set_index('id')
+                      .sort_index())
 
-        # There was some sort of round-robin finals round in 1897 and figuring out
-        # a way to clean it up that makes sense is more trouble than just dropping a few rows
-        data_frame = data_frame[(data_frame['year'] != 1897) |
-                                (data_frame['round_number'] != 15)]
+        # Drawn finals get replayed, which screws up my indexing and a bunch of other
+        # data munging, so getting match_ids for the repeat matches, and filtering
+        # them out of the data frame
+        duplicate_matches = (data_frame
+                             [data_frame.duplicated(subset=['year', 'round_number', 'player_id'],
+                                                    keep='last')]
+                             ['match_id'])
 
-        self.data = compose_all(data_frame).drop('venue', axis=1).dropna()
+        # There were some weird round-robin rounds in the early days, and it's easier to
+        # drop them rather than figure out how to split up the rounds.
+        data_frame = data_frame[
+            ((data_frame['year'] != 1897) | (data_frame['round_number'] != 15)) &
+            ((data_frame['year'] != 1924) | (data_frame['round_number'] != 19)) &
+            (~data_frame['match_id'].isin(duplicate_matches))
+        ]
+
+        self.data = compose_all(data_frame)
 
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data.
@@ -280,3 +310,9 @@ class MatchXGBData():
     @staticmethod
     def __y(data_frame: pd.DataFrame) -> pd.Series:
         return data_frame['score'] - data_frame['oppo_score']
+
+    @staticmethod
+    def __id_col(df):
+        return (df['player_id'].astype(str) +
+                df['match_id'].astype(str) +
+                df['year'].astype(str))

@@ -20,7 +20,7 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ```
 notebook_1  | [I 03:01:38.909 NotebookApp] The Jupyter Notebook is running at:
-notebook_1  | [I 03:01:38.909 NotebookApp] http://(ea7b71b85805 or 127.0.0.1):8888/?token=**dhf7674ururrtuuf8968lhhjdrfjghicty57t69t85e6dhfj**
+notebook_1  | [I 03:01:38.909 NotebookApp] http://(ea7b71b85805 or 127.0.0.1):8888/?token=dhf7674ururrtuuf8968lhhjdrfjghicty57t69t85e6dhfj
 notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
 ```
 
@@ -30,3 +30,7 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 ### Run Python tests
 
 - `docker-compose run server pytest`
+
+## Troubleshooting
+
+- When working with some of the larger data sets (e.g. player stats comprise over 600,000 rows), your process might mysteriously die without completing. This is likely due to Docker running out of memory, because the default 2GB isn't enough. At least 4GB is the recommended limit, but you'll want more if you plan on having multiple processes running or multiple Jupyter notebooks open at the same time.

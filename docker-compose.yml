@@ -13,6 +13,8 @@ services:
     build: ./client
     volumes:
       - ./client:/app
+      - /app/node_modules
+      - /app/build
     ports:
       - "3000:3000"
     environment:

@@ -67,13 +67,10 @@ def measure_classifier(estimator, data, cv=5, n_jobs=-1):
             test_error_score)
 
 
-def measure_estimators(estimators, data, model_type='regression', cv=5, n_jobs=-1, accuracy=True):
+def measure_estimators(pipelines, data, model_type='regression', cv=5, n_jobs=-1, accuracy=True):
     if model_type not in ('regression', 'classification'):
         raise Exception(
             f'model_type must be "regression" or "classification", but {model_type} was given.')
-
-    # Use standard scaler, because many of these estimators are sensitive to scale of different features
-    scaler = StandardScaler()
 
     estimator_names = []
     mean_cv_accuracies = []
@@ -83,10 +80,8 @@ def measure_estimators(estimators, data, model_type='regression', cv=5, n_jobs=-
     std_cv_accuracies = []
     std_cv_errors = []
 
-    for estimator in estimators:
-        pipeline = make_pipeline(scaler, estimator)
-
-        estimator_name = type(estimator).__name__
+    for pipeline in pipelines:
+        estimator_name = pipeline.steps[-1][0]
         print(f'Training {estimator_name}')
 
         if model_type == 'regression':

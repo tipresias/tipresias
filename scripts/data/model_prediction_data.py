@@ -15,8 +15,8 @@ from server.ml_models import BettingLasso
 from server.ml_models.betting_lasso import BettingLassoData
 from server.ml_models import MatchXGB
 from server.ml_models.match_xgb import MatchXGBData
-from server.ml_models import PlayerXGB
-from server.ml_models.player_xgb import PlayerXGBData
+from server.ml_models import PlayerRidge
+from server.ml_models.player_ridge import PlayerRidgeData
 
 from notebooks.src.data.data_builder import DataBuilder, BettingData, MatchData
 from notebooks.src.data.data_transformer import DataTransformer
@@ -31,8 +31,8 @@ def tipresias_player_predictions() -> pd.DataFrame:
         pandas.DataFrame
     """
 
-    data = PlayerXGBData(train_years=(None, None), test_years=(None, None))
-    estimator = PlayerXGB()
+    data = PlayerRidgeData(train_years=(None, None), test_years=(None, None))
+    estimator = PlayerRidge()
 
     predictions = []
 
@@ -53,7 +53,7 @@ def tipresias_player_predictions() -> pd.DataFrame:
     return (home_df.loc[:, ['year', 'round_number', 'team', 'oppo_team']]
             .rename(columns={'team': 'home_team', 'oppo_team': 'away_team'})
             .assign(model='tipresias_player',
-                        predicted_home_margin=(home_df['predicted_margin']
+                    predicted_home_margin=(home_df['predicted_margin']
                                            .round()),
                     home_margin=home_df['score'] - home_df['oppo_score'],
                     predicted_home_win=((home_df['predicted_margin'] > 0)

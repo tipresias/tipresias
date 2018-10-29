@@ -27,12 +27,17 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'server.apps.ServerConfig',
+    'graphene_django',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
 ]
+
+GRAPHENE = {
+    'SCHEMA': 'server.schema.schema'
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

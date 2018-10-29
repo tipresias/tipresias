@@ -9,7 +9,9 @@ class Match(models.Model):
     start_date_time = models.DateTimeField()
     round_number = models.PositiveSmallIntegerField()
 
-    year = start_date_time.year
+    @property
+    def winner(self):
+        return max(self.team_match_set.all(), key=lambda x: x.score)
 
 
 class TeamMatch(models.Model):
@@ -33,3 +35,7 @@ class Prediction(models.Model):
     ml_model = models.ForeignKey(MLModel, on_delete=models.CASCADE)
     predicted_winner = models.ForeignKey(Team, on_delete=models.CASCADE)
     predicted_margin = models.SmallIntegerField()
+
+    @property
+    def is_correct(self):
+        return self.predicted_winner == self.match.winner

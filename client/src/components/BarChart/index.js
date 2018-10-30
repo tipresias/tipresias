@@ -87,8 +87,9 @@ class BarChart extends Component {
         return { [model]: cumulativeTotalPoints };
       });
       // console.log(dataModels);
-      return { [currentRound]: dataModels };
+      return dataModels;
     });
+
     console.log(data);
 
 

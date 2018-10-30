@@ -27,6 +27,7 @@ django
 whitenoise
 graphene>=2.0
 graphene-django>=2.0
+psycopg2-binary
 
 # Testing/Linting
 pylint==1.9.2 # Necessary for open bug (as of 2-10-18): https://github.com/PyCQA/pylint/issues/2315

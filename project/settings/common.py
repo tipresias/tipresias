@@ -59,7 +59,16 @@ WSGI_APPLICATION = 'project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-DATABASES = {}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'tipresias',
+        'HOST': os.getenv('DATABASE_HOST'),
+        'USER': 'postgres',
+        'PASSWORD': '',
+        'PORT': 5432
+    }
+}
 
 
 # Password validation

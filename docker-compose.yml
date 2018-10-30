@@ -10,8 +10,15 @@ services:
       - "8000:8000"
     stdin_open: true
     tty: true
+<<<<<<< HEAD
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
+=======
+    depends_on:
+      - db
+    environment:
+      - DATABASE_HOST=db
+>>>>>>> Add postgres database
     command: python3 manage.py runserver 0.0.0.0:8000
   client:
     build: ./client
@@ -32,3 +39,7 @@ services:
     ports:
       - "8888:8888"
     command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=tipresias

@@ -12,10 +12,12 @@ class App extends Component {
   };
 
   componentDidMount() {
+    const { year } = this.state;
     axios.get('/predictions')
       .then((response) => {
+        const filteredDataByYear = response.data.data.filter(item => item.year === year);
         this.setState({
-          games: response.data.data,
+          games: filteredDataByYear,
           isLoading: false,
         });
       });
@@ -37,7 +39,7 @@ class App extends Component {
     if (isLoading) {
       contentComponent = <div>Loading content!...</div>;
     } else {
-      contentComponent = <BarChart year={year} data={games} />;
+      contentComponent = <BarChart year={year} gamesByYear={games} />;
     }
     return (
       <div className="App">

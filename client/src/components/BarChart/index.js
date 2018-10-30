@@ -29,8 +29,6 @@ class BarChart extends Component {
     // year/round/model
 
     const { gamesByYear } = this.props;
-    console.log(gamesByYear);
-
 
     const [xMin, xMax] = d3.extent(gamesByYear, d => d.round_number);
 
@@ -75,24 +73,23 @@ class BarChart extends Component {
 
         const prevRound = currentRound - 1;
         const currentModel = modelsObject[currentRound][model];
-        const prevModel = (index === 0 || modelsObject[prevRound][model] === undefined) ? { total_points: 0 } : modelsObject[prevRound][model];
+        let prevModel;
 
-        // console.log('currentModel', currentModel);
-        // console.log('prevModel', prevModel);
-        // console.log('currentModel', currentModel.total_points);
-        // console.log('prevModel', prevModel.total_points);
-
+        if (index === 0) {
+          prevModel = { total_points: 0 };
+        } else if (modelsObject[prevRound][model] === undefined) {
+          prevModel = modelsObject[prevRound - 1][model];
+        } else {
+          prevModel = modelsObject[prevRound][model];
+        }
         const cumulativeTotalPoints = currentModel.total_points + prevModel.total_points;
         currentModel.total_points = cumulativeTotalPoints;
-        return cumulativeTotalPoints;
+        return { [model]: cumulativeTotalPoints };
       });
-
       // console.log(dataModels);
-
-
       return { [currentRound]: dataModels };
     });
-    // console.log(data);
+    console.log(data);
 
 
     // const [min, max] = d3.extent(collection, d => d.cumulativeTipPoint);

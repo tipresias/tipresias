@@ -62,7 +62,7 @@ class BarChart extends Component {
         </div>
         {
           !calculating && (
-            <svg width={width} height={height} style={{ border: '1px solid black' }}>
+            <svg viewBox="0 0 800 400" style={{ border: '1px solid black', height: 'auto', width: '80%' }}>
               {
                 bars.map((item, index) => (
                   <g key={index}>

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as d3 from 'd3';
-// import drawChart from 'drawChart.js';
+import createChartObject from './drawChart';
 
 const height = 400;
 const width = 800;
@@ -27,97 +27,7 @@ class BarChart extends Component {
 
   componentDidMount() {
     const { gamesByYear } = this.props;
-
-    // prepare models objects
-    const modelsObject = gamesByYear.reduce((acc, currentItem, currentIndex, arr) => {
-      const { model, round_number } = currentItem;
-      acc[round_number] = acc[round_number] || {};
-      acc[round_number][model] = acc[round_number][model] || {};
-      acc[round_number][model].round = acc[round_number][model].round || 0;
-      acc[round_number][model].data = acc[round_number][model].data || [];
-      acc[round_number][model].total_points = acc[round_number][model].total_points || [];
-      acc[round_number][model].round = currentItem.round_number;
-
-      acc[round_number][model].data.push(currentItem);
-
-      const roundArray = acc[round_number][model].data;
-      const roundPointTotal = roundArray.reduce((accumulator, currentVaue) => accumulator + currentVaue.tip_point, 0);
-      acc[round_number][model].total_points = roundPointTotal;
-
-      return acc;
-    }, {});
-    // console.log(modelsObject);
-
-    const roundsArray = Object.keys(modelsObject);
-
-    const cumulativeTipPointPerModel = roundsArray.map((currentRound, index) => {
-      const modelKeyArray = Object.keys(modelsObject[currentRound]);
-      const dataModels = modelKeyArray.map((model) => {
-        const prevRound = currentRound - 1;
-        const currentModel = modelsObject[currentRound][model];
-        let prevModel;
-
-        if (index === 0) {
-          prevModel = { total_points: 0 };
-        } else if (modelsObject[prevRound][model] === undefined) {
-          prevModel = modelsObject[prevRound - 1][model];
-        } else {
-          prevModel = modelsObject[prevRound][model];
-        }
-        const cumulativeTotalPoints = currentModel.total_points + prevModel.total_points;
-        currentModel.total_points = cumulativeTotalPoints;
-        return { model, cumulativeTotalPoints };
-      });
-      return dataModels;
-    });
-
-    // console.log(cumulativeTipPointPerModel);
-
-    const [xMin, xMax] = d3.extent(gamesByYear, d => d.round_number);
-    const xScale = d3.scaleLinear()
-      .domain([xMin, xMax + 1])
-      .range([margin.left, width - margin.right]);
-
-
-    const [yMin, yMax] = d3.extent(cumulativeTipPointPerModel[27], item => item.cumulativeTotalPoints);
-    const yScale = d3.scaleLinear()
-      .domain([0, yMax])
-      .range([height - margin.bottom, margin.top]);
-
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-
-    // console.log(cumulativeTipPointPerModel);
-
-    const bars = cumulativeTipPointPerModel.map((roundItem, roundItemIndex) => {
-      const barsPerRound = roundItem.map((modelItem) => {
-        let x;
-
-        if (modelItem.model === 'oddsmakers') {
-          x = xScale(roundItemIndex);
-        }
-        if (modelItem.model === 'tipresias_betting') {
-          x = xScale(roundItemIndex) + 10;
-        }
-        if (modelItem.model === 'tipresias_match') {
-          x = xScale(roundItemIndex) + 20;
-        }
-
-        const y = yScale(modelItem.cumulativeTotalPoints);
-        const h = yScale(0) - yScale(modelItem.cumulativeTotalPoints);
-
-        return ({
-          key: `${roundItemIndex + 1}-${modelItem.model}`,
-          round: roundItemIndex + 1,
-          x,
-          y,
-          height: h,
-          width: 6,
-          fill: colorScale(modelItem.model),
-        });
-      });
-      return barsPerRound;
-    });
-
+    const { bars, xScale, yScale } = createChartObject(gamesByYear);
     this.setState({
       bars,
       xScale,
@@ -139,7 +49,6 @@ class BarChart extends Component {
       bars,
       calculating,
     } = this.state;
-    console.log(bars);
 
     const { year } = this.props;
     const title = `BarChart for ${year}`;
@@ -148,12 +57,12 @@ class BarChart extends Component {
     const yAxisTranslate = `translate(${margin.left},0)`;
     return (
       <div>
-        <p>
+        <div>
           {title}
-        </p>
+        </div>
         {
           !calculating && (
-            <svg width="800" height="400" style={{ border: '1px solid black' }}>
+            <svg width={width} height={height} style={{ border: '1px solid black' }}>
               {
                 bars.map((item, index) => (
                   <g key={index}>

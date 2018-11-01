@@ -103,6 +103,8 @@ const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel
 };
 
 const createChartObject = (gamesByYear) => {
+  console.log('gamesByYear >>>>>>>> ', gamesByYear);
+
   const modelsObject = prepareModel(gamesByYear);
   const cumulativeTipPointPerModel = calculateCumulativeTotals(modelsObject);
   const { xScale, yScale, colorScale } = createScales(cumulativeTipPointPerModel, gamesByYear);

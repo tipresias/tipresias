@@ -8,6 +8,12 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ## Running things
 
+### Setup
+
+- To build and run the app: `docker-compose up --build`
+- Migrate the DB: `docker-compose run --rm server python3 manage.py migrate`
+- Seed the DB: `docker-compose run --rm server python3 manage.py seed_db`
+
 ### Run the app
 
 - `docker-compose up` (add `--build` to build the images)
@@ -29,7 +35,7 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 
 ### Run Python tests
 
-- `docker-compose run server pytest`
+- `docker-compose run --rm server python3 manage.py test`
 
 ## Troubleshooting
 

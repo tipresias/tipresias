@@ -121,12 +121,12 @@ CITIES = {
 
 TEAM_CITIES = {
     'Adelaide': 'Adelaide',
-    'Brisbane Lions': 'Brisbane',
+    'Brisbane': 'Brisbane',
     'Carlton': 'Melbourne',
     'Collingwood': 'Melbourne',
     'Essendon': 'Melbourne',
     'Fitzroy': 'Melbourne',
-    'Footscray': 'Melbourne',
+    'Western Bulldogs': 'Melbourne',
     'Fremantle': 'Perth',
     'GWS': 'Sydney',
     'Geelong': 'Geelong',

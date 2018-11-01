@@ -1,8 +1,42 @@
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+
+TEAM_NAMES = [
+    'Richmond',
+    'Carlton',
+    'Melbourne',
+    'Gold Coast',
+    'Essendon',
+    'Sydney',
+    'Collingwood',
+    'North Melbourne',
+    'Adelaide',
+    'Western Bulldogs',
+    'Fremantle',
+    'Port Adelaide',
+    'St Kilda',
+    'West Coast',
+    'Brisbane',
+    'Hawthorn',
+    'GWS',
+    'Geelong',
+    'Fitzroy',
+    'University'
+]
+
+
+def validate_name(name):
+    if name not in TEAM_NAMES:
+        raise ValidationError(
+            _('%(name)s is not a valid team name'), params={'name': name}
+        )
 
 
 class Team(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(
+        max_length=100, unique=True, validators=[validate_name]
+    )
 
 
 class Match(models.Model):
@@ -11,7 +45,11 @@ class Match(models.Model):
 
     @property
     def winner(self):
-        return max(self.team_match_set.all(), key=lambda x: x.score)
+        return max(self.teammatch_set.all(), key=lambda x: x.score).team
+
+    @property
+    def year(self):
+        return self.start_date_time.year
 
 
 class TeamMatch(models.Model):
@@ -23,11 +61,11 @@ class TeamMatch(models.Model):
 
 class MLModel(models.Model):
     trained_to_match = models.ForeignKey(
-        Match, on_delete=models.SET_NULL, null=True
+        Match, on_delete=models.SET_NULL, null=True, blank=True
     )
     name = models.CharField(max_length=100)
-    description = models.TextField()
-    filepath = models.CharField(max_length=500)
+    description = models.TextField(null=True, blank=True)
+    filepath = models.CharField(max_length=500, null=True, blank=True)
 
 
 class Prediction(models.Model):

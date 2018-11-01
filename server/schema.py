@@ -18,7 +18,9 @@ class MatchType(DjangoObjectType):
     class Meta:
         model = Match
 
-    winner = TeamType
+    winner = graphene.Field(TeamType, id=graphene.Int(),
+                            name=graphene.String())
+    year = graphene.Int()
 
 
 class TeamMatchType(DjangoObjectType):
@@ -48,9 +50,7 @@ class Query(graphene.ObjectType):
     def resolve_hello(self, _info, name):
         return 'Hello ' + name
 
-    def resolve_predictions(self, args, _context, _info):
-        year = args.get('year')
-
+    def resolve_predictions(self, _info, year):
         if year is None:
             return Prediction.objects.all()
 

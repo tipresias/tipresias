@@ -1,7 +1,6 @@
 import os
 import sys
-from unittest import TestCase
-from faker import Faker
+from django.test import TestCase
 from django.core.exceptions import ValidationError
 
 PROJECT_PATH = os.path.abspath(
@@ -12,8 +11,6 @@ if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
 from server.models import Team
-
-FAKE = Faker()
 
 
 class TestTeam(TestCase):
@@ -27,6 +24,13 @@ class TestTeam(TestCase):
 
         with self.subTest(team=Team(name='Bob')):
             team = Team(name='Bob')
+
+            with self.assertRaises(ValidationError):
+                team.full_clean()
+
+        with self.subTest(team=self.team):
+            team = Team(name='Richmond')
+            Team(name='Richmond').save()
 
             with self.assertRaises(ValidationError):
                 team.full_clean()

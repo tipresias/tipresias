@@ -50,7 +50,7 @@ class Query(graphene.ObjectType):
     def resolve_hello(self, _info, name):
         return 'Hello ' + name
 
-    def resolve_predictions(self, _info, year):
+    def resolve_predictions(self, _info, year=None):
         if year is None:
             return Prediction.objects.all()
 

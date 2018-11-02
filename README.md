@@ -16,7 +16,7 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ### Run the app
 
-- `docker-compose up` (add `--build` to build the images)
+- `docker-compose up`
 - Navigate to `localhost:3000`.
 
 ### Run Jupyter notebook in Docker

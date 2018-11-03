@@ -7,6 +7,7 @@ RUN apt-get update && apt-get -y install r-base
 RUN apt-get update && apt-get -y install curl
 RUN curl -sL https://deb.nodesource.com/setup_8.x | bash \
   && apt-get install nodejs
+RUN curl -o- -L https://yarnpkg.com/install.sh | bash
 
 # Install dependencies
 COPY requirements.txt /app/
@@ -23,7 +24,7 @@ RUN pip install --upgrade pip --trusted-host pypi.python.org -r requirements.txt
 COPY . /app/
 WORKDIR /app/client/
 
-RUN yarn
+RUN $HOME/.yarn/bin/yarn install
 RUN yarn build
 
 WORKDIR /app/

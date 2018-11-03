@@ -16,14 +16,14 @@ services:
     volumes:
       - ./client:/app
       - /app/node_modules
-      - /app/build
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
     depends_on:
       - server
-    command: yarn start
+    # Have to run build in dev, because server depends on build/index.html existing
+    command: bash -c "yarn build && yarn start"
   notebook:
     image: tipresias_server:latest
     volumes:

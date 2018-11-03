@@ -11,7 +11,3 @@ RUN yarn
 COPY . /app/
 
 EXPOSE 3000
-
-# Since backend serves the assets in production, it depends on build/ in development as well,
-# so we need to make sure build/index.html exists in all environments
-RUN yarn build

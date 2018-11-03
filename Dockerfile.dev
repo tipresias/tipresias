@@ -3,16 +3,17 @@ FROM python:3
 
 # Install R to use rpy2 for access to R packages
 RUN apt-get update && apt-get -y install r-base
+RUN R -e "install.packages('devtools', repos='https://mirror.aarnet.edu.au/pub/CRAN/')"
 
-# Install dependencies
-COPY requirements.txt /app/
 WORKDIR /app/
 
-RUN pip3 install --upgrade pip
-RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
-
+# Install R dependencies
 COPY requirements.r /app/
 RUN Rscript requirements.r
+
+# Install Python dependencies
+COPY requirements.txt /app/
+RUN pip3 install --upgrade pip -r requirements.txt
 
 # Add the rest of the code
 COPY . /app/

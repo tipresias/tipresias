@@ -3,29 +3,31 @@ FROM python:3.6
 
 # Install R to use rpy2 for access to R packages
 RUN apt-get update && apt-get -y install r-base
+RUN R -e "install.packages('devtools', repos='https://mirror.aarnet.edu.au/pub/CRAN/')"
 
-RUN apt-get update && apt-get -y install curl
+RUN apt-get -y install curl
 RUN curl -sL https://deb.nodesource.com/setup_8.x | bash \
   && apt-get install nodejs
 RUN curl -o- -L https://yarnpkg.com/install.sh | bash
 
-# Install dependencies
-COPY requirements.txt /app/
 WORKDIR /app/
 
-# Install dependencies
+# Install R dependencies
 COPY requirements.r /app/
 RUN Rscript requirements.r
 
+# Install Python dependencies
 COPY requirements.txt /app/
-RUN pip install --upgrade pip --trusted-host pypi.python.org -r requirements.txt
+RUN pip3 install --upgrade pip -r requirements.txt
 
 # Add the rest of the code
 COPY . /app/
+
+# Install JS dependencies
 WORKDIR /app/client/
 
 RUN $HOME/.yarn/bin/yarn install
-RUN yarn build
+RUN $HOME/.yarn/bin/yarn build
 
 WORKDIR /app/
 

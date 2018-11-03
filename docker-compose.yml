@@ -10,13 +10,14 @@ services:
       - "8000:8000"
     stdin_open: true
     tty: true
+    environment:
+      - DJANGO_SETTINGS_MODULE=project.settings.development
     command: python3 manage.py runserver 0.0.0.0:8000
   client:
     build: ./client
     volumes:
       - ./client:/app
       - /app/node_modules
-      - /app/build
     ports:
       - "3000:3000"
     environment:

@@ -1,12 +1,13 @@
 import os
 import sys
 from unittest import TestCase
+from unittest.mock import Mock
 import pandas as pd
 import numpy as np
 from faker import Faker
 
 PROJECT_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../')
+    os.path.join(os.path.dirname(__file__), '../../../../')
 )
 
 if PROJECT_PATH not in sys.path:
@@ -16,6 +17,11 @@ from server.ml_models import MatchXGB
 from server.ml_models.match_xgb import MatchXGBData
 
 FAKE = Faker()
+
+match_results_df = pd.read_csv(
+    f'{PROJECT_PATH}/server/tests/fixtures/fitzroy_match_results.csv'
+)
+match_results_mock = Mock(return_value=match_results_df)
 
 
 class TestMatchXGB(TestCase):
@@ -42,7 +48,7 @@ class TestMatchXGB(TestCase):
 
 class TestMatchXGBData(TestCase):
     def setUp(self):
-        self.data = MatchXGBData()
+        self.data = MatchXGBData(data_readers=[match_results_mock])
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()

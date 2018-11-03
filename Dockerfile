@@ -35,4 +35,4 @@ WORKDIR /app/
 EXPOSE 8000
 
 # CMD craft serve
-CMD python3 manage.py runserver
+CMD python3 manage.py runserver 0.0.0.0:$PORT

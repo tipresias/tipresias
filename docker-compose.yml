@@ -24,8 +24,7 @@ services:
       - NODE_ENV=development
     depends_on:
       - server
-    # Have to run build in dev, because server depends on build/index.html existing
-    command: bash -c "yarn build && yarn start"
+    command: yarn start
   notebook:
     image: tipresias_server:latest
     volumes:

@@ -1,4 +1,3 @@
-import django_heroku
 # pylint: disable=W0401,W0614
 from project.settings.common import *
 
@@ -6,7 +5,13 @@ DEBUG = False
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-INSTALLED_APPS.append('django.contrib.staticfiles')
+INSTALLED_APPS.extend([
+    'whitenoise.runserver_nostatic',
+    'django.contrib.staticfiles',
+])
+
+# Must insert after SecurityMiddleware, which is first in settings/common.py
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 TEMPLATES = [
     {
@@ -30,10 +35,12 @@ TEMPLATES = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
-STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'client/build/static/'),
+    os.path.join(BASE_DIR, 'client', 'build', 'static'),
 ]
-
-#acivate django-heroku
-django_heroku.settings(locals())
+STATICFILES_STORAGE = (
+    'whitenoise.storage.CompressedManifestStaticFilesStorage'
+)
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/'
+WHITENOISE_ROOT = os.path.join(BASE_DIR, 'client', 'build', 'root')

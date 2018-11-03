@@ -3,8 +3,8 @@ FROM python:3.6
 
 # Install R to use rpy2 for access to R packages
 RUN apt-get update && apt-get -y install r-base
-RUN R -e "install.packages('devtools', repos='https://mirror.aarnet.edu.au/pub/CRAN/')"
 
+# Install curl, node, & yarn
 RUN apt-get -y install curl
 RUN curl -sL https://deb.nodesource.com/setup_8.x | bash \
   && apt-get install nodejs
@@ -28,6 +28,13 @@ WORKDIR /app/client/
 
 RUN $HOME/.yarn/bin/yarn install
 RUN $HOME/.yarn/bin/yarn build
+
+# Have to move all static files other than index.html to root/
+# for whitenoise middleware
+WORKDIR /app/client/build
+
+RUN mkdir root
+RUN mv *.ico *.js *.json root
 
 WORKDIR /app/
 

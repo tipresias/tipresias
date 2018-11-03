@@ -2,6 +2,7 @@
 numpy
 pandas
 scikit-learn==0.20.0
+# tensorflow is being a jerkface, and I'm not currently using it
 # tensorflow==1.11.0
 scipy
 xgboost==0.80
@@ -23,7 +24,7 @@ bs4
 
 # App packages
 django
-django-heroku
+whitenoise
 
 # Testing/Linting
 pylint==1.9.2 # Necessary for open bug (as of 2-10-18): https://github.com/PyCQA/pylint/issues/2315

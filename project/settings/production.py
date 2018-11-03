@@ -1,3 +1,4 @@
+import django_heroku
 # pylint: disable=W0401,W0614
 from project.settings.common import *
 
@@ -33,3 +34,6 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'client/build/static/'),
 ]
+
+#acivate django-heroku
+django_heroku.settings(locals())

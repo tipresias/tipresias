@@ -23,6 +23,7 @@ bs4
 
 # App packages
 django
+django-heroku
 
 # Testing/Linting
 pylint==1.9.2 # Necessary for open bug (as of 2-10-18): https://github.com/PyCQA/pylint/issues/2315

@@ -17,7 +17,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, 'client/build')
+            os.path.join(BASE_DIR, 'client', 'build')
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -41,6 +41,6 @@ STATICFILES_DIRS = [
 STATICFILES_STORAGE = (
     'whitenoise.storage.CompressedManifestStaticFilesStorage'
 )
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 WHITENOISE_ROOT = os.path.join(BASE_DIR, 'client', 'build', 'root')

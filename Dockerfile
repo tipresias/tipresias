@@ -20,13 +20,16 @@ RUN Rscript requirements.r
 COPY requirements.txt /app/
 RUN pip3 install --upgrade pip -r requirements.txt
 
-# Add the rest of the code
-COPY . /app/
-
 # Install JS dependencies
 WORKDIR /app/client/
 
+COPY ./client/package.json ./client/yarn.lock /app/client/
 RUN $HOME/.yarn/bin/yarn install
+
+# Add the rest of the code
+COPY . /app/
+
+# Build static files
 RUN $HOME/.yarn/bin/yarn build
 
 # Have to move all static files other than index.html to root/
@@ -42,4 +45,5 @@ WORKDIR /app/
 EXPOSE 8000
 
 # CMD craft serve
-CMD python3 manage.py runserver 0.0.0.0:$PORT
+CMD python3 manage.py collectstatic --no-input \
+  && python3 manage.py runserver 0.0.0.0:8000

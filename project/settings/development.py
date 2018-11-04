@@ -1,6 +1,8 @@
 # pylint: disable=W0401,W0614
 from project.settings.common import *
 
+ALLOWED_HOSTS = ['server', 'localhost']
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 

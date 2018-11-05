@@ -3,7 +3,7 @@ setup:
     - plan: heroku-postgresql:hobby-dev
       as: DATABASE
   config:
-    - DJANGO_SETTINGS_MODULE=project.settings.production
+    DJANGO_SETTINGS_MODULE: project.settings.production
 build:
   docker:
     web: Dockerfile

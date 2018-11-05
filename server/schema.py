@@ -41,14 +41,9 @@ class PredictionType(DjangoObjectType):
 
 
 class Query(graphene.ObjectType):
-    hello = graphene.String(name=graphene.String(default_value="stranger"))
-
     predictions = graphene.List(
         PredictionType, year=graphene.Int(default_value=None)
     )
-
-    def resolve_hello(self, _info, name):
-        return 'Hello ' + name
 
     def resolve_predictions(self, _info, year=None):
         if year is None:

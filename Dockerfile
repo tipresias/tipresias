@@ -44,6 +44,6 @@ WORKDIR /app/
 # Make port 8000 available for the app
 EXPOSE 8000
 
-# CMD craft serve
-CMD python3 manage.py collectstatic --no-input \
+CMD python3 manage.py migrate \
+  && python3 manage.py collectstatic --no-input \
   && python3 manage.py runserver 0.0.0.0:$PORT

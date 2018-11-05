@@ -1,3 +1,5 @@
+import dj_database_url
+
 # pylint: disable=W0401,W0614
 from project.settings.common import *
 
@@ -32,6 +34,10 @@ TEMPLATES = [
         },
     },
 ]
+
+DATABASES['default'] = dj_database_url.config(
+    conn_max_age=600, ssl_require=True
+)
 
 
 # Static files (CSS, JavaScript, Images)

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+from typing import List, Dict, Union, Any
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(
@@ -21,7 +22,7 @@ BASE_DIR = os.path.dirname(
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS: List = []
 
 # Application definition
 
@@ -51,7 +52,21 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'project.urls'
 
-TEMPLATES = []
+TEMPLATES: List[Dict[str, Any]] = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
@@ -59,7 +74,7 @@ WSGI_APPLICATION = 'project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-DATABASES = {}
+DATABASES: Dict[str, Dict[str, Union[str, int]]] = {}
 
 
 # Password validation
@@ -81,7 +96,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 STATIC_URL = ''
-STATICFILES_DIRS = []
+STATICFILES_DIRS: List = []
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/

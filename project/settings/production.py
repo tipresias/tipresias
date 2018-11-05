@@ -17,12 +17,11 @@ INSTALLED_APPS.extend([
 # Must insert after SecurityMiddleware, which is first in settings/common.py
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
+# Add build directory created by Create React App to serve webpage
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            os.path.join(BASE_DIR, 'client', 'build')
-        ],
+        'DIRS': [os.path.join(BASE_DIR, 'client', 'build')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

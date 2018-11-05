@@ -10,15 +10,11 @@ services:
       - "8000:8000"
     stdin_open: true
     tty: true
-<<<<<<< HEAD
-    environment:
-      - DJANGO_SETTINGS_MODULE=project.settings.development
-=======
     depends_on:
       - db
     environment:
+      - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
->>>>>>> Add postgres database
     command: python3 manage.py runserver 0.0.0.0:8000
   client:
     build: ./client

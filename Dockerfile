@@ -44,6 +44,4 @@ WORKDIR /app/
 # Make port 8000 available for the app
 EXPOSE 8000
 
-CMD python3 manage.py migrate \
-  && python3 manage.py collectstatic --no-input \
-  && python3 manage.py runserver 0.0.0.0:$PORT
+CMD python3 manage.py runserver 0.0.0.0:$PORT

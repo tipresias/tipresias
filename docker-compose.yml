@@ -15,6 +15,7 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
+      - GRAPHIQL=True
     command: python3 manage.py runserver 0.0.0.0:8000
   client:
     build: ./client

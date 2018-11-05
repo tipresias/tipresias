@@ -3,15 +3,19 @@ services:
   server:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: dev.Dockerfile
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     stdin_open: true
     tty: true
+    depends_on:
+      - db
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
+      - DATABASE_HOST=db
+      - GRAPHIQL=True
     command: python3 manage.py runserver 0.0.0.0:8000
   client:
     build: ./client
@@ -32,3 +36,7 @@ services:
     ports:
       - "8888:8888"
     command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=tipresias

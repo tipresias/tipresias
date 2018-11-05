@@ -1,4 +1,4 @@
-"""Script for generating the pickle file for the PlayerXGB estimator"""
+"""Script for generating the pickle file for the PlayerRidge estimator"""
 
 import os
 import sys

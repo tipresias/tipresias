@@ -258,12 +258,12 @@ class TestFeatureFunctions(TestCase):
     def test_add_out_of_state(self):
         teams = [
             'Adelaide',
-            'Brisbane Lions',
+            'Brisbane',
             'Carlton',
             'Collingwood',
             'Essendon',
             'Fitzroy',
-            'Footscray',
+            'Western Bulldogs',
             'Fremantle',
             'GWS',
             'Geelong',
@@ -299,12 +299,12 @@ class TestFeatureFunctions(TestCase):
     def test_add_travel_distance(self):
         teams = [
             'Adelaide',
-            'Brisbane Lions',
+            'Brisbane',
             'Carlton',
             'Collingwood',
             'Essendon',
             'Fitzroy',
-            'Footscray',
+            'Western Bulldogs',
             'Fremantle',
             'GWS',
             'Geelong',

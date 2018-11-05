@@ -17,7 +17,7 @@ class DataConcatenator():
     def __init__(self, drop_cols: List[str] = ['date']) -> None:
         self.drop_cols = drop_cols
 
-    def transform(self, data_frames: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, data_frames: List[pd.DataFrame]) -> pd.DataFrame:
         """Concatenate the given data_frames
 
         Args:

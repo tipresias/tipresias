@@ -1,0 +1,16 @@
+setup:
+  addons:
+    - plan: heroku-postgresql
+      as: DATABASE
+  config:
+    - DJANGO_SETTINGS_MODULE=project.settings.production
+build:
+  docker:
+    web: Dockerfile
+release:
+  command:
+    - python3 manage.py migrate
+    - python3 manage.py collectstatic --no-input
+  image: web
+run:
+  web: python3 manage.py runserver 0.0.0.0:$PORT

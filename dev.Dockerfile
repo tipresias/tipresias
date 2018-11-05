@@ -23,5 +23,4 @@ EXPOSE 8888
 # Make port 8000 available for the app
 EXPOSE 8000
 
-# CMD craft serve
 CMD python3 manage.py runserver 0.0.0.0:8000

@@ -180,7 +180,7 @@ class Command(BaseCommand):
                     (data_frame['round_number'] == record['round_number']) &
                     (data_frame['home_team'] == record['home_team']) &
                     (data_frame['away_team'] == record['away_team']),
-                    ['home_team', 'away_team', 'home_margin',
+                    ['home_team', 'away_team', 'predicted_home_margin',
                      'predicted_home_win', 'model']
                 ]
                 .to_dict('records'))
@@ -210,9 +210,9 @@ class Command(BaseCommand):
         predicted_home_win: bool = prediction_datum['predicted_home_win'] == 1
 
         if predicted_home_win:
-            return int(prediction_datum['home_margin'])
+            return int(prediction_datum['predicted_home_margin'])
 
-        return int(prediction_datum['home_margin'] * -1)
+        return int(prediction_datum['predicted_home_margin'] * -1)
 
     @staticmethod
     def __build_team_matches(match: Match,

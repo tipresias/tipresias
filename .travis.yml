@@ -1,0 +1,26 @@
+sudo: required
+services:
+  - docker
+
+branches:
+  only:
+    - master
+
+env:
+  DOCKER_COMPOSE_VERSION: 1.22.0
+before_install:
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+
+script:
+  - docker-compose build
+  - docker-compose run server python3 -Wi manage.py test
+
+deploy:
+  provider: heroku
+  api_key:
+    secure: Nyr9M/g2o3uZ9HGQ+c7OHMTcTMj6f2MY6uS3xiwvDObzen+p42TaQ74MTKFPbJYbHX3fHjVxEjeLlsojeAF9w6w5JbVO/0937snXynky/NXzD1ZU7JNq+xvjwBFjuSouuw/bT+YH0gnI0euZcofGNYijpIwoLg61b2McTISbKswQZmTmqXCBCfPa2YUp7A9+L+0Cr2hEPNbb5sVaMIgMjU7O1aplFfSweHC9LtiRl3t8nbOx7t/vO2/NBZxHqFirDqd2m/PfrbNDdXM0kAvOSshT2JSrQj7OHFnLwVlX6OrUjCRPhwOhRERDaryg7wBK+voVcqfQD/JwFzUJ6O+pkFe1yqcTi8c/lyriwnaEaTmhTOoRPd1pydpl0n1DQWAktscGVQ8QXr0yq9S1UIBGDdNrqrN4e4VDEBVahI8WyA6Gw2o7c6tYKySszKUCzITwmcjVn0SHJme2LIHKZRihIjmpj8LXzUbd5uFW1fvDDTilZugUrdltjAMFphjUca1vCC1iAcYozg+mzNFXkfRlMKCuUiW1nSfV4yRttKIEaWjKWSQ9g8otgz7Fz943/dvZflhS2sD4PlKxN5RBLRcx6CA7SuMJWoVT1X9CDXylpFELPMtSluDUfrtZ5nn6XY0eI8zEIW9f+N6owbqP93Mb3qjdau3zm5tnYFLkEy1dO00=
+  app: tipresias
+  on: master

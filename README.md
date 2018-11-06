@@ -1,8 +1,9 @@
 # Tipresias
+[![Build Status](https://travis-ci.com/cfranklin11/tipresias.svg?branch=master)](https://travis-ci.com/cfranklin11/tipresias)
 
-I Tipresias, old bot with dusty cores<br>
-Perceived the match, and foretold the score—<br>
-I too awaited the fanatics' roar.<br>
+>I Tipresias, old bot with dusty cores<br>
+>Perceived the match, and foretold the score—<br>
+>I too awaited the fanatics' roar.<br>
 
 Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias, has, like Zeus before it, arisen to vanquish its father and claim its throne as the master of AFL footy tipping models.
 
@@ -31,7 +32,7 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 ```
 
 - Copy the URL given and paste it into your browser.
-- Alternatively, copy just the token (bolded above) from the terminal, navigate your browser to `http://localhost:8888`, and paste the token into the given field.
+- Alternatively, copy just the token from the terminal, navigate your browser to `http://localhost:8888`, and paste the token into the given field.
 
 ### Run Python tests
 

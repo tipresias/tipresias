@@ -35,7 +35,7 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 
 ### Run Python tests
 
-- `docker-compose run --rm server python3 manage.py test`
+- `docker-compose run --rm server python3 -Wi manage.py test`
 
 ## Troubleshooting
 

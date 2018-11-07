@@ -15,8 +15,8 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
 
 script:
-  - docker-compose build
-  - docker-compose run server python3 -Wi manage.py test
+  - docker-compose -f ci.docker-compose.yml build --pull
+  - docker-compose -f ci.docker-compose.yml run server python3 -Wi manage.py test
 
 deploy:
   provider: heroku

@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import fetchPredictions from './lib/fetchPredictions';
 import logo from './logo.svg';
 import './App.css';
-import BarChart from './components/BarChart';
+import BarChartContainer from './components/BarChartContainer';
 import Select from './components/Select';
 
 class App extends Component {
@@ -36,7 +36,7 @@ class App extends Component {
     if (isLoading) {
       contentComponent = <div>Loading content!...</div>;
     } else {
-      contentComponent = <BarChart year={yearSelected} games={games} />;
+      contentComponent = <BarChartContainer year={yearSelected} games={games} />;
     }
     return (
       <div className="App">

@@ -78,14 +78,14 @@ const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel
         x = xScale(roundItemIndex);
       }
       if (modelItem.model === 'tipresias_betting') {
-        x = xScale(roundItemIndex) + 6;
+        x = xScale(roundItemIndex) + 5;
       }
       if (modelItem.model === 'tipresias_match') {
-        x = xScale(roundItemIndex) + 12;
+        x = xScale(roundItemIndex) + 10;
       }
 
       if (modelItem.model === 'tipresias_player') {
-        x = xScale(roundItemIndex) + 18;
+        x = xScale(roundItemIndex) + 15;
       }
 
       const y = yScale(modelItem.cumulativeTotalPoints);
@@ -97,7 +97,7 @@ const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel
         x,
         y,
         height: h,
-        width: 6,
+        width: 5,
         fill: colorScale(modelItem.model),
       });
     });

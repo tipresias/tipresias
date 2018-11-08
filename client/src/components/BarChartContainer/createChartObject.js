@@ -78,10 +78,14 @@ const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel
         x = xScale(roundItemIndex);
       }
       if (modelItem.model === 'tipresias_betting') {
-        x = xScale(roundItemIndex) + 10;
+        x = xScale(roundItemIndex) + 6;
       }
       if (modelItem.model === 'tipresias_match') {
-        x = xScale(roundItemIndex) + 20;
+        x = xScale(roundItemIndex) + 12;
+      }
+
+      if (modelItem.model === 'tipresias_player') {
+        x = xScale(roundItemIndex) + 18;
       }
 
       const y = yScale(modelItem.cumulativeTotalPoints);

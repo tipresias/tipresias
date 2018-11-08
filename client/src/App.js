@@ -1,45 +1,42 @@
 import React, { Component } from 'react';
-import axios from 'axios';
+import fetchPredictions from './lib/fetchPredictions';
 import logo from './logo.svg';
 import './App.css';
-import BarChart from './components/BarChart';
+import BarChartContainer from './components/BarChartContainer';
+import Select from './components/Select';
 
 class App extends Component {
   state = {
     isLoading: true,
-    year: 2011,
-    years: [2011, 2012, 2013, 2014],
+    yearSelected: 2011,
   };
 
   componentDidMount() {
-    const { year } = this.state;
-    axios.get('/predictions')
-      .then((response) => {
-        const filteredDataByYear = response.data.data.filter(item => item.year === year);
-        this.setState({
-          games: filteredDataByYear,
-          isLoading: false,
-        });
+    const { yearSelected } = this.state;
+    fetchPredictions(yearSelected).then((data) => {
+      this.setState({
+        games: data,
+        isLoading: false,
       });
+    });
   }
 
-  updateYear = (event) => {
-    this.setState({ year: event.target.value });
+  onChangeYear = (event) => {
+    this.setState({ yearSelected: event.target.value });
   }
 
   render() {
     const {
       isLoading,
       games,
-      year,
-      years,
+      yearSelected,
     } = this.state;
 
     let contentComponent;
     if (isLoading) {
       contentComponent = <div>Loading content!...</div>;
     } else {
-      contentComponent = <BarChart year={year} gamesByYear={games} />;
+      contentComponent = <BarChartContainer year={yearSelected} games={games} />;
     }
     return (
       <div className="App">
@@ -49,16 +46,12 @@ class App extends Component {
         </header>
         <div>
           <p className="App-intro">
-            Peace among worlds!
+            Peace among Worlds!
           </p>
-          <select value={year} name="year" onChange={this.updateYear}>
-            {
-              years.map(item => (
-                <option key={item} value={item}>
-                  {item}
-                </option>))
-            }
-          </select>
+          <Select
+            value={yearSelected}
+            onChange={this.onChangeYear}
+          />
           {contentComponent}
         </div>
       </div>

@@ -98,7 +98,7 @@ const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel
         y,
         height: h,
         width: 6,
-        fill: colorScale(modelItem.model)
+        fill: colorScale(modelItem.model),
       });
     });
     return barsPerRound;
@@ -107,8 +107,6 @@ const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel
 };
 
 const createChartObject = (gamesByYear) => {
-  console.log('gamesByYear >>>>>>>> ', gamesByYear);
-
   const modelsObject = prepareModel(gamesByYear);
   const cumulativeTipPointPerModel = calculateCumulativeTotals(modelsObject);
   const { xScale, yScale, colorScale } = createScales(cumulativeTipPointPerModel, gamesByYear);

@@ -1,21 +1,16 @@
-import React, { Component } from 'react';
-import * as d3 from 'd3';
-import createChartObject from './drawChart';
-import BarChart from '../BarChart';
+import React from 'react';
+import createChartObject from './createChartObject';
+import BarChart from './BarChart';
+import Axis from './Axis';
 
-class BarChartContainer extends Component {
+const height = 400;
+const width = 800;
+
+class BarChartContainer extends React.Component {
   state = {
     bars: [],
-    calculating: true,
+    isCalculating: true,
   }
-
-  xAxisRef = React.createRef();
-
-  yAxisRef = React.createRef();
-
-  xAxis = d3.axisBottom().tickFormat(d => d);
-
-  yAxis = d3.axisLeft().tickFormat(d => d);
 
   componentDidMount() {
     const { games, year } = this.props;
@@ -25,7 +20,6 @@ class BarChartContainer extends Component {
   componentDidUpdate(prevProps, prevState) {
     const { games, year } = this.props;
     if (year !== prevProps.year) {
-      console.log('year, games', year, games);
       this.calculateData(games, year);
     }
   }
@@ -35,19 +29,16 @@ class BarChartContainer extends Component {
     const { bars, xScale, yScale } = createChartObject(filteredDataByYear);
     this.setState({
       bars,
-      calculating: false,
-    }, () => {
-      this.xAxis.scale(xScale);
-      d3.select(this.xAxisRef.current).call(this.xAxis);
-      this.yAxis.scale(yScale);
-      d3.select(this.yAxisRef.current).call(this.yAxis);
+      scales: { xScale, yScale },
+      isCalculating: false,
     });
   }
 
   render() {
     const {
       bars,
-      calculating,
+      scales,
+      isCalculating,
     } = this.state;
 
     const { year } = this.props;
@@ -58,12 +49,12 @@ class BarChartContainer extends Component {
           {title}
         </div>
         {
-          !calculating && (
-            <BarChart
-              bars={bars}
-              xAxisRef={this.xAxisRef}
-              yAxisRef={this.yAxisRef}
-            />
+          !isCalculating
+          && (
+            <svg viewBox={`0 0 ${width} ${height}`} style={{ border: '1px solid black', height: 'auto', width: '80%' }}>
+              <BarChart bars={bars} />
+              <Axis scales={scales} />
+            </svg>
           )
         }
       </div>

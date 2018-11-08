@@ -51,7 +51,7 @@ class BarChartContainer extends React.Component {
         {
           !isCalculating
           && (
-            <svg viewBox={`0 0 ${width} ${height}`} style={{ border: '1px solid black', height: 'auto', width: '80%' }}>
+            <svg viewBox={`0 0 ${width} ${height}`} style={{ height: 'auto', width: '100%' }}>
               <BarChart bars={bars} />
               <Axis scales={scales} />
             </svg>

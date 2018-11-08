@@ -2,7 +2,7 @@ import React from 'react';
 
 const BarChart = ({ bars }) => (
   bars.map((item, index) => (
-    <g key={index}>
+    <g transform="translate(20, 0)" key={index}>
       {
         item.map(i => (<rect
           key={i.key}

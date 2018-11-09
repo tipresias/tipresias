@@ -13,20 +13,19 @@ class BarChartContainer extends React.Component {
   }
 
   componentDidMount() {
-    const { games, year } = this.props;
-    this.calculateData(games, year);
+    const { gamesByYear } = this.props;
+    this.calculateData(gamesByYear);
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { games, year } = this.props;
-    if (year !== prevProps.year) {
-      this.calculateData(games, year);
+    const { gamesByYear } = this.props;
+    if (gamesByYear !== prevProps.gamesByYear) {
+      this.calculateData(gamesByYear);
     }
   }
 
-  calculateData(data, year) {
-    const filteredDataByYear = data.filter(item => item.year === parseInt(year, 10));
-    const { bars, xScale, yScale } = createChartObject(filteredDataByYear);
+  calculateData(gamesByYear) {
+    const { bars, xScale, yScale } = createChartObject(gamesByYear);
     this.setState({
       bars,
       scales: { xScale, yScale },
@@ -41,13 +40,8 @@ class BarChartContainer extends React.Component {
       isCalculating,
     } = this.state;
 
-    const { year } = this.props;
-    const title = `BarChart for ${year}`;
     return (
       <div>
-        <div>
-          {title}
-        </div>
         {
           !isCalculating
           && (

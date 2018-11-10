@@ -41,4 +41,3 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 ## Troubleshooting
 
 - When working with some of the larger data sets (e.g. player stats comprise over 600,000 rows), your process might mysteriously die without completing. This is likely due to Docker running out of memory, because the default 2GB isn't enough. At least 4GB is the recommended limit, but you'll want more if you plan on having multiple processes running or multiple Jupyter notebooks open at the same time.
-

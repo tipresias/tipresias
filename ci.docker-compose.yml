@@ -1,0 +1,30 @@
+version: "3.2"
+services:
+  server:
+    image: cfranklin11/tipresias_server:master
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DJANGO_SETTINGS_MODULE=project.settings.development
+      - DATABASE_HOST=db
+    command: python3 manage.py runserver 0.0.0.0:8000
+  client:
+    image: cfranklin11/tipresias_client:master
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - server
+    command: yarn start
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=tipresias

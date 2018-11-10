@@ -17,7 +17,7 @@ script:
   - docker-compose -f ci.docker-compose.yml run server python3 -Wi manage.py test
 
 after_success:
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_server:master
 
 deploy:

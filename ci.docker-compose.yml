@@ -2,11 +2,6 @@ version: "3.2"
 services:
   server:
     image: cfranklin11/tipresias_server:master
-    build:
-      context: .
-      dockerfile: dev.Dockerfile
-      cache_from:
-        - cfranklin11/tipresias_server:master
     volumes:
       - .:/app
     ports:
@@ -19,10 +14,6 @@ services:
     command: python3 manage.py runserver 0.0.0.0:8000
   client:
     image: cfranklin11/tipresias_client:master
-    build:
-      context: ./client
-      cache_from:
-        - cfranklin11/tipresias_client:master
     volumes:
       - ./client:/app
       - /app/node_modules

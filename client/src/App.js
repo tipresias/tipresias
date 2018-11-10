@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import fetchPredictions from './lib/fetchPredictions';
+import fetchPredictions from './helpers/fetchPredictions';
 import logo from './logo.svg';
 import './App.css';
 import BarChartContainer from './components/BarChartContainer';

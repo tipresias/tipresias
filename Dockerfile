@@ -30,14 +30,14 @@ RUN $HOME/.yarn/bin/yarn install
 COPY . /app/
 
 # Build static files
-RUN $HOME/.yarn/bin/yarn build
+# RUN $HOME/.yarn/bin/yarn build
 
 # Have to move all static files other than index.html to root/
 # for whitenoise middleware
-WORKDIR /app/client/build
+# WORKDIR /app/client/build
 
-RUN mkdir root
-RUN mv *.ico *.js *.json root
+# RUN mkdir root
+# RUN mv *.ico *.js *.json root
 
 WORKDIR /app/
 

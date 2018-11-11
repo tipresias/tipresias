@@ -41,7 +41,8 @@ RUN mv *.ico *.js *.json root
 
 WORKDIR /app/
 
-# Make port 8000 available for the app
-EXPOSE 8000
+# Build static files
+RUN mkdir staticfiles
+RUN DJANGO_SETTINGS_MODULE=project.settings.production SECRET_KEY=somethingsupersecret python3 manage.py collectstatic --noinput
 
 CMD python3 manage.py runserver 0.0.0.0:$PORT

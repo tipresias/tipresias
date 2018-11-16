@@ -542,8 +542,9 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
                   'clangers', 'frees_for', 'frees_against', 'contested_possessions',
                   'uncontested_possessions', 'contested_marks', 'marks_inside_50',
                   'one_percenters', 'bounces', 'goal_assists', 'time_on_ground']
+
     rolling_stats_cols = {
-        stats_col: f'rolling_{stats_col}' for stats_col in STATS_COLS if stats_col != 'player_id'
+        stats_col: f'rolling_prev_match_{stats_col}' for stats_col in STATS_COLS if stats_col != 'player_id'
     }
 
     if any([req_col not in data_frame.columns for req_col in STATS_COLS]):
@@ -551,7 +552,14 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
                          f'{STATS_COLS} must be in the data frame, but the columns'
                          f'given were {list(data_frame.columns)}')
 
-    player_groups = (data_frame[STATS_COLS]
+    player_data_frame = (
+        data_frame.sort_values(['player_id', 'year', 'round_number'])
+    )
+    player_groups = (player_data_frame[STATS_COLS]
+                     .groupby('player_id', group_keys=False)
+                     .shift()
+                     .assign(player_id=player_data_frame['player_id'])
+                     .fillna(0)
                      .groupby('player_id', group_keys=False))
 
     rolling_stats = player_groups.rolling(window=23).mean()
@@ -561,7 +569,7 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
                     .drop('player_id', axis=1)
                     .sort_index())
 
-    return (data_frame
+    return (player_data_frame
             .assign(**player_stats.to_dict('series'))
             .rename(columns=rolling_stats_cols))
 

@@ -54,10 +54,10 @@ class TestPlayerDataAggregator(TestCase):
             self.assertEqual(valid_data_frame['oppo_score'].mean(),
                              transformed_df['oppo_score'].mean())
             # Player data should be aggregated, but same sum
-            self.assertEqual(valid_data_frame['rolling_kicks'].sum(),
-                             transformed_df['rolling_kicks'].sum())
-            self.assertEqual(valid_data_frame['rolling_marks'].sum(),
-                             transformed_df['rolling_marks'].sum())
+            self.assertEqual(valid_data_frame['rolling_prev_match_kicks'].sum(),
+                             transformed_df['rolling_prev_match_kicks'].sum())
+            self.assertEqual(valid_data_frame['rolling_prev_match_marks'].sum(),
+                             transformed_df['rolling_prev_match_marks'].sum())
 
         for required_col in REQUIRED_COLS + self.index_cols:
             invalid_data_frame = self.data_frame.drop(required_col, axis=1)

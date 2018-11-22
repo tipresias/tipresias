@@ -3,13 +3,19 @@ import pandas as pd
 import numpy as np
 
 INDEX_COLS: List[str] = ['team', 'year', 'round_number']
-STATS_COLS = ['rolling_kicks', 'rolling_marks', 'rolling_handballs', 'rolling_goals',
-              'rolling_behinds', 'rolling_hit_outs', 'rolling_tackles', 'rolling_rebounds',
-              'rolling_inside_50s', 'rolling_clearances', 'rolling_clangers',
-              'rolling_frees_for', 'rolling_frees_against', 'rolling_contested_possessions',
-              'rolling_uncontested_possessions', 'rolling_contested_marks',
-              'rolling_marks_inside_50', 'rolling_one_percenters', 'rolling_bounces',
-              'rolling_goal_assists', 'rolling_time_on_ground',
+STATS_COLS = ['rolling_prev_match_kicks', 'rolling_prev_match_marks',
+              'rolling_prev_match_handballs', 'rolling_prev_match_goals',
+              'rolling_prev_match_behinds', 'rolling_prev_match_hit_outs',
+              'rolling_prev_match_tackles', 'rolling_prev_match_rebounds',
+              'rolling_prev_match_inside_50s', 'rolling_prev_match_clearances',
+              'rolling_prev_match_clangers', 'rolling_prev_match_frees_for',
+              'rolling_prev_match_frees_against',
+              'rolling_prev_match_contested_possessions',
+              'rolling_prev_match_uncontested_possessions',
+              'rolling_prev_match_contested_marks',
+              'rolling_prev_match_marks_inside_50',
+              'rolling_prev_match_one_percenters', 'rolling_prev_match_bounces',
+              'rolling_prev_match_goal_assists', 'rolling_prev_match_time_on_ground',
               'last_year_brownlow_votes']
 MATCH_STATS_COLS = ['at_home', 'score', 'oppo_score']
 REQUIRED_COLS = (['oppo_team', 'player_id', 'player_name'] +

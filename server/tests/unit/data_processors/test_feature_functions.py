@@ -368,7 +368,7 @@ class TestFeatureFunctions(TestCase):
         make_column_assertions(
             self,
             column_names=[
-                f'rolling_{stats_col}' for stats_col in STATS_COLS if stats_col != 'player_id'
+                f'rolling_prev_match_{stats_col}' for stats_col in STATS_COLS if stats_col != 'player_id'
             ],
             req_cols=STATS_COLS,
             valid_data_frame=valid_data_frame,

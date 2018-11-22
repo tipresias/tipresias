@@ -20,13 +20,19 @@ STATS_COLS = ['player_id', 'kicks', 'marks', 'handballs', 'goals', 'behinds', 'h
 MATCH_COLS = ['year', 'home_team', 'home_score', 'away_team', 'away_score',
               'round_number', 'match_id']
 MATCH_STATS_COLS = ['at_home', 'score', 'oppo_score']
+PREV_MATCH_STATS_COLS = [
+    f'prev_match_{col}' for col in STATS_COLS if col != 'player_id'
+]
 
 
 def id_col(df):
     return df['player_id'].astype(str) + df['match_id'].astype(str) + df['year'].astype(str)
 
 
-def player_data(start_date='1965-01-01', end_date='2016-12-31', aggregate=True):
+def player_data(start_date='1965-01-01',
+                end_date='2016-12-31',
+                aggregate=True,
+                prev_match_stats=True):
     # Player data matches have weird round labelling system (lots of strings for finals matches),
     # so using round numbers from match_results
     match_df = r_to_pandas(r('fitzRoy::match_results'))
@@ -66,11 +72,25 @@ def player_data(start_date='1965-01-01', end_date='2016-12-31', aggregate=True):
                  .sort_index())
     # There were some weird round-robin rounds in the early days, and it's easier to
     # drop them rather than figure out how to split up the rounds.
-    player_df = player_df[((player_df['year'] != 1897) | (player_df['round_number'] != 15)) &
-                          ((player_df['year'] != 1924) | (player_df['round_number'] != 19))]
+    player_df = (player_df[((player_df['year'] != 1897) | (player_df['round_number'] != 15)) &
+                           ((player_df['year'] != 1924) | (player_df['round_number'] != 19))]
+                 .sort_values(['player_id', 'year', 'round_number']))
 
-    player_groups = player_df[STATS_COLS].groupby(
-        'player_id', group_keys=False)
+    if prev_match_stats:
+        rename_cols = {
+            col: f'prev_match_{col}' for col in STATS_COLS if col != 'player_id'
+        }
+        player_groups = (player_df[STATS_COLS]
+                         .groupby('player_id', group_keys=False)
+                         .shift()
+                         .assign(player_id=player_df['player_id'])
+                         .rename(columns=rename_cols)
+                         .fillna(0)
+                         .groupby('player_id', group_keys=False))
+    else:
+        player_groups = player_df[STATS_COLS].groupby(
+            'player_id', group_keys=False
+        )
 
     rolling_stats = player_groups.rolling(window=23).mean()
     expanding_stats = player_groups.expanding(1).mean()
@@ -116,7 +136,7 @@ def player_data(start_date='1965-01-01', end_date='2016-12-31', aggregate=True):
                 .drop(['player_name', 'match_id'], axis=1))
 
     player_aggs = {
-        col: 'sum' for col in STATS_COLS[1:] + ['last_year_brownlow_votes']}
+        col: 'sum' for col in PREV_MATCH_STATS_COLS + ['last_year_brownlow_votes']}
     # Since match stats are the same across player rows, taking the mean
     # is the easiest way to aggregate them
     match_aggs = {col: 'mean' for col in MATCH_STATS_COLS}

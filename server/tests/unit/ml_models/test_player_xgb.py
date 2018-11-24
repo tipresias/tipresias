@@ -13,8 +13,8 @@ PROJECT_PATH = os.path.abspath(
 if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
-from server.ml_models import PlayerRidge
-from server.ml_models.player_ridge import PlayerRidgeData
+from server.ml_models import PlayerXGB
+from server.ml_models.player_xgb import PlayerXGBData
 from server.data_processors import FitzroyDataReader
 
 FAKE = Faker()
@@ -29,7 +29,7 @@ get_afltables_stats_mock = Mock(return_value=get_afltables_stats_df)
 match_results_mock = Mock(return_value=match_results_df)
 
 
-class TestPlayerRidge(TestCase):
+class TestPlayerXGB(TestCase):
     def setUp(self):
         data_frame = pd.DataFrame({
             'team': [FAKE.company() for _ in range(10)],
@@ -42,7 +42,7 @@ class TestPlayerRidge(TestCase):
                   .get_dummies(data_frame.drop('oppo_score', axis=1))
                   .astype(float))
         self.y = data_frame['oppo_score']
-        self.model = PlayerRidge()
+        self.model = PlayerXGB()
 
     def test_predict(self):
         self.model.fit(self.X, self.y)
@@ -51,9 +51,9 @@ class TestPlayerRidge(TestCase):
         self.assertIsInstance(predictions, pd.Series)
 
 
-class TestPlayerRidgeData(TestCase):
+class TestPlayerXGBData(TestCase):
     def setUp(self):
-        self.data = PlayerRidgeData(data_readers=[get_afltables_stats_mock,
+        self.data = PlayerXGBData(data_readers=[get_afltables_stats_mock,
                                                 match_results_mock])
 
     def test_train_data(self):

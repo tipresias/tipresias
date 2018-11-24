@@ -1,4 +1,4 @@
-"""Module with wrapper class for Ridge model and its associated data class"""
+"""Module with wrapper class for XGBRegressor model and its associated data class"""
 
 from typing import List, Tuple, Optional, Union, Sequence, Callable
 import os
@@ -9,7 +9,7 @@ from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.externals import joblib
 from sklearn.base import BaseEstimator
-from sklearn.linear_model import Ridge
+from xgboost import XGBRegressor
 
 from server.types import FeatureFunctionType
 from server.data_processors import (
@@ -64,19 +64,19 @@ DATA_READERS: List[Callable] = [
 np.random.seed(42)
 
 
-class PlayerRidge():
+class PlayerXGB():
     """Create pipeline for for fitting/predicting with lasso model.
 
     Attributes:
         _pipeline (sklearn.pipeline.Pipeline): Scikit Learn pipeline
             with transformers & Lasso estimator.
-        name (string): Name of final estimator in the pipeline ('Ridge').
+        name (string): Name of final estimator in the pipeline ('XGBRegressor').
     """
 
     def __init__(self) -> None:
         self._pipeline: Pipeline = make_pipeline(
             StandardScaler(),
-            Ridge()
+            XGBRegressor()
         )
 
     @property
@@ -111,8 +111,8 @@ class PlayerRidge():
         return pd.Series(y_pred, name='predicted_margin', index=X.index)
 
     def save(self,
-             filepath: str = (f'{PROJECT_PATH}/server/ml_models/player_ridge/'
-                              'player_ridge_model.pkl')) -> None:
+             filepath: str = (f'{PROJECT_PATH}/server/ml_models/player_xgb/'
+                              'player_xgb_model.pkl')) -> None:
         """Save the pipeline as a pickle file.
 
         Args:
@@ -125,8 +125,8 @@ class PlayerRidge():
         joblib.dump(self._pipeline, filepath)
 
     def load(self,
-             filepath: str = (f'{PROJECT_PATH}/server/ml_models/player_ridge/'
-                              'player_ridge_model.pkl')) -> None:
+             filepath: str = (f'{PROJECT_PATH}/server/ml_models/player_xgb/'
+                              'player_xgb_model.pkl')) -> None:
         """Load the pipeline from a pickle file.
 
         Args:
@@ -142,8 +142,8 @@ class PlayerRidge():
         return self._pipeline.steps[-1]
 
 
-class PlayerRidgeData():
-    """Load and clean data for the Ridge pipeline.
+class PlayerXGBData():
+    """Load and clean data for the XGBRegressor pipeline.
 
     Args:
         data_transformers (list[callable]): Functions that receive, transform,

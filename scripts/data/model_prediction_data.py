@@ -15,8 +15,8 @@ from server.ml_models import BettingLasso
 from server.ml_models.betting_lasso import BettingLassoData
 from server.ml_models import MatchXGB
 from server.ml_models.match_xgb import MatchXGBData
-from server.ml_models import PlayerRidge
-from server.ml_models.player_ridge import PlayerRidgeData
+from server.ml_models import PlayerXGB
+from server.ml_models.player_xgb import PlayerXGBData
 
 from notebooks.src.data.data_builder import DataBuilder, BettingData, MatchData
 from notebooks.src.data.data_transformer import DataTransformer
@@ -31,8 +31,8 @@ def tipresias_player_predictions() -> pd.DataFrame:
         pandas.DataFrame
     """
 
-    data = PlayerRidgeData(train_years=(None, None), test_years=(None, None))
-    estimator = PlayerRidge()
+    data = PlayerXGBData(train_years=(None, None), test_years=(None, None))
+    estimator = PlayerXGB()
 
     predictions = []
 

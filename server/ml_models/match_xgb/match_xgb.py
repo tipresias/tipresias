@@ -187,6 +187,7 @@ class MatchXGBData():
 
         data_frame = (data_readers[0]()
                       .rename(columns=COL_TRANSLATIONS)
+                      .astype({'year': int})
                       .drop(['round', 'game', 'date'], axis=1))
 
         # There was some sort of round-robin finals round in 1897 and figuring out

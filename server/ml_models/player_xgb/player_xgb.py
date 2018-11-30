@@ -224,7 +224,7 @@ class PlayerXGBData():
             (~data_frame['match_id'].isin(duplicate_matches))
         ]
 
-        self.data = compose_all(data_frame)
+        self.data = compose_all(data_frame).dropna()
 
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data.

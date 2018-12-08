@@ -3,7 +3,8 @@ services:
   backend:
     image: cfranklin11/tipresias_server:master
     volumes:
-      - ./backend:/app/backend
+      - ./backend:/app
+      - ./data:/app/data
     ports:
       - "8000:8000"
     depends_on:
@@ -17,6 +18,7 @@ services:
     volumes:
       - ./frontend:/app/frontend
       - /app/node_modules
+      - ./data:/app/data
     ports:
       - "3000:3000"
     environment:

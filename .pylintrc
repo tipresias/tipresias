@@ -8,7 +8,7 @@ disable=
     W0511, # No TODOs
     R0913, # Too many arguments
     C0330, # Wrong indentation (indentation handled by black)
-<<<<<<< HEAD
     C0103, # Wrong case conventions
-=======
->>>>>>> d18bb9c9ed069aca73db081fa41196553b20c6e2
+
+[MASTER]
+ignore=migrations

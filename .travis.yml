@@ -14,6 +14,7 @@ before_install:
 script:
   - docker pull cfranklin11/tipresias_server:master
   - docker build -f dev.Dockerfile --cache-from cfranklin11/tipresias_server:master -t cfranklin11/tipresias_server:master .
+  - docker-compose -f ci.docker-compose.yml run server pylint -d=R *.py
   - docker-compose -f ci.docker-compose.yml run server python3 -Wi manage.py test
 
 after_success:

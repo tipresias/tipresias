@@ -5,6 +5,10 @@ disable=
     E1101, # Instance of generator has no <something> method (needed for Flake)
     C0111, # Missing module docstring
     C0413, # Local import should be placed at the top of the module
-    C0103, # Module doesn't follow snake case (needed due to masonite conventions)
     W0511, # No TODOs
     R0913, # Too many arguments
+    C0330, # Wrong indentation (indentation handled by black)
+<<<<<<< HEAD
+    C0103, # Wrong case conventions
+=======
+>>>>>>> d18bb9c9ed069aca73db081fa41196553b20c6e2

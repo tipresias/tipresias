@@ -9,3 +9,6 @@ disable=
     R0913, # Too many arguments
     C0330, # Wrong indentation (indentation handled by black)
     C0103, # Wrong case conventions
+
+[MASTER]
+ignore=migrations

@@ -16,8 +16,6 @@ from server.ml_models.betting_lasso import BettingLassoData
 from server.ml_models.match_xgb import MatchXGBData
 from server.ml_models.player_xgb import PlayerXGBData
 
-from server.types import FeatureFunctionType
-
 YearsType = Tuple[Optional[int], Optional[int]]
 
 PROJECT_PATH: str = os.path.abspath(

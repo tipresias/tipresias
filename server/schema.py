@@ -4,9 +4,7 @@ from graphene_django.types import DjangoObjectType
 
 from server.models import Prediction, MLModel, TeamMatch, Match, Team
 
-PROJECT_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../')
-)
+PROJECT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 
 
 class TeamType(DjangoObjectType):
@@ -18,8 +16,7 @@ class MatchType(DjangoObjectType):
     class Meta:
         model = Match
 
-    winner = graphene.Field(TeamType, id=graphene.Int(),
-                            name=graphene.String())
+    winner = graphene.Field(TeamType, id=graphene.Int(), name=graphene.String())
     year = graphene.Int()
 
 
@@ -41,11 +38,10 @@ class PredictionType(DjangoObjectType):
 
 
 class Query(graphene.ObjectType):
-    predictions = graphene.List(
-        PredictionType, year=graphene.Int(default_value=None)
-    )
+    predictions = graphene.List(PredictionType, year=graphene.Int(default_value=None))
 
-    def resolve_predictions(self, _info, year=None):
+    @staticmethod
+    def resolve_predictions(_info, year=None):
         if year is None:
             return Prediction.objects.all()
 

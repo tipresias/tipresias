@@ -40,8 +40,7 @@ class PredictionType(DjangoObjectType):
 class Query(graphene.ObjectType):
     predictions = graphene.List(PredictionType, year=graphene.Int(default_value=None))
 
-    @staticmethod
-    def resolve_predictions(_info, year=None):
+    def resolve_predictions(self, _info, year=None):  # pylint: disable=R0201
         if year is None:
             return Prediction.objects.all()
 

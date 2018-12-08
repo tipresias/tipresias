@@ -37,6 +37,8 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 ### Run Python tests
 
 - `docker-compose run --rm server python3 -Wi manage.py test`
+- Linting: `docker-compose run --rm server pylint -d=R *.py`
+    - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 
 ## Troubleshooting
 

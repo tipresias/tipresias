@@ -1,5 +1,3 @@
-import os
-import sys
 import pandas as pd
 from django.http import JsonResponse, HttpRequest
 

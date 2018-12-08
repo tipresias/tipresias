@@ -1,5 +1,3 @@
-import os
-import sys
 from unittest import TestCase
 import pandas as pd
 from faker import Faker

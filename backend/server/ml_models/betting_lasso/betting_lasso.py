@@ -1,7 +1,6 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
 from typing import List, Tuple, Optional, Union, Sequence, Any
-import os
 from functools import reduce
 import pandas as pd
 import numpy as np
@@ -275,4 +274,3 @@ class BettingLassoData:
     @staticmethod
     def __y(data_frame: pd.DataFrame) -> pd.Series:
         return data_frame["score"] - data_frame["oppo_score"]
-

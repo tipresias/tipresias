@@ -1,7 +1,6 @@
 """Module with wrapper class for XGBRegressor model and its associated data class"""
 
 from typing import List, Tuple, Optional, Union, Callable
-import os
 from datetime import datetime
 from functools import reduce
 import pandas as pd

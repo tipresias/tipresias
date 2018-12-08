@@ -1,8 +1,5 @@
 """Script for generating the pickle file for the PlayerXGB estimator"""
 
-import os
-import sys
-
 from server.ml_models import PlayerXGB
 from server.ml_models.player_xgb import PlayerXGBData
 

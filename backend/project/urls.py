@@ -22,10 +22,10 @@ from graphene_django.views import GraphQLView
 from server import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('predictions', views.predictions, name='predictions'),
-    re_path('^graphql', GraphQLView.as_view(
-        graphiql=os.getenv('GRAPHIQL', default=False))
+    path("admin/", admin.site.urls),
+    path("predictions", views.predictions, name="predictions"),
+    re_path(
+        "^graphql", GraphQLView.as_view(graphiql=os.getenv("GRAPHIQL", default=False))
     ),
-    re_path('.*', TemplateView.as_view(template_name='index.html'))
+    re_path(".*", TemplateView.as_view(template_name="index.html")),
 ]

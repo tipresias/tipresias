@@ -1,7 +1,6 @@
 """Module with wrapper class for XGBRegressor model and its associated data class"""
 
 from typing import List, Tuple, Optional, Union, Sequence, Callable
-import os
 from functools import reduce
 import pandas as pd
 import numpy as np
@@ -359,4 +358,3 @@ class PlayerXGBData:
             + df["match_id"].astype(str)
             + df["year"].astype(str)
         )
-

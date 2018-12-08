@@ -1,5 +1,3 @@
-import os
-import sys
 from datetime import datetime
 from urllib.parse import urljoin
 import requests

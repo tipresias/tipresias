@@ -1,5 +1,4 @@
 from typing import List
-import os
 import pandas as pd
 
 from project.settings.common import BASE_DIR

@@ -1,8 +1,5 @@
 """Script for generating the pickle file for the LassoBetting estimator"""
 
-import os
-import sys
-
 from server.ml_models import MatchXGB
 from server.ml_models.match_xgb import MatchXGBData
 

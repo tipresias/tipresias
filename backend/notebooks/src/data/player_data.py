@@ -1,5 +1,3 @@
-import os
-import sys
 import pandas as pd
 from rpy2.robjects import r
 
@@ -234,4 +232,3 @@ def player_data(
         .drop_duplicates(subset=["team", "year", "round_number"])
         .set_index(["team", "year", "round_number"], drop=False)
     )
-

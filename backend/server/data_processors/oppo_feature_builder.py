@@ -1,6 +1,4 @@
 from typing import List, Optional
-import os
-import sys
 import pandas as pd
 
 INDEX_COLS: List[str] = ["team", "year", "round_number"]

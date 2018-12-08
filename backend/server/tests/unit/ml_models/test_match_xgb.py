@@ -1,4 +1,3 @@
-import os
 import sys
 from unittest import TestCase
 from unittest.mock import Mock
@@ -17,7 +16,7 @@ from server.ml_models.match_xgb import MatchXGBData
 FAKE = Faker()
 
 match_results_df = pd.read_csv(
-    f"{BASE_DIR}/backend/tests/fixtures/fitzroy_match_results.csv"
+    f"{BASE_DIR}/server/tests/fixtures/fitzroy_match_results.csv"
 )
 match_results_mock = Mock(return_value=match_results_df)
 

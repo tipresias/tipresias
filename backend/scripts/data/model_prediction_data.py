@@ -1,7 +1,6 @@
 """Script for generating prediction data (in the form of a CSV) for all available models."""
 
 from typing import Tuple
-import os
 import sys
 import pandas as pd
 

@@ -1,5 +1,3 @@
-import os
-import sys
 from unittest import TestCase
 import pandas as pd
 import numpy as np
@@ -13,16 +11,16 @@ FAKE = Faker()
 
 class TestBettingLasso(TestCase):
     def setUp(self):
-        data_frame = pd.DataFrame({
-            'team': [FAKE.company() for _ in range(10)],
-            'year': ([2014] * 2) + ([2015] * 6) + ([2016] * 2),
-            'score': np.random.randint(50, 150, 10),
-            'oppo_score': np.random.randint(50, 150, 10)
-        })
-        self.X = (pd
-                  .get_dummies(data_frame.drop('oppo_score', axis=1))
-                  .astype(float))
-        self.y = data_frame['oppo_score']
+        data_frame = pd.DataFrame(
+            {
+                "team": [FAKE.company() for _ in range(10)],
+                "year": ([2014] * 2) + ([2015] * 6) + ([2016] * 2),
+                "score": np.random.randint(50, 150, 10),
+                "oppo_score": np.random.randint(50, 150, 10),
+            }
+        )
+        self.X = pd.get_dummies(data_frame.drop("oppo_score", axis=1)).astype(float)
+        self.y = data_frame["oppo_score"]
         self.model = BettingLasso()
 
     def test_predict(self):
@@ -34,25 +32,26 @@ class TestBettingLasso(TestCase):
 
 class TestBettingLassoData(TestCase):
     def setUp(self):
-        self.data_frame = pd.DataFrame({
-            'team': [FAKE.company() for _ in range(10)],
-            'year': ([2014] * 2) + ([2015] * 6) + ([2016] * 2),
-            'score': np.random.randint(50, 150, 10),
-            'oppo_score': np.random.randint(50, 150, 10)
-        })
-        self.data = BettingLassoData(train_years=(2015, 2015),
-                                     test_years=(2016, 2016))
+        self.data_frame = pd.DataFrame(
+            {
+                "team": [FAKE.company() for _ in range(10)],
+                "year": ([2014] * 2) + ([2015] * 6) + ([2016] * 2),
+                "score": np.random.randint(50, 150, 10),
+                "oppo_score": np.random.randint(50, 150, 10),
+            }
+        )
+        self.data = BettingLassoData(train_years=(2015, 2015), test_years=(2016, 2016))
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()
 
         self.assertIsInstance(X_train, pd.DataFrame)
         self.assertIsInstance(y_train, pd.Series)
-        self.assertNotIn('score', X_train.columns)
-        self.assertNotIn('oppo_score', X_train.columns)
+        self.assertNotIn("score", X_train.columns)
+        self.assertNotIn("oppo_score", X_train.columns)
         # No columns should be composed of strings
         self.assertFalse(
-            any([X_train[column].dtype == 'O' for column in X_train.columns])
+            any([X_train[column].dtype == "O" for column in X_train.columns])
         )
         # Applying StandardScaler to integer columns raises a warning
         self.assertFalse(
@@ -64,11 +63,11 @@ class TestBettingLassoData(TestCase):
 
         self.assertIsInstance(X_test, pd.DataFrame)
         self.assertIsInstance(y_test, pd.Series)
-        self.assertNotIn('score', X_test.columns)
-        self.assertNotIn('oppo_score', X_test.columns)
+        self.assertNotIn("score", X_test.columns)
+        self.assertNotIn("oppo_score", X_test.columns)
         # No columns should be composed of strings
         self.assertFalse(
-            any([X_test[column].dtype == 'O' for column in X_test.columns])
+            any([X_test[column].dtype == "O" for column in X_test.columns])
         )
         # Applying StandardScaler to integer columns raises a warning
         self.assertFalse(

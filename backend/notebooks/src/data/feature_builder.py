@@ -155,14 +155,16 @@ class FeatureBuilder:
         return pd.Series(streak_groups, index=self.df.index)
 
     # Get cumulative stats by team & year
-    def __cum_col(self, series):
+    @staticmethod
+    def __cum_col(series):
         return (
             series.groupby(level=[TEAM_LEVEL, YEAR_LEVEL])
             .cumsum()
             .rename(f"cum_{series.name}")
         )
 
-    def __rolling_col(self, series):
+    @staticmethod
+    def __rolling_col(series):
         groups = series.groupby(level=TEAM_LEVEL, group_keys=False)
         # Using mean season length (23) for rolling window due to a combination of
         # testing different window values for a previous model and finding 23 to be

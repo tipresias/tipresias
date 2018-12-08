@@ -1,4 +1,3 @@
-import os
 import re
 import pandas as pd
 import numpy as np
@@ -150,7 +149,8 @@ def team_year_ladder_position(df):
         aggfunc={"cum_win_points": np.sum, "cum_percent": np.mean},
     )
 
-    # To get round-by-round ladder ranks, we sort each round by win points & percent, then save index numbers
+    # To get round-by-round ladder ranks, we sort each round by win points & percent,
+    # then save index numbers
     ladder_index = []
     ladder_values = []
 
@@ -175,7 +175,8 @@ def team_year_oppo_feature(column_label):
 
     return lambda x: (
         x.loc[:, ["year", "round_number", "oppo_team", column_label]]
-        # We switch out oppo_team for team in the index, then assign feature as oppo_{feature_column}
+        # We switch out oppo_team for team in the index, then assign feature
+        # as oppo_{feature_column}
         .rename(columns=rename_columns)
         .set_index(["team", "year", "round_number"])
         .sort_index()
@@ -243,7 +244,8 @@ def win_streak(df):
                     streaks.append(streaks[idx - 1] - 1)
             else:
                 raise Exception(
-                    f"No results should be negative, but {result} is at index {idx} of group {group_key}"
+                    f"No results should be negative, but {result} is at index {idx}"
+                    f"of group {group_key}"
                 )
 
         streak_groups.extend(streaks)
@@ -285,4 +287,3 @@ def cum_team_df(df):
         # in 2010 and had to replay it
         .drop_duplicates(subset=["team", "year", "round_number"], keep="last")
     )
-

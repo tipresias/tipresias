@@ -3,40 +3,38 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 TEAM_NAMES = [
-    'Richmond',
-    'Carlton',
-    'Melbourne',
-    'Gold Coast',
-    'Essendon',
-    'Sydney',
-    'Collingwood',
-    'North Melbourne',
-    'Adelaide',
-    'Western Bulldogs',
-    'Fremantle',
-    'Port Adelaide',
-    'St Kilda',
-    'West Coast',
-    'Brisbane',
-    'Hawthorn',
-    'GWS',
-    'Geelong',
-    'Fitzroy',
-    'University'
+    "Richmond",
+    "Carlton",
+    "Melbourne",
+    "Gold Coast",
+    "Essendon",
+    "Sydney",
+    "Collingwood",
+    "North Melbourne",
+    "Adelaide",
+    "Western Bulldogs",
+    "Fremantle",
+    "Port Adelaide",
+    "St Kilda",
+    "West Coast",
+    "Brisbane",
+    "Hawthorn",
+    "GWS",
+    "Geelong",
+    "Fitzroy",
+    "University",
 ]
 
 
 def validate_name(name):
     if name not in TEAM_NAMES:
         raise ValidationError(
-            _('%(name)s is not a valid team name'), params={'name': name}
+            _("%(name)s is not a valid team name"), params={"name": name}
         )
 
 
 class Team(models.Model):
-    name = models.CharField(
-        max_length=100, unique=True, validators=[validate_name]
-    )
+    name = models.CharField(max_length=100, unique=True, validators=[validate_name])
 
 
 class Match(models.Model):

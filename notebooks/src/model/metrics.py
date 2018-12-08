@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import make_scorer, mean_absolute_error, log_loss, accuracy_score
 
@@ -116,3 +114,38 @@ def measure_estimators(pipelines, data, model_type='regression', cv=5, n_jobs=-1
                          'std_accuracy': std_cv_accuracies + [np.nan] * len(test_accuracies),
                          'std_error': std_cv_errors + [np.nan] * len(test_errors),
                          'score_type': score_types})
+
+def yearly_performance_scores(estimators, features, labels):
+    model_names = []
+    errors = []
+    accuracies = []
+    years = []
+
+    for year in range(2011, 2017):
+        feat_train = features[features['year'] < year]
+        feat_test = features[features['year'] == year]
+        X_train = feat_train.values
+        X_test = feat_test.values
+
+        lab_train = labels.loc[feat_train.index]
+        lab_test = labels.loc[feat_test.index]
+        y_train = lab_train.values
+        y_test = lab_test.values
+
+        for estimator_name, estimator, keras in estimators:
+            kwargs = {'kerasregressor__verbose': 0} if keras else {}
+            estimator.fit(X_train, y_train, **kwargs)
+
+            y_pred = estimator.predict(X_test).reshape((-1,))
+
+            years.append(year)
+            model_names.append(estimator_name)
+            errors.append(mean_absolute_error(y_test, y_pred))
+            accuracies.append(regression_accuracy(y_test, y_pred))
+
+    year_scores = pd.DataFrame({'model': model_names,
+                                'year': years,
+                                'error': errors,
+                                'accuracy': accuracies}).astype({'year': int})
+
+    return year_scores

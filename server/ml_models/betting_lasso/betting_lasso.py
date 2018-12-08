@@ -177,7 +177,7 @@ class BettingLassoData():
             self.__compose_two, reversed(data_transformers), lambda x: x
         )
 
-        self.data = compose_all(data_readers).dropna()
+        self.data = compose_all(data_readers).astype({'year': int}).dropna()
 
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data.

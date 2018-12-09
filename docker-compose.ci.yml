@@ -1,26 +1,24 @@
-version: "3.1"
+version: "3.2"
 services:
   backend:
-    build: ./backend
+    image: cfranklin11/tipresias_server:master
     volumes:
       - ./backend:/app
       - ./data:/app/data
     ports:
       - "8000:8000"
-    stdin_open: true
-    tty: true
     depends_on:
       - db
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
-      - GRAPHIQL=True
     command: python3 manage.py runserver 0.0.0.0:8000
   frontend:
-    build: ./frontend
+    image: cfranklin11/tipresias_client:master
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app/frontend
       - /app/node_modules
+      - ./data:/app/data
     ports:
       - "3000:3000"
     environment:
@@ -28,16 +26,6 @@ services:
     depends_on:
       - backend
     command: yarn start
-  notebook:
-    image: tipresias_backend:latest
-    volumes:
-      - ./backend:/app
-      - ./data:/app/data
-    ports:
-      - "8888:8888"
-    depends_on:
-      - backend
-    command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
   db:
     image: postgres
     environment:

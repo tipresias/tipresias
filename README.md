@@ -12,8 +12,8 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 ### Setup
 
 - To build and run the app: `docker-compose up --build`
-- Migrate the DB: `docker-compose run --rm server python3 manage.py migrate`
-- Seed the DB: `docker-compose run --rm server python3 manage.py seed_db`
+- Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
+- Seed the DB: `docker-compose run --rm backend python3 manage.py seed_db`
 
 ### Run the app
 
@@ -36,8 +36,8 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 
 ### Run Python tests
 
-- `docker-compose run --rm server python3 -Wi manage.py test`
-- Linting: `docker-compose run --rm server pylint -d=R *.py`
+- `docker-compose run --rm backend python3 -Wi manage.py test`
+- Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
     - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 
 ## Troubleshooting

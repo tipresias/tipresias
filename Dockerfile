@@ -10,20 +10,20 @@ RUN curl -sL https://deb.nodesource.com/setup_8.x | bash \
   && apt-get install nodejs
 RUN curl -o- -L https://yarnpkg.com/install.sh | bash
 
-WORKDIR /app/
+WORKDIR /app
 
 # Install R dependencies
-COPY requirements.r /app/
+COPY ./backend/requirements.r /app/
 RUN Rscript requirements.r
 
 # Install Python dependencies
-COPY requirements.txt /app/
+COPY ./backend/requirements.txt /app/
 RUN pip3 install --upgrade pip -r requirements.txt
 
 # Install JS dependencies
-WORKDIR /app/client/
+WORKDIR /app/frontend/
 
-COPY ./client/package.json ./client/yarn.lock /app/client/
+COPY ./frontend/package.json ./frontend/yarn.lock /app/frontend/
 RUN $HOME/.yarn/bin/yarn install
 
 # Add the rest of the code
@@ -34,7 +34,7 @@ RUN $HOME/.yarn/bin/yarn build
 
 # Have to move all static files other than index.html to root/
 # for whitenoise middleware
-WORKDIR /app/client/build
+WORKDIR /app/frontend/build
 
 RUN mkdir root
 RUN mv *.ico *.js *.json root
@@ -43,6 +43,8 @@ WORKDIR /app/
 
 # Build static files
 RUN mkdir staticfiles
+# SECRET_KEY is only included here to avoid raising an error when generating static files.
+# Be sure to add a real SECRET_KEY config variable in Heroku.
 RUN DJANGO_SETTINGS_MODULE=project.settings.production SECRET_KEY=somethingsupersecret python3 manage.py collectstatic --noinput
 
 CMD python3 manage.py runserver 0.0.0.0:$PORT

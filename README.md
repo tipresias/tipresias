@@ -40,6 +40,16 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 - Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
     - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 
+### Deploy
+
+- Via Travis CI (recommended):
+    - In the Travis dashboard, navigate to the tipresias repository.
+    - Under 'More Options', trigger a build on `master`.
+    - This will build the image, run tests, and deploy to Heroku.
+- Via heroku CLI (skips CI):
+    - If your stack isn't set to container, run `heroku stack:set container`
+    - `git push heroku master`
+
 ## Troubleshooting
 
 - When working with some of the larger data sets (e.g. player stats comprise over 600,000 rows), your process might mysteriously die without completing. This is likely due to Docker running out of memory, because the default 2GB isn't enough. At least 4GB is the recommended limit, but you'll want more if you plan on having multiple processes running or multiple Jupyter notebooks open at the same time.

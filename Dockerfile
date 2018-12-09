@@ -10,18 +10,18 @@ RUN curl -sL https://deb.nodesource.com/setup_8.x | bash \
   && apt-get install nodejs
 RUN curl -o- -L https://yarnpkg.com/install.sh | bash
 
-WORKDIR /app
+WORKDIR /app/backend
 
 # Install R dependencies
-COPY ./backend/requirements.r /app/
+COPY ./backend/requirements.r /app/backend/
 RUN Rscript requirements.r
 
 # Install Python dependencies
-COPY ./backend/requirements.txt /app/
+COPY ./backend/requirements.txt /app/backend/
 RUN pip3 install --upgrade pip -r requirements.txt
 
 # Install JS dependencies
-WORKDIR /app/frontend/
+WORKDIR /app/frontend
 
 COPY ./frontend/package.json ./frontend/yarn.lock /app/frontend/
 RUN $HOME/.yarn/bin/yarn install
@@ -39,7 +39,7 @@ WORKDIR /app/frontend/build
 RUN mkdir root
 RUN mv *.ico *.js *.json root
 
-WORKDIR /app/
+WORKDIR /app/backend
 
 # Build static files
 RUN mkdir staticfiles

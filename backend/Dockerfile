@@ -4,7 +4,7 @@ FROM python:3.6
 # Install R to use rpy2 for access to R packages
 RUN apt-get update && apt-get -y install r-base
 
-WORKDIR /app/
+WORKDIR /app
 
 # Install R dependencies
 COPY requirements.r /app/

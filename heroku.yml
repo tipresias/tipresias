@@ -10,4 +10,4 @@ build:
 release:	
   image: web	
   command:	
-    - python3 manage.py migrate
+    - python3 backend/manage.py migrate

@@ -38,9 +38,9 @@ if os.environ.get("DATABASE_URL"):
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "frontend", "build", "static")]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "../", "frontend", "build", "static")]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 STATIC_URL = "/static/"
-WHITENOISE_ROOT = os.path.join(BASE_DIR, "frontend", "build", "root")
+WHITENOISE_ROOT = os.path.join(BASE_DIR, "../", "frontend", "build", "root")

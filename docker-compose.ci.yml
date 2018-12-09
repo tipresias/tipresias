@@ -16,9 +16,8 @@ services:
   frontend:
     image: cfranklin11/tipresias_client:master
     volumes:
-      - ./frontend:/app/frontend
+      - ./frontend:/app
       - /app/node_modules
-      - ./data:/app/data
     ports:
       - "3000:3000"
     environment:

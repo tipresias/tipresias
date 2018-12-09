@@ -1,7 +1,30 @@
 import * as d3 from 'd3';
 
-const prepareModel = (gamesByYear) => {
-  const modelsObject = gamesByYear.reduce((acc, currentItem) => {
+let games;
+let cumulativeTipPointPerModelObject;
+
+const margin = {
+  top: 20,
+  right: 5,
+  bottom: 20,
+  left: 35,
+};
+
+export const setGames = (gamesArray) => {
+  games = gamesArray;
+};
+
+export const getGames = () => games;
+
+const setCumulativeTipPointPerModel = (value) => {
+  cumulativeTipPointPerModelObject = value;
+};
+
+const getCumulativeTipPointPerModel = () => cumulativeTipPointPerModelObject;
+
+const prepareModel = () => {
+  const data = getGames();
+  const modelsObject = data.reduce((acc, currentItem) => {
     const { model, round_number } = currentItem;
     acc[round_number] = acc[round_number] || {};
     acc[round_number][model] = acc[round_number][model] || {};
@@ -46,50 +69,58 @@ const calculateCumulativeTotals = (modelsObject) => {
   return cumulativeTipPointPerModel;
 };
 
-const createScales = (cumulativeTipPointPerModel, gamesByYear) => {
+export const createTipPointScale = () => {
+  const cumulativeTipPointPerModel = getCumulativeTipPointPerModel();
   const height = 400;
-  const width = 800;
-  const margin = {
-    top: 20,
-    right: 5,
-    bottom: 20,
-    left: 35,
-  };
-  const [xMin, xMax] = d3.extent(gamesByYear, d => d.round_number);
-  const xScale = d3.scaleLinear()
-    .domain([xMin, xMax + 1])
-    .range([margin.left, width - margin.right]);
+  const extentArray = d3.extent(cumulativeTipPointPerModel[cumulativeTipPointPerModel.length - 1], item => item.cumulativeTotalPoints);
 
-  const [yMin, yMax] = d3.extent(cumulativeTipPointPerModel[27], item => item.cumulativeTotalPoints);
-  const yScale = d3.scaleLinear()
-    .domain([0, yMax])
+  const tipPointScale = d3.scaleLinear()
+    .domain([0, extentArray.yMax])
     .range([height - margin.bottom, margin.top]);
-
-  const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-  return { xScale, yScale, colorScale };
+  return tipPointScale;
 };
 
-const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel) => {
+export const createRoundScale = () => {
+  const gamesByYear = getGames();
+  const width = 800;
+  const [xMin, xMax] = d3.extent(gamesByYear, d => d.round_number);
+  const roundScale = d3.scaleLinear()
+    .domain([xMin, xMax + 1])
+    .range([margin.left, width - margin.right]);
+  return roundScale;
+};
+
+const createModelColorScale = () => {
+  const modelColorScale = d3.scaleOrdinal(d3.schemeCategory10);
+  return modelColorScale;
+};
+
+const createBarsObject = ({
+  roundScale,
+  tipPointScale,
+  modelColorScale,
+  cumulativeTipPointPerModel,
+}) => {
   const bars = cumulativeTipPointPerModel.map((roundItem, roundItemIndex) => {
     const barsPerRound = roundItem.map((modelItem) => {
       let x;
 
       if (modelItem.model === 'oddsmakers') {
-        x = xScale(roundItemIndex);
+        x = roundScale(roundItemIndex);
       }
       if (modelItem.model === 'tipresias_betting') {
-        x = xScale(roundItemIndex) + 5;
+        x = roundScale(roundItemIndex) + 5;
       }
       if (modelItem.model === 'tipresias_match') {
-        x = xScale(roundItemIndex) + 10;
+        x = roundScale(roundItemIndex) + 10;
       }
 
       if (modelItem.model === 'tipresias_player') {
-        x = xScale(roundItemIndex) + 15;
+        x = roundScale(roundItemIndex) + 15;
       }
 
-      const y = yScale(modelItem.cumulativeTotalPoints);
-      const h = yScale(0) - yScale(modelItem.cumulativeTotalPoints);
+      const y = tipPointScale(modelItem.cumulativeTotalPoints);
+      const h = tipPointScale(0) - tipPointScale(modelItem.cumulativeTotalPoints);
 
       return ({
         key: `${roundItemIndex + 1}-${modelItem.model}`,
@@ -98,7 +129,7 @@ const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel
         y,
         height: h,
         width: 5,
-        fill: colorScale(modelItem.model),
+        fill: modelColorScale(modelItem.model),
       });
     });
     return barsPerRound;
@@ -106,12 +137,24 @@ const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel
   return bars;
 };
 
-const createChartObject = (gamesByYear) => {
+export const drawBars = () => {
+  const gamesByYear = getGames();
   const modelsObject = prepareModel(gamesByYear);
   const cumulativeTipPointPerModel = calculateCumulativeTotals(modelsObject);
-  const { xScale, yScale, colorScale } = createScales(cumulativeTipPointPerModel, gamesByYear);
-  const bars = createBarsObject(xScale, yScale, colorScale, cumulativeTipPointPerModel);
-  return { bars, xScale, yScale };
-};
 
-export default createChartObject;
+  setCumulativeTipPointPerModel(cumulativeTipPointPerModel);
+
+  const roundScale = createRoundScale();
+
+  const tipPointScale = createTipPointScale();
+
+  const modelColorScale = createModelColorScale();
+
+  const bars = createBarsObject({
+    roundScale,
+    tipPointScale,
+    modelColorScale,
+    cumulativeTipPointPerModel,
+  });
+  return bars;
+};

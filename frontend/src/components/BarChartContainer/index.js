@@ -1,5 +1,12 @@
 import React from 'react';
-import createChartObject from './createChartObject';
+import {
+  setGames,
+  getGames,
+  drawBars,
+  createTipPointScale,
+  createRoundScale,
+} from './createChartObject';
+
 import BarChart from './BarChart';
 import Axis from './Axis';
 
@@ -25,10 +32,16 @@ class BarChartContainer extends React.Component {
   }
 
   calculateData(gamesByYear) {
-    const { bars, xScale, yScale } = createChartObject(gamesByYear);
+    setGames(gamesByYear);
+    const bars = drawBars();
+
+    const xScale = createRoundScale();
+    const yScale = createTipPointScale();
+
     this.setState({
       bars,
-      scales: { xScale, yScale },
+      xScale,
+      yScale,
       isCalculating: false,
     });
   }
@@ -36,18 +49,20 @@ class BarChartContainer extends React.Component {
   render() {
     const {
       bars,
-      scales,
+      xScale,
+      yScale,
       isCalculating,
     } = this.state;
 
     return (
       <div>
+        wip
         {
           !isCalculating
           && (
             <svg viewBox={`0 0 ${width} ${height}`} style={{ height: 'auto', width: '100%' }}>
               <BarChart bars={bars} />
-              <Axis scales={scales} />
+              <Axis xScale={xScale} yScale={yScale} />
             </svg>
           )
         }

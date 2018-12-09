@@ -23,7 +23,7 @@ class Axis extends React.Component {
   yAxis = d3.axisLeft().tickFormat(d => d);
 
   componentDidMount() {
-    const { scales: { xScale, yScale } } = this.props;
+    const { xScale, yScale } = this.props;
     this.xAxis.scale(xScale);
 
     d3.select(this.xAxisRef.current).call(this.xAxis);

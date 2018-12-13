@@ -1,17 +1,14 @@
-"""Module with wrapper class for XGBRegressor model and its associated data class"""
+"""Model class trained on player data and its associated data class"""
 
-from typing import List, Tuple, Optional, Union, Sequence, Callable
+from typing import List, Tuple, Union, Sequence, Callable, Optional
 from functools import reduce
 import pandas as pd
 import numpy as np
-from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.externals import joblib
 from sklearn.base import BaseEstimator
 from xgboost import XGBRegressor
 
-from project.settings.common import BASE_DIR
-from server.types import FeatureFunctionType
+from server.types import FeatureFunctionType, YearsType
 from server.data_processors import (
     FeatureBuilder,
     PlayerDataStacker,
@@ -24,7 +21,7 @@ from server.data_processors.feature_functions import (
     add_cum_matches_played,
 )
 from server.data_processors import FitzroyDataReader
-from server.types import YearsType
+from server.ml_models.ml_model import MLModel
 
 MATCH_STATS_COLS = [
     "at_home",
@@ -58,89 +55,21 @@ DATA_TRANSFORMERS: List[FeatureFunctionType] = [
 
 fitzroy = FitzroyDataReader()
 DATA_READERS: List[Callable] = [fitzroy.get_afltables_stats, fitzroy.match_results]
+MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
 
 np.random.seed(42)
 
 
-class PlayerModel:
-    """Create pipeline for for fitting/predicting with lasso model.
+class PlayerModel(MLModel):
+    """Create pipeline for fitting/predicting with model trained on player data"""
 
-    Attributes:
-        _pipeline (sklearn.pipeline.Pipeline): Scikit Learn pipeline
-            with transformers & Lasso estimator.
-        name (string): Name of final estimator in the pipeline ('XGBRegressor').
-    """
-
-    def __init__(self) -> None:
-        self._pipeline: Pipeline = make_pipeline(StandardScaler(), XGBRegressor())
-
-    @property
-    def name(self) -> str:
-        return self.__last_estimator()[0]
-
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Fit estimator to the data.
-
-        Args:
-            X (pandas.DataFrame): Data features.
-            y (pandas.Series): Data labels.
-
-        Returns:
-            None.
-        """
-
-        self._pipeline.fit(X, y)
-
-    def predict(self, X: pd.DataFrame) -> pd.Series:
-        """Make predictions base on the data input.
-
-        Args:
-            X (pandas.DataFrame): Data features.
-
-        Returns:
-            pandas.Series: Estimator predictions.
-        """
-
-        y_pred = self._pipeline.predict(X)
-
-        return pd.Series(y_pred, name="predicted_margin", index=X.index)
-
-    def save(
+    def __init__(
         self,
-        filepath: str = (
-            f"{BASE_DIR}/server/ml_models/player_xgb/" "player_xgb_model.pkl"
-        ),
+        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
+        name: Optional[str] = None,
+        module_name: str = "",
     ) -> None:
-        """Save the pipeline as a pickle file.
-
-        Args:
-            filepath (string): The path where the pickle file is saved.
-
-        Returns:
-            None.
-        """
-
-        joblib.dump(self._pipeline, filepath)
-
-    def load(
-        self,
-        filepath: str = (
-            f"{BASE_DIR}/server/ml_models/player_xgb/" "player_xgb_model.pkl"
-        ),
-    ) -> None:
-        """Load the pipeline from a pickle file.
-
-        Args:
-            filepath (string): The path to the file to laod.
-
-        Returns:
-            None.
-        """
-
-        self._pipeline = joblib.load(filepath)
-
-    def __last_estimator(self) -> Tuple[str, BaseEstimator]:
-        return self._pipeline.steps[-1]
+        super().__init__(estimators=estimators, name=name, module_name=module_name)
 
 
 class PlayerModelData:
@@ -300,6 +229,8 @@ class PlayerModelData:
 
     @property
     def train_years(self) -> YearsType:
+        """Range of years for slicing training data"""
+
         return self._train_years
 
     @train_years.setter
@@ -308,6 +239,8 @@ class PlayerModelData:
 
     @property
     def test_years(self) -> YearsType:
+        """Range of years for slicing test data"""
+
         return self._test_years
 
     @test_years.setter

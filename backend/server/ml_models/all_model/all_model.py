@@ -1,20 +1,18 @@
-"""Module with wrapper class for XGBRegressor model and its associated data class"""
+"""Class for model trained on all AFL data and its associated data class"""
 
-from typing import List, Tuple, Optional, Union, Callable
+from typing import List, Tuple, Union, Callable, Sequence, Optional
 from datetime import datetime
 from functools import reduce
 import pandas as pd
 import numpy as np
-from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.externals import joblib
 from sklearn.base import BaseEstimator
+from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 
-from project.settings.common import BASE_DIR
 from server.ml_models.betting_model import BettingModelData
 from server.ml_models.match_model import MatchModelData
 from server.ml_models.player_model import PlayerModelData
+from server.ml_models.ml_model import MLModel
 from server.types import YearsType
 
 
@@ -25,87 +23,21 @@ DATA_READERS: List[Callable] = [
     PlayerModelData(start_date=START_DATE, **DATA_KWARGS).data,
     MatchModelData(**DATA_KWARGS).data,
 ]
+MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
 
 np.random.seed(42)
 
 
-class AllModel:
-    """Create pipeline for for fitting/predicting with lasso model.
+class AllModel(MLModel):
+    """Create pipeline for fitting/predicting with model trained on all AFL data"""
 
-    Attributes:
-        _pipeline (sklearn.pipeline.Pipeline): Scikit Learn pipeline
-            with transformers & Lasso estimator.
-        name (string): Name of final estimator in the pipeline ('XGBRegressor').
-    """
-
-    def __init__(self) -> None:
-        self._pipeline: Pipeline = make_pipeline(StandardScaler(), XGBRegressor())
-
-    @property
-    def name(self) -> str:
-        return self.__last_estimator()[0]
-
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Fit estimator to the data.
-
-        Args:
-            X (pandas.DataFrame): Data features.
-            y (pandas.Series): Data labels.
-
-        Returns:
-            None.
-        """
-
-        self._pipeline.fit(X, y)
-
-    def predict(self, X: pd.DataFrame) -> pd.Series:
-        """Make predictions base on the data input.
-
-        Args:
-            X (pandas.DataFrame): Data features.
-
-        Returns:
-            pandas.Series: Estimator predictions.
-        """
-
-        y_pred = self._pipeline.predict(X)
-
-        return pd.Series(y_pred, name="predicted_margin", index=X.index)
-
-    def save(
+    def __init__(
         self,
-        filepath: str = (f"{BASE_DIR}/server/ml_models/all_xgb/" "all_xgb_model.pkl"),
+        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
+        name: Optional[str] = None,
+        module_name: str = "",
     ) -> None:
-        """Save the pipeline as a pickle file.
-
-        Args:
-            filepath (string): The path where the pickle file is saved.
-
-        Returns:
-            None.
-        """
-
-        joblib.dump(self._pipeline, filepath)
-
-    def load(
-        self,
-        filepath: str = (
-            f"{BASE_DIR}/server/ml_models/player_xgb/" "all_xgb_model.pkl"
-        ),
-    ) -> None:
-        """Load the pipeline from a pickle file.
-
-        Args:
-            filepath (string): The path to the file to laod.
-
-        Returns:
-            None.
-        """
-
-        self._pipeline = joblib.load(filepath)
-
-    def __last_estimator(self) -> Tuple[str, BaseEstimator]:
-        return self._pipeline.steps[-1]
+        super().__init__(estimators=estimators, name=name, module_name=module_name)
 
 
 class AllModelData:
@@ -190,6 +122,8 @@ class AllModelData:
 
     @property
     def train_years(self) -> YearsType:
+        """Range of years for slicing training data"""
+
         return self._train_years
 
     @train_years.setter
@@ -198,6 +132,8 @@ class AllModelData:
 
     @property
     def test_years(self) -> YearsType:
+        """Range of years for slicing test data"""
+
         return self._test_years
 
     @test_years.setter

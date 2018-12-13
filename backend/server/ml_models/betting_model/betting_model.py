@@ -4,14 +4,11 @@ from typing import List, Tuple, Optional, Union, Sequence, Any
 from functools import reduce
 import pandas as pd
 import numpy as np
-from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Lasso
-from sklearn.externals import joblib
 from sklearn.base import BaseEstimator
 
-from project.settings.common import BASE_DIR
-from server.types import FeatureFunctionType
+from server.types import FeatureFunctionType, YearsType
 from server.data_processors import (
     DataConcatenator,
     DataCleaner,
@@ -31,7 +28,7 @@ from server.data_processors.feature_functions import (
     add_ladder_position,
     add_win_streak,
 )
-from server.types import YearsType
+from server.ml_models.ml_model import MLModel
 
 FEATURE_FUNCS: Sequence[FeatureFunctionType] = (
     add_last_week_result,
@@ -66,13 +63,12 @@ DATA_TRANSFORMERS = [
     FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
 ]
 DATA_READERS = [BettingDataReader().transform(), MatchDataReader().transform()]
+MODEL_ESTIMATORS = (StandardScaler(), Lasso())
 
 np.random.seed(42)
 
 
-# TODO: This will need a refactor, but I'll wait to see what other ML model classes
-# look like before making decisions about data & dependencies
-class BettingModel:
+class BettingModel(MLModel):
     """Create pipeline for for fitting/predicting with lasso model.
 
     Attributes:
@@ -81,76 +77,13 @@ class BettingModel:
         name (string): Name of final estimator in the pipeline ('Lasso').
     """
 
-    def __init__(self) -> None:
-        self._pipeline: Pipeline = make_pipeline(StandardScaler(), Lasso())
-        self.name = self.__name()
-
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Fit estimator to the data.
-
-        Args:
-            X (pandas.DataFrame): Data features.
-            y (pandas.Series): Data labels.
-
-        Returns:
-            None.
-        """
-
-        self._pipeline.fit(X, y)
-
-    def predict(self, X: pd.DataFrame) -> pd.Series:
-        """Make predictions base on the data input.
-
-        Args:
-            X (pandas.DataFrame): Data features.
-
-        Returns:
-            pandas.Series: Estimator predictions.
-        """
-
-        y_pred = self._pipeline.predict(X)
-
-        return pd.Series(y_pred, name="predicted_margin", index=X.index)
-
-    def save(
+    def __init__(
         self,
-        filepath: str = (
-            f"{BASE_DIR}/server/ml_models/betting_lasso/" "betting_lasso_model.pkl"
-        ),
+        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
+        name: Optional[str] = None,
+        module_name: str = "",
     ) -> None:
-        """Save the pipeline as a pickle file.
-
-        Args:
-            filepath (string): The path where the pickle file is saved.
-
-        Returns:
-            None.
-        """
-
-        joblib.dump(self._pipeline, filepath)
-
-    def load(
-        self,
-        filepath: str = (
-            f"{BASE_DIR}/server/ml_models/betting_lasso/" "betting_lasso_model.pkl"
-        ),
-    ) -> None:
-        """Load the pipeline from a pickle file.
-
-        Args:
-            filepath (string): The path to the file to laod.
-
-        Returns:
-            None.
-        """
-
-        self._pipeline = joblib.load(filepath)
-
-    def __name(self) -> str:
-        return self.__last_estimator()[0]
-
-    def __last_estimator(self) -> Tuple[str, BaseEstimator]:
-        return self._pipeline.steps[-1]
+        super().__init__(estimators=estimators, name=name, module_name=module_name)
 
 
 class BettingModelData:
@@ -225,6 +158,8 @@ class BettingModelData:
 
     @property
     def train_years(self) -> YearsType:
+        """Range of years for slicing training data"""
+
         return self._train_years
 
     @train_years.setter
@@ -233,6 +168,8 @@ class BettingModelData:
 
     @property
     def test_years(self) -> YearsType:
+        """Range of years for slicing test data"""
+
         return self._test_years
 
     @test_years.setter

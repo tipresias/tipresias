@@ -1,7 +1,6 @@
 """Module with wrapper class for XGBRegressor model and its associated data class"""
 
-from typing import List, Tuple, Optional, Union, Callable
-from datetime import datetime
+from typing import List, Tuple, Optional, Union, Sequence, Callable
 from functools import reduce
 import pandas as pd
 import numpy as np
@@ -12,25 +11,58 @@ from sklearn.base import BaseEstimator
 from xgboost import XGBRegressor
 
 from project.settings.common import BASE_DIR
-from server.ml_models.betting_lasso import BettingLassoData
-from server.ml_models.match_xgb import MatchXGBData
-from server.ml_models.player_xgb import PlayerXGBData
+from server.types import FeatureFunctionType
+from server.data_processors import (
+    FeatureBuilder,
+    PlayerDataStacker,
+    PlayerDataAggregator,
+    OppoFeatureBuilder,
+)
+from server.data_processors.feature_functions import (
+    add_last_year_brownlow_votes,
+    add_rolling_player_stats,
+    add_cum_matches_played,
+)
+from server.data_processors import FitzroyDataReader
+from server.types import YearsType
 
-YearsType = Tuple[Optional[int], Optional[int]]
-
-
-START_DATE = "1965-01-01"
-DATA_KWARGS = {"train_years": (None, None), "test_years": (None, None)}
-DATA_READERS: List[Callable] = [
-    BettingLassoData(**DATA_KWARGS).data,
-    PlayerXGBData(start_date=START_DATE, **DATA_KWARGS).data,
-    MatchXGBData(**DATA_KWARGS).data,
+MATCH_STATS_COLS = [
+    "at_home",
+    "score",
+    "oppo_score",
+    "team",
+    "oppo_team",
+    "year",
+    "round_number",
 ]
+COL_TRANSLATIONS = {
+    "season": "year",
+    "time_on_ground__": "time_on_ground",
+    "id": "player_id",
+    "game": "match_id",
+}
+FEATURE_FUNCS: Sequence[FeatureFunctionType] = [
+    add_last_year_brownlow_votes,
+    add_rolling_player_stats,
+    add_cum_matches_played,
+]
+DATA_TRANSFORMERS: List[FeatureFunctionType] = [
+    PlayerDataStacker().transform,
+    FeatureBuilder(
+        feature_funcs=FEATURE_FUNCS,
+        index_cols=["team", "year", "round_number", "player_id"],
+    ).transform,
+    PlayerDataAggregator().transform,
+    OppoFeatureBuilder(match_cols=MATCH_STATS_COLS).transform,
+]
+
+fitzroy = FitzroyDataReader()
+DATA_READERS: List[Callable] = [fitzroy.get_afltables_stats, fitzroy.match_results]
 
 np.random.seed(42)
 
 
-class AllXGB:
+class PlayerModel:
     """Create pipeline for for fitting/predicting with lasso model.
 
     Attributes:
@@ -75,7 +107,9 @@ class AllXGB:
 
     def save(
         self,
-        filepath: str = (f"{BASE_DIR}/server/ml_models/all_xgb/" "all_xgb_model.pkl"),
+        filepath: str = (
+            f"{BASE_DIR}/server/ml_models/player_xgb/" "player_xgb_model.pkl"
+        ),
     ) -> None:
         """Save the pipeline as a pickle file.
 
@@ -91,7 +125,7 @@ class AllXGB:
     def load(
         self,
         filepath: str = (
-            f"{BASE_DIR}/server/ml_models/player_xgb/" "all_xgb_model.pkl"
+            f"{BASE_DIR}/server/ml_models/player_xgb/" "player_xgb_model.pkl"
         ),
     ) -> None:
         """Load the pipeline from a pickle file.
@@ -109,10 +143,12 @@ class AllXGB:
         return self._pipeline.steps[-1]
 
 
-class AllXGBData:
+class PlayerModelData:
     """Load and clean data for the XGBRegressor pipeline.
 
     Args:
+        data_transformers (list[callable]): Functions that receive, transform,
+            and return data frames.
         train_years (tuple[integer or None]): Minimum and maximum (inclusive) years
             for the training data.
         test_years (tuple[ingeter or None]): Minimum and maximum (inclusive) years
@@ -129,32 +165,105 @@ class AllXGBData:
     def __init__(
         self,
         data_readers: List[Callable] = DATA_READERS,
+        data_transformers: List[FeatureFunctionType] = DATA_TRANSFORMERS,
         train_years: YearsType = (None, 2015),
         test_years: YearsType = (2016, 2016),
-        start_date=None,
+        start_date="1965-01-01",
         end_date="2016-12-31",
     ) -> None:
         self._train_years = train_years
         self._test_years = test_years
 
-        data_frame = reduce(self.__concat_data_frames, data_readers)
-        data_frame_dtypes = data_frame.dtypes
-        numeric_cols = data_frame_dtypes[
-            (data_frame_dtypes == float) | (data_frame_dtypes == int)
-        ]
-        fillna_dict = {col: 0 for col in numeric_cols}
-        start_year = datetime.strptime(start_date, "%Y-%m-%d").year if start_date else 0
-        end_year = (
-            datetime.strptime(end_date, "%Y-%m-%d").year if start_date else np.Inf
+        # Need to reverse the transformation steps, because composition makes the output
+        # of each new function the argument for the previous
+        compose_all = reduce(
+            self.__compose_two, reversed(data_transformers), lambda x: x
         )
 
-        self.data = (
-            data_frame[
-                (data_frame["year"] >= start_year) & (data_frame["year"] <= end_year)
-            ]
-            .fillna(fillna_dict)
+        data_frame = (
+            data_readers[0](start_date=start_date, end_date=end_date)
+            # Some player data venues have trailing spaces
+            .assign(venue=lambda x: x["venue"].str.strip())
+            # Player data match IDs are wrong for recent years.
+            # The easiest way to add correct ones is to graft on the IDs
+            # from match_results. Also, match_results round_numbers are more useful.
+            .merge(
+                data_readers[1]()[["date", "venue", "round_number", "game"]],
+                on=["date", "venue"],
+                how="left",
+            )
+            # As of 11-10-2018, match_results is still missing finals data from 2018.
+            # Joining on date/venue leaves two duplicates played at M.C.G.
+            # on 29-4-1986 & 9-8-1986, but that's an acceptable loss of data
+            # and easier than munging team names
             .dropna()
+            .rename(columns=COL_TRANSLATIONS)
+            .astype({"year": int, "match_id": int})
+            .assign(
+                player_name=lambda x: x["first_name"] + " " + x["surname"],
+                # Need to add year to ID, because there are some
+                # player_id/match_id combos, decades apart, that by chance overlap
+                id=self.__id_col,
+            )
+            .drop(
+                [
+                    "first_name",
+                    "surname",
+                    "round",
+                    "local_start_time",
+                    "attendance",
+                    "hq1g",
+                    "hq1b",
+                    "hq2g",
+                    "hq2b",
+                    "hq3g",
+                    "hq3b",
+                    "hq4g",
+                    "hq4b",
+                    "aq1g",
+                    "aq1b",
+                    "aq2g",
+                    "aq2b",
+                    "aq3g",
+                    "aq3b",
+                    "aq4g",
+                    "aq4b",
+                    "jumper_no_",
+                    "umpire_1",
+                    "umpire_2",
+                    "umpire_3",
+                    "umpire_4",
+                    "substitute",
+                    "group_id",
+                    "date",
+                    "venue",
+                ],
+                axis=1,
+            )
+            # Some early matches (1800s) have fully-duplicated rows
+            .drop_duplicates()
+            .set_index("id")
+            .sort_index()
         )
+
+        # Drawn finals get replayed, which screws up my indexing and a bunch of other
+        # data munging, so getting match_ids for the repeat matches, and filtering
+        # them out of the data frame
+        duplicate_matches = data_frame[
+            data_frame.duplicated(
+                subset=["year", "round_number", "player_id"], keep="last"
+            )
+        ]["match_id"]
+
+        # There were some weird round-robin rounds in the early days, and it's easier to
+        # drop them rather than figure out how to split up the rounds.
+        data_frame = data_frame[
+            ((data_frame["year"] != 1897) | (data_frame["round_number"] != 15))
+            & ((data_frame["year"] != 1924) | (data_frame["round_number"] != 19))
+            & (~data_frame["match_id"].isin(duplicate_matches))
+        ]
+
+        self.data = compose_all(data_frame).dropna()
 
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data.
@@ -231,6 +340,12 @@ class AllXGBData:
         return pd.concat([X_data, missing_df], axis=1).astype(float)
 
     @staticmethod
+    def __compose_two(
+        composed_func: FeatureFunctionType, func_element: FeatureFunctionType
+    ) -> FeatureFunctionType:
+        return lambda x: composed_func(func_element(x))
+
+    @staticmethod
     def __y(data_frame: pd.DataFrame) -> pd.Series:
         return data_frame["score"] - data_frame["oppo_score"]
 
@@ -240,19 +355,4 @@ class AllXGBData:
             df["player_id"].astype(str)
             + df["match_id"].astype(str)
             + df["year"].astype(str)
-        )
-
-    @staticmethod
-    def __concat_data_frames(concated_data_frame, data_frame):
-        if concated_data_frame is None:
-            return data_frame
-
-        agg_cols = set(concated_data_frame.columns)
-        df_cols = set(data_frame.columns)
-        drop_cols = agg_cols.intersection(df_cols)
-
-        # Have to drop shared columns, and this seems a reasonable way of doing it
-        # without hard-coding values
-        return pd.concat(
-            [concated_data_frame.drop(list(drop_cols), axis=1), data_frame], axis=1
         )

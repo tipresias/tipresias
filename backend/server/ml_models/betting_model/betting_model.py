@@ -31,8 +31,7 @@ from server.data_processors.feature_functions import (
     add_ladder_position,
     add_win_streak,
 )
-
-YearsType = Tuple[Optional[int], Optional[int]]
+from server.types import YearsType
 
 FEATURE_FUNCS: Sequence[FeatureFunctionType] = (
     add_last_week_result,
@@ -73,7 +72,7 @@ np.random.seed(42)
 
 # TODO: This will need a refactor, but I'll wait to see what other ML model classes
 # look like before making decisions about data & dependencies
-class BettingLasso:
+class BettingModel:
     """Create pipeline for for fitting/predicting with lasso model.
 
     Attributes:
@@ -154,7 +153,7 @@ class BettingLasso:
         return self._pipeline.steps[-1]
 
 
-class BettingLassoData:
+class BettingModelData:
     """Load and clean data for the BettingLasso pipeline.
 
     Args:

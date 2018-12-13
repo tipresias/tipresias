@@ -3,12 +3,9 @@ disable=
     W0102, # Dangerous default value (list)
     R0903, # Too few public methods
     E1101, # Instance of generator has no <something> method (needed for Flake)
-    C0111, # Missing module docstring
-    C0413, # Local import should be placed at the top of the module
     W0511, # No TODOs
     R0913, # Too many arguments
     C0330, # Wrong indentation (indentation handled by black)
-    C0103, # Wrong case conventions
 
 [MASTER]
 ignore=migrations

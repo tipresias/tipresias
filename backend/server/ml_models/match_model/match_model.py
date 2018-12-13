@@ -27,9 +27,7 @@ from server.data_processors.feature_functions import (
     add_last_week_behinds,
 )
 from server.data_processors import FitzroyDataReader
-
-YearsType = Tuple[Optional[int], Optional[int]]
-
+from server.types import YearsType
 
 COL_TRANSLATIONS = {
     "home_points": "home_score",
@@ -75,7 +73,7 @@ DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
 np.random.seed(42)
 
 
-class MatchXGB:
+class MatchModel:
     """Create pipeline for for fitting/predicting with lasso model.
 
     Attributes:
@@ -156,7 +154,7 @@ class MatchXGB:
         return self._pipeline.steps[-1]
 
 
-class MatchXGBData:
+class MatchModelData:
     """Load and clean data for the XGB pipeline.
 
     Args:

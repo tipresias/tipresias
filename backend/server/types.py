@@ -6,4 +6,4 @@ from typing import Callable, Tuple, Optional
 import pandas as pd
 
 FeatureFunctionType = Callable[[pd.DataFrame], pd.DataFrame]
-YearsType = Tuple[Optional[int], Optional[int]]
+YearPair = Tuple[Optional[int], Optional[int]]

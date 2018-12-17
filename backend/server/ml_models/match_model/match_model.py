@@ -1,14 +1,13 @@
 """Module with wrapper class for XGBoost model and its associated data class"""
 
 from typing import List, Optional, Sequence, Callable
-from functools import reduce
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.base import BaseEstimator
 from xgboost import XGBRegressor
 
-from server.types import FeatureFunctionType, YearPair
+from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
 from server.data_processors.feature_functions import (
     add_last_week_result,
@@ -24,7 +23,7 @@ from server.data_processors.feature_functions import (
     add_last_week_behinds,
 )
 from server.data_processors import FitzroyDataReader
-from server.ml_models.ml_model import MLModel, MLModelData
+from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
 
 COL_TRANSLATIONS = {
     "home_points": "home_score",
@@ -34,7 +33,7 @@ COL_TRANSLATIONS = {
 }
 INDEX_COLS = ["team", "year", "round_number"]
 REQUIRED_COLS: List[str] = ["year", "score", "oppo_score"]
-FEATURE_FUNCS: Sequence[FeatureFunctionType] = [
+FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
     add_out_of_state,
     add_travel_distance,
     add_last_week_goals,
@@ -45,7 +44,7 @@ FEATURE_FUNCS: Sequence[FeatureFunctionType] = [
     add_rolling_last_week_win_rate,
     add_win_streak,
 ]
-DATA_TRANSFORMERS: List[FeatureFunctionType] = [
+DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     TeamDataStacker(index_cols=INDEX_COLS).transform,
     FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform,
     OppoFeatureBuilder(
@@ -83,23 +82,19 @@ class MatchModel(MLModel):
         super().__init__(estimators=estimators, name=name, module_name=module_name)
 
 
-class MatchModelData(MLModelData):
+class MatchModelData(MLModelData, DataTransformerMixin):
     """Load and clean match data"""
 
     def __init__(
         self,
         data_readers: List[Callable] = DATA_READERS,
-        data_transformers: List[FeatureFunctionType] = DATA_TRANSFORMERS,
+        data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
-        # Need to reverse the transformation steps, because composition makes the output
-        # of each new function the argument for the previous
-        compose_all = reduce(
-            self.__compose_two, reversed(data_transformers), lambda x: x
-        )
+        self._data_transformers = data_transformers
 
         data_frame = (
             data_readers[0]()
@@ -114,14 +109,14 @@ class MatchModelData(MLModelData):
             (data_frame["year"] != 1897) | (data_frame["round_number"] != 15)
         ]
 
-        self._data = compose_all(data_frame).drop("venue", axis=1).dropna()
+        self._data = (
+            self._compose_transformers(data_frame).drop("venue", axis=1).dropna()
+        )
 
     @property
     def data(self) -> pd.DataFrame:
         return self._data
 
-    @staticmethod
-    def __compose_two(
-        composed_func: FeatureFunctionType, func_element: FeatureFunctionType
-    ) -> FeatureFunctionType:
-        return lambda x: composed_func(func_element(x))
+    @property
+    def data_transformers(self):
+        return self._data_transformers

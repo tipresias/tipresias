@@ -1,14 +1,12 @@
 """Model class trained on player data and its associated data class"""
 
 from typing import List, Sequence, Callable, Optional
-from functools import reduce
-import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.base import BaseEstimator
 from xgboost import XGBRegressor
 
-from server.types import FeatureFunctionType, YearPair
+from server.types import DataFrameTransformer, YearPair
 from server.data_processors import (
     FeatureBuilder,
     PlayerDataStacker,
@@ -21,7 +19,7 @@ from server.data_processors.feature_functions import (
     add_cum_matches_played,
 )
 from server.data_processors import FitzroyDataReader
-from server.ml_models.ml_model import MLModel, MLModelData
+from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
 
 MATCH_STATS_COLS = [
     "at_home",
@@ -71,12 +69,12 @@ COL_TRANSLATIONS = {
     "game": "match_id",
 }
 
-FEATURE_FUNCS: Sequence[FeatureFunctionType] = [
+FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
     add_last_year_brownlow_votes,
     add_rolling_player_stats,
     add_cum_matches_played,
 ]
-DATA_TRANSFORMERS: List[FeatureFunctionType] = [
+DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     PlayerDataStacker().transform,
     FeatureBuilder(
         feature_funcs=FEATURE_FUNCS,
@@ -105,13 +103,13 @@ class PlayerModel(MLModel):
         super().__init__(estimators=estimators, name=name, module_name=module_name)
 
 
-class PlayerModelData(MLModelData):
+class PlayerModelData(MLModelData, DataTransformerMixin):
     """Load and clean player data"""
 
     def __init__(
         self,
         data_readers: List[Callable] = DATA_READERS,
-        data_transformers: List[FeatureFunctionType] = DATA_TRANSFORMERS,
+        data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         start_date="1965-01-01",
@@ -119,11 +117,7 @@ class PlayerModelData(MLModelData):
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
-        # Need to reverse the transformation steps, because composition makes the output
-        # of each new function the argument for the previous
-        compose_all = reduce(
-            self.__compose_two, reversed(data_transformers), lambda x: x
-        )
+        self._data_transformers = data_transformers
 
         data_frame = (
             data_readers[0](start_date=start_date, end_date=end_date)
@@ -174,17 +168,15 @@ class PlayerModelData(MLModelData):
             & (~data_frame["match_id"].isin(duplicate_matches))
         ]
 
-        self._data = compose_all(data_frame).dropna()
+        self._data = self._compose_transformers(data_frame).dropna()
 
     @property
-    def data(self) -> pd.DataFrame:
+    def data(self):
         return self._data
 
-    @staticmethod
-    def __compose_two(
-        composed_func: FeatureFunctionType, func_element: FeatureFunctionType
-    ) -> FeatureFunctionType:
-        return lambda x: composed_func(func_element(x))
+    @property
+    def data_transformers(self):
+        return self._data_transformers
 
     @staticmethod
     def __id_col(df):

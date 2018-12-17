@@ -1,14 +1,15 @@
 """Base ML model and data classes"""
 
 import os
-from typing import Sequence, Optional, Tuple, Union
+from typing import Sequence, Optional, Tuple, Union, List
+from functools import reduce
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.base import BaseEstimator
 from sklearn.externals import joblib
 import pandas as pd
 import numpy as np
 
-from server.types import YearPair
+from server.types import YearPair, DataFrameTransformer
 
 MODULE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
@@ -158,3 +159,31 @@ class MLModelData:
     @staticmethod
     def __y(data_frame: pd.DataFrame) -> pd.Series:
         return data_frame["score"] - data_frame["oppo_score"]
+
+
+class DataTransformerMixin:
+    """Mixin class for MLModelData classes that use data transformers"""
+
+    @property
+    def data_transformers(self) -> List[DataFrameTransformer]:
+        """List of data transformer functions"""
+
+        raise NotImplementedError("The data_transformers() method must be defined.")
+
+    @property
+    def _compose_transformers(self) -> DataFrameTransformer:
+        """Combine data transformation functions via composition"""
+
+        # Need to reverse the transformation steps, because composition makes the output
+        # of each new function the argument for the previous
+        return reduce(
+            self.__compose_two_transformers,
+            reversed(self.data_transformers),
+            lambda x: x,
+        )
+
+    @staticmethod
+    def __compose_two_transformers(
+        composed_func: DataFrameTransformer, func_element: DataFrameTransformer
+    ) -> DataFrameTransformer:
+        return lambda x: composed_func(func_element(x))

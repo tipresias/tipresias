@@ -1,27 +1,15 @@
-import sys
 from unittest import TestCase
-from unittest.mock import Mock
 import pandas as pd
 import numpy as np
 from faker import Faker
 
-from project.settings.common import BASE_DIR
-
-if BASE_DIR not in sys.path:
-    sys.path.append(BASE_DIR)
-
-from server.ml_models import MatchXGB
-from server.ml_models.match_xgb import MatchXGBData
+from server.ml_models import BettingModel
+from server.ml_models.betting_model import BettingModelData
 
 FAKE = Faker()
 
-match_results_df = pd.read_csv(
-    f"{BASE_DIR}/server/tests/fixtures/fitzroy_match_results.csv"
-)
-match_results_mock = Mock(return_value=match_results_df)
 
-
-class TestMatchXGB(TestCase):
+class TestBettingModel(TestCase):
     def setUp(self):
         data_frame = pd.DataFrame(
             {
@@ -29,12 +17,11 @@ class TestMatchXGB(TestCase):
                 "year": ([2014] * 2) + ([2015] * 6) + ([2016] * 2),
                 "score": np.random.randint(50, 150, 10),
                 "oppo_score": np.random.randint(50, 150, 10),
-                "round_number": 15,
             }
         )
         self.X = pd.get_dummies(data_frame.drop("oppo_score", axis=1)).astype(float)
         self.y = data_frame["oppo_score"]
-        self.model = MatchXGB()
+        self.model = BettingModel()
 
     def test_predict(self):
         self.model.fit(self.X, self.y)
@@ -43,9 +30,17 @@ class TestMatchXGB(TestCase):
         self.assertIsInstance(predictions, pd.Series)
 
 
-class TestMatchXGBData(TestCase):
+class TestBettingModelData(TestCase):
     def setUp(self):
-        self.data = MatchXGBData(data_readers=[match_results_mock])
+        self.data_frame = pd.DataFrame(
+            {
+                "team": [FAKE.company() for _ in range(10)],
+                "year": ([2014] * 2) + ([2015] * 6) + ([2016] * 2),
+                "score": np.random.randint(50, 150, 10),
+                "oppo_score": np.random.randint(50, 150, 10),
+            }
+        )
+        self.data = BettingModelData(train_years=(2015, 2015), test_years=(2016, 2016))
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()
@@ -54,10 +49,6 @@ class TestMatchXGBData(TestCase):
         self.assertIsInstance(y_train, pd.Series)
         self.assertNotIn("score", X_train.columns)
         self.assertNotIn("oppo_score", X_train.columns)
-        self.assertNotIn("goals", X_train.columns)
-        self.assertNotIn("oppo_goals", X_train.columns)
-        self.assertNotIn("behinds", X_train.columns)
-        self.assertNotIn("oppo_behinds", X_train.columns)
         # No columns should be composed of strings
         self.assertFalse(
             any([X_train[column].dtype == "O" for column in X_train.columns])
@@ -74,10 +65,6 @@ class TestMatchXGBData(TestCase):
         self.assertIsInstance(y_test, pd.Series)
         self.assertNotIn("score", X_test.columns)
         self.assertNotIn("oppo_score", X_test.columns)
-        self.assertNotIn("goals", X_test.columns)
-        self.assertNotIn("oppo_goals", X_test.columns)
-        self.assertNotIn("behinds", X_test.columns)
-        self.assertNotIn("oppo_behinds", X_test.columns)
         # No columns should be composed of strings
         self.assertFalse(
             any([X_test[column].dtype == "O" for column in X_test.columns])
@@ -88,8 +75,6 @@ class TestMatchXGBData(TestCase):
         )
 
     def test_train_test_data_compatibility(self):
-        self.maxDiff = None
-
         X_train, _ = self.data.train_data()
         X_test, _ = self.data.test_data()
 

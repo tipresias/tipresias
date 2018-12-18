@@ -5,8 +5,8 @@ import numpy as np
 from faker import Faker
 
 from project.settings.common import BASE_DIR
-from server.ml_models import AllXGB
-from server.ml_models.all_xgb import AllXGBData
+from server.ml_models import AllModel
+from server.ml_models.all_model import AllModelData
 
 FAKE = Faker()
 N_ROWS = 10
@@ -21,7 +21,7 @@ get_afltables_stats_mock = Mock(return_value=get_afltables_stats_df)
 match_results_mock = Mock(return_value=match_results_df)
 
 
-class TestAllXGB(TestCase):
+class TestAllModel(TestCase):
     def setUp(self):
         data_frame = pd.DataFrame(
             {
@@ -34,7 +34,7 @@ class TestAllXGB(TestCase):
         )
         self.X = pd.get_dummies(data_frame.drop("oppo_score", axis=1)).astype(float)
         self.y = data_frame["oppo_score"]
-        self.model = AllXGB()
+        self.model = AllModel()
 
     def test_predict(self):
         self.model.fit(self.X, self.y)
@@ -43,7 +43,7 @@ class TestAllXGB(TestCase):
         self.assertIsInstance(predictions, pd.Series)
 
 
-class TestAllXGBData(TestCase):
+class TestAllModelData(TestCase):
     def setUp(self):
         teams = [FAKE.company() for _ in range(N_ROWS)]
         years = ([2014] * 2) + ([2015] * 6) + ([2016] * 2)
@@ -88,7 +88,7 @@ class TestAllXGBData(TestCase):
             }
         ).set_index(index_cols, drop=False)
 
-        self.data = AllXGBData(data_readers=[betting_data, player_data, match_data])
+        self.data = AllModelData(data_readers=[betting_data, player_data, match_data])
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()

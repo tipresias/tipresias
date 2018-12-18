@@ -1,4 +1,6 @@
-from .betting_lasso import BettingLasso
-from .match_xgb import MatchXGB
-from .player_xgb import PlayerXGB
-from .all_xgb import AllXGB
+"""ML model classes and associated data classes"""
+
+from .betting_model import BettingModel
+from .match_model import MatchModel
+from .player_model import PlayerModel
+from .all_model import AllModel

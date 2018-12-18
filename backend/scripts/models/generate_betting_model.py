@@ -1,12 +1,12 @@
-"""Script for generating the pickle file for the LassoBetting estimator"""
+"""Script for generating the pickle file for the ModelBetting estimator"""
 
-from server.ml_models import BettingLasso
-from server.ml_models.betting_lasso import BettingLassoData
+from server.ml_models import BettingModel
+from server.ml_models.betting_model import BettingModelData
 
 
 def main():
-    data = BettingLassoData()
-    estimator = BettingLasso()
+    data = BettingModelData()
+    estimator = BettingModel()
     estimator.fit(*data.train_data())
     estimator.save()
 

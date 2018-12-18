@@ -2,7 +2,7 @@ from typing import List, Sequence
 from functools import reduce, partial
 import pandas as pd
 
-from server.types import FeatureFunctionType
+from server.types import DataFrameTransformer
 
 INDEX_COLS: List[str] = ["team", "year", "round_number"]
 REQUIRED_COLS: List[str] = INDEX_COLS + ["oppo_team"]
@@ -21,7 +21,7 @@ class FeatureBuilder:
     def __init__(
         self,
         index_cols: List[str] = INDEX_COLS,
-        feature_funcs: Sequence[FeatureFunctionType] = [],
+        feature_funcs: Sequence[DataFrameTransformer] = [],
     ) -> None:
         self.index_cols = index_cols
         self.feature_funcs = [
@@ -49,7 +49,7 @@ class FeatureBuilder:
 
     @staticmethod
     def __add_feature(
-        feature_func: FeatureFunctionType, data_frame: pd.DataFrame
+        feature_func: DataFrameTransformer, data_frame: pd.DataFrame
     ) -> pd.DataFrame:
         """Use the given feature function to add the feature and opposition team feature
         to the data frame"""
@@ -58,6 +58,6 @@ class FeatureBuilder:
 
     @staticmethod
     def __compose_two(
-        composed_func: FeatureFunctionType, func_element: FeatureFunctionType
-    ) -> FeatureFunctionType:
+        composed_func: DataFrameTransformer, func_element: DataFrameTransformer
+    ) -> DataFrameTransformer:
         return lambda x: composed_func(func_element(x))

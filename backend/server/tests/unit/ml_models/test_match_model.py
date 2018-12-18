@@ -5,22 +5,19 @@ import numpy as np
 from faker import Faker
 
 from project.settings.common import BASE_DIR
-from server.ml_models import PlayerXGB
-from server.ml_models.player_xgb import PlayerXGBData
+
+from server.ml_models import MatchModel
+from server.ml_models.match_model import MatchModelData
 
 FAKE = Faker()
 
-get_afltables_stats_df = pd.read_csv(
-    f"{BASE_DIR}/server/tests/fixtures/fitzroy_get_afltables_stats.csv"
-)
 match_results_df = pd.read_csv(
     f"{BASE_DIR}/server/tests/fixtures/fitzroy_match_results.csv"
 )
-get_afltables_stats_mock = Mock(return_value=get_afltables_stats_df)
 match_results_mock = Mock(return_value=match_results_df)
 
 
-class TestPlayerXGB(TestCase):
+class TestMatchModel(TestCase):
     def setUp(self):
         data_frame = pd.DataFrame(
             {
@@ -33,7 +30,7 @@ class TestPlayerXGB(TestCase):
         )
         self.X = pd.get_dummies(data_frame.drop("oppo_score", axis=1)).astype(float)
         self.y = data_frame["oppo_score"]
-        self.model = PlayerXGB()
+        self.model = MatchModel()
 
     def test_predict(self):
         self.model.fit(self.X, self.y)
@@ -42,11 +39,9 @@ class TestPlayerXGB(TestCase):
         self.assertIsInstance(predictions, pd.Series)
 
 
-class TestPlayerXGBData(TestCase):
+class TestMatchModelData(TestCase):
     def setUp(self):
-        self.data = PlayerXGBData(
-            data_readers=[get_afltables_stats_mock, match_results_mock]
-        )
+        self.data = MatchModelData(data_readers=[match_results_mock])
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()

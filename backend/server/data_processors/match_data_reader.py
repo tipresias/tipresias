@@ -1,3 +1,5 @@
+"""For reading match data from a CSV"""
+
 from typing import List
 import pandas as pd
 

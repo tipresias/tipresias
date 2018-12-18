@@ -1,6 +1,6 @@
 """Class for model trained on all AFL data and its associated data class"""
 
-from typing import List, Callable, Sequence, Optional
+from typing import List, Sequence, Optional
 from datetime import datetime
 from functools import reduce
 import pandas as pd
@@ -17,11 +17,14 @@ from server.types import YearPair
 
 
 START_DATE = "1965-01-01"
-DATA_KWARGS = {"train_years": (None, None), "test_years": (None, None)}
-DATA_READERS: List[Callable] = [
-    BettingModelData(**DATA_KWARGS).data,
-    PlayerModelData(start_date=START_DATE, **DATA_KWARGS).data,
-    MatchModelData(**DATA_KWARGS).data,
+# Was using **dict for repeated kwargs, but mypy complained, so just repeating
+# a little
+DATA_READERS: List[pd.DataFrame] = [
+    BettingModelData(train_years=(None, None), test_years=(None, None)).data,
+    PlayerModelData(
+        start_date=START_DATE, train_years=(None, None), test_years=(None, None)
+    ).data,
+    MatchModelData(train_years=(None, None), test_years=(None, None)).data,
 ]
 MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
 
@@ -45,7 +48,7 @@ class AllModelData(MLModelData):
 
     def __init__(
         self,
-        data_readers: List[Callable] = DATA_READERS,
+        data_readers: List[pd.DataFrame] = DATA_READERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         start_date=None,
@@ -77,7 +80,7 @@ class AllModelData(MLModelData):
         return self._data
 
     @staticmethod
-    def __concat_data_frames(concated_data_frame, data_frame):
+    def __concat_data_frames(concated_data_frame, data_frame) -> pd.DataFrame:
         if concated_data_frame is None:
             return data_frame
 

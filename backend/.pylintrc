@@ -7,6 +7,7 @@ disable=
     R0913, # Too many arguments
     C0330, # Wrong indentation (indentation handled by black),
     C0103, # Wrong case naming style
+    C0111, # TODO: Fix docstrings and reenable this rule
 
 [MASTER]
 ignore=migrations

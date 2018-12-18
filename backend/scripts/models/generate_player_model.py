@@ -1,12 +1,12 @@
-"""Script for generating the pickle file for the PlayerXGB estimator"""
+"""Script for generating the pickle file for the PlayerModel estimator"""
 
-from server.ml_models import PlayerXGB
-from server.ml_models.player_xgb import PlayerXGBData
+from server.ml_models import PlayerModel
+from server.ml_models.player_model import PlayerModelData
 
 
 def main():
-    data = PlayerXGBData()
-    estimator = PlayerXGB()
+    data = PlayerModelData()
+    estimator = PlayerModel()
     estimator.fit(*data.train_data())
     estimator.save()
 

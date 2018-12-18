@@ -38,7 +38,7 @@ FEATURE_FUNCS: Sequence[DataFrameTransformer] = (
     add_win_streak,
 )
 REQUIRED_COLS: List[str] = ["year", "score", "oppo_score"]
-DATA_TRANSFORMERS = [
+DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     DataCleaner().transform,
     TeamDataStacker().transform,
     FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform,

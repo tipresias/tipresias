@@ -106,7 +106,7 @@ class MLModelData:
         return X_test, y_test
 
     @property
-    def data(self) -> None:
+    def data(self) -> pd.DataFrame:
         """Get the data frame"""
 
         raise NotImplementedError("The data() method must be defined.")

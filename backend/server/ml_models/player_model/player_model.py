@@ -168,7 +168,9 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
             & (~data_frame["match_id"].isin(duplicate_matches))
         ]
 
-        self._data = self._compose_transformers(data_frame).dropna()
+        self._data = self._compose_transformers(  # pylint: disable=E1102
+            data_frame
+        ).dropna()
 
     @property
     def data(self):
@@ -179,9 +181,9 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
         return self._data_transformers
 
     @staticmethod
-    def __id_col(df):
+    def __id_col(data_frame):
         return (
-            df["player_id"].astype(str)
-            + df["match_id"].astype(str)
-            + df["year"].astype(str)
+            data_frame["player_id"].astype(str)
+            + data_frame["match_id"].astype(str)
+            + data_frame["year"].astype(str)
         )

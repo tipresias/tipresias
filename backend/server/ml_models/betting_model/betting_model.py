@@ -100,7 +100,9 @@ class BettingModelData(MLModelData, DataTransformerMixin):
 
         data_frame = self.__concat_data_input(data_readers)
         self._data = (
-            self._compose_transformers(data_frame).astype({"year": int}).dropna()
+            self._compose_transformers(data_frame)  # pylint: disable=E1102
+            .astype({"year": int})
+            .dropna()
         )
 
     @property

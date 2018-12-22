@@ -19,6 +19,8 @@ class App extends Component {
         const { allGames, year } = this.state;
         this.setGamesByYear(allGames, year);
       });
+    }).catch((err) => {
+      console.log(err);
     });
   }
 

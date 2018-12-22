@@ -72,10 +72,10 @@ const calculateCumulativeTotals = (modelsObject) => {
 export const createTipPointScale = () => {
   const cumulativeTipPointPerModel = getCumulativeTipPointPerModel();
   const height = 400;
-  const extentArray = d3.extent(cumulativeTipPointPerModel[cumulativeTipPointPerModel.length - 1], item => item.cumulativeTotalPoints);
+  const [yMin, yMax] = d3.extent(cumulativeTipPointPerModel[cumulativeTipPointPerModel.length - 1], item => item.cumulativeTotalPoints);
 
   const tipPointScale = d3.scaleLinear()
-    .domain([0, extentArray.yMax])
+    .domain([0, yMax])
     .range([height - margin.bottom, margin.top]);
   return tipPointScale;
 };
@@ -108,18 +108,23 @@ const createBarsObject = ({
       if (modelItem.model === 'oddsmakers') {
         x = roundScale(roundItemIndex);
       }
-      if (modelItem.model === 'tipresias_betting') {
+      if (modelItem.model === 'tipresias_all_data') {
         x = roundScale(roundItemIndex) + 5;
       }
-      if (modelItem.model === 'tipresias_match') {
+      if (modelItem.model === 'tipresias_betting') {
         x = roundScale(roundItemIndex) + 10;
       }
-
-      if (modelItem.model === 'tipresias_player') {
+      if (modelItem.model === 'tipresias_match') {
         x = roundScale(roundItemIndex) + 15;
       }
 
+      if (modelItem.model === 'tipresias_player') {
+        x = roundScale(roundItemIndex) + 20;
+      }
+
       const y = tipPointScale(modelItem.cumulativeTotalPoints);
+
+
       const h = tipPointScale(0) - tipPointScale(modelItem.cumulativeTotalPoints);
 
       return ({
@@ -132,6 +137,7 @@ const createBarsObject = ({
         fill: modelColorScale(modelItem.model),
       });
     });
+
     return barsPerRound;
   });
   return bars;
@@ -156,5 +162,6 @@ export const drawBars = () => {
     modelColorScale,
     cumulativeTipPointPerModel,
   });
+
   return bars;
 };

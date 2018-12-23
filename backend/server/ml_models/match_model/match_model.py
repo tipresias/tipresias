@@ -77,7 +77,7 @@ class MatchModel(MLModel):
         self,
         estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
         name: Optional[str] = None,
-        module_name: str = "",
+        module_name: str = "match_model",
     ) -> None:
         super().__init__(estimators=estimators, name=name, module_name=module_name)
 

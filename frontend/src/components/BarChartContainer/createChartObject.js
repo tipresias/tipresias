@@ -1,4 +1,6 @@
+// @flow
 import * as d3 from 'd3';
+// import type { GameData } from '../../types';
 
 let games;
 let cumulativeTipPointPerModelObject;
@@ -10,7 +12,7 @@ const margin = {
   left: 35,
 };
 
-export const setGames = (gamesArray) => {
+export const setGames = (gamesArray: Array<GameData>) => {
   games = gamesArray;
 };
 

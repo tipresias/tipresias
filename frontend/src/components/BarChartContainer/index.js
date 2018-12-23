@@ -32,6 +32,8 @@ class BarChartContainer extends React.Component {
   }
 
   setBars(gamesByYear) {
+    console.log(gamesByYear);
+
     setGames(gamesByYear);
     const bars = drawBars();
 

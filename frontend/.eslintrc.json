@@ -5,10 +5,13 @@
         "jest": true
     },
     "extends": [
-        "eslint:recommended",
-        "airbnb"
+        "airbnb",
+        "plugin:flowtype/recommended"
     ],
     "parser": "babel-eslint",
+    "plugins": [
+        "flowtype"
+    ],
     "parserOptions": {
         "ecmaVersion": 2015,
         "sourceType": "module"

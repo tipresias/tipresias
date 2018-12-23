@@ -3,11 +3,22 @@ import pandas as pd
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import make_scorer, mean_absolute_error, log_loss, accuracy_score
 
+# from sklearn.externals.joblib import Parallel, delayed
+from dask import compute, delayed
+
 np.random.seed(42)
 
 
 def regression_accuracy(y, y_pred, **kwargs):  # pylint: disable=W0613
-    correct_preds = ((y >= 0) & (y_pred >= 0)) | ((y <= 0) & (y_pred <= 0))
+    try:
+        correct_preds = ((y >= 0) & (y_pred >= 0)) | ((y <= 0) & (y_pred <= 0))
+    except ValueError:
+        reset_y = y.reset_index(drop=True)
+        reset_y_pred = y_pred.reset_index(drop=True)
+        correct_preds = ((reset_y >= 0) & (reset_y_pred >= 0)) | (
+            (reset_y <= 0) & (reset_y_pred <= 0)
+        )
+
     return np.mean(correct_preds.astype(int))
 
 
@@ -83,7 +94,7 @@ def measure_classifier(estimator, data, cv=5, n_jobs=-1):
 
 
 def measure_estimators(
-    pipelines, data, model_type="regression", cv=5, n_jobs=-1, accuracy=True
+    estimators, data, model_type="regression", cv=5, n_jobs=-1, accuracy=True
 ):
     if model_type not in ("regression", "classification"):
         raise Exception(
@@ -98,17 +109,21 @@ def measure_estimators(
     std_cv_accuracies = []
     std_cv_errors = []
 
-    for pipeline in pipelines:
-        estimator_name = pipeline.steps[-1][0]
+    for estimator in estimators:
+        estimator_name = (
+            estimator.steps[-1][0]
+            if isinstance(estimator, Pipeline)
+            else type(estimator).__name__
+        )
         print(f"Training {estimator_name}")
 
         if model_type == "regression":
             cv_accuracies, cv_errors, test_accuracy, test_error = measure_regressor(
-                pipeline, data, cv=cv, n_jobs=n_jobs, accuracy=accuracy
+                estimator, data, cv=cv, n_jobs=n_jobs, accuracy=accuracy
             )
         else:
             cv_accuracies, cv_errors, test_accuracy, test_error = measure_classifier(
-                pipeline, data, cv=cv, n_jobs=n_jobs
+                estimator, data, cv=cv, n_jobs=n_jobs
             )
 
         mean_cv_accuracy = np.mean(cv_accuracies)
@@ -130,7 +145,7 @@ def measure_estimators(
 
     return pd.DataFrame(
         {
-            "estimator": estimator_names * 2,
+            "model": estimator_names * 2,
             "accuracy": mean_cv_accuracies + test_accuracies,
             "error": mean_cv_errors + test_errors,
             "std_accuracy": std_cv_accuracies + [np.nan] * len(test_accuracies),
@@ -161,7 +176,10 @@ def yearly_performance_scores(estimators, features, labels):
             kwargs = {"kerasregressor__verbose": 0} if keras else {}
             estimator.fit(X_train, y_train, **kwargs)
 
-            y_pred = estimator.predict(X_test).reshape((-1,))
+            y_pred = estimator.predict(X_test)
+
+            if isinstance(y_pred, np.ndarray):
+                y_pred = y_pred.reshape((-1,))
 
             years.append(year)
             model_names.append(estimator_name)

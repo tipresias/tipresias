@@ -5,6 +5,7 @@
         "jest": true
     },
     "extends": [
+        "eslint:recommended",
         "airbnb",
         "plugin:flowtype/recommended"
     ],

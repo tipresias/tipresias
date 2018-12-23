@@ -1,5 +1,13 @@
+// @flow
 import React from 'react';
 import * as d3 from 'd3';
+import type { NumericScale, StringScale } from '../../../types';
+
+type Props = {
+  xScale: NumericScale,
+  yScale: StringScale
+}
+type State = {}
 
 const height = 400;
 const margin = {
@@ -11,14 +19,13 @@ const margin = {
 const xAxisTranslate = `translate(0, ${height - margin.bottom})`;
 const yAxisTranslate = `translate(${margin.left},0)`;
 
-class Axis extends React.Component {
+class Axis extends React.Component<Props, State> {
   xAxisRef = React.createRef();
 
   yAxisRef = React.createRef();
 
   xAxis = d3.axisBottom()
     .tickFormat(d => d);
-  // xAxis = d3.axisBottom().tickValues([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
 
   yAxis = d3.axisLeft().tickFormat(d => d);
 

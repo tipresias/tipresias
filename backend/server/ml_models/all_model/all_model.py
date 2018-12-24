@@ -76,8 +76,9 @@ class AllModelData(MLModelData):
     def data(self) -> pd.DataFrame:
         return self._data
 
+    @staticmethod
     def __concat_data_frames(
-        self, concated_data_frame: pd.DataFrame, data_reader: Type[MLModelData]
+        concated_data_frame: pd.DataFrame, data_reader: Type[MLModelData]
     ) -> pd.DataFrame:
         data_frame = data_reader().data
 

@@ -40,7 +40,7 @@ class TestAllModel(TestCase):
         self.model.fit(self.X, self.y)
         predictions = self.model.predict(self.X)
 
-        self.assertIsInstance(predictions, pd.Series)
+        self.assertIsInstance(predictions, np.ndarray)
 
 
 class TestAllModelData(TestCase):
@@ -52,7 +52,8 @@ class TestAllModelData(TestCase):
         oppo_scores = np.random.randint(50, 150, N_ROWS)
         index_cols = ["team", "year", "round_number"]
 
-        betting_data = pd.DataFrame(
+        betting_data_reader = Mock()
+        betting_data_reader().data = pd.DataFrame(
             {
                 "team": teams,
                 "year": years,
@@ -64,7 +65,8 @@ class TestAllModelData(TestCase):
             }
         ).set_index(index_cols, drop=False)
 
-        player_data = pd.DataFrame(
+        player_data_reader = Mock()
+        player_data_reader().data = pd.DataFrame(
             {
                 "team": teams,
                 "year": years,
@@ -76,7 +78,8 @@ class TestAllModelData(TestCase):
             }
         ).set_index(index_cols, drop=False)
 
-        match_data = pd.DataFrame(
+        match_data_reader = Mock()
+        match_data_reader().data = pd.DataFrame(
             {
                 "team": teams,
                 "year": years,
@@ -88,7 +91,9 @@ class TestAllModelData(TestCase):
             }
         ).set_index(index_cols, drop=False)
 
-        self.data = AllModelData(data_readers=[betting_data, player_data, match_data])
+        self.data = AllModelData(
+            data_readers=[betting_data_reader, player_data_reader, match_data_reader]
+        )
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()

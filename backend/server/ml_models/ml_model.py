@@ -47,13 +47,10 @@ class MLModel(BaseEstimator, RegressorMixin):
 
         return self
 
-    def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> pd.Series:
+    def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         """Make predictions based on the data input"""
 
-        y_pred = self._pipeline.predict(X)
-        index = X.index if isinstance(X, (pd.DataFrame, pd.Series)) else None
-
-        return pd.Series(y_pred, name="predicted_margin", index=index)
+        return self._pipeline.predict(X)
 
     def save(self, filepath: Optional[str] = None) -> None:
         """Save the pipeline as a pickle file"""

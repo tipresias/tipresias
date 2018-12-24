@@ -13,6 +13,7 @@ from server.ml_models import PlayerModel
 from server.ml_models.player_model import PlayerModelData
 from server.ml_models import AllModel
 from server.ml_models.all_model import AllModelData
+from server.ml_models import AvgModel
 
 from notebooks.src.data.data_builder import DataBuilder, BettingData, MatchData
 from notebooks.src.data.data_transformer import DataTransformer
@@ -23,6 +24,7 @@ ML_MODELS = [
     (MatchModel, MatchModelData),
     (PlayerModel, PlayerModelData),
     (AllModel, AllModelData),
+    (AvgModel, AllModelData),
 ]
 
 

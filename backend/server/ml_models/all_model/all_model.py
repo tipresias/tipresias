@@ -70,6 +70,7 @@ class AllModelData(MLModelData):
             ]
             .fillna(fillna_dict)
             .dropna()
+            .sort_index()
         )
 
     @property

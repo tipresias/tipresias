@@ -157,11 +157,11 @@ class MLModelData:
             {missing_col: 0 for missing_col in missing_cols}, index=X_data.index
         )
 
-        return pd.concat([X_data, missing_df], axis=1).astype(float)
+        return pd.concat([X_data, missing_df], axis=1).astype(float).sort_index()
 
     @staticmethod
     def __y(data_frame: pd.DataFrame) -> pd.Series:
-        return data_frame["score"] - data_frame["oppo_score"]
+        return (data_frame["score"] - data_frame["oppo_score"]).rename("margin")
 
 
 class DataTransformerMixin:

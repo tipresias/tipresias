@@ -168,9 +168,11 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
             & (~data_frame["match_id"].isin(duplicate_matches))
         ]
 
-        self._data = self._compose_transformers(  # pylint: disable=E1102
-            data_frame
-        ).dropna()
+        self._data = (
+            self._compose_transformers(data_frame)  # pylint: disable=E1102
+            .dropna()
+            .sort_index()
+        )
 
     @property
     def data(self):

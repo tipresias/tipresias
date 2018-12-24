@@ -103,6 +103,7 @@ class BettingModelData(MLModelData, DataTransformerMixin):
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .astype({"year": int})
             .dropna()
+            .sort_index()
         )
 
     @property

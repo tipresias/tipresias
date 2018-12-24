@@ -109,12 +109,7 @@ def measure_estimators(
     std_cv_accuracies = []
     std_cv_errors = []
 
-    for estimator in estimators:
-        estimator_name = (
-            estimator.steps[-1][0]
-            if isinstance(estimator, Pipeline)
-            else type(estimator).__name__
-        )
+    for estimator_name, estimator in estimators:
         print(f"Training {estimator_name}")
 
         if model_type == "regression":
@@ -155,39 +150,51 @@ def measure_estimators(
     )
 
 
-def yearly_performance_scores(estimators, features, labels):
-    model_names = []
-    errors = []
-    accuracies = []
-    years = []
+def yearly_performance_score(estimators, features, labels, year):
+    feat_train = features[features["year"] < year]
+    feat_test = features[features["year"] == year]
+    X_train = feat_train.values
+    X_test = feat_test.values
 
-    for year in range(2011, 2017):
-        feat_train = features[features["year"] < year]
-        feat_test = features[features["year"] == year]
-        X_train = feat_train.values
-        X_test = feat_test.values
+    lab_train = labels.loc[feat_train.index]
+    lab_test = labels.loc[feat_test.index]
+    y_train = lab_train.values
+    y_test = lab_test.values
 
-        lab_train = labels.loc[feat_train.index]
-        lab_test = labels.loc[feat_test.index]
-        y_train = lab_train.values
-        y_test = lab_test.values
+    scores = []
 
-        for estimator_name, estimator, keras in estimators:
-            kwargs = {"kerasregressor__verbose": 0} if keras else {}
-            estimator.fit(X_train, y_train, **kwargs)
+    for estimator_name, estimator, keras in estimators:
+        kwargs = {"kerasregressor__verbose": 0} if keras else {}
+        estimator.fit(X_train, y_train, **kwargs)
 
-            y_pred = estimator.predict(X_test)
+        y_pred = estimator.predict(X_test)
 
-            if isinstance(y_pred, np.ndarray):
-                y_pred = y_pred.reshape((-1,))
+        if isinstance(y_pred, np.ndarray):
+            y_pred = y_pred.reshape((-1,))
 
-            years.append(year)
-            model_names.append(estimator_name)
-            errors.append(mean_absolute_error(y_test, y_pred))
-            accuracies.append(regression_accuracy(y_test, y_pred))
+        scores.append(
+            {
+                "year": year,
+                "model": estimator_name,
+                "error": mean_absolute_error(y_test, y_pred),
+                "accuracy": regression_accuracy(y_test, y_pred),
+            }
+        )
 
-    year_scores = pd.DataFrame(
-        {"model": model_names, "year": years, "error": errors, "accuracy": accuracies}
-    ).astype({"year": int})
+    return scores
 
-    return year_scores
+
+def yearly_performance_scores(estimators, features, labels, parallel=True):
+    if parallel:
+        scores = [
+            delayed(yearly_performance_score)(estimators, features, labels, year)
+            for year in range(2011, 2017)
+        ]
+        results = compute(scores, scheduler="processes")
+    else:
+        results = [
+            yearly_performance_score(estimators, features, labels, year)
+            for year in range(2011, 2017)
+        ]
+
+    return pd.DataFrame(list(np.array(results).flatten()))

@@ -5,48 +5,48 @@ ShallowWrapper {
   Symbol(enzyme.__root__): [Circular],
   Symbol(enzyme.__unrendered__): <BarChart
     bars={
+      Array [
         Array [
-            Array [
-              Object {
-                "fill": "#1f77b4",
-                "height": 11.764705882352928,
-                "key": "1-oddsmakers",
-                "round": 1,
-                "width": 6,
-                "x": 7.857142857142858,
-                "y": 368.2352941176471,
-              },
-              Object {
-                "fill": "#ff7f0e",
-                "height": 11.764705882352928,
-                "key": "1-tipresias_betting",
-                "round": 1,
-                "width": 6,
-                "x": 13.857142857142858,
-                "y": 368.2352941176471,
-              },
-              Object {
-                "fill": "#2ca02c",
-                "height": 9.411764705882376,
-                "key": "1-tipresias_match",
-                "round": 1,
-                "width": 6,
-                "x": 19.857142857142858,
-                "y": 370.5882352941176,
-              },
-              Object {
-                "fill": "#d62728",
-                "height": 18.823529411764696,
-                "key": "1-tipresias_player",
-                "round": 1,
-                "width": 6,
-                "x": 25.857142857142858,
-                "y": 361.1764705882353,
-              },
-            ],
-          ]
+          Object {
+            "fill": "#1f77b4",
+            "height": 11.764705882352928,
+            "key": "1-oddsmakers",
+            "round": 1,
+            "width": 6,
+            "x": 7.857142857142858,
+            "y": 368.2352941176471,
+          },
+          Object {
+            "fill": "#ff7f0e",
+            "height": 11.764705882352928,
+            "key": "1-tipresias_betting",
+            "round": 1,
+            "width": 6,
+            "x": 13.857142857142858,
+            "y": 368.2352941176471,
+          },
+          Object {
+            "fill": "#2ca02c",
+            "height": 9.411764705882376,
+            "key": "1-tipresias_match",
+            "round": 1,
+            "width": 6,
+            "x": 19.857142857142858,
+            "y": 370.5882352941176,
+          },
+          Object {
+            "fill": "#d62728",
+            "height": 18.823529411764696,
+            "key": "1-tipresias_player",
+            "round": 1,
+            "width": 6,
+            "x": 25.857142857142858,
+            "y": 361.1764705882353,
+          },
+        ],
+      ]
     }
-/>,
+  />,
   Symbol(enzyme.__renderer__): Object {
     "batchedUpdates": [Function],
     "getNode": [Function],
@@ -64,39 +64,31 @@ ShallowWrapper {
         <rect
           fill="#1f77b4"
           height={11.764705882352928}
-          stroke={undefined}
-          strokeWidth={undefined}
           width={6}
           x={7.857142857142858}
           y={368.2352941176471}
-/>,
+        />,
         <rect
           fill="#ff7f0e"
           height={11.764705882352928}
-          stroke={undefined}
-          strokeWidth={undefined}
           width={6}
           x={13.857142857142858}
           y={368.2352941176471}
-/>,
+        />,
         <rect
           fill="#2ca02c"
           height={9.411764705882376}
-          stroke={undefined}
-          strokeWidth={undefined}
           width={6}
           x={19.857142857142858}
           y={370.5882352941176}
-/>,
+        />,
         <rect
           fill="#d62728"
           height={18.823529411764696}
-          stroke={undefined}
-          strokeWidth={undefined}
           width={6}
           x={25.857142857142858}
           y={361.1764705882353}
-/>,
+        />,
       ],
       "transform": "translate(20, 0)",
     },
@@ -183,39 +175,31 @@ ShallowWrapper {
           <rect
             fill="#1f77b4"
             height={11.764705882352928}
-            stroke={undefined}
-            strokeWidth={undefined}
             width={6}
             x={7.857142857142858}
             y={368.2352941176471}
-/>,
+          />,
           <rect
             fill="#ff7f0e"
             height={11.764705882352928}
-            stroke={undefined}
-            strokeWidth={undefined}
             width={6}
             x={13.857142857142858}
             y={368.2352941176471}
-/>,
+          />,
           <rect
             fill="#2ca02c"
             height={9.411764705882376}
-            stroke={undefined}
-            strokeWidth={undefined}
             width={6}
             x={19.857142857142858}
             y={370.5882352941176}
-/>,
+          />,
           <rect
             fill="#d62728"
             height={18.823529411764696}
-            stroke={undefined}
-            strokeWidth={undefined}
             width={6}
             x={25.857142857142858}
             y={361.1764705882353}
-/>,
+          />,
         ],
         "transform": "translate(20, 0)",
       },

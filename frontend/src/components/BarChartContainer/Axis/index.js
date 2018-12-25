@@ -1,11 +1,10 @@
 // @flow
 import React from 'react';
 import * as d3 from 'd3';
-import type { NumericScale, StringScale } from '../../../types';
 
 type Props = {
-  xScale: NumericScale,
-  yScale: StringScale
+  xScale: Function,
+  yScale: Function
 }
 type State = {}
 
@@ -24,16 +23,16 @@ class Axis extends React.Component<Props, State> {
 
   yAxisRef = React.createRef();
 
-  xAxis = d3.axisBottom()
-    .tickFormat(d => d);
+  xAxis = d3.axisBottom().tickFormat(d => d);
 
   yAxis = d3.axisLeft().tickFormat(d => d);
 
   componentDidMount() {
     const { xScale, yScale } = this.props;
-    this.xAxis.scale(xScale);
 
+    this.xAxis.scale(xScale);
     d3.select(this.xAxisRef.current).call(this.xAxis);
+
     this.yAxis.scale(yScale);
     d3.select(this.yAxisRef.current).call(this.yAxis);
   }

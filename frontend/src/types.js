@@ -1,4 +1,7 @@
 // @flow
+export type NumericScale = (a: number)=> number
+
+export type StringScale = (a: string)=> string
 
 export type GameDataType = {
   away_team: string,
@@ -13,34 +16,25 @@ export type GameDataType = {
   tip_point: number,
   year: number
 }
-// export type createBarsFuncArgType = {
-//   roundScale: (a: number)=> number,
-//   tipPointScale: (a: number)=> number,
-//   modelColorScale: (a: string)=> string,
-//   cumulativeTipPointPerModel: Array<Array<CumulativeTipPointPerModelType>>
-// }
+
+export type CumulTipPointPerModelType = {
+  cumulativeTotalPoints: number,
+  model: string
+}
+
 export type createBarsFuncArgType = {
   roundScale: NumericScale,
   tipPointScale: NumericScale,
   modelColorScale: StringScale,
-  cumulativeTipPointPerModel: Array<Array<CumulativeTipPointPerModelType>>
+  cumulativeTipPointPerModel: Array<Array<CumulTipPointPerModelType>>
 }
 
 export type BarsDataType = {
-    fill: string,
-    height: number,
-    key: string,
-    round: number,
-    width: number,
-    x: number,
-    y: number
-  }
-
-export type CumulativeTipPointPerModelType =  {
-    cumulativeTotalPoints: number,
-    model: string
-  }
-
-export type NumericScale = (a: number)=> number
-
-export type StringScale = (a: string)=> string
+  fill: string,
+  height: number,
+  key: string,
+  round: number,
+  width: number,
+  x: number,
+  y: number
+}

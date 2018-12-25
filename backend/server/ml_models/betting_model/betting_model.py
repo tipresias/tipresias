@@ -79,7 +79,7 @@ class BettingModel(MLModel):
         self,
         estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
         name: Optional[str] = None,
-        module_name: str = "",
+        module_name: str = "betting_model",
     ) -> None:
         super().__init__(estimators=estimators, name=name, module_name=module_name)
 
@@ -103,6 +103,7 @@ class BettingModelData(MLModelData, DataTransformerMixin):
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .astype({"year": int})
             .dropna()
+            .sort_index()
         )
 
     @property

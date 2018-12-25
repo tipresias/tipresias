@@ -1,5 +1,6 @@
 import re
 from typing import Pattern, List
+from functools import partial
 import pandas as pd
 
 DIGITS: Pattern = re.compile(r"round\s+(\d+)$", flags=re.I)
@@ -66,29 +67,45 @@ class DataCleaner:
                 (df_copy["datetime"] >= f"{self.min_year}-01-01")
                 & (df_copy["datetime"] <= f"{self.max_year}-12-31")
             ]
-            .assign(round_number=self.__extract_round_number, year=self.__extract_year)
+            .assign(year=self.__extract_year)
+            # Need to convert round strings to numbers by year, so has to be in a step
+            # after creating the year column
+            .assign(round_number=self.__extract_round_number)
             .drop(self.drop_cols + ["datetime", "season_round"], axis=1)
         )
 
     def __extract_round_number(self, data_frame: pd.DataFrame) -> pd.Series:
-        return data_frame["season_round"].map(self.__match_round)
+        year_groups = data_frame.groupby("year")
+        year_series = []
+
+        for _, year_data_frame in year_groups:
+            year_season_round = year_data_frame["season_round"]
+            round_numbers = year_season_round.str.extract(r"(\d+)", expand=False)
+            max_regular_round = pd.to_numeric(round_numbers, errors="coerce").max()
+
+            year_series.append(
+                year_season_round.map(partial(self.match_round, max_regular_round))
+            )
+
+        return pd.concat(year_series).sort_index()
 
     @staticmethod
-    def __match_round(round_string: str) -> int:
+    def match_round(max_regular_round: int, round_string: str) -> int:
         digits = DIGITS.search(round_string)
 
         if digits is not None:
             return int(digits.group(1))
-        if QUALIFYING.search(round_string) is not None:
-            return 25
-        if ELIMINATION.search(round_string) is not None:
-            return 25
+        if (
+            QUALIFYING.search(round_string) is not None
+            or ELIMINATION.search(round_string) is not None
+        ):
+            return max_regular_round + 1
         if SEMI.search(round_string) is not None:
-            return 26
+            return max_regular_round + 2
         if PRELIMINARY.search(round_string) is not None:
-            return 27
+            return max_regular_round + 3
         if GRAND.search(round_string) is not None:
-            return 28
+            return max_regular_round + 4
 
         raise ValueError(f"Round label {round_string} doesn't match any known patterns")
 

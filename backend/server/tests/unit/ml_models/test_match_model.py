@@ -36,7 +36,7 @@ class TestMatchModel(TestCase):
         self.model.fit(self.X, self.y)
         predictions = self.model.predict(self.X)
 
-        self.assertIsInstance(predictions, pd.Series)
+        self.assertIsInstance(predictions, np.ndarray)
 
 
 class TestMatchModelData(TestCase):

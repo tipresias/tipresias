@@ -1,7 +1,8 @@
 """Django command for seeding the DB with match & prediction data"""
 
 from functools import partial
-from typing import Sequence, Union, Callable, Generator, Dict, Tuple, List
+from typing import Sequence, Callable, Generator, Tuple, List
+from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
 from django.core.management.base import BaseCommand
@@ -16,9 +17,38 @@ MATCH_COLUMNS = ["date", "round_number"]
 TEAM_MATCH_COLUMNS = ["home_points", "away_points"]
 COLUMNS = TEAM_COLUMNS + MATCH_COLUMNS + TEAM_MATCH_COLUMNS + ["season"]
 
-# A proper solution would be to define a struct or class for this particular dictionary,
-# but I'm going to be lazy and maybe fix it up later
-Record = Dict[str, Union[str, float, int]]
+FitzroyRecord = TypedDict(
+    "FitzroyRecord",
+    {
+        "game": float,
+        "date": float,
+        "round": str,
+        "home_team": str,
+        "home_goals": int,
+        "home_behinds": int,
+        "home_points": int,
+        "away_team": str,
+        "away_goals": int,
+        "away_behinds": int,
+        "away_points": int,
+        "venue": str,
+        "margin": int,
+        "season": float,
+        "round_type": str,
+        "round_number": int,
+    },
+)
+PredictionRecord = TypedDict(
+    "PredictionRecord",
+    {
+        "home_team": str,
+        "away_team": str,
+        "model": str,
+        "predicted_home_margin": int,
+        "predicted_home_win": int,
+    },
+)
+
 UnzippedGroups = Tuple[Sequence[Sequence[TeamMatch]], Sequence[Sequence[Prediction]]]
 
 
@@ -80,7 +110,9 @@ class Command(BaseCommand):
         print("\n...DB seeded!")
 
     def __build_team_matches_and_predictions(
-        self, get_match_predictions: Callable[[Record], pd.DataFrame], record: Record
+        self,
+        get_match_predictions: Callable[[FitzroyRecord], List[PredictionRecord]],
+        record: FitzroyRecord,
     ) -> Tuple[Sequence[TeamMatch], Sequence[Prediction]]:
         prediction_data = get_match_predictions(record)
 
@@ -106,7 +138,11 @@ class Command(BaseCommand):
         return team_matches, tuple(predictions)
 
     def __build_prediction(
-        self, match: Match, home_team: Team, away_team: Team, prediction_datum: Record
+        self,
+        match: Match,
+        home_team: Team,
+        away_team: Team,
+        prediction_datum: PredictionRecord,
     ) -> Prediction:
         ml_model: MLModel = MLModel.objects.get(name=prediction_datum["model"])
 
@@ -160,8 +196,8 @@ class Command(BaseCommand):
 
     @staticmethod
     def __get_match_predictions(
-        data_frame: pd.DataFrame, record: Record
-    ) -> List[Record]:
+        data_frame: pd.DataFrame, record: FitzroyRecord
+    ) -> List[PredictionRecord]:
         return data_frame.loc[
             (data_frame["year"] == record["season"])
             & (data_frame["round_number"] == record["round_number"])
@@ -178,7 +214,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def __winning_team(
-        home_team: Team, away_team: Team, prediction_datum: Record
+        home_team: Team, away_team: Team, prediction_datum: PredictionRecord
     ) -> Team:
         predicted_home_win = prediction_datum["predicted_home_win"] == 1
 
@@ -201,7 +237,7 @@ class Command(BaseCommand):
         return away_team
 
     @staticmethod
-    def __winning_margin(prediction_datum: Record) -> int:
+    def __winning_margin(prediction_datum: PredictionRecord) -> int:
         predicted_home_win: bool = prediction_datum["predicted_home_win"] == 1
 
         if predicted_home_win:
@@ -211,7 +247,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def __build_team_matches(
-        match: Match, home_team: Team, away_team: Team, record: Record
+        match: Match, home_team: Team, away_team: Team, record: FitzroyRecord
     ) -> Tuple[TeamMatch, TeamMatch]:
         home_team_match = TeamMatch(
             team=home_team, match=match, at_home=True, score=record["home_points"]

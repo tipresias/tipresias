@@ -78,7 +78,7 @@ const calculateCumulativeTotals = (modelsObject) => {
 export const createTipPointScale = () => {
   const height = 400;
   const lastItem = getCuTipPointPerModel().length - 1;
-  const [yMin, yMax] = d3.extent(
+  const [, yMax] = d3.extent(
     getCuTipPointPerModel()[lastItem],
     item => item.cumulativeTotalPoints,
   );

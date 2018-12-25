@@ -38,7 +38,7 @@ class BarChartContainer extends React.Component<Props, State> {
       this.setBars(gamesByYear);
     }
 
-    componentDidUpdate(prevProps: Array<GameDataType>) {
+    componentDidUpdate(prevProps: { gamesByYear: Array<GameDataType> }) {
       const { gamesByYear } = this.props;
       if (gamesByYear !== prevProps.gamesByYear) {
         this.setBars(gamesByYear);

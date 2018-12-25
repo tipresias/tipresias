@@ -14,9 +14,6 @@ import Axis from './Axis';
 type Props = {
   gamesByYear: Array<GameDataType>
 }
-type prevProps = {
-  gamesByYear: Array<GameDataType>
-  }
 
 type State = {
   bars: Array<Array<BarsDataType>>,
@@ -41,7 +38,7 @@ class BarChartContainer extends React.Component<Props, State> {
       this.setBars(gamesByYear);
     }
 
-    componentDidUpdate(prevProps: prevProps) {
+    componentDidUpdate(prevProps: Array<GameDataType>) {
       const { gamesByYear } = this.props;
       if (gamesByYear !== prevProps.gamesByYear) {
         this.setBars(gamesByYear);

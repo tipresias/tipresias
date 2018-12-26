@@ -6,6 +6,7 @@ type Props = {
   xScale: Function,
   yScale: Function
 }
+
 type State = {}
 
 const height = 400;
@@ -19,9 +20,9 @@ const xAxisTranslate = `translate(0, ${height - margin.bottom})`;
 const yAxisTranslate = `translate(${margin.left},0)`;
 
 class Axis extends React.Component<Props, State> {
-  xAxisRef = React.createRef();
+  xAxisRef: any = React.createRef();
 
-  yAxisRef = React.createRef();
+  yAxisRef: any = React.createRef();
 
   xAxis = d3.axisBottom().tickFormat(d => d);
 
@@ -40,8 +41,8 @@ class Axis extends React.Component<Props, State> {
   render() {
     return (
       <g>
-        <g ref={this.xAxisRef} transform={xAxisTranslate} style={{ border: '1px solid red' }} />
-        <g ref={this.yAxisRef} transform={yAxisTranslate} style={{ border: '1px solid red' }} />
+        <g ref={this.xAxisRef} transform={xAxisTranslate} />
+        <g ref={this.yAxisRef} transform={yAxisTranslate} />
       </g>
     );
   }

@@ -8,6 +8,7 @@
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.6.0",
     "eslint-plugin-import": "^2.14.0",
+    "flow-typed": "^2.5.1",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "react-scripts": "2.1.1"

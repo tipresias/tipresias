@@ -101,8 +101,6 @@ ShallowWrapper {
         "props": Object {
           "fill": "#1f77b4",
           "height": 11.764705882352928,
-          "stroke": undefined,
-          "strokeWidth": undefined,
           "width": 6,
           "x": 7.857142857142858,
           "y": 368.2352941176471,
@@ -118,8 +116,6 @@ ShallowWrapper {
         "props": Object {
           "fill": "#ff7f0e",
           "height": 11.764705882352928,
-          "stroke": undefined,
-          "strokeWidth": undefined,
           "width": 6,
           "x": 13.857142857142858,
           "y": 368.2352941176471,
@@ -135,8 +131,6 @@ ShallowWrapper {
         "props": Object {
           "fill": "#2ca02c",
           "height": 9.411764705882376,
-          "stroke": undefined,
-          "strokeWidth": undefined,
           "width": 6,
           "x": 19.857142857142858,
           "y": 370.5882352941176,
@@ -152,8 +146,6 @@ ShallowWrapper {
         "props": Object {
           "fill": "#d62728",
           "height": 18.823529411764696,
-          "stroke": undefined,
-          "strokeWidth": undefined,
           "width": 6,
           "x": 25.857142857142858,
           "y": 361.1764705882353,
@@ -212,8 +204,6 @@ ShallowWrapper {
           "props": Object {
             "fill": "#1f77b4",
             "height": 11.764705882352928,
-            "stroke": undefined,
-            "strokeWidth": undefined,
             "width": 6,
             "x": 7.857142857142858,
             "y": 368.2352941176471,
@@ -229,8 +219,6 @@ ShallowWrapper {
           "props": Object {
             "fill": "#ff7f0e",
             "height": 11.764705882352928,
-            "stroke": undefined,
-            "strokeWidth": undefined,
             "width": 6,
             "x": 13.857142857142858,
             "y": 368.2352941176471,
@@ -246,8 +234,6 @@ ShallowWrapper {
           "props": Object {
             "fill": "#2ca02c",
             "height": 9.411764705882376,
-            "stroke": undefined,
-            "strokeWidth": undefined,
             "width": 6,
             "x": 19.857142857142858,
             "y": 370.5882352941176,
@@ -263,8 +249,6 @@ ShallowWrapper {
           "props": Object {
             "fill": "#d62728",
             "height": 18.823529411764696,
-            "stroke": undefined,
-            "strokeWidth": undefined,
             "width": 6,
             "x": 25.857142857142858,
             "y": 361.1764705882353,

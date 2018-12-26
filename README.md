@@ -40,6 +40,13 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 - Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
     - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 
+### Run Javascript tests
+
+- `docker-compose run --rm frontend yarn run test:unit`
+- Linting: `docker-compose run --rm frontend yarn run eslint src`
+    - Note: The ESLint rule `"import/no-unresolved"` is disabled, because code editors can't find the `node_modules` inside the docker container, and it made everything red. Also, basic testing should catch erroneous imports anyway.
+- Flow: `docker-compose run --rm frontend yarn run flow`
+
 ### Deploy
 
 - Via Travis CI (recommended):
@@ -49,6 +56,10 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 - Via heroku CLI (skips CI):
     - If your stack isn't set to container, run `heroku stack:set container`
     - `git push heroku master`
+
+## Pro-Tips
+
+- Both `backend` and `frontend` are encapsulated, with their dependencies, in their respective containers, so if you want to take advantage of in-editor linting, autofixing, etc., open your editor from the service directory, not the project directory. Be sure to run terminal commands from the project root, though.
 
 ## Troubleshooting
 

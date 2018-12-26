@@ -17,10 +17,17 @@ script:
   - docker run cfranklin11/tipresias_server:master pylint --disable=R server project scripts
   - docker run cfranklin11/tipresias_server:master mypy server project scripts
   - docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
+  
+  - docker pull cfranklin11/tipresias_client:master
+  - docker build --cache-from cfranklin11/tipresias_client:master -t cfranklin11/tipresias_client:master ./frontend
+  - docker run cfranklin11/tipresias_client:master yarn run eslint src
+  - docker run cfranklin11/tipresias_client:master yarn run flow
+  - docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit
 
 after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_server:master
+  - docker push cfranklin11/tipresias_client:master
 
 deploy:
   provider: heroku

@@ -1,64 +1,87 @@
+// @flow
 import React from 'react';
-import createChartObject from './createChartObject';
+import type { GameDataType, BarsDataType } from '../../types';
+import {
+  setGames,
+  drawBars,
+  createTipPointScale,
+  createRoundScale,
+} from './createChartObject';
+
 import BarChart from './BarChart';
 import Axis from './Axis';
+
+type Props = {
+  gamesByYear: Array<GameDataType>
+}
+
+type State = {
+  bars: Array<Array<BarsDataType>>,
+  xScale: Function,
+  yScale: Function,
+  isCalculating: boolean
+}
 
 const height = 400;
 const width = 800;
 
-class BarChartContainer extends React.Component {
-  state = {
-    bars: [],
-    isCalculating: true,
-  }
-
-  componentDidMount() {
-    const { games, year } = this.props;
-    this.calculateData(games, year);
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    const { games, year } = this.props;
-    if (year !== prevProps.year) {
-      this.calculateData(games, year);
+class BarChartContainer extends React.Component<Props, State> {
+    state = {
+      bars: [],
+      xScale: () => null,
+      yScale: () => null,
+      isCalculating: true,
     }
-  }
 
-  calculateData(data, year) {
-    const filteredDataByYear = data.filter(item => item.year === parseInt(year, 10));
-    const { bars, xScale, yScale } = createChartObject(filteredDataByYear);
-    this.setState({
-      bars,
-      scales: { xScale, yScale },
-      isCalculating: false,
-    });
-  }
+    componentDidMount() {
+      const { gamesByYear } = this.props;
+      this.setBars(gamesByYear);
+    }
 
-  render() {
-    const {
-      bars,
-      scales,
-      isCalculating,
-    } = this.state;
+    componentDidUpdate(prevProps: { gamesByYear: Array<GameDataType> }) {
+      const { gamesByYear } = this.props;
+      if (gamesByYear !== prevProps.gamesByYear) {
+        this.setBars(gamesByYear);
+      }
+    }
 
-    const { year } = this.props;
-    const title = `BarChart for ${year}`;
-    return (
-      <div>
+    setBars(gamesByYear: Array<GameDataType>) {
+      setGames(gamesByYear);
+      const bars = drawBars();
+
+      const xScale = createRoundScale();
+      const yScale = createTipPointScale();
+
+      this.setState({
+        bars,
+        xScale,
+        yScale,
+        isCalculating: false,
+      });
+    }
+
+    render() {
+      const {
+        bars,
+        xScale,
+        yScale,
+        isCalculating,
+      } = this.state;
+
+      return (
         <div>
-          {title}
-        </div>
-        {
-          !isCalculating
+        wip
+          {
+            !isCalculating
           && (
             <svg viewBox={`0 0 ${width} ${height}`} style={{ height: 'auto', width: '100%' }}>
               <BarChart bars={bars} />
-              <Axis scales={scales} />
+              <Axis xScale={xScale} yScale={yScale} />
             </svg>
           )
-        }
-      </div>
-    );
-  }
+          }
+        </div>
+      );
+    }
 }
 export default BarChartContainer;

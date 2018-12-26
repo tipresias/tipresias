@@ -1,7 +1,39 @@
+// @flow
 import * as d3 from 'd3';
+import type {
+  GameDataType,
+  createBarsFuncArgType,
+  BarsDataType,
+  CumulTipPointPerModelType,
+} from '../../types';
 
-const prepareModel = (gamesByYear) => {
-  const modelsObject = gamesByYear.reduce((acc, currentItem) => {
+let games;
+let cumulTipPointPerModel;
+
+const margin = {
+  top: 20,
+  right: 5,
+  bottom: 20,
+  left: 35,
+};
+
+export const setGames = (gamesArray: Array<GameDataType>): void => {
+  games = gamesArray;
+};
+
+export const getGames = (): Array<GameDataType> => games;
+
+const setCumulativeTipPointPerModel = (value: Array<Array<CumulTipPointPerModelType>>): void => {
+  cumulTipPointPerModel = value;
+};
+
+const getCuTipPointPerModel = (): Array<Array<CumulTipPointPerModelType>> => cumulTipPointPerModel;
+
+const prepareModel = () => {
+  const data = getGames();
+  const modelsObject = data.reduce((acc, currentItem) => {
+    // todo: this will change when implementing graphql.
+    // eslint-disable-next-line camelcase
     const { model, round_number } = currentItem;
     acc[round_number] = acc[round_number] || {};
     acc[round_number][model] = acc[round_number][model] || {};
@@ -13,7 +45,7 @@ const prepareModel = (gamesByYear) => {
     acc[round_number][model].data.push(currentItem);
 
     const roundArray = acc[round_number][model].data;
-    const roundPointTotal = roundArray.reduce((accumulator, currentVaue) => accumulator + currentVaue.tip_point, 0);
+    const roundPointTotal = roundArray.reduce((acc2, value) => acc2 + value.tip_point, 0);
     acc[round_number][model].total_points = roundPointTotal;
 
     return acc;
@@ -23,10 +55,10 @@ const prepareModel = (gamesByYear) => {
 
 const calculateCumulativeTotals = (modelsObject) => {
   const roundsArray = Object.keys(modelsObject);
-  const cumulativeTipPointPerModel = roundsArray.map((currentRound, index) => {
+  return roundsArray.map((currentRound, index) => {
     const modelKeyArray = Object.keys(modelsObject[currentRound]);
     const dataModels = modelKeyArray.map((model) => {
-      const prevRound = currentRound - 1;
+      const prevRound = parseInt(currentRound, 10) - 1;
       const currentModel = modelsObject[currentRound][model];
       let prevModel;
 
@@ -43,75 +75,99 @@ const calculateCumulativeTotals = (modelsObject) => {
     });
     return dataModels;
   });
-  return cumulativeTipPointPerModel;
 };
 
-const createScales = (cumulativeTipPointPerModel, gamesByYear) => {
+export const createTipPointScale = () => {
   const height = 400;
-  const width = 800;
-  const margin = {
-    top: 20,
-    right: 5,
-    bottom: 20,
-    left: 35,
-  };
-  const [xMin, xMax] = d3.extent(gamesByYear, d => d.round_number);
-  const xScale = d3.scaleLinear()
-    .domain([xMin, xMax + 1])
-    .range([margin.left, width - margin.right]);
+  const lastItem = getCuTipPointPerModel().length - 1;
+  const [, yMax] = d3.extent(
+    getCuTipPointPerModel()[lastItem],
+    item => item.cumulativeTotalPoints,
+  );
 
-  const [yMin, yMax] = d3.extent(cumulativeTipPointPerModel[27], item => item.cumulativeTotalPoints);
-  const yScale = d3.scaleLinear()
+  const tipPointScale = d3.scaleLinear()
     .domain([0, yMax])
     .range([height - margin.bottom, margin.top]);
-
-  const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-  return { xScale, yScale, colorScale };
+  return tipPointScale;
 };
 
-const createBarsObject = (xScale, yScale, colorScale, cumulativeTipPointPerModel) => {
-  const bars = cumulativeTipPointPerModel.map((roundItem, roundItemIndex) => {
+export const createRoundScale = () => {
+  const gamesByYear = getGames();
+  const width = 800;
+  const [xMin, xMax] = d3.extent(gamesByYear, d => d.round_number);
+  const roundScale = d3.scaleLinear()
+    .domain([xMin, xMax + 1])
+    .range([margin.left, width - margin.right]);
+  return roundScale;
+};
+
+const createModelColorScale = () => {
+  const modelColorScale = d3.scaleOrdinal(d3.schemeCategory10);
+  return modelColorScale;
+};
+
+const createBarsObject = ({
+  roundScale,
+  tipPointScale,
+  modelColorScale,
+  cumulativeTipPointPerModel,
+}: createBarsFuncArgType): Array<Array<BarsDataType>> => {
+  const createCoordinates = ({ modelItem, roundItemIndex }) => {
+    let x;
+    if (modelItem.model === 'oddsmakers') {
+      x = roundScale(roundItemIndex);
+    }
+    if (modelItem.model === 'tipresias_all_data') {
+      x = roundScale(roundItemIndex) + 5;
+    }
+    if (modelItem.model === 'tipresias_betting') {
+      x = roundScale(roundItemIndex) + 10;
+    }
+    if (modelItem.model === 'tipresias_match') {
+      x = roundScale(roundItemIndex) + 15;
+    }
+    if (modelItem.model === 'tipresias_player') {
+      x = roundScale(roundItemIndex) + 20;
+    }
+    const y = tipPointScale(modelItem.cumulativeTotalPoints);
+    const h = tipPointScale(0) - tipPointScale(modelItem.cumulativeTotalPoints);
+    return { x, y, h };
+  };
+
+  return cumulativeTipPointPerModel.map((roundItem, roundItemIndex) => {
     const barsPerRound = roundItem.map((modelItem) => {
-      let x;
-
-      if (modelItem.model === 'oddsmakers') {
-        x = xScale(roundItemIndex);
-      }
-      if (modelItem.model === 'tipresias_betting') {
-        x = xScale(roundItemIndex) + 5;
-      }
-      if (modelItem.model === 'tipresias_match') {
-        x = xScale(roundItemIndex) + 10;
-      }
-
-      if (modelItem.model === 'tipresias_player') {
-        x = xScale(roundItemIndex) + 15;
-      }
-
-      const y = yScale(modelItem.cumulativeTotalPoints);
-      const h = yScale(0) - yScale(modelItem.cumulativeTotalPoints);
-
+      const { x, y, h } = createCoordinates({ modelItem, roundItemIndex });
       return ({
         key: `${roundItemIndex + 1}-${modelItem.model}`,
         round: roundItemIndex + 1,
-        x,
+        x: parseFloat(x),
         y,
         height: h,
         width: 5,
-        fill: colorScale(modelItem.model),
+        fill: modelColorScale(modelItem.model),
       });
     });
     return barsPerRound;
   });
+};
+
+export const drawBars = () => {
+  const modelsObject = prepareModel();
+  const cumulativeTipPointPerModel = calculateCumulativeTotals(modelsObject);
+
+  setCumulativeTipPointPerModel(cumulativeTipPointPerModel);
+
+  const roundScale = createRoundScale();
+
+  const tipPointScale = createTipPointScale();
+
+  const modelColorScale = createModelColorScale();
+
+  const bars = createBarsObject({
+    roundScale,
+    tipPointScale,
+    modelColorScale,
+    cumulativeTipPointPerModel,
+  });
   return bars;
 };
-
-const createChartObject = (gamesByYear) => {
-  const modelsObject = prepareModel(gamesByYear);
-  const cumulativeTipPointPerModel = calculateCumulativeTotals(modelsObject);
-  const { xScale, yScale, colorScale } = createScales(cumulativeTipPointPerModel, gamesByYear);
-  const bars = createBarsObject(xScale, yScale, colorScale, cumulativeTipPointPerModel);
-  return { bars, xScale, yScale };
-};
-
-export default createChartObject;

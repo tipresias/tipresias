@@ -1,3 +1,4 @@
+// @flow
 import React, { Component } from 'react';
 import fetchPredictions from './helpers/fetchPredictions';
 import filterDataByYear from './helpers/filterDataByYear';
@@ -5,12 +6,23 @@ import logo from './logo.svg';
 import './App.css';
 import BarChartContainer from './components/BarChartContainer';
 import Select from './components/Select';
+import type { GameDataType } from './types';
 
-class App extends Component {
+type State = {
+  isLoading: boolean,
+  year: number,
+  allGames: Array<GameDataType>,
+  gamesByYear: Array<GameDataType>
+}
+
+type Props = {}
+
+class App extends Component<Props, State> {
   state = {
     isLoading: true,
     year: 2011,
     allGames: [],
+    gamesByYear: [],
   };
 
   componentDidMount() {
@@ -24,18 +36,18 @@ class App extends Component {
     });
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps: Props, prevState: State) {
     const { allGames, year } = this.state;
     if (year !== prevState.year) {
       this.setGamesByYear(allGames, year);
     }
   }
 
-  onChangeYear = (event) => {
-    this.setState({ year: event.target.value });
+  onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
+    this.setState({ year: parseInt(event.currentTarget.value, 10) });
   }
 
-  setGamesByYear(allGames, year) {
+  setGamesByYear(allGames: Array<GameDataType>, year: number) {
     const gamesByYear = filterDataByYear(allGames, year);
     this.setState({
       gamesByYear,
@@ -67,9 +79,9 @@ class App extends Component {
             <Select
               value={year}
               onChange={this.onChangeYear}
+              options={[2011, 2012, 2013, 2014]}
             />
           </p>
-
           {contentComponent}
         </div>
       </div>

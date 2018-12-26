@@ -1,7 +1,15 @@
+// @flow
 import React from 'react';
+import type { Node } from 'react';
+import type { BarsDataType } from '../../../types';
 
-const BarChart = ({ bars }) => (
+type Props = {
+  bars: Array<Array<BarsDataType>>
+}
+const BarChart = ({ bars }: Props): Node => (
   bars.map((item, index) => (
+    // todo: add a key to bars array.
+    // eslint-disable-next-line react/no-array-index-key
     <g transform="translate(20, 0)" key={index}>
       {
         item.map(i => (<rect
@@ -11,8 +19,6 @@ const BarChart = ({ bars }) => (
           width={i.width}
           height={i.height}
           fill={i.fill}
-          stroke={i.stroke}
-          strokeWidth={i.strokeWidth}
         />
         ))
       }

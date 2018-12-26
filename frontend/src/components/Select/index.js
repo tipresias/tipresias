@@ -4,13 +4,13 @@ import type { Node } from 'react';
 
 type Props = {
   value: number,
-  onChange: (event: any)=> void,
+  onChange: (event: SyntheticEvent<HTMLSelectElement>)=> void,
   options: Array<number>
 }
 const Select = ({
   value,
   onChange,
-  options = [2011, 2012, 2013, 2014],
+  options,
 }: Props): Node => (
   <select
     value={value}

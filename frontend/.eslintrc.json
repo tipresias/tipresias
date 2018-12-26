@@ -2,7 +2,8 @@
     "env": {
         "es6": true,
         "node": true,
-        "jest": true
+        "jest": true,
+        "browser": true
     },
     "extends": [
         "eslint:recommended",
@@ -18,11 +19,12 @@
         "sourceType": "module"
     },
     "rules": {
+        "import/no-unresolved": 0,
+        "no-console": 0,
         "indent": [
             "error",
             2
         ],
-        "no-console": 0,
         "linebreak-style": [
             "error",
             "unix"

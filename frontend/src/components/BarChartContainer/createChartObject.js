@@ -32,6 +32,8 @@ const getCuTipPointPerModel = (): Array<Array<CumulTipPointPerModelType>> => cum
 const prepareModel = () => {
   const data = getGames();
   const modelsObject = data.reduce((acc, currentItem) => {
+    // todo: this will change when implementing graphql.
+    // eslint-disable-next-line camelcase
     const { model, round_number } = currentItem;
     acc[round_number] = acc[round_number] || {};
     acc[round_number][model] = acc[round_number][model] || {};

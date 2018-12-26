@@ -4,11 +4,11 @@
 .*/server/.*
 .*/webpack.config.js
 .*/dist/.*
+.*/node_modules/.*
 
 [include]
 
 [libs]
-flow-typed
 
 [lints]
 

@@ -21,7 +21,7 @@ script:
   - docker build --cache-from cfranklin11/tipresias_client:master -t cfranklin11/tipresias_client:master ./frontend
   - docker run cfranklin11/tipresias_client:master yarn run eslint src
   - docker run cfranklin11/tipresias_client:master yarn run flow
-  - docker run cfranklin11/tipresias_client:master yarn run test:unit
+  - docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit
 
 after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin

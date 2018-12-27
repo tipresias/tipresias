@@ -22,66 +22,67 @@ type State = {
   isCalculating: boolean
 }
 
-const height = 400;
+const barWidth = 4;
 const width = 800;
+const height = 400;
 
 class BarChartContainer extends React.Component<Props, State> {
-    state = {
-      bars: [],
-      xScale: () => null,
-      yScale: () => null,
-      isCalculating: true,
-    }
+  state = {
+    bars: [],
+    xScale: () => null,
+    yScale: () => null,
+    isCalculating: true,
+  }
 
-    componentDidMount() {
-      const { gamesByYear } = this.props;
+  componentDidMount() {
+    const { gamesByYear } = this.props;
+    this.setBars(gamesByYear);
+  }
+
+  componentDidUpdate(prevProps: { gamesByYear: Array<GameDataType> }) {
+    const { gamesByYear } = this.props;
+    if (gamesByYear !== prevProps.gamesByYear) {
       this.setBars(gamesByYear);
     }
+  }
 
-    componentDidUpdate(prevProps: { gamesByYear: Array<GameDataType> }) {
-      const { gamesByYear } = this.props;
-      if (gamesByYear !== prevProps.gamesByYear) {
-        this.setBars(gamesByYear);
-      }
-    }
+  setBars(gamesByYear: Array<GameDataType>) {
+    setGames(gamesByYear);
+    const bars = drawBars(barWidth);
 
-    setBars(gamesByYear: Array<GameDataType>) {
-      setGames(gamesByYear);
-      const bars = drawBars();
+    const xScale = createRoundScale();
+    const yScale = createTipPointScale();
 
-      const xScale = createRoundScale();
-      const yScale = createTipPointScale();
+    this.setState({
+      bars,
+      xScale,
+      yScale,
+      isCalculating: false,
+    });
+  }
 
-      this.setState({
-        bars,
-        xScale,
-        yScale,
-        isCalculating: false,
-      });
-    }
+  render() {
+    const {
+      bars,
+      xScale,
+      yScale,
+      isCalculating,
+    } = this.state;
 
-    render() {
-      const {
-        bars,
-        xScale,
-        yScale,
-        isCalculating,
-      } = this.state;
-
-      return (
-        <div>
+    return (
+      <div>
         wip
-          {
-            !isCalculating
+        {
+          !isCalculating
           && (
             <svg viewBox={`0 0 ${width} ${height}`} style={{ height: 'auto', width: '100%' }}>
-              <BarChart bars={bars} />
+              <BarChart bars={bars} barWidth={barWidth} />
               <Axis xScale={xScale} yScale={yScale} />
             </svg>
           )
-          }
-        </div>
-      );
-    }
+        }
+      </div>
+    );
+  }
 }
 export default BarChartContainer;

@@ -107,43 +107,29 @@ const createModelColorScale = () => {
 };
 
 const createBarsObject = ({
+  barWidth,
   roundScale,
   tipPointScale,
   modelColorScale,
   cumulativeTipPointPerModel,
 }: createBarsFuncArgType): Array<Array<BarsDataType>> => {
-  const createCoordinates = ({ modelItem, roundItemIndex }) => {
-    let x;
-    if (modelItem.model === 'oddsmakers') {
-      x = roundScale(roundItemIndex);
-    }
-    if (modelItem.model === 'tipresias_all_data') {
-      x = roundScale(roundItemIndex) + 5;
-    }
-    if (modelItem.model === 'tipresias_betting') {
-      x = roundScale(roundItemIndex) + 10;
-    }
-    if (modelItem.model === 'tipresias_match') {
-      x = roundScale(roundItemIndex) + 15;
-    }
-    if (modelItem.model === 'tipresias_player') {
-      x = roundScale(roundItemIndex) + 20;
-    }
+  const createCoordinates = ({ modelItem, modelItemIndex, roundItemIndex }) => {
+    const x = roundScale(roundItemIndex) + (barWidth * modelItemIndex);
     const y = tipPointScale(modelItem.cumulativeTotalPoints);
     const h = tipPointScale(0) - tipPointScale(modelItem.cumulativeTotalPoints);
     return { x, y, h };
   };
 
   return cumulativeTipPointPerModel.map((roundItem, roundItemIndex) => {
-    const barsPerRound = roundItem.map((modelItem) => {
-      const { x, y, h } = createCoordinates({ modelItem, roundItemIndex });
+    const barsPerRound = roundItem.map((modelItem, modelItemIndex) => {
+      const { x, y, h } = createCoordinates({ modelItem, modelItemIndex, roundItemIndex });
       return ({
         key: `${roundItemIndex + 1}-${modelItem.model}`,
         round: roundItemIndex + 1,
         x: parseFloat(x),
         y,
         height: h,
-        width: 5,
+        width: barWidth,
         fill: modelColorScale(modelItem.model),
       });
     });
@@ -151,7 +137,7 @@ const createBarsObject = ({
   });
 };
 
-export const drawBars = () => {
+export const drawBars = (barWidth: number) => {
   const modelsObject = prepareModel();
   const cumulativeTipPointPerModel = calculateCumulativeTotals(modelsObject);
 
@@ -164,6 +150,7 @@ export const drawBars = () => {
   const modelColorScale = createModelColorScale();
 
   const bars = createBarsObject({
+    barWidth,
     roundScale,
     tipPointScale,
     modelColorScale,

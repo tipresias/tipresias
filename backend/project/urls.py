@@ -21,7 +21,7 @@ from graphene_django.views import GraphQLView
 
 from server import views
 
-urlpatterns = [
+urlpatterns = [  # pylint: disable=C0103
     path("admin/", admin.site.urls),
     path("predictions", views.predictions, name="predictions"),
     re_path(

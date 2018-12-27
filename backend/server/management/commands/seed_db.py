@@ -5,7 +5,7 @@ import numpy as np
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from project.settings.common import BASE_DIR
+from project.settings.common import DATA_DIR
 from server.data_processors import FitzroyDataReader
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
 
@@ -33,7 +33,7 @@ class Command(BaseCommand):
             match_results["season"] >= 2011, COLUMNS
         ].assign(date=self.__convert_to_datetime)
         prediction_data_frame: pd.DataFrame = pd.read_csv(
-            f"{BASE_DIR}/data/model_predictions.csv"
+            f"{DATA_DIR}/model_predictions.csv"
         )
 
         self.__seed_teams(filtered_matches)

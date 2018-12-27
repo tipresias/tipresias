@@ -12,6 +12,7 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
+from project.settings.common import DATA_DIR
 from server.ml_models import BettingModel
 from server.ml_models.betting_model import BettingModelData
 from server.ml_models import MatchModel
@@ -88,7 +89,7 @@ def make_predictions(ml_model, ml_data) -> pd.DataFrame:
 def oddsmakers_predictions() -> pd.DataFrame:
     """Generate prediction data frame based on raw betting odds"""
 
-    csv_paths = [f"data/{data_file}" for data_file in DATA_FILES]
+    csv_paths = [os.path.join(DATA_DIR, data_file) for data_file in DATA_FILES]
     data_classes = (BettingData, MatchData)
 
     raw_df = DataBuilder(data_classes, csv_paths).concat()
@@ -135,7 +136,7 @@ def main():
     model_predictions = [make_predictions(*ml_model) for ml_model in ML_MODELS]
 
     pd.concat([oddsmakers_predictions(), *model_predictions]).to_csv(
-        f"{BASE_DIR}/data/model_predictions.csv", index=False
+        f"{DATA_DIR}/model_predictions.csv", index=False
     )
 
 

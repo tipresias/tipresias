@@ -3,7 +3,7 @@
 from typing import List
 import pandas as pd
 
-from project.settings.common import BASE_DIR
+from project.settings.common import DATA_DIR
 
 
 class MatchDataReader:
@@ -32,7 +32,7 @@ class MatchDataReader:
         """
 
         return (
-            pd.read_csv(f"{BASE_DIR}/data/{filename}", parse_dates=self.parse_dates)
+            pd.read_csv(f"{DATA_DIR}/{filename}", parse_dates=self.parse_dates)
             .rename(columns={"date": "datetime"})
             .assign(date=self.__convert_datetime_to_date)
         )

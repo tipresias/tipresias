@@ -9,6 +9,7 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
+from project.settings.common import DATA_DIR
 from scripts.data import raw_data
 
 
@@ -201,12 +202,10 @@ def main(data, csv=False):
             df = clean_match_data(value)
 
         if csv:
-            data_directory = os.path.join(BASE_DIR, "data")
+            if not os.path.isdir(DATA_DIR):
+                os.makedirs(DATA_DIR)
 
-            if not os.path.isdir(data_directory):
-                os.makedirs(data_directory)
-
-            df.to_csv(os.path.join(data_directory, f"{key}.csv"), index=False)
+            df.to_csv(os.path.join(DATA_DIR, f"{key}.csv"), index=False)
 
         dfs.append(df)
 

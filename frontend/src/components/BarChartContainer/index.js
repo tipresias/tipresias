@@ -71,7 +71,6 @@ class BarChartContainer extends React.Component<Props, State> {
 
     return (
       <div>
-        wip
         {
           !isCalculating
           && (

@@ -72,16 +72,13 @@ class App extends Component<Props, State> {
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to Tipresias</h1>
+          <Select
+            value={year}
+            onChange={this.onChangeYear}
+            options={[2011, 2012, 2013, 2014]}
+          />
         </header>
-        <div>
-          <p className="App-intro">
-            <Select
-              value={year}
-              onChange={this.onChangeYear}
-              options={[2011, 2012, 2013, 2014]}
-            />
-          </p>
+        <div className="App-content">
           {contentComponent}
         </div>
       </div>

@@ -1,3 +1,5 @@
+"""Django command for seeding the DB with match & prediction data"""
+
 from functools import partial
 from typing import Sequence, Union, Callable, Generator, Dict, Tuple, List
 import pandas as pd

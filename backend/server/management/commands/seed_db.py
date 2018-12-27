@@ -55,17 +55,23 @@ UnzippedGroups = Tuple[Sequence[Sequence[TeamMatch]], Sequence[Sequence[Predicti
 class Command(BaseCommand):
     help = "Seed the database with team, match, and prediction data."
 
-    def handle(self, *_args, **_kwargs) -> None:  # pylint disable=W0613
+    def handle(self, *_args, **_kwargs) -> None:  # pylint disable=W0613,R0194
         print("Seeding DB...\n")
+
+        prediction_data_frame: pd.DataFrame = pd.read_csv(
+            f"{DATA_DIR}/model_predictions.csv"
+        )
+        max_prediction_year = prediction_data_frame["year"].max()
+        min_prediction_year = prediction_data_frame["year"].min()
 
         fitzroy = FitzroyDataReader()
         match_results: pd.DataFrame = fitzroy.match_results()
+        match_filter = (match_results["season"] >= min_prediction_year) & (
+            match_results["season"] <= max_prediction_year
+        )
         # We don't need to save match/prediction data going all the way back
-        filtered_matches = match_results.loc[
-            match_results["season"] >= 2011, COLUMNS
-        ].assign(date=self.__convert_to_datetime)
-        prediction_data_frame: pd.DataFrame = pd.read_csv(
-            f"{DATA_DIR}/model_predictions.csv"
+        filtered_matches = match_results.loc[match_filter, COLUMNS].assign(
+            date=self.__convert_to_datetime
         )
 
         self.__seed_teams(filtered_matches)

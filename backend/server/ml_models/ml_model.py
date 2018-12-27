@@ -1,20 +1,20 @@
 """Base ML model and data classes"""
 
 import os
-from typing import Sequence, Optional, Tuple, Union, List
+from typing import Sequence, Optional, Tuple, Union, List, Type
 from functools import reduce
 from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.externals import joblib
 import pandas as pd
 import numpy as np
 
-from server.types import YearPair, DataFrameTransformer
+from server.types import YearPair, DataFrameTransformer, M
 
 MODULE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 
-class MLModel:
+class MLModel(BaseEstimator, RegressorMixin):
     """Base ML model class"""
 
     def __init__(
@@ -28,7 +28,8 @@ class MLModel:
             raise ValueError("At least one estimator is required, but none were given.")
 
         self._name = name
-        self._module_name = module_name
+        self.module_name = module_name
+        self.estimators = estimators
         self._pipeline: Pipeline = make_pipeline(*estimators)
 
     @property
@@ -37,23 +38,25 @@ class MLModel:
 
         return self._name or self.__last_estimator()[0]
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
+    def fit(
+        self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
+    ) -> Type[M]:
         """Fit estimator to the data"""
 
         self._pipeline.fit(X, y)
 
-    def predict(self, X: pd.DataFrame) -> pd.Series:
+        return self
+
+    def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         """Make predictions based on the data input"""
 
-        y_pred = self._pipeline.predict(X)
-
-        return pd.Series(y_pred, name="predicted_margin", index=X.index)
+        return self._pipeline.predict(X)
 
     def save(self, filepath: Optional[str] = None) -> None:
         """Save the pipeline as a pickle file"""
 
         filepath = filepath or os.path.join(
-            MODULE_DIR, self._module_name, f"{self.name}.pkl"
+            MODULE_DIR, self.module_name, f"{self.name}.pkl"
         )
 
         joblib.dump(self._pipeline, filepath)
@@ -62,7 +65,7 @@ class MLModel:
         """Load the pipeline from a pickle file"""
 
         filepath = filepath or os.path.join(
-            MODULE_DIR, self._module_name, f"{self.name}.pkl"
+            MODULE_DIR, self.module_name, f"{self.name}.pkl"
         )
 
         self._pipeline = joblib.load(filepath)
@@ -154,11 +157,11 @@ class MLModelData:
             {missing_col: 0 for missing_col in missing_cols}, index=X_data.index
         )
 
-        return pd.concat([X_data, missing_df], axis=1).astype(float)
+        return pd.concat([X_data, missing_df], axis=1).astype(float).sort_index()
 
     @staticmethod
     def __y(data_frame: pd.DataFrame) -> pd.Series:
-        return data_frame["score"] - data_frame["oppo_score"]
+        return (data_frame["score"] - data_frame["oppo_score"]).rename("margin")
 
 
 class DataTransformerMixin:

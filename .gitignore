@@ -128,3 +128,6 @@ yarn-debug.log*
 yarn-error.log*
 
 .vscode
+
+# Folders added via docker volumes
+backend/data

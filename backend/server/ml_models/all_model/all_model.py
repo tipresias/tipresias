@@ -1,6 +1,6 @@
 """Class for model trained on all AFL data and its associated data class"""
 
-from typing import List, Sequence, Optional
+from typing import List, Sequence, Optional, Type
 from datetime import datetime
 from functools import reduce
 import pandas as pd
@@ -17,14 +17,10 @@ from server.types import YearPair
 
 
 START_DATE = "1965-01-01"
-# Was using **dict for repeated kwargs, but mypy complained, so just repeating
-# a little
-DATA_READERS: List[pd.DataFrame] = [
-    BettingModelData(train_years=(None, None), test_years=(None, None)).data,
-    PlayerModelData(
-        start_date=START_DATE, train_years=(None, None), test_years=(None, None)
-    ).data,
-    MatchModelData(train_years=(None, None), test_years=(None, None)).data,
+DATA_READERS: List[Type[MLModelData]] = [
+    BettingModelData,
+    PlayerModelData,
+    MatchModelData,
 ]
 MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
 
@@ -38,7 +34,7 @@ class AllModel(MLModel):
         self,
         estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
         name: Optional[str] = None,
-        module_name: str = "",
+        module_name: str = "all_model",
     ) -> None:
         super().__init__(estimators=estimators, name=name, module_name=module_name)
 
@@ -48,7 +44,7 @@ class AllModelData(MLModelData):
 
     def __init__(
         self,
-        data_readers: List[pd.DataFrame] = DATA_READERS,
+        data_readers: List[Type[MLModelData]] = DATA_READERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         start_date=None,
@@ -56,16 +52,17 @@ class AllModelData(MLModelData):
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
-        data_frame = reduce(self.__concat_data_frames, data_readers)
+        data_frame = reduce(self.__concat_data_frames, data_readers, None)
+
         data_frame_dtypes = data_frame.dtypes
-        numeric_cols = data_frame_dtypes[
+        numeric_cols_filter = (
             (data_frame_dtypes == float) | (data_frame_dtypes == int)
-        ]
+        ).values
+        numeric_cols = data_frame.columns[numeric_cols_filter]
         fillna_dict = {col: 0 for col in numeric_cols}
+
         start_year = datetime.strptime(start_date, "%Y-%m-%d").year if start_date else 0
-        end_year = (
-            datetime.strptime(end_date, "%Y-%m-%d").year if start_date else np.Inf
-        )
+        end_year = datetime.strptime(end_date, "%Y-%m-%d").year if end_date else np.Inf
 
         self._data = (
             data_frame[
@@ -73,6 +70,7 @@ class AllModelData(MLModelData):
             ]
             .fillna(fillna_dict)
             .dropna()
+            .sort_index()
         )
 
     @property
@@ -80,7 +78,11 @@ class AllModelData(MLModelData):
         return self._data
 
     @staticmethod
-    def __concat_data_frames(concated_data_frame, data_frame) -> pd.DataFrame:
+    def __concat_data_frames(
+        concated_data_frame: pd.DataFrame, data_reader: Type[MLModelData]
+    ) -> pd.DataFrame:
+        data_frame = data_reader().data
+
         if concated_data_frame is None:
             return data_frame
 
@@ -89,7 +91,11 @@ class AllModelData(MLModelData):
         drop_cols = agg_cols.intersection(df_cols)
 
         # Have to drop shared columns, and this seems a reasonable way of doing it
-        # without hard-coding values
+        # without hard-coding values.
+        # TODO: Make this a little more robust by doing some fillna with shared columns,
+        # because this currently relies on ordering data from smallest to largest
+        # and knowing that larger datasets contain all shared data contained in
+        # smaller data sets plus more.
         return pd.concat(
             [concated_data_frame.drop(list(drop_cols), axis=1), data_frame], axis=1
         )

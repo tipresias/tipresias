@@ -63,7 +63,7 @@ def graph_cv_model_performance(performance_data_frame):
     )
 
     plt.figure(figsize=(15, 7))
-    sns.barplot(x="estimator", y="error", hue="score_type", data=mae_scores)
+    sns.barplot(x="model", y="error", hue="score_type", data=mae_scores)
     plt.ylim(bottom=20)
     plt.title(
         "Model mean absolute error for cross-validation & test sets\n", fontsize=18
@@ -82,7 +82,7 @@ def graph_cv_model_performance(performance_data_frame):
     )
 
     plt.figure(figsize=(15, 7))
-    sns.barplot(x="estimator", y="accuracy", hue="score_type", data=acc_scores)
+    sns.barplot(x="model", y="accuracy", hue="score_type", data=acc_scores)
     plt.ylim(bottom=0.55)
     plt.title("Model accuracy for cross-validation & test sets\n", fontsize=18)
     plt.ylabel("Accuracy", fontsize=14)
@@ -99,7 +99,7 @@ def graph_cv_model_performance(performance_data_frame):
     )
 
     plt.figure(figsize=(15, 7))
-    sns.barplot(x="estimator", y="std_error", data=std_scores)
+    sns.barplot(x="model", y="std_error", data=std_scores)
     plt.title("Standard deviation for model mean absolute error\n", fontsize=18)
     plt.ylabel("Std", fontsize=14)
     plt.xlabel("", fontsize=14)

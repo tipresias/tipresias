@@ -1,7 +1,7 @@
 // @flow
-export type NumericScale = (a: number)=> number
+export type NumericScale = (a: number) => number
 
-export type StringScale = (a: string)=> string
+export type StringScale = (a: string) => string
 
 export type GameDataType = {
   away_team: string,
@@ -23,6 +23,7 @@ export type CumulTipPointPerModelType = {
 }
 
 export type createBarsFuncArgType = {
+  barWidth: number,
   roundScale: NumericScale,
   tipPointScale: NumericScale,
   modelColorScale: StringScale,

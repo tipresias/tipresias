@@ -1,7 +1,4 @@
-import os
 import pandas as pd
-
-from project.settings.common import BASE_DIR
 
 
 class DataBuilder:
@@ -14,10 +11,8 @@ class DataBuilder:
         if len(csv_paths) != len(data_classes):
             raise ValueError("csv_paths and data_classes arguments must be same length")
 
-        abs_paths = [os.path.join(BASE_DIR, csv_path) for csv_path in csv_paths]
-
         self.dfs = [
-            data_class(abs_paths[idx], shared_index_cols).data_frame()
+            data_class(csv_paths[idx], shared_index_cols).data_frame()
             for idx, data_class in enumerate(data_classes)
         ]
 

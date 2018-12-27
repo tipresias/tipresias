@@ -1,7 +1,9 @@
+"""Module for the BettingDataReader class"""
+
 from typing import Tuple, List, Callable
 import pandas as pd
 
-from project.settings.common import BASE_DIR
+from project.settings.common import DATA_DIR
 
 
 class BettingDataReader:
@@ -39,7 +41,7 @@ class BettingDataReader:
         """
 
         data_frame = pd.read_csv(
-            f"{BASE_DIR}/data/{filename}",
+            f"{DATA_DIR}/{filename}",
             index_col=self.index_col,
             parse_dates=self.parse_dates,
         )

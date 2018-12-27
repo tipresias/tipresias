@@ -98,7 +98,7 @@ class PlayerModel(MLModel):
         self,
         estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
         name: Optional[str] = None,
-        module_name: str = "",
+        module_name: str = "player_model",
     ) -> None:
         super().__init__(estimators=estimators, name=name, module_name=module_name)
 
@@ -168,9 +168,11 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
             & (~data_frame["match_id"].isin(duplicate_matches))
         ]
 
-        self._data = self._compose_transformers(  # pylint: disable=E1102
-            data_frame
-        ).dropna()
+        self._data = (
+            self._compose_transformers(data_frame)  # pylint: disable=E1102
+            .dropna()
+            .sort_index()
+        )
 
     @property
     def data(self):

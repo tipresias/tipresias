@@ -1,10 +1,18 @@
 """Script for generating prediction data (in the form of a CSV) for all available models."""
 
+import os
+import sys
 from typing import Tuple
 import pandas as pd
+import numpy as np
+from dask import compute, delayed
 
-from project.settings.common import BASE_DIR
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
+from project.settings.common import DATA_DIR
 from server.ml_models import BettingModel
 from server.ml_models.betting_model import BettingModelData
 from server.ml_models import MatchModel
@@ -13,56 +21,76 @@ from server.ml_models import PlayerModel
 from server.ml_models.player_model import PlayerModelData
 from server.ml_models import AllModel
 from server.ml_models.all_model import AllModelData
+from server.ml_models import AvgModel
 
 from notebooks.src.data.data_builder import DataBuilder, BettingData, MatchData
 from notebooks.src.data.data_transformer import DataTransformer
 
 DATA_FILES: Tuple[str, str] = ("afl_betting.csv", "ft_match_list.csv")
 ML_MODELS = [
-    (BettingModel, BettingModelData),
-    (MatchModel, MatchModelData),
-    (PlayerModel, PlayerModelData),
-    (AllModel, AllModelData),
+    (BettingModel(name="betting_data"), BettingModelData),
+    (MatchModel(name="match_data"), MatchModelData),
+    (PlayerModel(name="player_data"), PlayerModelData),
+    (AllModel(name="all_data"), AllModelData),
+    (AvgModel(name="avg_predictions"), AllModelData),
 ]
+
+np.random.seed(42)
+
+
+def make_year_prediction(estimator, data, year):
+    data.train_years = (0, year - 1)
+    data.test_years = (year, year)
+
+    estimator.fit(*data.train_data())
+    y_pred = estimator.predict(data.test_data()[0])
+    year_pred_df = data.data.loc[(slice(None), year, slice(None)), :].assign(
+        margin=lambda x: x["score"] - x["oppo_score"], predicted_margin=y_pred
+    )
+
+    return year_pred_df
 
 
 def make_predictions(ml_model, ml_data) -> pd.DataFrame:
     """Generate prediction data frame for estimator based on player data"""
 
     data = ml_data(train_years=(None, None), test_years=(None, None))
-    estimator = ml_model()
+    estimator = ml_model
 
-    predictions = []
+    values = [
+        delayed(make_year_prediction)(estimator, data, year)
+        for year in range(2011, 2017)
+    ]
+    predictions = compute(*values, scheduler="processes")
 
-    for test_year in range(2011, 2017):
-        data.train_years = (0, test_year - 1)
-        data.test_years = (test_year, test_year)
-
-        estimator.fit(*data.train_data())
-        y_pred = estimator.predict(data.test_data()[0])
-
-        predictions.append(y_pred)
-
-    pred_col = pd.concat(predictions)
-
-    pred_df = pd.concat([data.data, pred_col], join="inner", axis=1)
+    pred_df = pd.concat(predictions).sort_index()
     home_df = pred_df[pred_df["at_home"] == 1]
 
     return (
         home_df.loc[:, ["year", "round_number", "team", "oppo_team"]]
         .rename(columns={"team": "home_team", "oppo_team": "away_team"})
         .assign(
-            model=type(ml_model).__name__,
+            model=ml_model.name,
             predicted_home_margin=(home_df["predicted_margin"].round()),
-            home_margin=home_df["score"] - home_df["oppo_score"],
-            predicted_home_win=((home_df["predicted_margin"] > 0).astype(int)),
-            home_win=((home_df["score"] > home_df["oppo_score"]).astype(int)),
-            draw=(home_df["score"] == home_df["oppo_score"]).astype(int),
+            home_margin=home_df["margin"],
+            predicted_home_win=(home_df["predicted_margin"] > 0),
+            home_win=(home_df["margin"] > 0),
+            draw=(home_df["margin"] == 0),
         )
         .assign(
             tip_point=lambda x: (
                 (x["predicted_home_win"] == x["home_win"]) | (x["draw"])
-            ).astype(int)
+            )
+        )
+        .astype(
+            {
+                "year": int,
+                "round_number": int,
+                "tip_point": int,
+                "predicted_home_win": int,
+                "home_win": int,
+                "draw": int,
+            }
         )
         .reset_index(drop=True)
     )
@@ -71,7 +99,7 @@ def make_predictions(ml_model, ml_data) -> pd.DataFrame:
 def oddsmakers_predictions() -> pd.DataFrame:
     """Generate prediction data frame based on raw betting odds"""
 
-    csv_paths = [f"data/{data_file}" for data_file in DATA_FILES]
+    csv_paths = [os.path.join(DATA_DIR, data_file) for data_file in DATA_FILES]
     data_classes = (BettingData, MatchData)
 
     raw_df = DataBuilder(data_classes, csv_paths).concat()
@@ -118,7 +146,7 @@ def main():
     model_predictions = [make_predictions(*ml_model) for ml_model in ML_MODELS]
 
     pd.concat([oddsmakers_predictions(), *model_predictions]).to_csv(
-        f"{BASE_DIR}/data/model_predictions.csv", index=False
+        f"{DATA_DIR}/model_predictions.csv", index=False
     )
 
 

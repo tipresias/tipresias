@@ -3,11 +3,22 @@ import pandas as pd
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import make_scorer, mean_absolute_error, log_loss, accuracy_score
 
+# from sklearn.externals.joblib import Parallel, delayed
+from dask import compute, delayed
+
 np.random.seed(42)
 
 
 def regression_accuracy(y, y_pred, **kwargs):  # pylint: disable=W0613
-    correct_preds = ((y >= 0) & (y_pred >= 0)) | ((y <= 0) & (y_pred <= 0))
+    try:
+        correct_preds = ((y >= 0) & (y_pred >= 0)) | ((y <= 0) & (y_pred <= 0))
+    except ValueError:
+        reset_y = y.reset_index(drop=True)
+        reset_y_pred = y_pred.reset_index(drop=True)
+        correct_preds = ((reset_y >= 0) & (reset_y_pred >= 0)) | (
+            (reset_y <= 0) & (reset_y_pred <= 0)
+        )
+
     return np.mean(correct_preds.astype(int))
 
 
@@ -83,7 +94,7 @@ def measure_classifier(estimator, data, cv=5, n_jobs=-1):
 
 
 def measure_estimators(
-    pipelines, data, model_type="regression", cv=5, n_jobs=-1, accuracy=True
+    estimators, data, model_type="regression", cv=5, n_jobs=-1, accuracy=True
 ):
     if model_type not in ("regression", "classification"):
         raise Exception(
@@ -98,17 +109,16 @@ def measure_estimators(
     std_cv_accuracies = []
     std_cv_errors = []
 
-    for pipeline in pipelines:
-        estimator_name = pipeline.steps[-1][0]
+    for estimator_name, estimator in estimators:
         print(f"Training {estimator_name}")
 
         if model_type == "regression":
             cv_accuracies, cv_errors, test_accuracy, test_error = measure_regressor(
-                pipeline, data, cv=cv, n_jobs=n_jobs, accuracy=accuracy
+                estimator, data, cv=cv, n_jobs=n_jobs, accuracy=accuracy
             )
         else:
             cv_accuracies, cv_errors, test_accuracy, test_error = measure_classifier(
-                pipeline, data, cv=cv, n_jobs=n_jobs
+                estimator, data, cv=cv, n_jobs=n_jobs
             )
 
         mean_cv_accuracy = np.mean(cv_accuracies)
@@ -130,7 +140,7 @@ def measure_estimators(
 
     return pd.DataFrame(
         {
-            "estimator": estimator_names * 2,
+            "model": estimator_names * 2,
             "accuracy": mean_cv_accuracies + test_accuracies,
             "error": mean_cv_errors + test_errors,
             "std_accuracy": std_cv_accuracies + [np.nan] * len(test_accuracies),
@@ -140,36 +150,51 @@ def measure_estimators(
     )
 
 
-def yearly_performance_scores(estimators, features, labels):
-    model_names = []
-    errors = []
-    accuracies = []
-    years = []
+def yearly_performance_score(estimators, features, labels, year):
+    feat_train = features[features["year"] < year]
+    feat_test = features[features["year"] == year]
+    X_train = feat_train.values
+    X_test = feat_test.values
 
-    for year in range(2011, 2017):
-        feat_train = features[features["year"] < year]
-        feat_test = features[features["year"] == year]
-        X_train = feat_train.values
-        X_test = feat_test.values
+    lab_train = labels.loc[feat_train.index]
+    lab_test = labels.loc[feat_test.index]
+    y_train = lab_train.values
+    y_test = lab_test.values
 
-        lab_train = labels.loc[feat_train.index]
-        lab_test = labels.loc[feat_test.index]
-        y_train = lab_train.values
-        y_test = lab_test.values
+    scores = []
 
-        for estimator_name, estimator, keras in estimators:
-            kwargs = {"kerasregressor__verbose": 0} if keras else {}
-            estimator.fit(X_train, y_train, **kwargs)
+    for estimator_name, estimator, keras in estimators:
+        kwargs = {"kerasregressor__verbose": 0} if keras else {}
+        estimator.fit(X_train, y_train, **kwargs)
 
-            y_pred = estimator.predict(X_test).reshape((-1,))
+        y_pred = estimator.predict(X_test)
 
-            years.append(year)
-            model_names.append(estimator_name)
-            errors.append(mean_absolute_error(y_test, y_pred))
-            accuracies.append(regression_accuracy(y_test, y_pred))
+        if isinstance(y_pred, np.ndarray):
+            y_pred = y_pred.reshape((-1,))
 
-    year_scores = pd.DataFrame(
-        {"model": model_names, "year": years, "error": errors, "accuracy": accuracies}
-    ).astype({"year": int})
+        scores.append(
+            {
+                "year": year,
+                "model": estimator_name,
+                "error": mean_absolute_error(y_test, y_pred),
+                "accuracy": regression_accuracy(y_test, y_pred),
+            }
+        )
 
-    return year_scores
+    return scores
+
+
+def yearly_performance_scores(estimators, features, labels, parallel=True):
+    if parallel:
+        scores = [
+            delayed(yearly_performance_score)(estimators, features, labels, year)
+            for year in range(2011, 2017)
+        ]
+        results = compute(scores, scheduler="processes")
+    else:
+        results = [
+            yearly_performance_score(estimators, features, labels, year)
+            for year in range(2011, 2017)
+        ]
+
+    return pd.DataFrame(list(np.array(results).flatten()))

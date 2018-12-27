@@ -44,8 +44,8 @@ def make_year_prediction(estimator, data, year):
 
     estimator.fit(*data.train_data())
     y_pred = estimator.predict(data.test_data()[0])
-    year_pred_df = pd.concat(list(data.test_data()), axis=1).assign(
-        predicted_margin=y_pred
+    year_pred_df = data.data.loc[(slice(None), year, slice(None)), :].assign(
+        margin=lambda x: x["score"] - x["oppo_score"], predicted_margin=y_pred
     )
 
     return year_pred_df
@@ -73,14 +73,24 @@ def make_predictions(ml_model, ml_data) -> pd.DataFrame:
             model=ml_model.name,
             predicted_home_margin=(home_df["predicted_margin"].round()),
             home_margin=home_df["margin"],
-            predicted_home_win=(home_df["predicted_margin"] > 0).astype(int),
-            home_win=(home_df["margin"] > 0).astype(int),
-            draw=(home_df["margin"] == 0).astype(int),
+            predicted_home_win=(home_df["predicted_margin"] > 0),
+            home_win=(home_df["margin"] > 0),
+            draw=(home_df["margin"] == 0),
         )
         .assign(
             tip_point=lambda x: (
                 (x["predicted_home_win"] == x["home_win"]) | (x["draw"])
-            ).astype(int)
+            )
+        )
+        .astype(
+            {
+                "year": int,
+                "round_number": int,
+                "tip_point": int,
+                "predicted_home_win": int,
+                "home_win": int,
+                "draw": int,
+            }
         )
         .reset_index(drop=True)
     )

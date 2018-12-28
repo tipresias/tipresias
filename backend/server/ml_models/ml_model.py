@@ -23,7 +23,6 @@ class MLModel(BaseEstimator, RegressorMixin):
         name: Optional[str] = None,
         module_name: str = "",
     ) -> None:
-
         if not any(estimators):
             raise ValueError("At least one estimator is required, but none were given.")
 
@@ -86,9 +85,8 @@ class MLModelData:
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data"""
 
-        data_train = self.data[
-            (self.data["year"] >= self.__train_min())
-            & (self.data["year"] <= self.__train_max())
+        data_train = self.data.loc[
+            (slice(None), slice(*self.train_years), slice(None)), :
         ]
 
         X_train = self.__X(data_train)
@@ -96,12 +94,11 @@ class MLModelData:
 
         return X_train, y_train
 
-    def test_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def test_data(self, test_round=None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce test data"""
 
-        data_test = self.data[
-            (self.data["year"] >= self.__test_min())
-            & (self.data["year"] <= self.__test_max())
+        data_test = self.data.loc[
+            (slice(None), slice(*self.test_years), slice(test_round, test_round)), :
         ]
         X_test = self.__X(data_test)
         y_test = self.__y(data_test)
@@ -133,18 +130,6 @@ class MLModelData:
     @test_years.setter
     def test_years(self, years: YearPair) -> None:
         self._test_years = years
-
-    def __train_min(self) -> Union[int, float]:
-        return self._train_years[0] or np.NINF
-
-    def __train_max(self) -> Union[int, float]:
-        return self._train_years[1] or np.Inf
-
-    def __test_min(self) -> Union[int, float]:
-        return self._test_years[0] or np.NINF
-
-    def __test_max(self) -> Union[int, float]:
-        return self._test_years[1] or np.Inf
 
     def __X(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         data_dummies = pd.get_dummies(self.data.select_dtypes("O"))

@@ -30,11 +30,24 @@ TEAM_NAMES = [
 GAME_LENGTH_HRS = 3
 
 
-def validate_name(name):
-    if name not in TEAM_NAMES:
-        raise ValidationError(
-            _("%(name)s is not a valid team name"), params={"name": name}
-        )
+def validate_name(name: str) -> None:
+    if name in TEAM_NAMES:
+        return None
+
+    raise ValidationError(_("%(name)s is not a valid team name"), params={"name": name})
+
+
+def validate_module_path(path: str) -> None:
+    if "." in path and "/" not in path:
+        return None
+
+    raise ValidationError(
+        _(
+            "%(path)s is not a valid module path. Be sure to separate modules & classes "
+            "with a '.'"
+        ),
+        params={"path": path},
+    )
 
 
 class Team(models.Model):
@@ -96,13 +109,16 @@ class MLModel(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(null=True, blank=True)
     filepath = models.CharField(max_length=500, null=True, blank=True)
+    data_class_path = models.CharField(
+        max_length=500, null=True, blank=True, validators=[validate_module_path]
+    )
 
 
 class Prediction(models.Model):
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     ml_model = models.ForeignKey(MLModel, on_delete=models.CASCADE)
     predicted_winner = models.ForeignKey(Team, on_delete=models.CASCADE)
-    predicted_margin = models.SmallIntegerField()
+    predicted_margin = models.PositiveSmallIntegerField()
 
     @property
     def is_correct(self):

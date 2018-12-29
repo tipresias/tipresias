@@ -1,37 +1,31 @@
 sudo: required
 services:
-  - docker
-
+- docker
 env:
   DOCKER_COMPOSE_VERSION: 1.22.0
-
 before_install:
   - sudo rm /usr/local/bin/docker-compose
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
-
 script:
   - docker pull cfranklin11/tipresias_server:master
   - docker build --cache-from cfranklin11/tipresias_server:master -t cfranklin11/tipresias_server:master ./backend
   - docker run cfranklin11/tipresias_server:master pylint --disable=R server project scripts
   - docker run cfranklin11/tipresias_server:master mypy server project scripts
   - docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
-  
   - docker pull cfranklin11/tipresias_client:master
   - docker build --cache-from cfranklin11/tipresias_client:master -t cfranklin11/tipresias_client:master ./frontend
   - docker run cfranklin11/tipresias_client:master yarn run eslint src
   - docker run cfranklin11/tipresias_client:master yarn run flow
   - docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit
-
 after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_server:master
   - docker push cfranklin11/tipresias_client:master
-
 deploy:
   provider: heroku
   api_key:
-    secure: Nyr9M/g2o3uZ9HGQ+c7OHMTcTMj6f2MY6uS3xiwvDObzen+p42TaQ74MTKFPbJYbHX3fHjVxEjeLlsojeAF9w6w5JbVO/0937snXynky/NXzD1ZU7JNq+xvjwBFjuSouuw/bT+YH0gnI0euZcofGNYijpIwoLg61b2McTISbKswQZmTmqXCBCfPa2YUp7A9+L+0Cr2hEPNbb5sVaMIgMjU7O1aplFfSweHC9LtiRl3t8nbOx7t/vO2/NBZxHqFirDqd2m/PfrbNDdXM0kAvOSshT2JSrQj7OHFnLwVlX6OrUjCRPhwOhRERDaryg7wBK+voVcqfQD/JwFzUJ6O+pkFe1yqcTi8c/lyriwnaEaTmhTOoRPd1pydpl0n1DQWAktscGVQ8QXr0yq9S1UIBGDdNrqrN4e4VDEBVahI8WyA6Gw2o7c6tYKySszKUCzITwmcjVn0SHJme2LIHKZRihIjmpj8LXzUbd5uFW1fvDDTilZugUrdltjAMFphjUca1vCC1iAcYozg+mzNFXkfRlMKCuUiW1nSfV4yRttKIEaWjKWSQ9g8otgz7Fz943/dvZflhS2sD4PlKxN5RBLRcx6CA7SuMJWoVT1X9CDXylpFELPMtSluDUfrtZ5nn6XY0eI8zEIW9f+N6owbqP93Mb3qjdau3zm5tnYFLkEy1dO00=
+    secure: DNFbg9pkA4RZe/nUffDo+fOFa3c+OVbecO08HgYcW93T0IEqW4R4jdGO4xpZof/7066Ue7RdsGHSrr7TKZnLImgcqtblNv0/H/MTLorEXJ/Kmeg3RBGvyT67aM2ZhCUIh9hZij+irmzT5/uXdHGsH/GyoPUtaTRyaEziqlLtkM7Muq9NExcPIuh2sVWQhCQmRRNNtKtSdoWu0OpwrSSTE8jeBE9coi+YgncqqqzrqTbbd+uxxgSWVTl7bbjj9yR7v/UFEWS+BVOXTDA4u8LlQFOvHi93mi4r228UxtUkcUfyKeUZlVhQLAkj5YnRqrjYQWB/QiRbvbEbCf248kI68IdNv4/jgYdEzMS0K9Imf2iKoo+joQOFMfXTUHXqHv/SyNq6l4jJeinYk5tLJUOKaw2MdKy73uTdzX/jMgMJ8f5zRen+BSskLx23jOwxK/qmdjBnGB/EPrT0TAARrCo6aFL0VTZslSQtDqqvyVwaYCy+PtVwrdeCZP0iJbnBSZpDofr8oq882UJGQj7NPrVJ7HBTAFD8posJIPln8F4CKOVUjF0FkOKIuvimpmJF84ziJdf4cgi2hWsXlJyJTiBpRRnEsnHlfeRsZHyt6nhbkc3ARwdr5Nh0GJkJBVmRq04LjA8oY5kMlSmoCAdUHrnfYj+b9VmlrrmxPs6bkSbWJNk=
   app: tipresias
   on: master

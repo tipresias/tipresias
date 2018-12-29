@@ -3,8 +3,8 @@ services:
   backend:
     build: ./backend
     volumes:
-      - ./backend:/app
-      - ./data:/data
+      - ./backend:/app/backend
+      - ./data:/app/data
     ports:
       - "8000:8000"
     stdin_open: true
@@ -31,8 +31,8 @@ services:
   notebook:
     image: tipresias_backend:latest
     volumes:
-      - ./backend:/app
-      - ./data:/data
+      - ./backend:/app/backend
+      - ./data:/app/data
     ports:
       - "8888:8888"
     depends_on:

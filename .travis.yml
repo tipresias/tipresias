@@ -23,6 +23,7 @@ after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_server:master
   - docker push cfranklin11/tipresias_client:master
+  - echo "$HEROKU_PASSWORD" | docker login -u "$HEROKU_USERNAME" --password-stdin registry.heroku.com
 deploy:
   provider: heroku
   api_key:

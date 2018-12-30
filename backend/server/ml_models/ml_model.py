@@ -9,9 +9,8 @@ from sklearn.externals import joblib
 import pandas as pd
 import numpy as np
 
+from project.settings.common import BASE_DIR
 from server.types import YearPair, DataFrameTransformer, M
-
-MODULE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 
 class MLModel(BaseEstimator, RegressorMixin):
@@ -35,7 +34,13 @@ class MLModel(BaseEstimator, RegressorMixin):
     def name(self) -> str:
         """Name of the model"""
 
-        return self._name or self.__last_estimator()[0]
+        return self._name or self.__class__.__name__
+
+    @property
+    def pickle_filepath(self) -> str:
+        """Filepath to the model's saved pickle file"""
+
+        return os.path.join(BASE_DIR, os.path.dirname(__file__), f"{self.name}.pkl")
 
     def fit(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
@@ -51,26 +56,15 @@ class MLModel(BaseEstimator, RegressorMixin):
 
         return self._pipeline.predict(X)
 
-    def save(self, filepath: Optional[str] = None) -> None:
+    def save(self) -> None:
         """Save the pipeline as a pickle file"""
 
-        filepath = filepath or os.path.join(
-            MODULE_DIR, self.module_name, f"{self.name}.pkl"
-        )
+        joblib.dump(self._pipeline, self.pickle_filepath)
 
-        joblib.dump(self._pipeline, filepath)
-
-    def load(self, filepath: Optional[str] = None) -> None:
+    def load(self) -> None:
         """Load the pipeline from a pickle file"""
 
-        filepath = filepath or os.path.join(
-            MODULE_DIR, self.module_name, f"{self.name}.pkl"
-        )
-
-        self._pipeline = joblib.load(filepath)
-
-    def __last_estimator(self) -> Tuple[str, BaseEstimator]:
-        return self._pipeline.steps[-1]
+        self._pipeline = joblib.load(self.pickle_filepath)
 
 
 class MLModelData:

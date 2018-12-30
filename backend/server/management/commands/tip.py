@@ -2,7 +2,7 @@ import os
 from functools import partial
 from pydoc import locate
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from mypy_extensions import TypedDict
 from django.core.management.base import BaseCommand
 import pandas as pd
@@ -55,7 +55,7 @@ class Command(BaseCommand):
         self.right_now = datetime.now(timezone.utc)
         self.current_year = self.right_now.year
 
-    def handle(self, *_args, **_kwargs) -> None:  # pylint disable=W0613
+    def handle(self, *_args, **_kwargs) -> None:
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
 
         if fixture_data_frame is None:
@@ -74,19 +74,26 @@ class Command(BaseCommand):
         ).count()
 
         if last_round_played != next_round_to_play and saved_match_count == 0:
-            print(
-                f"Saving Match and TeamMatch records for round {next_round_to_play}\n"
-            )
-
             next_round_fixture = fixture_data_frame[
                 (fixture_data_frame["round"] == next_round_to_play)
             ]
-            self.__build_matches(next_round_fixture.to_dict("records"))
 
-        next_round_year = fixture_data_frame["date"].map(lambda x: x.year).max()
-        self.__make_predictions(next_round_year, next_round_to_play)
+            print(
+                f"Saving Match and TeamMatch records for round {next_round_to_play}...\n"
+            )
 
-        print("Match data already exists in the DB. No new records were created.")
+            self.__create_matches(next_round_fixture.to_dict("records"))
+
+            next_round_year = fixture_data_frame["date"].map(lambda x: x.year).max()
+
+            if self.__make_predictions(
+                (next_round_year, next_round_year), round_number=next_round_to_play
+            ):
+                print("Match and prediction data were updated!\n")
+
+            return None
+
+        print("Match data already exists in the DB. No new records were created.\n")
         return None
 
     def __fetch_fixture_data(self, year: int, retry=True) -> Optional[pd.DataFrame]:
@@ -125,11 +132,11 @@ class Command(BaseCommand):
 
         return fixture_data_frame
 
-    def __build_matches(
+    def __create_matches(
         self, fixture_data: List[FixtureData]
     ) -> Optional[List[TeamMatch]]:
         if not any(fixture_data):
-            print("No match data found for the given season and round number.")
+            print("No match data found.")
             return None
 
         team_matches = list(
@@ -139,7 +146,7 @@ class Command(BaseCommand):
         )
 
         if not any(team_matches):
-            print("Something went wrong, and no team matches were saved.")
+            print("Something went wrong, and no team matches were saved.\n")
             return None
 
         TeamMatch.objects.bulk_create(team_matches)
@@ -157,50 +164,73 @@ class Command(BaseCommand):
 
         return self.__build_team_match(match, match_data)
 
-    def __make_predictions(self, year: int, round_number: int) -> None:
-        upcoming_matches = Match.objects.filter(
+    def __make_predictions(
+        self,
+        year_range: Tuple[int, int],
+        ml_models: Optional[List[MLModel]] = None,
+        round_number: Optional[int] = None,
+    ) -> bool:
+        matches_to_predict = Match.objects.filter(
             start_date_time_gt=self.right_now, round_number=round_number
         )
-        ml_models = MLModel.objects.all()
 
-        build_model_predictions = partial(
-            self.__build_model_predictions, year, round_number, upcoming_matches
+        ml_models = ml_models or MLModel.objects.all()
+
+        if ml_models is None:
+            print("Could not find any ML models in DB to make predictions.\n")
+            return False
+
+        make_model_predictions = partial(
+            self.__make_model_predictions, year_range, round_number, matches_to_predict
         )
 
-        predictions = [build_model_predictions(ml_model) for ml_model in ml_models]
+        predictions = [make_model_predictions(ml_model) for ml_model in ml_models]
 
         Prediction.bulk_create(list(np.array(predictions).flatten()))
+        print("Predictions saved!\n")
+        return True
 
-    def __build_model_predictions(
-        self, year: int, round_number: int, matches: List[Match], ml_model: MLModel
+    def __make_model_predictions(
+        self,
+        year_range: Tuple[int, int],
+        matches: List[Match],
+        ml_model_record: MLModel,
+        round_number: Optional[int] = None,
     ) -> List[Prediction]:
-        loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model.file_path))
+        loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model_record.filepath))
         data_class = locate(loaded_model.data_class_path)
-        data = data_class(test_years=(year, year))
+        data = data_class(test_years=year_range)
+
         X_test, _ = data.test_data(test_round=round_number)
         y_pred = loaded_model.predict(X_test)
-        prediction_data = data.data.loc[(slice(None), year, round_number), :].assign(
+
+        data_row_slice = (
+            slice(None),
+            slice(*year_range),
+            slice(round_number, round_number),
+        )
+        prediction_data = data.data.loc[data_row_slice, :].assign(
             predicted_margin=y_pred
         )
 
         build_match_prediction = partial(
-            self.__build_match_prediction, ml_model, prediction_data
+            self.__build_match_prediction, ml_model_record, prediction_data
         )
 
         return [build_match_prediction(match) for match in matches]
 
     @staticmethod
     def __build_match_prediction(
-        ml_model: MLModel, prediction_data: pd.DataFrame, match: Match
+        ml_model_record: MLModel, prediction_data: pd.DataFrame, match: Match
     ) -> Prediction:
         home_team = match.team_matches.get(at_home=True).team
         away_team = match.team_matches.get(at_home=False).team
 
-        predicted_home_margin = prediction_data.loc[
-            (home_team.name, slice(None), slice(None)), "predicted_margin"
+        predicted_home_margin = prediction_data.xs(home_team.name, level=0)[
+            "predicted_margin"
         ]
-        predicted_away_margin = prediction_data.loc[
-            (away_team.name, slice(None), slice(None)), "predicted_margin"
+        predicted_away_margin = prediction_data.xs(away_team.name, level=0)[
+            "predicted_margin"
         ]
 
         # predicted_margin is always positive as its always associated with predicted_winner
@@ -215,7 +245,7 @@ class Command(BaseCommand):
 
         prediction = Prediction(
             match=match,
-            ml_model=ml_model,
+            ml_model=ml_model_record,
             predicted_margin=predicted_margin,
             predicted_winner=predicted_winner,
         )

@@ -1,190 +1,278 @@
 """Django command for seeding the DB with match & prediction data"""
 
+from datetime import datetime, timezone
 from functools import partial
-from typing import Sequence, Callable, Generator, Tuple, List
+from pydoc import locate
+from typing import Tuple, List, Optional, Type
 from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
-from project.settings.common import DATA_DIR
 from server.data_processors import FitzroyDataReader
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
+from server.ml_models import ml_model
+from server.ml_models.betting_model import BettingModel, BettingModelData
+from server.ml_models.match_model import MatchModel, MatchModelData
+from server.ml_models.all_model import AllModel, AllModelData
+from server.ml_models.player_model import PlayerModel, PlayerModelData
+from server.ml_models import AvgModel
 
-TEAM_COLUMNS = ["home_team", "away_team"]
-MATCH_COLUMNS = ["date", "round_number"]
-TEAM_MATCH_COLUMNS = ["home_points", "away_points"]
-COLUMNS = TEAM_COLUMNS + MATCH_COLUMNS + TEAM_MATCH_COLUMNS + ["season"]
-
-FitzroyRecord = TypedDict(
-    "FitzroyRecord",
+FixtureData = TypedDict(
+    "FixtureData",
     {
-        "game": float,
-        "date": float,
-        "round": str,
+        "date": pd.Timestamp,
+        "season": int,
+        "season_game": int,
+        "round": int,
         "home_team": str,
-        "home_goals": int,
-        "home_behinds": int,
-        "home_points": int,
         "away_team": str,
-        "away_goals": int,
-        "away_behinds": int,
-        "away_points": int,
         "venue": str,
-        "margin": int,
-        "season": float,
-        "round_type": str,
-        "round_number": int,
     },
 )
-PredictionRecord = TypedDict(
-    "PredictionRecord",
-    {
-        "home_team": str,
-        "away_team": str,
-        "model": str,
-        "predicted_home_margin": int,
-        "predicted_home_win": int,
-    },
-)
+EstimatorTuple = Tuple[ml_model.MLModel, Type[ml_model.MLModelData]]
 
-UnzippedGroups = Tuple[Sequence[Sequence[TeamMatch]], Sequence[Sequence[Prediction]]]
+PREDICTION_YEARS = "2011-2016"
+ESTIMATORS: List[EstimatorTuple] = [
+    (BettingModel(name="betting_data"), BettingModelData),
+    (MatchModel(name="match_data"), MatchModelData),
+    (PlayerModel(name="player_data"), PlayerModelData),
+    (AllModel(name="all_data"), AllModelData),
+    (AvgModel(name="tipresias"), AllModelData),
+]
+NO_SCORE = 0
+JAN = 1
+DEC = 12
 
 
 class Command(BaseCommand):
     help = "Seed the database with team, match, and prediction data."
 
-    def handle(self, *_args, **_kwargs) -> None:  # pylint disable=W0613,R0194
+    def __init__(
+        self,
+        *args,
+        data_reader=FitzroyDataReader(),
+        estimators: List[EstimatorTuple] = ESTIMATORS,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.data_reader = data_reader
+        self.estimators = estimators
+
+    def handle(  # pylint: disable=W0221
+        self, *_args, years: str = PREDICTION_YEARS, **_kwargs
+    ) -> None:  # pylint: disable=W0613
         print("Seeding DB...\n")
 
-        prediction_data_frame: pd.DataFrame = pd.read_csv(
-            f"{DATA_DIR}/model_predictions.csv"
-        )
-        max_prediction_year = prediction_data_frame["year"].max()
-        min_prediction_year = prediction_data_frame["year"].min()
+        years_array = np.array(years.split("-")).astype(int)
 
-        fitzroy = FitzroyDataReader()
-        match_results: pd.DataFrame = fitzroy.match_results()
-        match_filter = (match_results["season"] >= min_prediction_year) & (
-            match_results["season"] <= max_prediction_year
-        )
-        # We don't need to save match/prediction data going all the way back
-        filtered_matches = match_results.loc[match_filter, COLUMNS].assign(
-            date=self.__convert_to_datetime
-        )
+        if len(years_array) != 2 or not all(
+            [isinstance(year, int) for year in years_array]
+        ):
+            raise ValueError(
+                "Years argument must be of form 'yyyy-yyyy' where each 'y' is an integer. "
+                f"{years} is invalid."
+            )
 
-        self.__seed_teams(filtered_matches)
-        print("teams seeded!")
+        # A little clunky, but mypy complains when you create a tuple with tuple(),
+        # which is open-ended, then try to use a restricted tuple type
+        prediction_years = (years_array[0], years_array[1])
 
-        self.__seed_ml_models(prediction_data_frame)
-        print("ml_models seeded!")
-
-        get_match_predictions = partial(
-            self.__get_match_predictions, prediction_data_frame
+        yearly_data_frames = [
+            self.__fetch_fixture_data(year) for year in range(*prediction_years)
+        ]
+        fixture_data_frame = pd.concat(
+            [data_frame for data_frame in yearly_data_frames if data_frame is not None]
         )
 
-        build_team_matches_and_predictions = partial(
-            self.__build_team_matches_and_predictions, get_match_predictions
+        if not any(fixture_data_frame):
+            print("Could not fetch data.\n")
+            return None
+
+        if not self.__create_teams(fixture_data_frame):
+            return None
+
+        ml_models = self.__create_ml_models()
+
+        if ml_models is None:
+            return None
+
+        if not self.__create_matches(fixture_data_frame.to_dict("records")):
+            return None
+
+        if self.__make_predictions(prediction_years, ml_models=ml_models):
+            print("\n...DB seeded!")
+            return None
+
+        return None
+
+    def __fetch_fixture_data(self, year: int) -> Optional[pd.DataFrame]:
+        print(f"Fetching fixture for {self.current_year}...\n")
+
+        try:
+            fixture_data_frame = self.data_reader.get_fixture(season=year)
+        # fitzRoy raises RuntimeErrors when you try to fetch too far into the future
+        except RuntimeError:
+            print(
+                f"No data found for {year}. It is likely that the fixture "
+                "is not yet available. Please try again later.\n"
+            )
+            return None
+
+        if not any(fixture_data_frame):
+            print(f"No data found for {year}.")
+            return None
+
+        return fixture_data_frame
+
+    def __create_teams(self, fixture_data: pd.DataFrame) -> bool:
+        team_names = np.unique(fixture_data[["home_team", "away_team"]].values)
+        teams = [self.__build_team(team_name) for team_name in team_names]
+
+        if not any(teams):
+            print("Something went wrong and no teams were saved")
+            return False
+
+        Team.objects.bulk_create(teams)
+        print("Teams seeded!")
+        return True
+
+    def __create_ml_models(self) -> Optional[List[MLModel]]:
+        ml_models = [
+            self.__build_ml_model(estimator, data_class)
+            for estimator, data_class in self.estimators
+        ]
+
+        if not any(ml_models):
+            print("Something went wrong and no ML models were saved.")
+            return None
+
+        MLModel.objects.bulk_create(ml_models)
+        print("ML models seeded!")
+
+        return ml_models
+
+    def __create_matches(
+        self, fixture_data: List[FixtureData]
+    ) -> Optional[List[TeamMatch]]:
+        if not any(fixture_data):
+            print("No match data found.")
+            return None
+
+        team_matches = list(
+            np.array(
+                [self.__build_match(match_data) for match_data in fixture_data]
+            ).flatten()
         )
 
-        # Zipping groups team_matches & predictions together
-        team_match_groups, prediction_groups = zip(
-            *[  # pylint disable=C0301
-                build_team_matches_and_predictions(record)
-                for record in filtered_matches.to_dict("records")
-            ]
-        )
+        if not any(team_matches):
+            print("Something went wrong, and no team matches were saved.")
+            return None
 
-        # Sometimes the data doesn't quite match up, creating an inconsistent number
-        # of elements per group, so we have to convert each group to an array
-        # individually then concatenate
-        team_matches: np.array = (
-            np.concatenate([np.array(group) for group in team_match_groups])
-        )
+        TeamMatch.objects.bulk_create(team_matches)
 
-        predictions: np.array = (
-            np.concatenate([np.array(group) for group in prediction_groups])
-        )
+        print("Match data saved!\n")
+        return None
 
-        TeamMatch.objects.bulk_create(list(team_matches))
-        print("team_matches seeded!")
-
-        Prediction.objects.bulk_create(list(predictions))
-        print("predictions seeded!")
-
-        print("\n...DB seeded!")
-
-    def __build_team_matches_and_predictions(
-        self,
-        get_match_predictions: Callable[[FitzroyRecord], List[PredictionRecord]],
-        record: FitzroyRecord,
-    ) -> Tuple[Sequence[TeamMatch], Sequence[Prediction]]:
-        prediction_data = get_match_predictions(record)
-
-        home_team: Team = Team.objects.get(name=record["home_team"])
-        away_team: Team = Team.objects.get(name=record["away_team"])
-
+    def __build_match(self, match_data: FixtureData) -> List[TeamMatch]:
         match: Match = Match(
-            # Not setting to timezone of the match location, because I can't be bothered,
-            # but may add that level of granularity if/when I add venue data
-            start_date_time=timezone.make_aware(record["date"]),
-            round_number=record["round_number"],
+            start_date_time=match_data["date"].to_pydatetime(),
+            round_number=int(match_data["round"]),
         )
         match.clean()
         match.save()
 
-        build_prediction = partial(self.__build_prediction, match, home_team, away_team)
+        return self.__build_team_match(match, match_data)
 
-        team_matches = self.__build_team_matches(match, home_team, away_team, record)
-        predictions: Generator[Prediction, None, None] = (
-            build_prediction(prediction_datum) for prediction_datum in prediction_data
-        )
-
-        return team_matches, tuple(predictions)
-
-    def __build_prediction(
+    def __make_predictions(
         self,
-        match: Match,
-        home_team: Team,
-        away_team: Team,
-        prediction_datum: PredictionRecord,
-    ) -> Prediction:
-        ml_model: MLModel = MLModel.objects.get(name=prediction_datum["model"])
-
-        prediction: Prediction = Prediction(
-            match=match,
-            ml_model=ml_model,
-            predicted_winner=self.__winning_team(
-                home_team, away_team, prediction_datum
-            ),
-            predicted_margin=self.__winning_margin(prediction_datum),
+        prediction_years: Tuple[int, int],
+        ml_models: Optional[List[MLModel]] = None,
+        round_number: Optional[int] = None,
+    ) -> bool:
+        make_year_predictions = partial(
+            self.__make_year_predictions, ml_models=ml_models, round_number=round_number
         )
-        prediction.clean()
+        predictions = [make_year_predictions(year) for year in range(*prediction_years)]
 
-        return prediction
+        if predictions is None:
+            print("Could not find any predictions to save to the DB.\n")
+            return False
 
-    def __seed_ml_models(self, prediction_data: pd.DataFrame) -> None:
-        ml_names: Sequence[str] = prediction_data["model"].drop_duplicates()
-        ml_models: List[MLModel] = [
-            self.__build_ml_model(ml_name) for ml_name in ml_names
+        Prediction.bulk_create(list(np.array(predictions).flatten()))
+        print("Predictions saved!\n")
+        return True
+
+    def __make_year_predictions(
+        self,
+        year: int,
+        ml_models: Optional[List[MLModel]] = None,
+        round_number: Optional[int] = None,
+    ) -> Optional[List[List[Prediction]]]:
+        matches_to_predict = Match.objects.filter(
+            start_date_time_gt=datetime(year, JAN, 1, tzinfo=timezone.utc),
+            start_date_time_lt=datetime(year, DEC, 31, tzinfo=timezone.utc),
+        )
+
+        if matches_to_predict is None:
+            print("Could not find any matches to make predictions for.\n")
+            return None
+
+        ml_models = ml_models or MLModel.objects.all()
+
+        if ml_models is None:
+            print("Could not find any ML models in DB to make predictions.\n")
+            return None
+
+        make_model_predictions = partial(
+            self.__make_model_predictions,
+            year,
+            matches_to_predict,
+            round_number=round_number,
+        )
+
+        return [
+            make_model_predictions(ml_model_record) for ml_model_record in ml_models
         ]
 
-        MLModel.objects.bulk_create(ml_models)
+    def __make_model_predictions(
+        self,
+        year: int,
+        matches: List[Match],
+        ml_model_record: MLModel,
+        round_number: Optional[int] = None,
+    ) -> List[Prediction]:
+        estimator = self.__estimator(ml_model_record)
+        data_class = locate(estimator.data_class_path)
+        data = data_class(train_years=(None, year - 1), test_years=(year, year))
+        estimator.fit(*data.train_data())
 
-    def __seed_teams(self, match_results: pd.DataFrame) -> None:
-        team_names: Sequence[str] = match_results["home_team"].drop_duplicates()
-        teams: List[Team] = [self.__build_team(team_name) for team_name in team_names]
+        X_test, _ = data.test_data()
+        y_pred = estimator.predict(X_test)
 
-        Team.objects.bulk_create(teams)
+        data_row_slice = (slice(None), year, slice(round_number, round_number))
+        prediction_data = data.data.loc[data_row_slice, :].assign(
+            predicted_margin=y_pred
+        )
+
+        build_match_prediction = partial(
+            self.__build_match_prediction, ml_model_record, prediction_data
+        )
+
+        return [build_match_prediction(match) for match in matches]
 
     @staticmethod
-    def __convert_to_datetime(data_frame: pd.DataFrame) -> pd.DataFrame:
-        return (
-            pd
-            # datetime unit must be day, because match data doesn't include time info
-            .to_datetime(data_frame["date"], unit="D").dt.to_pydatetime()
+    def __build_ml_model(
+        estimator: ml_model.MLModel, data_class: Type[ml_model.MLModelData]
+    ) -> MLModel:
+        ml_model_record = MLModel(
+            name=estimator.name,
+            data_class_path=f"{data_class.__module__}.{data_class.__name__}",
         )
+        ml_model_record.full_clean()
+
+        return ml_model_record
 
     @staticmethod
     def __build_team(team_name: str) -> Team:
@@ -194,75 +282,66 @@ class Command(BaseCommand):
         return team
 
     @staticmethod
-    def __build_ml_model(model_name: str) -> MLModel:
-        ml_model = MLModel(name=model_name)
-        ml_model.full_clean()
+    def __build_team_match(match: Match, match_data: FixtureData) -> List[TeamMatch]:
+        home_team = Team.objects.get(name=match_data["home_team"])
+        away_team = Team.objects.get(name=match_data["away_team"])
 
-        return ml_model
-
-    @staticmethod
-    def __get_match_predictions(
-        data_frame: pd.DataFrame, record: FitzroyRecord
-    ) -> List[PredictionRecord]:
-        return data_frame.loc[
-            (data_frame["year"] == record["season"])
-            & (data_frame["round_number"] == record["round_number"])
-            & (data_frame["home_team"] == record["home_team"])
-            & (data_frame["away_team"] == record["away_team"]),
-            [
-                "home_team",
-                "away_team",
-                "predicted_home_margin",
-                "predicted_home_win",
-                "model",
-            ],
-        ].to_dict("records")
-
-    @staticmethod
-    def __winning_team(
-        home_team: Team, away_team: Team, prediction_datum: PredictionRecord
-    ) -> Team:
-        predicted_home_win = prediction_datum["predicted_home_win"] == 1
-
-        if predicted_home_win:
-            if prediction_datum["home_team"] != home_team.name:
-                raise ValueError(
-                    "Prediction home team name "
-                    f"{prediction_datum['home_team']} doesn't "
-                    f"match home team record {home_team.name}"
-                )
-
-            return home_team
-
-        if prediction_datum["away_team"] != away_team.name:
-            raise ValueError(
-                "Prediction home team name "
-                f"{prediction_datum['home_team']} doesn't "
-                f"match home team record {home_team.name}"
-            )
-        return away_team
-
-    @staticmethod
-    def __winning_margin(prediction_datum: PredictionRecord) -> int:
-        predicted_home_win: bool = prediction_datum["predicted_home_win"] == 1
-
-        if predicted_home_win:
-            return int(prediction_datum["predicted_home_margin"])
-
-        return int(prediction_datum["predicted_home_margin"] * -1)
-
-    @staticmethod
-    def __build_team_matches(
-        match: Match, home_team: Team, away_team: Team, record: FitzroyRecord
-    ) -> Tuple[TeamMatch, TeamMatch]:
         home_team_match = TeamMatch(
-            team=home_team, match=match, at_home=True, score=record["home_points"]
+            team=home_team, match=match, at_home=True, score=NO_SCORE
         )
         away_team_match = TeamMatch(
-            team=away_team, match=match, at_home=False, score=record["away_points"]
+            team=away_team, match=match, at_home=False, score=NO_SCORE
         )
 
         home_team_match.clean()
         away_team_match.clean()
 
-        return home_team_match, away_team_match
+        return [home_team_match, away_team_match]
+
+    @staticmethod
+    def __build_match_prediction(
+        ml_model_record: MLModel, prediction_data: pd.DataFrame, match: Match
+    ) -> Prediction:
+        home_team = match.team_matches.get(at_home=True).team
+        away_team = match.team_matches.get(at_home=False).team
+
+        match_predictions = prediction_data.loc[
+            (slice(None), match.start_date_time.year, match.round_number),
+            "predicted_margin",
+        ]
+        predicted_home_margin = match_predictions.loc[home_team.name]
+        predicted_away_margin = match_predictions.loc[away_team.name]
+
+        # predicted_margin is always positive as its always associated with predicted_winner
+        predicted_margin = match_predictions.abs().mean()
+
+        if predicted_home_margin > predicted_away_margin:
+            predicted_winner = home_team
+        else:
+            predicted_winner = away_team
+
+        prediction = Prediction(
+            match=match,
+            ml_model=ml_model_record,
+            predicted_margin=predicted_margin,
+            predicted_winner=predicted_winner,
+        )
+
+        prediction.clean()
+
+        return prediction
+
+    @staticmethod
+    def __estimator(ml_model_record: MLModel) -> ml_model.MLModel:
+        if ml_model_record.name == "betting_data":
+            return BettingModel(name=ml_model_record.name)
+        if ml_model_record.name == "match_data":
+            return MatchModel(name=ml_model_record.name)
+        if ml_model_record.name == "player_data":
+            return PlayerModel(name=ml_model_record.name)
+        if ml_model_record.name == "all_data":
+            return AllModel(name=ml_model_record.name)
+        if ml_model_record.name == "tipresias":
+            return AvgModel(name=ml_model_record.name)
+
+        raise ValueError(f"{ml_model_record.name} is not a recognized ML model name.")

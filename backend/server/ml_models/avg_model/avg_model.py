@@ -32,6 +32,5 @@ class AvgModel(MLModel):
         self,
         estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
         name: Optional[str] = None,
-        module_name: str = "avg_model",
     ) -> None:
-        super().__init__(estimators=estimators, name=name, module_name=module_name)
+        super().__init__(estimators=estimators, name=name)

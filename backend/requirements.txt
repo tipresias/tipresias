@@ -36,3 +36,4 @@ pytest
 pytest-env
 faker
 mypy
+freezegun

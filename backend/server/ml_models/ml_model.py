@@ -1,11 +1,11 @@
 """Base ML model and data classes"""
 
 import os
+import sys
 from typing import Sequence, Optional, Tuple, Union, List, Type
 from functools import reduce
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.externals import joblib
 import pandas as pd
 import numpy as np
 
@@ -17,16 +17,12 @@ class MLModel(BaseEstimator, RegressorMixin):
     """Base ML model class"""
 
     def __init__(
-        self,
-        estimators: Sequence[BaseEstimator] = (),
-        name: Optional[str] = None,
-        module_name: str = "",
+        self, estimators: Sequence[BaseEstimator] = (), name: Optional[str] = None
     ) -> None:
         if not any(estimators):
             raise ValueError("At least one estimator is required, but none were given.")
 
         self._name = name
-        self.module_name = module_name
         self.estimators = estimators
         self._pipeline: Pipeline = make_pipeline(*estimators)
 
@@ -36,11 +32,18 @@ class MLModel(BaseEstimator, RegressorMixin):
 
         return self._name or self.__class__.__name__
 
-    @property
-    def pickle_filepath(self) -> str:
+    def pickle_filepath(self, filepath: str = None) -> str:
         """Filepath to the model's saved pickle file"""
 
-        return os.path.join(BASE_DIR, os.path.dirname(__file__), f"{self.name}.pkl")
+        if filepath is not None:
+            return filepath
+
+        module_path = self.__module__
+        module_filepath = sys.modules[module_path].__file__
+
+        return os.path.abspath(
+            os.path.join(BASE_DIR, os.path.dirname(module_filepath), f"{self.name}.pkl")
+        )
 
     def fit(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
@@ -56,19 +59,13 @@ class MLModel(BaseEstimator, RegressorMixin):
 
         return self._pipeline.predict(X)
 
-    def save(self) -> None:
-        """Save the pipeline as a pickle file"""
-
-        joblib.dump(self._pipeline, self.pickle_filepath)
-
-    def load(self) -> None:
-        """Load the pipeline from a pickle file"""
-
-        self._pipeline = joblib.load(self.pickle_filepath)
-
 
 class MLModelData:
     """Base class for model data"""
+
+    @classmethod
+    def class_path(cls):
+        return f"{cls.__module__}.{cls.__name__}"
 
     def __init__(
         self, train_years: YearPair = (None, 2015), test_years: YearPair = (2016, 2016)

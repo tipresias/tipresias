@@ -65,10 +65,10 @@ class Command(BaseCommand):
     ) -> None:  # pylint: disable=W0613
         print("Seeding DB...\n")
 
-        years_array = np.array(years.split("-")).astype(int)
+        years_list = [int(year) for year in years.split("-")]
 
-        if len(years_array) != 2 or not all(
-            [isinstance(year, int) for year in years_array]
+        if len(years_list) != 2 or not all(
+            [len(str(year)) == 4 for year in years_list]
         ):
             raise ValueError(
                 "Years argument must be of form 'yyyy-yyyy' where each 'y' is an integer. "
@@ -77,7 +77,7 @@ class Command(BaseCommand):
 
         # A little clunky, but mypy complains when you create a tuple with tuple(),
         # which is open-ended, then try to use a restricted tuple type
-        prediction_years = (years_array[0], years_array[1])
+        prediction_years = (years_list[0], years_list[1])
 
         yearly_data_frames = [
             self.__fetch_fixture_data(year) for year in range(*prediction_years)
@@ -108,7 +108,7 @@ class Command(BaseCommand):
         return None
 
     def __fetch_fixture_data(self, year: int) -> Optional[pd.DataFrame]:
-        print(f"Fetching fixture for {self.current_year}...\n")
+        print(f"Fetching fixture for {year}...\n")
 
         try:
             fixture_data_frame = self.data_reader.get_fixture(season=year)
@@ -153,12 +153,10 @@ class Command(BaseCommand):
 
         return ml_models
 
-    def __create_matches(
-        self, fixture_data: List[FixtureData]
-    ) -> Optional[List[TeamMatch]]:
+    def __create_matches(self, fixture_data: List[FixtureData]) -> bool:
         if not any(fixture_data):
             print("No match data found.")
-            return None
+            return False
 
         team_matches = list(
             np.array(
@@ -168,12 +166,12 @@ class Command(BaseCommand):
 
         if not any(team_matches):
             print("Something went wrong, and no team matches were saved.")
-            return None
+            return False
 
         TeamMatch.objects.bulk_create(team_matches)
 
         print("Match data saved!\n")
-        return None
+        return True
 
     def __build_match(self, match_data: FixtureData) -> List[TeamMatch]:
         match: Match = Match(
@@ -200,7 +198,7 @@ class Command(BaseCommand):
             print("Could not find any predictions to save to the DB.\n")
             return False
 
-        Prediction.bulk_create(list(np.array(predictions).flatten()))
+        Prediction.objects.bulk_create(list(np.array(predictions).flatten()))
         print("Predictions saved!\n")
         return True
 
@@ -211,8 +209,8 @@ class Command(BaseCommand):
         round_number: Optional[int] = None,
     ) -> Optional[List[List[Prediction]]]:
         matches_to_predict = Match.objects.filter(
-            start_date_time_gt=datetime(year, JAN, 1, tzinfo=timezone.utc),
-            start_date_time_lt=datetime(year, DEC, 31, tzinfo=timezone.utc),
+            start_date_time__gt=datetime(year, JAN, 1, tzinfo=timezone.utc),
+            start_date_time__lt=datetime(year, DEC, 31, tzinfo=timezone.utc),
         )
 
         if matches_to_predict is None:
@@ -244,7 +242,8 @@ class Command(BaseCommand):
         round_number: Optional[int] = None,
     ) -> List[Prediction]:
         estimator = self.__estimator(ml_model_record)
-        data_class = locate(estimator.data_class_path)
+        data_class = locate(ml_model_record.data_class_path)
+
         data = data_class(train_years=(None, year - 1), test_years=(year, year))
         estimator.fit(*data.train_data())
 
@@ -267,8 +266,7 @@ class Command(BaseCommand):
         estimator: ml_model.MLModel, data_class: Type[ml_model.MLModelData]
     ) -> MLModel:
         ml_model_record = MLModel(
-            name=estimator.name,
-            data_class_path=f"{data_class.__module__}.{data_class.__name__}",
+            name=estimator.name, data_class_path=data_class.class_path()
         )
         ml_model_record.full_clean()
 
@@ -302,15 +300,16 @@ class Command(BaseCommand):
     def __build_match_prediction(
         ml_model_record: MLModel, prediction_data: pd.DataFrame, match: Match
     ) -> Prediction:
-        home_team = match.team_matches.get(at_home=True).team
-        away_team = match.team_matches.get(at_home=False).team
+        home_team = match.teammatch_set.get(at_home=True).team
+        away_team = match.teammatch_set.get(at_home=False).team
 
         match_predictions = prediction_data.loc[
             (slice(None), match.start_date_time.year, match.round_number),
             "predicted_margin",
         ]
-        predicted_home_margin = match_predictions.loc[home_team.name]
-        predicted_away_margin = match_predictions.loc[away_team.name]
+
+        predicted_home_margin = match_predictions.loc[home_team.name].iloc[0]
+        predicted_away_margin = match_predictions.loc[away_team.name].iloc[0]
 
         # predicted_margin is always positive as its always associated with predicted_winner
         predicted_margin = match_predictions.abs().mean()

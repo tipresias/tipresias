@@ -79,9 +79,8 @@ class BettingModel(MLModel):
         self,
         estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
         name: Optional[str] = None,
-        module_name: str = "betting_model",
     ) -> None:
-        super().__init__(estimators=estimators, name=name, module_name=module_name)
+        super().__init__(estimators=estimators, name=name)
 
 
 class BettingModelData(MLModelData, DataTransformerMixin):

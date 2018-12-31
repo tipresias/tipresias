@@ -61,17 +61,11 @@ class TestSeedDb(TestCase):
                         "venue": FAKE.city(),
                     }
                 )
+        self.fixture_data_frame = pd.DataFrame(fixture_data)
 
-        fixture_data_frame = pd.DataFrame(fixture_data)
         fitzroy = FitzroyDataReader()
-        # mock_values = [
-        #     fixture_data_frame[fixture_data_frame["season"] == year]
-        #     for year in range(*self.years)
-        # ]
-        def side_effect(season=None):
-            return fixture_data_frame[fixture_data_frame["season"] == season]
 
-        fitzroy.get_fixture = Mock(side_effect=side_effect)
+        fitzroy.get_fixture = Mock(side_effect=self.__side_effect)
 
         estimator = BettingModel(name="betting_data")
         data_class = BettingModelData
@@ -87,3 +81,6 @@ class TestSeedDb(TestCase):
         self.assertEqual(Match.objects.count(), ROW_COUNT * 2)
         self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 4)
         self.assertEqual(Prediction.objects.count(), ROW_COUNT * 2)
+
+    def __side_effect(self, season=None):
+        return self.fixture_data_frame[self.fixture_data_frame["season"] == season]

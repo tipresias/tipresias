@@ -63,7 +63,7 @@ class Command(BaseCommand):
             return None
 
         fixture_rounds = fixture_data_frame["round"]
-        next_round_to_play = fixture_rounds[
+        upcoming_round = fixture_rounds[
             fixture_data_frame["date"] > self.right_now
         ].min()
         saved_match_count = Match.objects.filter(
@@ -71,27 +71,31 @@ class Command(BaseCommand):
         ).count()
 
         if saved_match_count == 0:
-            next_round_fixture = fixture_data_frame[
-                (fixture_data_frame["round"] == next_round_to_play)
-                & (fixture_data_frame["date"] > self.right_now)
-            ]
-
             print(
-                f"Saving Match and TeamMatch records for round {next_round_to_play}...\n"
+                f"No existing match records found for round {upcoming_round}. "
+                "Creating new match and prediction records...\n"
+            )
+        else:
+            print(
+                f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
+                "Updating associated prediction records with new model predictions."
             )
 
-            self.__create_matches(next_round_fixture.to_dict("records"))
+        upcoming_fixture = fixture_data_frame[
+            (fixture_data_frame["round"] == upcoming_round)
+            & (fixture_data_frame["date"] > self.right_now)
+        ]
 
-            next_round_year = fixture_data_frame["date"].map(lambda x: x.year).max()
+        print(f"Saving Match and TeamMatch records for round {upcoming_round}...\n")
 
-            if self.__make_predictions(
-                next_round_year, round_number=next_round_to_play
-            ):
-                print("Match and prediction data were updated!\n")
-
+        if not self.__create_matches(upcoming_fixture.to_dict("records")):
             return None
 
-        print("Match data already exists in the DB. No new records were created.\n")
+        upcoming_round_year = fixture_data_frame["date"].map(lambda x: x.year).max()
+
+        if self.__make_predictions(upcoming_round_year, round_number=upcoming_round):
+            print("Match and prediction data were updated!\n")
+
         return None
 
     def __fetch_fixture_data(self, year: int, retry=True) -> Optional[pd.DataFrame]:
@@ -130,35 +134,43 @@ class Command(BaseCommand):
 
         return fixture_data_frame
 
-    def __create_matches(
-        self, fixture_data: List[FixtureData]
-    ) -> Optional[List[TeamMatch]]:
+    def __create_matches(self, fixture_data: List[FixtureData]) -> bool:
         if not any(fixture_data):
-            print("No match data found.")
-            return None
+            print("No fixture data found.\n")
+            return False
+
+        team_match_lists = [
+            self.__build_match(match_data) for match_data in fixture_data
+        ]
 
         team_matches = list(
             np.array(
-                [self.__build_match(match_data) for match_data in fixture_data]
+                [
+                    team_match_list
+                    for team_match_list in team_match_lists
+                    if team_match_lists is not None
+                ]
             ).flatten()
         )
 
         if not any(team_matches):
             print("Something went wrong, and no team matches were saved.\n")
-            return None
+            return False
 
         TeamMatch.objects.bulk_create(team_matches)
 
         print("Match data saved!\n")
-        return None
+        return True
 
-    def __build_match(self, match_data: FixtureData) -> List[TeamMatch]:
-        match: Match = Match(
+    def __build_match(self, match_data: FixtureData) -> Optional[List[TeamMatch]]:
+        match, was_created = Match.objects.get_or_create(
             start_date_time=match_data["date"].to_pydatetime(),
             round_number=int(match_data["round"]),
+            venue=match_data["venue"],
         )
-        match.clean()
-        match.save()
+
+        if was_created:
+            match.full_clean()
 
         return self.__build_team_match(match, match_data)
 
@@ -240,19 +252,36 @@ class Command(BaseCommand):
         else:
             predicted_winner = away_team
 
-        prediction = Prediction(
-            match=match,
-            ml_model=ml_model_record,
-            predicted_margin=predicted_margin,
-            predicted_winner=predicted_winner,
-        )
+        prediction_attributes = {"match": match, "ml_model": ml_model_record}
 
+        try:
+            prediction = Prediction.objects.get(**prediction_attributes)
+        except Prediction.DoesNotExist:
+            prediction = Prediction(**prediction_attributes)
+
+        prediction.predicted_margin = round(predicted_margin)
+        prediction.predicted_winner = predicted_winner
+
+        prediction.clean_fields()
         prediction.clean()
 
         return prediction
 
     @staticmethod
-    def __build_team_match(match: Match, match_data: FixtureData) -> List[TeamMatch]:
+    def __build_team_match(
+        match: Match, match_data: FixtureData
+    ) -> Optional[List[TeamMatch]]:
+        team_match_count = match.teammatch_set.count()
+
+        if team_match_count == 2:
+            return None
+
+        if team_match_count == 1 or team_match_count > 2:
+            model_string = "TeamMatches" if team_match_count > 1 else "TeamMatch"
+            raise ValueError(
+                f"{match} has {team_match_count} associated {model_string}, which shouldn't "
+                "happen. Figure out what's up."
+            )
         home_team = Team.objects.get(name=match_data["home_team"])
         away_team = Team.objects.get(name=match_data["away_team"])
 
@@ -263,7 +292,9 @@ class Command(BaseCommand):
             team=away_team, match=match, at_home=False, score=NO_SCORE
         )
 
+        home_team_match.clean_fields()
         home_team_match.clean()
+        away_team_match.clean_fields()
         away_team_match.clean()
 
         return [home_team_match, away_team_match]

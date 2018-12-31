@@ -57,6 +57,10 @@ class Team(models.Model):
 class Match(models.Model):
     start_date_time = models.DateTimeField()
     round_number = models.PositiveSmallIntegerField()
+    venue = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        unique_together = ("start_date_time", "venue")
 
     @property
     def is_draw(self):

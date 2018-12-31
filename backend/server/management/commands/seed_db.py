@@ -177,8 +177,10 @@ class Command(BaseCommand):
         match: Match = Match(
             start_date_time=match_data["date"].to_pydatetime(),
             round_number=int(match_data["round"]),
+            venue=match_data["venue"],
         )
-        match.clean()
+
+        match.full_clean()
         match.save()
 
         return self.__build_team_match(match, match_data)
@@ -291,7 +293,9 @@ class Command(BaseCommand):
             team=away_team, match=match, at_home=False, score=NO_SCORE
         )
 
+        home_team_match.clean_fields()
         home_team_match.clean()
+        away_team_match.clean_fields()
         away_team_match.clean()
 
         return [home_team_match, away_team_match]
@@ -322,10 +326,11 @@ class Command(BaseCommand):
         prediction = Prediction(
             match=match,
             ml_model=ml_model_record,
-            predicted_margin=predicted_margin,
+            predicted_margin=round(predicted_margin),
             predicted_winner=predicted_winner,
         )
 
+        prediction.clean_fields()
         prediction.clean()
 
         return prediction

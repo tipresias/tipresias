@@ -88,7 +88,9 @@ class TestTip(TestCase):
             self.assertEqual(Match.objects.count(), 0)
             self.assertEqual(TeamMatch.objects.count(), 0)
             self.assertEqual(Prediction.objects.count(), 0)
+
             self.tip_command.handle()
+
             self.assertEqual(Match.objects.count(), ROW_COUNT)
             self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
             self.assertEqual(Prediction.objects.count(), ROW_COUNT)
@@ -97,7 +99,19 @@ class TestTip(TestCase):
             self.assertEqual(Match.objects.count(), ROW_COUNT)
             self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
             self.assertEqual(Prediction.objects.count(), ROW_COUNT)
+
+            predicted_margins = Prediction.objects.values("predicted_margin").order_by(
+                "match__start_date_time"
+            )
             self.tip_command.handle()
+
             self.assertEqual(Match.objects.count(), ROW_COUNT)
             self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
             self.assertEqual(Prediction.objects.count(), ROW_COUNT)
+
+            updated_predicted_margins = Prediction.objects.values(
+                "predicted_margin"
+            ).order_by("match__start_date_time")
+
+            for idx, margin in enumerate(updated_predicted_margins):
+                self.assertNotEqual(margin, predicted_margins[idx])

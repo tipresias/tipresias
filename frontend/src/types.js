@@ -3,7 +3,7 @@ export type NumericScale = (a: number) => number
 
 export type StringScale = (a: string) => string
 
-export type GameDataType = {
+export type Game = {
   away_team: string,
   draw: number,
   home_margin: number,
@@ -17,20 +17,20 @@ export type GameDataType = {
   year: number
 }
 
-export type CumulTipPointPerModelType = {
+export type CumulTipPointPerModel = {
   cumulativeTotalPoints: number,
   model: string
 }
 
-export type createBarsFuncArgType = {
+export type createBarGroupsArgs = {
   barWidth: number,
-  roundScale: NumericScale,
-  tipPointScale: NumericScale,
-  modelColorScale: StringScale,
-  cumulativeTipPointPerModel: Array<Array<CumulTipPointPerModelType>>
+  xScale: NumericScale,
+  yScale: NumericScale,
+  colorScale: StringScale,
+  cumulativeModels: Array<Array<CumulTipPointPerModel>>
 }
 
-export type BarsDataType = {
+export type Bar = {
   fill: string,
   height: number,
   key: string,

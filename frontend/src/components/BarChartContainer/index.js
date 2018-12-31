@@ -1,30 +1,32 @@
 // @flow
 import React from 'react';
-import type { GameDataType, BarsDataType } from '../../types';
+import type { Game, Bar } from '../../types';
+import groupModelsByRound from './groupModelsByRound';
+import createCumulativeModels from './createCumulativeModels';
+import createBarGroups from './createBarGroups';
 import {
-  setGames,
-  drawBars,
   createTipPointScale,
   createRoundScale,
-} from './createChartObject';
+  createColorScale,
+} from './createScales';
 
 import BarChart from './BarChart';
 import Axis from './Axis';
 
 type Props = {
-  gamesByYear: Array<GameDataType>
+  gamesByYear: Array<Game>
 }
 
 type State = {
-  bars: Array<Array<BarsDataType>>,
+  bars: Array<Array<Bar>>,
   xScale: Function,
   yScale: Function,
   isCalculating: boolean
 }
 
-const barWidth = 4;
-const width = 800;
-const height = 400;
+const BAR_WIDTH = 4;
+const WIDTH = 800;
+const HEIGHT = 400;
 
 class BarChartContainer extends React.Component<Props, State> {
   state = {
@@ -39,20 +41,28 @@ class BarChartContainer extends React.Component<Props, State> {
     this.setBars(gamesByYear);
   }
 
-  componentDidUpdate(prevProps: { gamesByYear: Array<GameDataType> }) {
+  componentDidUpdate(prevProps: { gamesByYear: Array<Game> }) {
     const { gamesByYear } = this.props;
     if (gamesByYear !== prevProps.gamesByYear) {
       this.setBars(gamesByYear);
     }
   }
 
-  setBars(gamesByYear: Array<GameDataType>) {
-    setGames(gamesByYear);
-    const bars = drawBars(barWidth);
+  setBars(gamesByYear: Array<Game>) {
+    const modelsByRound = groupModelsByRound(gamesByYear);
+    console.log(modelsByRound);
 
-    const xScale = createRoundScale();
-    const yScale = createTipPointScale();
-
+    const cumulativeModels = createCumulativeModels(modelsByRound);
+    const xScale = createRoundScale(cumulativeModels, WIDTH);
+    const yScale = createTipPointScale(cumulativeModels, HEIGHT);
+    const colorScale = createColorScale();
+    const bars = createBarGroups({
+      barWidth: BAR_WIDTH,
+      xScale,
+      yScale,
+      colorScale,
+      cumulativeModels,
+    });
     this.setState({
       bars,
       xScale,
@@ -74,8 +84,8 @@ class BarChartContainer extends React.Component<Props, State> {
         {
           !isCalculating
           && (
-            <svg viewBox={`0 0 ${width} ${height}`} style={{ height: 'auto', width: '100%' }}>
-              <BarChart bars={bars} barWidth={barWidth} />
+            <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} style={{ height: 'auto', width: '100%' }}>
+              <BarChart bars={bars} barWidth={BAR_WIDTH} />
               <Axis xScale={xScale} yScale={yScale} />
             </svg>
           )

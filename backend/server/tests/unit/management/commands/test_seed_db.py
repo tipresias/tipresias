@@ -2,7 +2,6 @@
 # model and fake data, because this is getting closer to an integration test with
 # each import
 
-import os
 from datetime import datetime, timezone
 from unittest.mock import Mock
 from django.test import TestCase
@@ -10,7 +9,6 @@ from faker import Faker
 import pandas as pd
 import numpy as np
 
-from project.settings.common import BASE_DIR
 from server.data_processors import FitzroyDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_models.betting_model import BettingModel, BettingModelData

@@ -1,7 +1,7 @@
 # Data packages
 numpy
 pandas
-scikit-learn==0.20.0
+scikit-learn==0.20.1
 tensorflow==1.11.0
 scipy
 xgboost==0.80

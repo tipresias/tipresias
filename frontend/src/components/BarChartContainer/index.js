@@ -1,14 +1,14 @@
 // @flow
 import React from 'react';
 import type { Game, Bar } from '../../types';
-import groupModelsByRound from './groupModelsByRound';
-import createCumulativeModels from './createCumulativeModels';
-import createBarGroups from './createBarGroups';
+import groupModelsByRound from './helpers/groupModelsByRound';
+import createCumulativeModels from './helpers/createCumulativeModels';
+import createBarGroups from './helpers/createBarGroups';
 import {
   createTipPointScale,
   createRoundScale,
   createColorScale,
-} from './createScales';
+} from './helpers/createScales';
 
 import BarChart from './BarChart';
 import Axis from './Axis';
@@ -50,8 +50,6 @@ class BarChartContainer extends React.Component<Props, State> {
 
   setBars(gamesByYear: Array<Game>) {
     const modelsByRound = groupModelsByRound(gamesByYear);
-    console.log(modelsByRound);
-
     const cumulativeModels = createCumulativeModels(modelsByRound);
     const xScale = createRoundScale(cumulativeModels, WIDTH);
     const yScale = createTipPointScale(cumulativeModels, HEIGHT);

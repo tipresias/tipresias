@@ -2,7 +2,7 @@
 import type {
   createBarGroupsArgs,
   Bar,
-} from '../../types';
+} from '../../../../types';
 
 const createBarGroups = ({
   barWidth,

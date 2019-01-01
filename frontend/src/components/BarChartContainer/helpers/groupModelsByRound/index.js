@@ -1,7 +1,7 @@
 // @flow
 import type {
   Game,
-} from '../../types';
+} from '../../../../types';
 
 const groupModelsByRound = (data: Array<Game>): any => {
   const modelsByRound = data.reduce((acc, currentItem) => {

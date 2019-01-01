@@ -169,7 +169,7 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
 
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
-            .dropna()
+            .fillna(0)
             .sort_index()
         )
 

@@ -111,7 +111,7 @@ class MatchModelData(MLModelData, DataTransformerMixin):
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .drop("venue", axis=1)
-            .dropna()
+            .fillna(0)
             .sort_index()
         )
 

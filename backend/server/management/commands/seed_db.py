@@ -119,9 +119,22 @@ class Command(BaseCommand):
                 "is not yet available. Please try again later.\n"
             )
             return None
+        # TODO: As of 1-1-2019, fitzRoy is returning dodgy fixture data for the 2015
+        # season (i.e. NaNs in the date column, and all rounds are 0). This data
+        # isn't critical to the core functionality of the app, and I don't know R
+        # well enough to debug the package, so I'm just bypassing it for now
+        except ValueError:
+            if year == 2015 and datetime.now() < datetime(2019, 2, 1):
+                print(
+                    f"There was an error when processing season {year} due to a bug "
+                    "in the fitzRoy package. Skipping this season for now.\n"
+                )
+                return None
+
+            raise
 
         if not any(fixture_data_frame):
-            print(f"No data found for {year}.")
+            print(f"No data found for {year}.\n")
             return None
 
         return fixture_data_frame
@@ -145,11 +158,11 @@ class Command(BaseCommand):
         ]
 
         if not any(ml_models):
-            print("Something went wrong and no ML models were saved.")
+            print("Something went wrong and no ML models were saved.\n")
             return None
 
         MLModel.objects.bulk_create(ml_models)
-        print("ML models seeded!")
+        print("ML models seeded!\n")
 
         return ml_models
 
@@ -165,7 +178,7 @@ class Command(BaseCommand):
         )
 
         if not any(team_matches):
-            print("Something went wrong, and no team matches were saved.")
+            print("Something went wrong, and no team matches were saved.\n")
             return False
 
         TeamMatch.objects.bulk_create(team_matches)
@@ -308,8 +321,7 @@ class Command(BaseCommand):
         away_team = match.teammatch_set.get(at_home=False).team
 
         match_predictions = prediction_data.loc[
-            (slice(None), match.start_date_time.year, match.round_number),
-            "predicted_margin",
+            (slice(None), match.year, match.round_number), "predicted_margin"
         ]
 
         predicted_home_margin = match_predictions.loc[home_team.name].iloc[0]

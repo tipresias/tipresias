@@ -22,7 +22,7 @@ def regression_accuracy(y, y_pred, **kwargs):  # pylint: disable=W0613
     return np.mean(correct_preds.astype(int))
 
 
-def measure_regressor(estimator, data, cv=5, n_jobs=-1, accuracy=True):
+def measure_regressor(estimator, data, accuracy=True, **cv_kwargs):
     # Data assumes we've used train_test_split outside of the function to guarantee
     # consistent data splits
     X_train, X_test, y_train, y_test = data
@@ -30,45 +30,30 @@ def measure_regressor(estimator, data, cv=5, n_jobs=-1, accuracy=True):
     y_pred = estimator.predict(X_test)
 
     if accuracy:
-        return (
-            cross_val_score(
-                estimator,
-                X_train,
-                y_train,
-                scoring=make_scorer(regression_accuracy),
-                cv=cv,
-                n_jobs=n_jobs,
-            ),
-            cross_val_score(
-                estimator,
-                X_train,
-                y_train,
-                scoring="neg_mean_absolute_error",
-                cv=cv,
-                n_jobs=n_jobs,
-            )
-            * -1,
-            regression_accuracy(y_test, y_pred),
-            mean_absolute_error(y_test, y_pred),
-        )
-
-    return (
-        0,
-        cross_val_score(
+        cv_accuracy = cross_val_score(
             estimator,
             X_train,
             y_train,
-            scoring="neg_mean_absolute_error",
-            cv=cv,
-            n_jobs=n_jobs,
+            scoring=make_scorer(regression_accuracy),
+            **cv_kwargs,
+        )
+        test_accuracy = regression_accuracy(y_test, y_pred)
+    else:
+        cv_accuracy = 0
+        test_accuracy = 0
+
+    return (
+        cv_accuracy,
+        cross_val_score(
+            estimator, X_train, y_train, scoring="neg_mean_absolute_error", **cv_kwargs
         )
         * -1,
-        0,
+        test_accuracy,
         mean_absolute_error(y_test, y_pred),
     )
 
 
-def measure_classifier(estimator, data, cv=5, n_jobs=-1):
+def measure_classifier(estimator, data, **cv_kwargs):
     # Data assumes we've used train_test_split outside of the function to guarantee
     # consistent data splits
     X_train, X_test, y_train, y_test = data
@@ -77,16 +62,14 @@ def measure_classifier(estimator, data, cv=5, n_jobs=-1):
 
     try:
         cv_error_score = cross_val_score(
-            estimator, X_train, y_train, scoring="neg_log_loss", cv=cv, n_jobs=n_jobs
+            estimator, X_train, y_train, scoring="neg_log_loss", **cv_kwargs
         )
         test_error_score = log_loss(y_test, y_pred)
     except AttributeError:
         cv_error_score, test_error_score = 0, 0
 
     return (
-        cross_val_score(
-            estimator, X_train, y_train, scoring="accuracy", cv=cv, n_jobs=n_jobs
-        ),
+        cross_val_score(estimator, X_train, y_train, scoring="accuracy", **cv_kwargs),
         cv_error_score,
         accuracy_score(y_test, y_pred),
         test_error_score,
@@ -94,7 +77,13 @@ def measure_classifier(estimator, data, cv=5, n_jobs=-1):
 
 
 def measure_estimators(
-    estimators, data, model_type="regression", cv=5, n_jobs=-1, accuracy=True
+    estimators,
+    data,
+    model_type="regression",
+    accuracy=True,
+    cv=5,
+    n_jobs=-1,
+    **cv_kwargs,
 ):
     if model_type not in ("regression", "classification"):
         raise Exception(
@@ -109,16 +98,16 @@ def measure_estimators(
     std_cv_accuracies = []
     std_cv_errors = []
 
-    for estimator_name, estimator in estimators:
+    for estimator_name, estimator, est_kwargs in estimators:
         print(f"Training {estimator_name}")
 
         if model_type == "regression":
             cv_accuracies, cv_errors, test_accuracy, test_error = measure_regressor(
-                estimator, data, cv=cv, n_jobs=n_jobs, accuracy=accuracy
+                estimator, data, accuracy=accuracy, cv=cv, n_jobs=n_jobs, **cv_kwargs
             )
         else:
             cv_accuracies, cv_errors, test_accuracy, test_error = measure_classifier(
-                estimator, data, cv=cv, n_jobs=n_jobs
+                estimator, data, cv=cv, n_jobs=n_jobs, **cv_kwargs, **est_kwargs
             )
 
         mean_cv_accuracy = np.mean(cv_accuracies)
@@ -150,21 +139,27 @@ def measure_estimators(
     )
 
 
-def yearly_performance_score(estimators, features, labels, year):
+def yearly_performance_score(estimators, features, labels, year, data_frame):
     feat_train = features[features["year"] < year]
     feat_test = features[features["year"] == year]
-    X_train = feat_train.values
-    X_test = feat_test.values
+    X_train = feat_train
+    X_test = feat_test
 
     lab_train = labels.loc[feat_train.index]
     lab_test = labels.loc[feat_test.index]
-    y_train = lab_train.values
-    y_test = lab_test.values
+    y_train = lab_train
+    y_test = lab_test
+
+    if not data_frame:
+        X_train = X_train.values
+        X_test = X_test.values
+
+        y_train = y_train.values
+        y_test = y_test.values
 
     scores = []
 
-    for estimator_name, estimator, keras in estimators:
-        kwargs = {"kerasregressor__verbose": 0} if keras else {}
+    for estimator_name, estimator, kwargs in estimators:
         estimator.fit(X_train, y_train, **kwargs)
 
         y_pred = estimator.predict(X_test)
@@ -184,16 +179,20 @@ def yearly_performance_score(estimators, features, labels, year):
     return scores
 
 
-def yearly_performance_scores(estimators, features, labels, parallel=True):
+def yearly_performance_scores(
+    estimators, features, labels, parallel=True, data_frame=False
+):
     if parallel:
         scores = [
-            delayed(yearly_performance_score)(estimators, features, labels, year)
+            delayed(yearly_performance_score)(
+                estimators, features, labels, year, data_frame
+            )
             for year in range(2011, 2017)
         ]
         results = compute(scores, scheduler="processes")
     else:
         results = [
-            yearly_performance_score(estimators, features, labels, year)
+            yearly_performance_score(estimators, features, labels, year, data_frame)
             for year in range(2011, 2017)
         ]
 

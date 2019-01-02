@@ -2,6 +2,7 @@
 # model and fake data, because this is getting closer to an integration test with
 # each import
 
+import copy
 import os
 from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock
@@ -47,26 +48,32 @@ class TestTip(TestCase):
     def setUp(self):
         tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
         year = tomorrow.year
-        teams = TEAM_NAMES[:]
+        team_names = TEAM_NAMES[:]
 
+        # Mock fitzRoy fixture data
         self.fixture_data = [
             {
                 "date": pd.Timestamp(tomorrow),
                 "season": year,
                 "season_game": 1,
                 "round": 1,
-                "home_team": teams.pop(),
-                "away_team": teams.pop(),
+                "home_team": team_names.pop(),
+                "away_team": team_names.pop(),
                 "venue": FAKE.city(),
             }
-            for _ in range(ROW_COUNT)
+            for idx in range(ROW_COUNT)
         ]
 
         fitzroy = FitzroyDataReader()
         fitzroy.get_fixture = Mock(return_value=pd.DataFrame(self.fixture_data))
 
-        self.tip_command = tip.Command(data_reader=fitzroy)
+        # Mock bulk_create to make assertions on calls
+        pred_bulk_create = copy.copy(Prediction.objects.bulk_create)
+        Prediction.objects.bulk_create = Mock(
+            side_effect=self.__pred_bulk_create(pred_bulk_create)
+        )
 
+        # Save records in DB
         for match_data in self.fixture_data:
             Team(name=match_data["home_team"]).save()
             Team(name=match_data["away_team"]).save()
@@ -83,13 +90,15 @@ class TestTip(TestCase):
             data_class_path=BettingModelData.class_path(),
         ).save()
 
+        self.tip_command = tip.Command(data_reader=fitzroy)
+
     def test_handle(self):
         with self.subTest("with no existing match records in DB"):
             self.assertEqual(Match.objects.count(), 0)
             self.assertEqual(TeamMatch.objects.count(), 0)
             self.assertEqual(Prediction.objects.count(), 0)
 
-            self.tip_command.handle()
+            self.tip_command.handle(verbose=0)
 
             self.assertEqual(Match.objects.count(), ROW_COUNT)
             self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
@@ -100,18 +109,10 @@ class TestTip(TestCase):
             self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
             self.assertEqual(Prediction.objects.count(), ROW_COUNT)
 
-            predicted_margins = Prediction.objects.values("predicted_margin").order_by(
-                "match__start_date_time"
-            )
-            self.tip_command.handle()
+            self.tip_command.handle(verbose=0)
 
-            self.assertEqual(Match.objects.count(), ROW_COUNT)
-            self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
-            self.assertEqual(Prediction.objects.count(), ROW_COUNT)
+            Prediction.objects.bulk_create.assert_called()
 
-            updated_predicted_margins = Prediction.objects.values(
-                "predicted_margin"
-            ).order_by("match__start_date_time")
-
-            for idx, margin in enumerate(updated_predicted_margins):
-                self.assertNotEqual(margin, predicted_margins[idx])
+    @staticmethod
+    def __pred_bulk_create(pred_bulk_create):
+        return pred_bulk_create

@@ -1,7 +1,7 @@
 """Django command for seeding the DB with match & prediction data"""
 
-from datetime import datetime, timezone
-from functools import partial
+from datetime import datetime
+from functools import partial, reduce
 from pydoc import locate
 from typing import Tuple, List, Optional, Type
 from mypy_extensions import TypedDict
@@ -32,7 +32,7 @@ FixtureData = TypedDict(
 )
 EstimatorTuple = Tuple[ml_model.MLModel, Type[ml_model.MLModelData]]
 
-PREDICTION_YEARS = "2011-2016"
+YEAR_RANGE = "2011-2017"
 ESTIMATORS: List[EstimatorTuple] = [
     (BettingModel(name="betting_data"), BettingModelData),
     (MatchModel(name="match_data"), MatchModelData),
@@ -44,6 +44,7 @@ NO_SCORE = 0
 JAN = 1
 DEC = 12
 RESCUE_LIMIT = datetime(2019, 2, 1)
+DODGY_SEASONS = [2012, 2013, 2014, 2016]
 
 
 class Command(BaseCommand):
@@ -62,80 +63,97 @@ class Command(BaseCommand):
         self.estimators = estimators
 
     def handle(  # pylint: disable=W0221
-        self, *_args, years: str = PREDICTION_YEARS, **_kwargs
+        self, *_args, year_range: str = YEAR_RANGE, verbose: int = 1, **_kwargs
     ) -> None:  # pylint: disable=W0613
-        print("Seeding DB...\n")
+        self.verbose = verbose  # pylint: disable=W0201
 
-        years_list = [int(year) for year in years.split("-")]
+        if self.verbose == 1:
+            print("\nSeeding DB...\n")
+
+        years_list = [int(year) for year in year_range.split("-")]
 
         if len(years_list) != 2 or not all(
             [len(str(year)) == 4 for year in years_list]
         ):
             raise ValueError(
-                "Years argument must be of form 'yyyy-yyyy' where each 'y' is an integer. "
-                f"{years} is invalid."
+                "Years argument must be of form 'yyyy-yyyy' where each 'y' is "
+                f"an integer. {year_range} is invalid."
             )
 
         # A little clunky, but mypy complains when you create a tuple with tuple(),
         # which is open-ended, then try to use a restricted tuple type
-        prediction_years = (years_list[0], years_list[1])
+        year_range_tuple = (years_list[0], years_list[1])
 
         yearly_data_frames = [
-            self.__fetch_fixture_data(year) for year in range(*prediction_years)
+            self.__fetch_fixture_data(year) for year in range(*year_range_tuple)
         ]
-        fixture_data_frame = pd.concat(
-            [data_frame for data_frame in yearly_data_frames if data_frame is not None]
-        )
+        compacted_data_frames = [
+            data_frame for data_frame in yearly_data_frames if data_frame is not None
+        ]
 
-        if not any(fixture_data_frame):
-            print("Could not fetch data.\n")
-            return None
+        if len(compacted_data_frames) == 0:  # pylint: disable=C1801
+            raise ValueError(f"No fixture data was found for years {year_range}")
 
-        if not self.__create_teams(fixture_data_frame):
-            return None
+        fixture_data_frame = pd.concat(compacted_data_frames)
 
-        ml_models = self.__create_ml_models()
+        # Putting saving records in a try block, so we can go back and delete everything
+        # if an error is raised
+        try:
+            if not self.__create_teams(fixture_data_frame):
+                return None
 
-        if ml_models is None:
-            return None
+            ml_models = self.__create_ml_models()
 
-        if not self.__create_matches(fixture_data_frame.to_dict("records")):
-            return None
+            if ml_models is None:
+                return None
 
-        if self.__make_predictions(prediction_years, ml_models=ml_models):
-            print("\n...DB seeded!")
-            return None
+            if not self.__create_matches(fixture_data_frame.to_dict("records")):
+                return None
+
+            if self.__make_predictions(year_range_tuple, ml_models=ml_models):
+                if self.verbose == 1:
+                    print("\n...DB seeded!\n")
+
+                return None
+        except:
+            Team.objects.all().delete()
+            MLModel.objects.all().delete()
+            Match.objects.all().delete()
+
+            raise
 
         return None
 
     def __fetch_fixture_data(self, year: int) -> Optional[pd.DataFrame]:
-        print(f"Fetching fixture for {year}...\n")
+        if self.verbose == 1:
+            print(f"Fetching fixture for {year}...")
 
         try:
             fixture_data_frame = self.data_reader.get_fixture(season=year)
         # fitzRoy raises RuntimeErrors when you try to fetch too far into the future
         except RuntimeError:
             print(
-                f"No data found for {year}. It is likely that the fixture "
-                "is not yet available. Please try again later.\n"
+                f"\tNo data found for {year}. It is likely that the fixture "
+                "is not yet available. Please try again later."
             )
             return None
         # TODO: As of 1-1-2019, fitzRoy is returning dodgy fixture data for the 2015
-        # season (i.e. NaNs in the date column, and all rounds are 0). This data
-        # isn't critical to the core functionality of the app, and I don't know R
-        # well enough to debug the package, so I'm just bypassing it for now
+        # season (i.e. NaNs in the date column, and all rounds are 0) due to round 14
+        # having a cancelled match. This data isn't critical to the core functionality
+        # of the app, so I'm just bypassing it for now
         except ValueError:
             if year == 2015 and datetime.now() < RESCUE_LIMIT:
                 print(
-                    f"There was an error when processing season {year} due to a bug "
-                    "in the fitzRoy package. Skipping this season for now.\n"
+                    f"\tThere was an error when processing season {year} due to a bug "
+                    "in the fitzRoy package. Skipping this season for now."
                 )
                 return None
 
             raise
 
-        if not any(fixture_data_frame):
-            print(f"No data found for {year}.\n")
+        if fixture_data_frame.empty:
+            if self.verbose == 1:
+                print(f"\tNo data found for {year}.")
             return None
 
         return fixture_data_frame
@@ -145,11 +163,13 @@ class Command(BaseCommand):
         teams = [self.__build_team(team_name) for team_name in team_names]
 
         if not any(teams):
-            print("Something went wrong and no teams were saved")
-            return False
+            raise ValueError("Something went wrong and no teams were saved.")
 
         Team.objects.bulk_create(teams)
-        print("Teams seeded!")
+
+        if self.verbose == 1:
+            print("Teams seeded!")
+
         return True
 
     def __create_ml_models(self) -> Optional[List[MLModel]]:
@@ -159,32 +179,33 @@ class Command(BaseCommand):
         ]
 
         if not any(ml_models):
-            print("Something went wrong and no ML models were saved.\n")
+            raise ValueError("Something went wrong and no ML models were saved.")
             return None
 
         MLModel.objects.bulk_create(ml_models)
-        print("ML models seeded!\n")
+
+        if self.verbose == 1:
+            print("ML models seeded!")
 
         return ml_models
 
     def __create_matches(self, fixture_data: List[FixtureData]) -> bool:
         if not any(fixture_data):
-            print("No match data found.")
-            return False
+            raise ValueError("No match data found.")
 
-        team_matches = list(
-            np.array(
-                [self.__build_match(match_data) for match_data in fixture_data]
-            ).flatten()
+        team_matches = [self.__build_match(match_data) for match_data in fixture_data]
+        team_matches_to_save = reduce(
+            lambda acc_list, curr_list: acc_list + curr_list, team_matches
         )
 
         if not any(team_matches):
-            print("Something went wrong, and no team matches were saved.\n")
-            return False
+            raise ValueError("Something went wrong, and no team matches were saved.")
 
-        TeamMatch.objects.bulk_create(team_matches)
+        TeamMatch.objects.bulk_create(team_matches_to_save)
 
-        print("Match data saved!\n")
+        if self.verbose == 1:
+            print("Match data saved!")
+
         return True
 
     def __build_match(self, match_data: FixtureData) -> List[TeamMatch]:
@@ -201,21 +222,26 @@ class Command(BaseCommand):
 
     def __make_predictions(
         self,
-        prediction_years: Tuple[int, int],
+        year_range: Tuple[int, int],
         ml_models: Optional[List[MLModel]] = None,
         round_number: Optional[int] = None,
     ) -> bool:
         make_year_predictions = partial(
             self.__make_year_predictions, ml_models=ml_models, round_number=round_number
         )
-        predictions = [make_year_predictions(year) for year in range(*prediction_years)]
+        predictions = [make_year_predictions(year) for year in range(*year_range)]
+        predictions_to_save = reduce(
+            lambda acc_list, curr_list: acc_list + curr_list, predictions
+        )
 
-        if predictions is None:
-            print("Could not find any predictions to save to the DB.\n")
-            return False
+        if not any(predictions_to_save):
+            raise ValueError("Could not find any predictions to save to the DB.")
 
-        Prediction.objects.bulk_create(list(np.array(predictions).flatten()))
-        print("Predictions saved!\n")
+        Prediction.objects.bulk_create(predictions_to_save)
+
+        if self.verbose == 1:
+            print("\nPredictions saved!")
+
         return True
 
     def __make_year_predictions(
@@ -223,41 +249,60 @@ class Command(BaseCommand):
         year: int,
         ml_models: Optional[List[MLModel]] = None,
         round_number: Optional[int] = None,
-    ) -> Optional[List[List[Prediction]]]:
-        matches_to_predict = Match.objects.filter(
-            start_date_time__gt=datetime(year, JAN, 1, tzinfo=timezone.utc),
-            start_date_time__lt=datetime(year, DEC, 31, tzinfo=timezone.utc),
-        )
+    ) -> List[Prediction]:
+        if self.verbose == 1:
+            print(f"\nMaking predictions for {year}...")
 
-        if matches_to_predict is None:
-            print("Could not find any matches to make predictions for.\n")
-            return None
+        matches_to_predict = Match.objects.filter(start_date_time__year=year)
+
+        if matches_to_predict is None or not any(matches_to_predict):
+            if self.verbose == 1:
+                print(
+                    f"\tCould not find any matches from season {year} to make predictions for."
+                )
+
+            return []
 
         ml_models = ml_models or MLModel.objects.all()
 
-        if ml_models is None:
-            print("Could not find any ML models in DB to make predictions.\n")
-            return None
+        if ml_models is None or not any(ml_models):
+            if self.verbose == 1:
+                print("\tCould not find any ML models in DB to make predictions.")
 
-        # TODO: As of 2-1-2019, fixture round numbers for the 2012 season are incorrect,
-        # resulting in various mismatched labels. As with 2015, we're just skipping
-        # the season for now while we wait for a fix.
+            return []
+
+        make_model_predictions = partial(
+            self.__make_model_predictions,
+            year,
+            matches_to_predict,
+            round_number=round_number,
+        )
+
+        # TODO: As of 2-1-2019, fixture round numbers for the 2012, 2013, 2014, & 2016
+        # seasons are incorrect due to inconsistent round/week alignment,
+        # resulting in various mismatched labels.
+        # As with 2015, we're just skipping the seasons for now while we wait for a fix.
+        # Relevant GH issue: https://github.com/jimmyday12/fitzRoy/issues/54
         try:
-            make_model_predictions = partial(
-                self.__make_model_predictions,
-                year,
-                matches_to_predict,
-                round_number=round_number,
-            )
+            model_predictions = [
+                make_model_predictions(ml_model_record) for ml_model_record in ml_models
+            ]
         except KeyError:
-            if year == 2012 and datetime.now() < RESCUE_LIMIT:
-                print()
+            if year in DODGY_SEASONS and datetime.now() < RESCUE_LIMIT:
+                if self.verbose == 1:
+                    print(
+                        f"\tCould not generate predictions for {year} due to a mismatch "
+                        "in fixture and prediction data. This is likely caused by a bug in "
+                        "fitzRoy's fixture data, so skipping this year for now."
+                    )
+
+                return []
 
             raise
 
-        return [
-            make_model_predictions(ml_model_record) for ml_model_record in ml_models
-        ]
+        return reduce(
+            lambda acc_list, curr_list: acc_list + curr_list, model_predictions
+        )
 
     def __make_model_predictions(
         self,
@@ -266,13 +311,23 @@ class Command(BaseCommand):
         ml_model_record: MLModel,
         round_number: Optional[int] = None,
     ) -> List[Prediction]:
+        if self.verbose == 1:
+            print(f"\tMaking predictions with {ml_model_record.name}...")
+
         estimator = self.__estimator(ml_model_record)
         data_class = locate(ml_model_record.data_class_path)
 
         data = data_class(train_years=(None, year - 1), test_years=(year, year))
-        estimator.fit(*data.train_data())
-
+        X_train, y_train = data.train_data()
         X_test, _ = data.test_data()
+
+        # On the off chance that we try to run predictions for years that have no relevant
+        # prediction data
+        if X_train.empty or y_train.empty or X_test.empty:
+            return []
+
+        estimator.fit(X_train, y_train)
+
         y_pred = estimator.predict(X_test)
 
         data_row_slice = (slice(None), year, slice(round_number, round_number))
@@ -330,20 +385,29 @@ class Command(BaseCommand):
         home_team = match.teammatch_set.get(at_home=True).team
         away_team = match.teammatch_set.get(at_home=False).team
 
-        match_predictions = prediction_data.loc[
-            (slice(None), match.year, match.round_number), "predicted_margin"
+        match_prediction = prediction_data.loc[
+            ([home_team.name, away_team.name], match.year, match.round_number),
+            "predicted_margin",
         ]
 
-        predicted_home_margin = match_predictions.loc[home_team.name].iloc[0]
-        predicted_away_margin = match_predictions.loc[away_team.name].iloc[0]
+        predicted_home_margin = match_prediction.loc[home_team.name].iloc[0]
+        predicted_away_margin = match_prediction.loc[away_team.name].iloc[0]
 
         # predicted_margin is always positive as its always associated with predicted_winner
-        predicted_margin = match_predictions.abs().mean()
+        predicted_margin = match_prediction.abs().mean()
 
         if predicted_home_margin > predicted_away_margin:
             predicted_winner = home_team
-        else:
+        elif predicted_away_margin > predicted_home_margin:
             predicted_winner = away_team
+        else:
+            raise ValueError(
+                "Predicted home and away margins are equal, which is basically impossible, "
+                "so figure out what's going on:\n"
+                f"home_team = {home_team.name}\n"
+                f"away_team = {away_team.name}\n"
+                f"data = {match_prediction}"
+            )
 
         prediction = Prediction(
             match=match,

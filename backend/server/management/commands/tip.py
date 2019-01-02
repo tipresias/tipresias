@@ -1,5 +1,5 @@
 import os
-from functools import partial
+from functools import partial, reduce
 from pydoc import locate
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -55,12 +55,13 @@ class Command(BaseCommand):
         self.right_now = datetime.now(timezone.utc)
         self.current_year = self.right_now.year
 
-    def handle(self, *_args, **_kwargs) -> None:
+    def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
+        self.verbose = verbose  # pylint: disable=W0201
+
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
 
         if fixture_data_frame is None:
-            print("Could not fetch data.")
-            return None
+            raise ValueError("Could not fetch data.")
 
         fixture_rounds = fixture_data_frame["round"]
         upcoming_round = fixture_rounds[
@@ -70,50 +71,52 @@ class Command(BaseCommand):
             start_date_time__gt=self.right_now
         ).count()
 
-        if saved_match_count == 0:
-            print(
-                f"No existing match records found for round {upcoming_round}. "
-                "Creating new match and prediction records...\n"
-            )
-        else:
-            print(
-                f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
-                "Updating associated prediction records with new model predictions."
-            )
+        if self.verbose == 1:
+            if saved_match_count == 0:
+                print(
+                    f"No existing match records found for round {upcoming_round}. "
+                    "Creating new match and prediction records...\n"
+                )
+            else:
+                print(
+                    f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
+                    "Updating associated prediction records with new model predictions."
+                )
 
         upcoming_fixture = fixture_data_frame[
             (fixture_data_frame["round"] == upcoming_round)
             & (fixture_data_frame["date"] > self.right_now)
         ]
 
-        print(f"Saving Match and TeamMatch records for round {upcoming_round}...\n")
+        if self.verbose == 1:
+            print(f"Saving Match and TeamMatch records for round {upcoming_round}...\n")
 
-        if not self.__create_matches(upcoming_fixture.to_dict("records")):
-            return None
+        self.__create_matches(upcoming_fixture.to_dict("records"))
 
         upcoming_round_year = fixture_data_frame["date"].map(lambda x: x.year).max()
 
-        if self.__make_predictions(upcoming_round_year, round_number=upcoming_round):
+        self.__make_predictions(upcoming_round_year, round_number=upcoming_round)
+
+        if self.verbose == 1:
             print("Match and prediction data were updated!\n")
 
         return None
 
     def __fetch_fixture_data(self, year: int, retry=True) -> Optional[pd.DataFrame]:
-        print(f"Fetching fixture for {self.current_year}...\n")
+        if self.verbose == 1:
+            print(f"Fetching fixture for {year}...\n")
 
         try:
             fixture_data_frame = self.data_reader.get_fixture(season=year)
         # fitzRoy raises RuntimeErrors when you try to fetch too far into the future
         except RuntimeError:
-            print(
+            raise ValueError(
                 f"No data found for {year}. It is likely that the fixture "
-                "is not yet available. Please try again later.\n"
+                "is not yet available. Please try again later."
             )
-            return None
 
         if not any(fixture_data_frame):
-            print(f"No data found for {year}.")
-            return None
+            raise ValueError(f"No data found for {year}.")
 
         latest_match = fixture_data_frame["date"].max()
 
@@ -126,41 +129,47 @@ class Command(BaseCommand):
 
                 return self.__fetch_fixture_data((year + 1), retry=False)
 
-            print(
+            raise ValueError(
                 f"No unplayed matches found in {year}, and we're not going "
                 "to keep trying. Please try a season that hasn't been completed.\n"
             )
-            return None
 
         return fixture_data_frame
 
-    def __create_matches(self, fixture_data: List[FixtureData]) -> bool:
+    def __create_matches(self, fixture_data: List[FixtureData]) -> None:
         if not any(fixture_data):
-            print("No fixture data found.\n")
-            return False
+            raise ValueError("No fixture data found.")
+
+        round_number = set([match_data["round"] for match_data in fixture_data]).pop()
+        year = set([match_data["season"] for match_data in fixture_data]).pop()
 
         team_match_lists = [
             self.__build_match(match_data) for match_data in fixture_data
         ]
 
-        team_matches = list(
-            np.array(
-                [
-                    team_match_list
-                    for team_match_list in team_match_lists
-                    if team_match_lists is not None
-                ]
-            ).flatten()
+        compacted_team_match_lists = [
+            team_match_list
+            for team_match_list in team_match_lists
+            if team_match_list is not None
+        ]
+
+        team_matches_to_save: List[TeamMatch] = reduce(
+            lambda acc_list, curr_list: acc_list + curr_list,
+            compacted_team_match_lists,
+            [],
         )
 
-        if not any(team_matches):
-            print("Something went wrong, and no team matches were saved.\n")
-            return False
+        team_match_count = TeamMatch.objects.filter(
+            match__start_date_time__year=year, match__round_number=round_number
+        ).count()
 
-        TeamMatch.objects.bulk_create(team_matches)
+        if not any(team_matches_to_save) and team_match_count == 0:
+            raise ValueError("Something went wrong, and no team matches were saved.\n")
 
-        print("Match data saved!\n")
-        return True
+        TeamMatch.objects.bulk_create(team_matches_to_save)
+
+        if self.verbose == 1:
+            print("Match data saved!\n")
 
     def __build_match(self, match_data: FixtureData) -> Optional[List[TeamMatch]]:
         match, was_created = Match.objects.get_or_create(
@@ -179,7 +188,7 @@ class Command(BaseCommand):
         year: int,
         ml_models: Optional[List[MLModel]] = None,
         round_number: Optional[int] = None,
-    ) -> bool:
+    ) -> None:
         matches_to_predict = Match.objects.filter(
             start_date_time__gt=self.right_now, round_number=round_number
         )
@@ -187,8 +196,9 @@ class Command(BaseCommand):
         ml_models = ml_models or MLModel.objects.all()
 
         if ml_models is None:
-            print("Could not find any ML models in DB to make predictions.\n")
-            return False
+            raise ValueError(
+                "Could not find any ML models in DB to make predictions.\n"
+            )
 
         make_model_predictions = partial(
             self.__make_model_predictions,
@@ -197,11 +207,16 @@ class Command(BaseCommand):
             round_number=round_number,
         )
 
-        predictions = [make_model_predictions(ml_model) for ml_model in ml_models]
+        prediction_lists = [make_model_predictions(ml_model) for ml_model in ml_models]
+        predictions: List[Optional[Prediction]] = reduce(
+            lambda acc_list, curr_list: acc_list + curr_list, prediction_lists, []
+        )
+        predictions_to_save = [pred for pred in predictions if pred is not None]
 
-        Prediction.objects.bulk_create(list(np.array(predictions).flatten()))
-        print("Predictions saved!\n")
-        return True
+        Prediction.objects.bulk_create(predictions_to_save)
+
+        if self.verbose == 1:
+            print("Predictions saved!\n")
 
     def __make_model_predictions(
         self,
@@ -209,7 +224,7 @@ class Command(BaseCommand):
         matches: List[Match],
         ml_model_record: MLModel,
         round_number: Optional[int] = None,
-    ) -> List[Prediction]:
+    ) -> List[Optional[Prediction]]:
         loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model_record.filepath))
         data_class = locate(ml_model_record.data_class_path)
         data = data_class(test_years=(year, year))
@@ -231,7 +246,7 @@ class Command(BaseCommand):
     @staticmethod
     def __build_match_prediction(
         ml_model_record: MLModel, prediction_data: pd.DataFrame, match: Match
-    ) -> Prediction:
+    ) -> Optional[Prediction]:
         home_team = match.teammatch_set.get(at_home=True).team
         away_team = match.teammatch_set.get(at_home=False).team
 
@@ -249,23 +264,38 @@ class Command(BaseCommand):
 
         if predicted_home_margin > predicted_away_margin:
             predicted_winner = home_team
-        else:
+        elif predicted_away_margin > predicted_home_margin:
             predicted_winner = away_team
+        else:
+            raise ValueError(
+                "Predicted home and away margins are equal, which is basically impossible, "
+                "so figure out what's going on:\n"
+                f"home_team = {home_team.name}\n"
+                f"away_team = {away_team.name}\n"
+                f"data = {prediction_data}"
+            )
 
         prediction_attributes = {"match": match, "ml_model": ml_model_record}
 
         try:
             prediction = Prediction.objects.get(**prediction_attributes)
+
+            prediction.predicted_margin = round(predicted_margin)
+            prediction.predicted_winner = predicted_winner
+
+            prediction.clean_fields()
+            prediction.clean()
+            prediction.save()
+
+            return None
         except Prediction.DoesNotExist:
-            prediction = Prediction(**prediction_attributes)
+            prediction = Prediction(
+                predicted_margin=round(predicted_margin),
+                predicted_winner=predicted_winner,
+                **prediction_attributes,
+            )
 
-        prediction.predicted_margin = round(predicted_margin)
-        prediction.predicted_winner = predicted_winner
-
-        prediction.clean_fields()
-        prediction.clean()
-
-        return prediction
+            return prediction
 
     @staticmethod
     def __build_team_match(

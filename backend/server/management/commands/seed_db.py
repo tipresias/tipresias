@@ -43,6 +43,7 @@ ESTIMATORS: List[EstimatorTuple] = [
 NO_SCORE = 0
 JAN = 1
 DEC = 12
+RESCUE_LIMIT = datetime(2019, 2, 1)
 
 
 class Command(BaseCommand):
@@ -124,7 +125,7 @@ class Command(BaseCommand):
         # isn't critical to the core functionality of the app, and I don't know R
         # well enough to debug the package, so I'm just bypassing it for now
         except ValueError:
-            if year == 2015 and datetime.now() < datetime(2019, 2, 1):
+            if year == 2015 and datetime.now() < RESCUE_LIMIT:
                 print(
                     f"There was an error when processing season {year} due to a bug "
                     "in the fitzRoy package. Skipping this season for now.\n"
@@ -238,12 +239,21 @@ class Command(BaseCommand):
             print("Could not find any ML models in DB to make predictions.\n")
             return None
 
-        make_model_predictions = partial(
-            self.__make_model_predictions,
-            year,
-            matches_to_predict,
-            round_number=round_number,
-        )
+        # TODO: As of 2-1-2019, fixture round numbers for the 2012 season are incorrect,
+        # resulting in various mismatched labels. As with 2015, we're just skipping
+        # the season for now while we wait for a fix.
+        try:
+            make_model_predictions = partial(
+                self.__make_model_predictions,
+                year,
+                matches_to_predict,
+                round_number=round_number,
+            )
+        except KeyError:
+            if year == 2012 and datetime.now() < RESCUE_LIMIT:
+                print()
+
+            raise
 
         return [
             make_model_predictions(ml_model_record) for ml_model_record in ml_models

@@ -231,4 +231,5 @@ def player_data(
         .reset_index()
         .drop_duplicates(subset=["team", "year", "round_number"])
         .set_index(["team", "year", "round_number"], drop=False)
+        .rename_axis([None, None, None])
     )

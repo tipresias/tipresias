@@ -53,43 +53,55 @@ class TestAllModelData(TestCase):
         index_cols = ["team", "year", "round_number"]
 
         betting_data_reader = Mock()
-        betting_data_reader().data = pd.DataFrame(
-            {
-                "team": teams,
-                "year": years,
-                "score": scores,
-                "oppo_score": oppo_scores,
-                "round_number": round_numbers,
-                "win_odds": (np.random.rand(N_ROWS) * 2) + 1,
-                "oppo_win_odds": (np.random.rand(N_ROWS) * 2) + 1,
-            }
-        ).set_index(index_cols, drop=False)
+        betting_data_reader().data = (
+            pd.DataFrame(
+                {
+                    "team": teams,
+                    "year": years,
+                    "score": scores,
+                    "oppo_score": oppo_scores,
+                    "round_number": round_numbers,
+                    "win_odds": (np.random.rand(N_ROWS) * 2) + 1,
+                    "oppo_win_odds": (np.random.rand(N_ROWS) * 2) + 1,
+                }
+            )
+            .set_index(index_cols, drop=False)
+            .rename_axis([None] * len(index_cols))
+        )
 
         player_data_reader = Mock()
-        player_data_reader().data = pd.DataFrame(
-            {
-                "team": teams,
-                "year": years,
-                "score": scores,
-                "oppo_score": oppo_scores,
-                "round_number": round_numbers,
-                "kicks": np.random.randint(1, 20, N_ROWS),
-                "marks": np.random.randint(1, 20, N_ROWS),
-            }
-        ).set_index(index_cols, drop=False)
+        player_data_reader().data = (
+            pd.DataFrame(
+                {
+                    "team": teams,
+                    "year": years,
+                    "score": scores,
+                    "oppo_score": oppo_scores,
+                    "round_number": round_numbers,
+                    "kicks": np.random.randint(1, 20, N_ROWS),
+                    "marks": np.random.randint(1, 20, N_ROWS),
+                }
+            )
+            .set_index(index_cols, drop=False)
+            .rename_axis([None] * len(index_cols))
+        )
 
         match_data_reader = Mock()
-        match_data_reader().data = pd.DataFrame(
-            {
-                "team": teams,
-                "year": years,
-                "score": scores,
-                "oppo_score": oppo_scores,
-                "round_number": round_numbers,
-                "rolling_win_percentage": np.random.rand(N_ROWS),
-                "ladder_position": np.random.randint(1, 18, N_ROWS),
-            }
-        ).set_index(index_cols, drop=False)
+        match_data_reader().data = (
+            pd.DataFrame(
+                {
+                    "team": teams,
+                    "year": years,
+                    "score": scores,
+                    "oppo_score": oppo_scores,
+                    "round_number": round_numbers,
+                    "rolling_win_percentage": np.random.rand(N_ROWS),
+                    "ladder_position": np.random.randint(1, 18, N_ROWS),
+                }
+            )
+            .set_index(index_cols, drop=False)
+            .rename_axis([None] * len(index_cols))
+        )
 
         self.data = AllModelData(
             data_readers=[betting_data_reader, player_data_reader, match_data_reader]

@@ -21,16 +21,20 @@ class TestFeatureBuilder(TestCase):
         teams = [FAKE.company() for _ in range(10)]
         oppo_teams = list(reversed(teams))
 
-        valid_data_frame = pd.DataFrame(
-            {
-                "team": teams,
-                "oppo_team": oppo_teams,
-                "year": [2015 for _ in range(10)],
-                "round_number": [3 for _ in range(10)],
-                "score": [np.random.randint(50, 150) for _ in range(10)],
-                "oppo_score": [np.random.randint(50, 150) for _ in range(10)],
-            }
-        ).set_index(["year", "round_number", "team"], drop=False)
+        valid_data_frame = (
+            pd.DataFrame(
+                {
+                    "team": teams,
+                    "oppo_team": oppo_teams,
+                    "year": [2015 for _ in range(10)],
+                    "round_number": [3 for _ in range(10)],
+                    "score": [np.random.randint(50, 150) for _ in range(10)],
+                    "oppo_score": [np.random.randint(50, 150) for _ in range(10)],
+                }
+            )
+            .set_index(["year", "round_number", "team"], drop=False)
+            .rename_axis([None, None, None])
+        )
 
         with self.subTest(data_frame=valid_data_frame):
             data_frame = valid_data_frame

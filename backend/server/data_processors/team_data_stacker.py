@@ -68,6 +68,7 @@ class TeamDataStacker:
             )
             .assign(at_home=at_home_col)
             .set_index(self.index_cols, drop=False)
+            .rename_axis([None] * len(self.index_cols))
             # Gotta drop duplicates, because St Kilda & Carlton tied a Grand Final
             # in 2010 and had to replay it, so let's just pretend that never happened
             .drop_duplicates(subset=self.index_cols, keep="last")

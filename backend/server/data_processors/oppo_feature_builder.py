@@ -48,7 +48,10 @@ class OppoFeatureBuilder:
             )
 
         transform_data_frame = (
-            data_frame.copy().set_index(INDEX_COLS, drop=False).sort_index()
+            data_frame.copy()
+            .set_index(INDEX_COLS, drop=False)
+            .rename_axis([None] * len(INDEX_COLS))
+            .sort_index()
         )
 
         return pd.concat(

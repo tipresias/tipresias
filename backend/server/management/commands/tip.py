@@ -280,7 +280,7 @@ class Command(BaseCommand):
         try:
             prediction = Prediction.objects.get(**prediction_attributes)
 
-            prediction.predicted_margin = round(predicted_margin)
+            prediction.predicted_margin = predicted_margin
             prediction.predicted_winner = predicted_winner
 
             prediction.clean_fields()
@@ -290,7 +290,7 @@ class Command(BaseCommand):
             return None
         except Prediction.DoesNotExist:
             prediction = Prediction(
-                predicted_margin=round(predicted_margin),
+                predicted_margin=predicted_margin,
                 predicted_winner=predicted_winner,
                 **prediction_attributes,
             )

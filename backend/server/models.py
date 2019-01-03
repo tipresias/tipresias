@@ -65,7 +65,7 @@ class Match(models.Model):
     @property
     def is_draw(self):
         return self.has_been_played and reduce(
-            lambda x, y: x.score == y.score, self.teammatch_set.all()
+            lambda score_x, score_y: score_x == score_y, self.__match_scores
         )
 
     @property
@@ -73,7 +73,7 @@ class Match(models.Model):
         if not self.has_been_played or self.is_draw:
             return None
 
-        return max(self.teammatch_set.all(), key=lambda x: x.score).team
+        return max(self.teammatch_set.all(), key=lambda tm: tm.score).team
 
     @property
     def year(self):
@@ -81,22 +81,20 @@ class Match(models.Model):
 
     @property
     def has_been_played(self):
+        match_end_time = self.start_date_time + timedelta(hours=GAME_LENGTH_HRS)
+
         # We need to check the scores in case the data hasn't been updated since the
         # match was played, because as far as the data is concerned it hasn't, even though
         # the date has passed.
-        return self.__has_score and (
-            self.start_date_time
-            < datetime.now(timezone.utc) - timedelta(hours=GAME_LENGTH_HRS)
-        )
+        return self.__has_score and match_end_time < datetime.now(timezone.utc)
 
     @property
     def __has_score(self):
-        return any(
-            [
-                score > 0
-                for score in self.teammatch_set.all().values_list("score", flat=True)
-            ]
-        )
+        return any([score > 0 for score in self.__match_scores])
+
+    @property
+    def __match_scores(self):
+        return self.teammatch_set.all().values_list("score", flat=True)
 
 
 class TeamMatch(models.Model):
@@ -123,6 +121,11 @@ class Prediction(models.Model):
     ml_model = models.ForeignKey(MLModel, on_delete=models.CASCADE)
     predicted_winner = models.ForeignKey(Team, on_delete=models.CASCADE)
     predicted_margin = models.PositiveSmallIntegerField()
+
+    def clean(self):
+        # Judgement call, but I want to avoid 0 predicted margin values for the cases
+        # where the floating prediction is < 0.5, because we're never predicting a draw
+        self.predicted_margin = round(self.predicted_margin) or 1
 
     @property
     def is_correct(self):

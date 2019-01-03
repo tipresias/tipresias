@@ -412,7 +412,7 @@ class Command(BaseCommand):
         prediction = Prediction(
             match=match,
             ml_model=ml_model_record,
-            predicted_margin=round(predicted_margin),
+            predicted_margin=predicted_margin,
             predicted_winner=predicted_winner,
         )
 

@@ -67,7 +67,7 @@ class MatchData:
         return (
             self._data.rename(columns={"date": "datetime"})
             .assign(date=self.__convert_datetime_to_date)
-            .set_index(self.shared_index_cols, drop=True)
+            .set_index(self.shared_index_cols)
         )
 
     def __convert_datetime_to_date(self, df):

@@ -1,34 +1,28 @@
 """Base ML model and data classes"""
 
 import os
+import sys
 from typing import Sequence, Optional, Tuple, Union, List, Type
 from functools import reduce
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.externals import joblib
 import pandas as pd
 import numpy as np
 
+from project.settings.common import BASE_DIR
 from server.types import YearPair, DataFrameTransformer, M
-
-MODULE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 
 class MLModel(BaseEstimator, RegressorMixin):
     """Base ML model class"""
 
     def __init__(
-        self,
-        estimators: Sequence[BaseEstimator] = (),
-        name: Optional[str] = None,
-        module_name: str = "",
+        self, estimators: Sequence[BaseEstimator] = (), name: Optional[str] = None
     ) -> None:
-
         if not any(estimators):
             raise ValueError("At least one estimator is required, but none were given.")
 
         self._name = name
-        self.module_name = module_name
         self.estimators = estimators
         self._pipeline: Pipeline = make_pipeline(*estimators)
 
@@ -36,7 +30,20 @@ class MLModel(BaseEstimator, RegressorMixin):
     def name(self) -> str:
         """Name of the model"""
 
-        return self._name or self.__last_estimator()[0]
+        return self._name or self.__class__.__name__
+
+    def pickle_filepath(self, filepath: str = None) -> str:
+        """Filepath to the model's saved pickle file"""
+
+        if filepath is not None:
+            return filepath
+
+        module_path = self.__module__
+        module_filepath = sys.modules[module_path].__file__
+
+        return os.path.abspath(
+            os.path.join(BASE_DIR, os.path.dirname(module_filepath), f"{self.name}.pkl")
+        )
 
     def fit(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
@@ -52,30 +59,13 @@ class MLModel(BaseEstimator, RegressorMixin):
 
         return self._pipeline.predict(X)
 
-    def save(self, filepath: Optional[str] = None) -> None:
-        """Save the pipeline as a pickle file"""
-
-        filepath = filepath or os.path.join(
-            MODULE_DIR, self.module_name, f"{self.name}.pkl"
-        )
-
-        joblib.dump(self._pipeline, filepath)
-
-    def load(self, filepath: Optional[str] = None) -> None:
-        """Load the pipeline from a pickle file"""
-
-        filepath = filepath or os.path.join(
-            MODULE_DIR, self.module_name, f"{self.name}.pkl"
-        )
-
-        self._pipeline = joblib.load(filepath)
-
-    def __last_estimator(self) -> Tuple[str, BaseEstimator]:
-        return self._pipeline.steps[-1]
-
 
 class MLModelData:
     """Base class for model data"""
+
+    @classmethod
+    def class_path(cls):
+        return f"{cls.__module__}.{cls.__name__}"
 
     def __init__(
         self, train_years: YearPair = (None, 2015), test_years: YearPair = (2016, 2016)
@@ -86,9 +76,8 @@ class MLModelData:
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data"""
 
-        data_train = self.data[
-            (self.data["year"] >= self.__train_min())
-            & (self.data["year"] <= self.__train_max())
+        data_train = self.data.loc[
+            (slice(None), slice(*self.train_years), slice(None)), :
         ]
 
         X_train = self.__X(data_train)
@@ -96,12 +85,11 @@ class MLModelData:
 
         return X_train, y_train
 
-    def test_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def test_data(self, test_round=None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce test data"""
 
-        data_test = self.data[
-            (self.data["year"] >= self.__test_min())
-            & (self.data["year"] <= self.__test_max())
+        data_test = self.data.loc[
+            (slice(None), slice(*self.test_years), slice(test_round, test_round)), :
         ]
         X_test = self.__X(data_test)
         y_test = self.__y(data_test)
@@ -133,18 +121,6 @@ class MLModelData:
     @test_years.setter
     def test_years(self, years: YearPair) -> None:
         self._test_years = years
-
-    def __train_min(self) -> Union[int, float]:
-        return self._train_years[0] or np.NINF
-
-    def __train_max(self) -> Union[int, float]:
-        return self._train_years[1] or np.Inf
-
-    def __test_min(self) -> Union[int, float]:
-        return self._test_years[0] or np.NINF
-
-    def __test_max(self) -> Union[int, float]:
-        return self._test_years[1] or np.Inf
 
     def __X(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         data_dummies = pd.get_dummies(self.data.select_dtypes("O"))

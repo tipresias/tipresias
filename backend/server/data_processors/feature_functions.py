@@ -281,7 +281,9 @@ def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:
         )
 
     # Pivot to get round-by-round match points and cumulative percent
-    ladder_pivot_table = data_frame[["cum_win_points", "cum_percent"]].pivot_table(
+    ladder_pivot_table = data_frame[
+        INDEX_COLS + ["cum_win_points", "cum_percent"]
+    ].pivot_table(
         index=["year", "round_number"],
         values=["cum_win_points", "cum_percent"],
         columns="team",

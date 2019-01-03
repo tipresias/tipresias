@@ -91,6 +91,7 @@ class PlayerDataAggregator:
                 }
             )
             .set_index(self.index_cols, drop=False)
+            .rename_axis([None] * len(self.index_cols))
             .sort_index()
         )
 

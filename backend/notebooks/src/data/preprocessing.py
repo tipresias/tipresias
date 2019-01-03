@@ -30,7 +30,7 @@ def raw_match_df(path=f"{DATA_DIR}/ft_match_list.csv"):
         pd.read_csv(path, parse_dates=["date"])
         .rename(columns={"date": "datetime"})
         .assign(date=lambda x: x["datetime"].map(lambda y: y.date()))
-        .set_index(["date", "venue", "home_team", "away_team"], drop=True)
+        .set_index(["date", "venue", "home_team", "away_team"])
     )
 
 
@@ -101,6 +101,7 @@ def team_df(df, team_type="home"):
         )
         .assign(at_home=at_home_col)
         .set_index(["team", "year", "round_number"], drop=False)
+        .rename_axis([None, None, None])
     )
 
 

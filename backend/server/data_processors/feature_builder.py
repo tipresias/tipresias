@@ -44,7 +44,10 @@ class FeatureBuilder:
             )
 
         return self._compose_all(
-            data_frame.copy().set_index(self.index_cols, drop=False).sort_index()
+            data_frame.copy()
+            .set_index(self.index_cols, drop=False)
+            .rename_axis([None] * len(self.index_cols))
+            .sort_index()
         )
 
     @staticmethod

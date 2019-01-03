@@ -65,6 +65,7 @@ class DataTransformer:
             df.rename(columns=self.__replace_col_names(team_type, oppo_team_type))
             .assign(at_home=at_home_col)
             .set_index(["team", "year", "round_number"], drop=False)
+            .rename_axis([None, None, None])
             # Gotta drop duplicates, because St Kilda & Carlton tied a Grand Final
             # in 2010 and had to replay it, so let's just pretend that never happened
             .drop_duplicates(subset=["team", "year", "round_number"], keep="last")

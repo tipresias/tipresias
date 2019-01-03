@@ -98,9 +98,8 @@ class PlayerModel(MLModel):
         self,
         estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
         name: Optional[str] = None,
-        module_name: str = "player_model",
     ) -> None:
-        super().__init__(estimators=estimators, name=name, module_name=module_name)
+        super().__init__(estimators=estimators, name=name)
 
 
 class PlayerModelData(MLModelData, DataTransformerMixin):
@@ -170,7 +169,7 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
 
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
-            .dropna()
+            .fillna(0)
             .sort_index()
         )
 

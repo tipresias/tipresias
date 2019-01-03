@@ -24,4 +24,4 @@ EXPOSE 8888
 # Make port 8000 available for the app
 EXPOSE 8000
 
-CMD python3 backend/manage.py runserver 0.0.0.0:8000
+CMD python3 manage.py runserver 0.0.0.0:8000

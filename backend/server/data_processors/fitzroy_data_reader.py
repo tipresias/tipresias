@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 import pandas as pd
 from rpy2.robjects import pandas2ri, vectors, r
 
@@ -13,6 +14,16 @@ TEAM_TRANSLATIONS = {
 
 class FitzroyDataReader:
     """Get data from the fitzRoy R package and return it as a pandas DataFrame."""
+
+    def __init__(self):
+        self.current_year = datetime.now().year
+
+    def get_fixture(self, season: Optional[int] = None) -> pd.DataFrame:
+        """Get AFL fixture for given year"""
+
+        requested_season = season or self.current_year
+
+        return self.__data(f"get_fixture(season = {requested_season})")
 
     def match_results(self, fetch_data: bool = False) -> pd.DataFrame:
         """Get match results data.

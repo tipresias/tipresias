@@ -9,19 +9,17 @@ class TestTeam(TestCase):
         self.team = Team(name="Richmond")
 
     def test_validation(self):
-        with self.subTest(team=self.team):
-            team = self.team
-            team.full_clean()
+        with self.subTest("with a valid team"):
+            self.assertIsNone(self.team.full_clean())
 
-        with self.subTest(team=Team(name="Bob")):
+        with self.subTest("with unrecognized team name"):
             team = Team(name="Bob")
 
             with self.assertRaises(ValidationError):
                 team.full_clean()
 
-        with self.subTest(team=self.team):
-            team = Team(name="Richmond")
-            Team(name="Richmond").save()
+        with self.subTest("with duplicate team name"):
+            Team.objects.create(name="Richmond")
 
             with self.assertRaises(ValidationError):
-                team.full_clean()
+                self.team.full_clean()

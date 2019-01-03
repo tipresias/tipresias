@@ -180,7 +180,6 @@ class Command(BaseCommand):
 
         if not any(ml_models):
             raise ValueError("Something went wrong and no ML models were saved.")
-            return None
 
         MLModel.objects.bulk_create(ml_models)
 

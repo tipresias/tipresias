@@ -20,6 +20,7 @@ matplotlib
 # Scraping
 requests
 bs4
+html5lib
 
 # App packages
 django

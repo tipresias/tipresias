@@ -1,12 +1,12 @@
 // @flow
 import React, { Component } from 'react';
-import type { Game } from './types';
-import fetchPredictions from './services/predictions/fetch';
-import filterDataByYear from './helpers/filterGameByYear';
-import logo from './logo.svg';
+import type { Game } from '../../types';
+import fetchPredictions from '../../services/fetchPredictions';
+import filterDataByYear from '../../utils/filterGameByYear';
+import logo from '../../logo.svg';
 import './App.css';
-import BarChartContainer from './components/BarChartContainer';
-import Select from './components/Select';
+import BarChartContainer from '../BarChartContainer';
+import Select from '../../components/Select';
 
 type State = {
   isLoading: boolean,

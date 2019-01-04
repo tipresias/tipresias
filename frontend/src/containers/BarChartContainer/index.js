@@ -1,17 +1,17 @@
 // @flow
 import React from 'react';
 import type { Game, Bar } from '../../types';
-import groupModelsByRound from './helpers/groupModelsByRound';
-import createCumulativeModels from './helpers/createCumulativeModels';
-import createBarGroups from './helpers/createBarGroups';
+import groupModelsByRound from './GroupModelsByRound';
+import createCumulativeModels from './CreateCumulativeModels';
+import createBarGroups from './CreateBarGroups';
 import {
   createTipPointScale,
   createRoundScale,
   createColorScale,
-} from './helpers/createScales';
+} from './CreateScales';
 
-import BarChart from './BarChart';
-import Axis from './Axis';
+import BarChart from '../../components/BarChart';
+import Axis from '../../components/Axis';
 
 type Props = {
   gamesByYear: Array<Game>

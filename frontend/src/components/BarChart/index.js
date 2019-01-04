@@ -1,10 +1,10 @@
 // @flow
 import React from 'react';
 import type { Node } from 'react';
-import type { BarsDataType } from '../../../types';
+import type { Bar } from '../../types';
 
 type Props = {
-  bars: Array<Array<BarsDataType>>
+  bars: Array<Array<Bar>>
 }
 const BarChart = ({ bars }: Props): Node => (
   bars.map((item, index) => (

@@ -48,7 +48,7 @@ class FootyWireDataReader:
 
     def get_fixture(
         self, year_range: Optional[Tuple[int, int]] = None, fresh_data: bool = False
-    ) -> Optional[pd.DataFrame]:
+    ) -> pd.DataFrame:
         """Get AFL fixtures for given year range"""
 
         if fresh_data:

@@ -9,13 +9,8 @@ from sklearn.linear_model import Lasso
 from sklearn.base import BaseEstimator
 
 from server.types import DataFrameTransformer, YearPair
-from server.data_processors import (
-    DataCleaner,
-    TeamDataStacker,
-    FeatureBuilder,
-    OppoFeatureBuilder,
-)
-from server.data_readers import BettingDataReader, MatchDataReader
+from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
+from server.data_readers import BettingDataReader, FootyWireDataReader
 from server.data_processors.feature_functions import (
     add_last_week_result,
     add_last_week_score,
@@ -38,7 +33,6 @@ FEATURE_FUNCS: Sequence[DataFrameTransformer] = (
 )
 REQUIRED_COLS: List[str] = ["year", "score", "oppo_score"]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
-    DataCleaner().transform,
     TeamDataStacker().transform,
     FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform,
     OppoFeatureBuilder(
@@ -59,7 +53,10 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     # Features dependent on oppo columns
     FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
 ]
-DATA_READERS = [BettingDataReader().transform(), MatchDataReader().transform()]
+DATA_READERS = [
+    BettingDataReader().transform(),
+    FootyWireDataReader().get_fixture().rename(columns={"season": "year"}),
+]
 MODEL_ESTIMATORS = (StandardScaler(), Lasso())
 
 np.random.seed(42)
@@ -96,7 +93,13 @@ class BettingModelData(MLModelData, DataTransformerMixin):
 
         self._data_transformers = data_transformers
 
-        data_frame = self.__concat_data_input(data_readers)
+        data_frame = (
+            self.__concat_data_input(data_readers)
+            .rename(columns={"season": "year", "round": "round_number"})
+            .assign(date=lambda df: df["date"].dt.date)
+            .drop(["venue", "crowd", "datetime", "round_label"], axis=1)
+        )
+
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .astype({"year": int})

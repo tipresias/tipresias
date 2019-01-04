@@ -4,10 +4,11 @@ describe('fetchPredictions', () => {
   it('renders', () => {
     // arrange
     // act
-    const result = fetchPredictions();
-    console.log(result);
-
     // assert
-    expect(true).toBe(true);
+    fetchPredictions().then((response) => {
+      console.log(response);
+
+      expect(true).toBe(true);
+    });
   });
 });

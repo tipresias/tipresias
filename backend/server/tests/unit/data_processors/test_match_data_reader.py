@@ -1,7 +1,7 @@
 from unittest import TestCase
 import pandas as pd
 
-from server.data_processors import MatchDataReader
+from server.data_readers import MatchDataReader
 
 
 class TestMatchDataReader(TestCase):

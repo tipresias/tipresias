@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from django.core.management.base import BaseCommand
 
-from server.data_processors import FitzroyDataReader
+from server.data_readers import FitzroyDataReader
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
 from server.ml_models import ml_model
 from server.ml_models.betting_model import BettingModel, BettingModelData

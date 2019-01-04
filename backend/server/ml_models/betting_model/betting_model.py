@@ -13,10 +13,9 @@ from server.data_processors import (
     DataCleaner,
     TeamDataStacker,
     FeatureBuilder,
-    BettingDataReader,
-    MatchDataReader,
     OppoFeatureBuilder,
 )
+from server.data_readers import BettingDataReader, MatchDataReader
 from server.data_processors.feature_functions import (
     add_last_week_result,
     add_last_week_score,

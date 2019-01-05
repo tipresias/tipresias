@@ -257,7 +257,7 @@ class FootywireDataReader:
             # NaNs with 0
             .assign(
                 home_score=lambda df: pd.to_numeric(df["home_score"], errors="coerce"),
-                away_score=lambda df: pd.to_numeric(df["home_score"], errors="coerce"),
+                away_score=lambda df: pd.to_numeric(df["away_score"], errors="coerce"),
             )
             .fillna(0)
         )

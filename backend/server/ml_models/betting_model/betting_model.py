@@ -1,7 +1,6 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
 from typing import List, Optional, Sequence, Any
-from functools import reduce
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -10,7 +9,7 @@ from sklearn.base import BaseEstimator
 
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
-from server.data_readers import BettingDataReader, FootyWireDataReader
+from server.data_readers import FootyWireDataReader
 from server.data_processors.feature_functions import (
     add_last_week_result,
     add_last_week_score,
@@ -22,6 +21,60 @@ from server.data_processors.feature_functions import (
     add_win_streak,
 )
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
+
+BETTING_TEAM_TRANSLATIONS = {
+    "Tigers": "Richmond",
+    "Blues": "Carlton",
+    "Demons": "Melbourne",
+    "Giants": "GWS",
+    "Suns": "Gold Coast",
+    "Bombers": "Essendon",
+    "Swans": "Sydney",
+    "Magpies": "Collingwood",
+    "Kangaroos": "North Melbourne",
+    "Crows": "Adelaide",
+    "Bulldogs": "Western Bulldogs",
+    "Dockers": "Fremantle",
+    "Power": "Port Adelaide",
+    "Saints": "St Kilda",
+    "Eagles": "West Coast",
+    "Lions": "Brisbane",
+    "Cats": "Geelong",
+    "Hawks": "Hawthorn",
+    "Adelaide Crows": "Adelaide",
+    "Brisbane Lions": "Brisbane",
+    "Gold Coast Suns": "Gold Coast",
+    "GWS Giants": "GWS",
+    "Geelong Cats": "Geelong",
+    "West Coast Eagles": "West Coast",
+    "Sydney Swans": "Sydney",
+}
+VENUE_TRANSLATIONS = {
+    "AAMI": "AAMI Stadium",
+    "ANZ": "ANZ Stadium",
+    "Adelaide": "Adelaide Oval",
+    "Aurora": "UTAS Stadium",
+    "Aurora Stadium": "UTAS Stadium",
+    "Blacktown": "Blacktown International",
+    "Blundstone": "Blundstone Arena",
+    "Cazaly's": "Cazaly's Stadium",
+    "Domain": "Domain Stadium",
+    "Etihad": "Etihad Stadium",
+    "GMHBA": "GMHBA Stadium",
+    "Gabba": "Gabba",
+    "Jiangwan": "Jiangwan Stadium",
+    "MCG": "MCG",
+    "Mars": "Mars Stadium",
+    "Metricon": "Metricon Stadium",
+    "Perth": "Optus Stadium",
+    "SCG": "SCG",
+    "Spotless": "Spotless Stadium",
+    "StarTrack": "Manuka Oval",
+    "TIO": "TIO Stadium",
+    "UTAS": "UTAS Stadium",
+    "Westpac": "Westpac Stadium",
+    "TIO Traegar Park": "TIO Stadium",
+}
 
 FEATURE_FUNCS: Sequence[DataFrameTransformer] = (
     add_last_week_result,
@@ -54,8 +107,8 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
 ]
 DATA_READERS = [
-    BettingDataReader().transform(),
-    FootyWireDataReader().get_fixture().rename(columns={"season": "year"}),
+    FootyWireDataReader().get_betting_odds(),
+    FootyWireDataReader().get_fixture(),
 ]
 MODEL_ESTIMATORS = (StandardScaler(), Lasso())
 
@@ -96,8 +149,16 @@ class BettingModelData(MLModelData, DataTransformerMixin):
         data_frame = (
             self.__concat_data_input(data_readers)
             .rename(columns={"season": "year", "round": "round_number"})
-            .assign(date=lambda df: df["date"].dt.date)
-            .drop(["venue", "crowd", "datetime", "round_label"], axis=1)
+            .drop(
+                [
+                    "crowd",
+                    "home_win_paid",
+                    "home_line_paid",
+                    "away_win_paid",
+                    "away_line_paid",
+                ],
+                axis=1,
+            )
         )
 
         self._data = (
@@ -117,23 +178,27 @@ class BettingModelData(MLModelData, DataTransformerMixin):
 
     @staticmethod
     def __concat_data_input(data_frames: List[pd.DataFrame]) -> pd.DataFrame:
-        shared_columns = reduce(
-            np.intersect1d, (data_frame.columns for data_frame in data_frames)
-        )
-
-        if not any(shared_columns):
-            raise ValueError(
-                "The data frames do not have any columns in common "
-                "and cannot be concatenated."
+        betting_data = (
+            data_frames[0]
+            .drop(
+                [
+                    "date",
+                    "venue",
+                    "round_label",
+                    "home_score",
+                    "home_margin",
+                    "away_score",
+                    "away_margin",
+                ],
+                axis=1,
             )
+            .assign(
+                home_team=lambda df: df["home_team"].map(BETTING_TEAM_TRANSLATIONS),
+                away_team=lambda df: df["away_team"].map(BETTING_TEAM_TRANSLATIONS),
+            )
+        )
+        match_data = data_frames[1].drop(["date", "venue", "round_label"], axis=1)
 
-        reindexed_data_frames = [
-            data_frame.set_index(list(shared_columns)) for data_frame in data_frames
-        ]
-
-        return (
-            pd.concat(reindexed_data_frames, axis=1)
-            .dropna()
-            .reset_index()
-            .drop("date", axis=1)
+        return betting_data.merge(
+            match_data, on=["home_team", "away_team", "round", "season"]
         )

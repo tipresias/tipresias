@@ -12,7 +12,7 @@ from freezegun import freeze_time
 import pandas as pd
 
 from project.settings.common import BASE_DIR
-from server.data_processors import FitzroyDataReader
+from server.data_readers import FitzroyDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import tip
 from server.ml_models.betting_model import BettingModel, BettingModelData

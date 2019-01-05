@@ -22,7 +22,7 @@ from server.data_processors.feature_functions import (
     add_last_week_goals,
     add_last_week_behinds,
 )
-from server.data_processors import FitzroyDataReader
+from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
 
 COL_TRANSLATIONS = {

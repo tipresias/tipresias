@@ -9,7 +9,7 @@ from django.test import TestCase
 from faker import Faker
 import pandas as pd
 
-from server.data_processors import FitzroyDataReader
+from server.data_readers import FitzroyDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_models.betting_model import BettingModel, BettingModelData
 from server.management.commands import seed_db

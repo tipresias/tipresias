@@ -18,7 +18,7 @@ from server.data_processors.feature_functions import (
     add_rolling_player_stats,
     add_cum_matches_played,
 )
-from server.data_processors import FitzroyDataReader
+from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
 
 MATCH_STATS_COLS = [

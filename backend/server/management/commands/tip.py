@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR
-from server.data_processors import FitzroyDataReader
+from server.data_readers import FitzroyDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_models import BettingModel, MatchModel, PlayerModel, AllModel, AvgModel
 from server.ml_models.betting_model import BettingModelData

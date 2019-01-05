@@ -2,14 +2,14 @@ import os
 from django.test import TestCase
 import pandas as pd
 
-from server.data_readers import FootyWireDataReader
+from server.data_readers import FootywireDataReader
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../fixtures"))
 
 
-class TestFootyWireDataReader(TestCase):
+class TestFootywireDataReader(TestCase):
     def setUp(self):
-        self.data_reader = FootyWireDataReader(csv_dir=DATA_DIR)
+        self.data_reader = FootywireDataReader(csv_dir=DATA_DIR)
 
     def test_get_fixture(self):
         with self.subTest("when fresh_data is True"):

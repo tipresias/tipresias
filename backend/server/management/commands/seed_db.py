@@ -7,9 +7,10 @@ from typing import Tuple, List, Optional, Type
 from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
+from django.utils import timezone
 from django.core.management.base import BaseCommand
 
-from server.data_readers import FitzroyDataReader
+from server.data_readers import FootywireDataReader
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
 from server.ml_models import ml_model
 from server.ml_models.betting_model import BettingModel, BettingModelData
@@ -53,7 +54,7 @@ class Command(BaseCommand):
     def __init__(
         self,
         *args,
-        data_reader=FitzroyDataReader(),
+        data_reader=FootywireDataReader(),
         estimators: List[EstimatorTuple] = ESTIMATORS,
         **kwargs,
     ) -> None:
@@ -84,81 +85,28 @@ class Command(BaseCommand):
         # which is open-ended, then try to use a restricted tuple type
         year_range_tuple = (years_list[0], years_list[1])
 
-        yearly_data_frames = [
-            self.__fetch_fixture_data(year) for year in range(*year_range_tuple)
-        ]
-        compacted_data_frames = [
-            data_frame for data_frame in yearly_data_frames if data_frame is not None
-        ]
-
-        if len(compacted_data_frames) == 0:  # pylint: disable=C1801
-            raise ValueError(f"No fixture data was found for years {year_range}")
-
-        fixture_data_frame = pd.concat(compacted_data_frames)
+        fixture_data_frame = self.data_reader.get_fixture(year_range=year_range_tuple)
 
         # Putting saving records in a try block, so we can go back and delete everything
         # if an error is raised
         try:
-            if not self.__create_teams(fixture_data_frame):
-                return None
-
+            self.__create_teams(fixture_data_frame)
             ml_models = self.__create_ml_models()
+            self.__create_matches(fixture_data_frame.to_dict("records"))
+            self.__make_predictions(year_range_tuple, ml_models=ml_models)
 
-            if ml_models is None:
-                return None
-
-            if not self.__create_matches(fixture_data_frame.to_dict("records")):
-                return None
-
-            if self.__make_predictions(year_range_tuple, ml_models=ml_models):
-                if self.verbose == 1:
-                    print("\n...DB seeded!\n")
-
-                return None
+            if self.verbose == 1:
+                print("\n...DB seeded!\n")
         except:
+            print("\nRolling back DB changes...")
             Team.objects.all().delete()
             MLModel.objects.all().delete()
             Match.objects.all().delete()
+            print("...DB unseeded!\n")
 
             raise
 
-        return None
-
-    def __fetch_fixture_data(self, year: int) -> Optional[pd.DataFrame]:
-        if self.verbose == 1:
-            print(f"Fetching fixture for {year}...")
-
-        try:
-            fixture_data_frame = self.data_reader.get_fixture(season=year)
-        # fitzRoy raises RuntimeErrors when you try to fetch too far into the future
-        except RuntimeError:
-            print(
-                f"\tNo data found for {year}. It is likely that the fixture "
-                "is not yet available. Please try again later."
-            )
-            return None
-        # TODO: As of 1-1-2019, fitzRoy is returning dodgy fixture data for the 2015
-        # season (i.e. NaNs in the date column, and all rounds are 0) due to round 14
-        # having a cancelled match. This data isn't critical to the core functionality
-        # of the app, so I'm just bypassing it for now
-        except ValueError:
-            if year == 2015 and datetime.now() < RESCUE_LIMIT:
-                print(
-                    f"\tThere was an error when processing season {year} due to a bug "
-                    "in the fitzRoy package. Skipping this season for now."
-                )
-                return None
-
-            raise
-
-        if fixture_data_frame.empty:
-            if self.verbose == 1:
-                print(f"\tNo data found for {year}.")
-            return None
-
-        return fixture_data_frame
-
-    def __create_teams(self, fixture_data: pd.DataFrame) -> bool:
+    def __create_teams(self, fixture_data: pd.DataFrame) -> None:
         team_names = np.unique(fixture_data[["home_team", "away_team"]].values)
         teams = [self.__build_team(team_name) for team_name in team_names]
 
@@ -170,9 +118,7 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print("Teams seeded!")
 
-        return True
-
-    def __create_ml_models(self) -> Optional[List[MLModel]]:
+    def __create_ml_models(self) -> List[MLModel]:
         ml_models = [
             self.__build_ml_model(estimator, data_class)
             for estimator, data_class in self.estimators
@@ -188,7 +134,7 @@ class Command(BaseCommand):
 
         return ml_models
 
-    def __create_matches(self, fixture_data: List[FixtureData]) -> bool:
+    def __create_matches(self, fixture_data: List[FixtureData]) -> None:
         if not any(fixture_data):
             raise ValueError("No match data found.")
 
@@ -205,11 +151,16 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print("Match data saved!")
 
-        return True
-
     def __build_match(self, match_data: FixtureData) -> List[TeamMatch]:
+        raw_date = match_data["date"].to_pydatetime()
+
+        if raw_date.tzinfo is None or raw_date.tzinfo.utcoffset(raw_date) is None:
+            match_date = timezone.make_aware(raw_date)
+        else:
+            match_date = raw_date
+
         match: Match = Match(
-            start_date_time=match_data["date"].to_pydatetime(),
+            start_date_time=match_date,
             round_number=int(match_data["round"]),
             venue=match_data["venue"],
         )
@@ -224,7 +175,7 @@ class Command(BaseCommand):
         year_range: Tuple[int, int],
         ml_models: Optional[List[MLModel]] = None,
         round_number: Optional[int] = None,
-    ) -> bool:
+    ) -> None:
         make_year_predictions = partial(
             self.__make_year_predictions, ml_models=ml_models, round_number=round_number
         )
@@ -240,8 +191,6 @@ class Command(BaseCommand):
 
         if self.verbose == 1:
             print("\nPredictions saved!")
-
-        return True
 
     def __make_year_predictions(
         self,
@@ -405,7 +354,8 @@ class Command(BaseCommand):
                 "so figure out what's going on:\n"
                 f"home_team = {home_team.name}\n"
                 f"away_team = {away_team.name}\n"
-                f"data = {match_prediction}"
+                "data ="
+                f"{match_prediction}"
             )
 
         prediction = Prediction(

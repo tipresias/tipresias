@@ -55,7 +55,9 @@ class TestFootywireDataReader(TestCase):
             self.assertEqual(len(seasons), 1)
             self.assertEqual(seasons.iloc[0], 2014)
 
-            date_years = data_frame["date"].dt.year.drop_duplicates()
+            # 'date' column is python datetime, not pandas datetime, so we have to
+            # convert it before calling .dt
+            date_years = pd.to_datetime(data_frame["date"]).dt.year.drop_duplicates()
             self.assertEqual(len(date_years), 1)
             self.assertEqual(date_years.iloc[0], 2014)
 

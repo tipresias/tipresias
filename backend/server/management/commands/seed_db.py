@@ -1,13 +1,14 @@
 """Django command for seeding the DB with match & prediction data"""
 
+import itertools
 from datetime import datetime
 from functools import partial, reduce
 from pydoc import locate
-from typing import Tuple, List, Optional, Type
+from typing import Tuple, List, Optional, Type, Iterator
 from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
-from django.utils import timezone
+from django import utils
 from django.core.management.base import BaseCommand
 
 from server.data_readers import FootywireDataReader
@@ -154,8 +155,9 @@ class Command(BaseCommand):
     def __build_match(self, match_data: FixtureData) -> List[TeamMatch]:
         raw_date = match_data["date"].to_pydatetime()
 
+        # 'make_aware' raises error if datetime already has a timezone
         if raw_date.tzinfo is None or raw_date.tzinfo.utcoffset(raw_date) is None:
-            match_date = timezone.make_aware(raw_date)
+            match_date = utils.timezone.make_aware(raw_date)
         else:
             match_date = raw_date
 
@@ -176,30 +178,69 @@ class Command(BaseCommand):
         ml_models: Optional[List[MLModel]] = None,
         round_number: Optional[int] = None,
     ) -> None:
-        make_year_predictions = partial(
-            self.__make_year_predictions, ml_models=ml_models, round_number=round_number
-        )
-        predictions = [make_year_predictions(year) for year in range(*year_range)]
-        predictions_to_save = reduce(
-            lambda acc_list, curr_list: acc_list + curr_list, predictions
-        )
+        ml_models = ml_models or MLModel.objects.all()
 
-        if not any(predictions_to_save):
+        if ml_models is None or not any(ml_models):
+            if self.verbose == 1:
+                raise ValueError(
+                    "\tCould not find any ML models in DB to make predictions."
+                )
+
+        make_model_predictions = partial(
+            self.__make_model_predictions, year_range, round_number=round_number
+        )
+        model_predictions_list = [
+            make_model_predictions(ml_model_record) for ml_model_record in ml_models
+        ]
+        model_predictions = itertools.chain.from_iterable(model_predictions_list)
+
+        if not any(model_predictions):
             raise ValueError("Could not find any predictions to save to the DB.")
 
-        Prediction.objects.bulk_create(predictions_to_save)
+        Prediction.objects.bulk_create(list(model_predictions))
 
         if self.verbose == 1:
             print("\nPredictions saved!")
 
+    def __make_model_predictions(
+        self,
+        year_range: Tuple[int, int],
+        ml_model_record: MLModel,
+        round_number: Optional[int] = None,
+    ) -> Iterator[Prediction]:
+        if self.verbose == 1:
+            print(f"\nMaking predictions with {ml_model_record.name}...")
+
+        estimator = self.__estimator(ml_model_record)
+        data_class = locate(ml_model_record.data_class_path)
+
+        data = data_class()
+
+        make_year_predictions = partial(
+            self.__make_year_predictions,
+            ml_model_record,
+            estimator,
+            data,
+            round_number=round_number,
+        )
+
+        return itertools.chain.from_iterable(
+            [make_year_predictions(year) for year in range(*year_range)]
+        )
+
+    # TODO: Got the following error when trying to implement multiprocessing:
+    # TypeError: cannot serialize '_io.TextIOWrapper' object
+    # Not too sure on the cause, but it works okay for now (it's just slow).
     def __make_year_predictions(
         self,
+        ml_model_record: MLModel,
+        estimator: ml_model.MLModel,
+        data: ml_model.MLModelData,
         year: int,
-        ml_models: Optional[List[MLModel]] = None,
         round_number: Optional[int] = None,
     ) -> List[Prediction]:
         if self.verbose == 1:
-            print(f"\nMaking predictions for {year}...")
+            print(f"\tMaking predictions for {year}...")
 
         matches_to_predict = Match.objects.filter(start_date_time__year=year)
 
@@ -211,61 +252,23 @@ class Command(BaseCommand):
 
             return []
 
-        ml_models = ml_models or MLModel.objects.all()
+        data.train_years = (None, year - 1)
+        data.test_years = (year, year)
+        data_row_slice = (slice(None), year, slice(round_number, round_number))
+        prediction_data = self.__predict(estimator, data, data_row_slice)
 
-        if ml_models is None or not any(ml_models):
-            if self.verbose == 1:
-                print("\tCould not find any ML models in DB to make predictions.")
-
-            return []
-
-        make_model_predictions = partial(
-            self.__make_model_predictions,
-            year,
-            matches_to_predict,
-            round_number=round_number,
+        build_match_prediction = partial(
+            self.__build_match_prediction, ml_model_record, prediction_data
         )
 
-        # TODO: As of 2-1-2019, fixture round numbers for the 2012, 2013, 2014, & 2016
-        # seasons are incorrect due to inconsistent round/week alignment,
-        # resulting in various mismatched labels.
-        # As with 2015, we're just skipping the seasons for now while we wait for a fix.
-        # Relevant GH issue: https://github.com/jimmyday12/fitzRoy/issues/54
-        try:
-            model_predictions = [
-                make_model_predictions(ml_model_record) for ml_model_record in ml_models
-            ]
-        except KeyError:
-            if year in DODGY_SEASONS and datetime.now() < RESCUE_LIMIT:
-                if self.verbose == 1:
-                    print(
-                        f"\tCould not generate predictions for {year} due to a mismatch "
-                        "in fixture and prediction data. This is likely caused by a bug in "
-                        "fitzRoy's fixture data, so skipping this year for now."
-                    )
+        return [build_match_prediction(match) for match in matches_to_predict]
 
-                return []
-
-            raise
-
-        return reduce(
-            lambda acc_list, curr_list: acc_list + curr_list, model_predictions
-        )
-
-    def __make_model_predictions(
-        self,
-        year: int,
-        matches: List[Match],
-        ml_model_record: MLModel,
-        round_number: Optional[int] = None,
-    ) -> List[Prediction]:
-        if self.verbose == 1:
-            print(f"\tMaking predictions with {ml_model_record.name}...")
-
-        estimator = self.__estimator(ml_model_record)
-        data_class = locate(ml_model_record.data_class_path)
-
-        data = data_class(train_years=(None, year - 1), test_years=(year, year))
+    @staticmethod
+    def __predict(
+        estimator: ml_model.MLModel,
+        data: ml_model.MLModelData,
+        data_row_slice: Tuple[slice, int, slice],
+    ):
         X_train, y_train = data.train_data()
         X_test, _ = data.test_data()
 
@@ -278,16 +281,7 @@ class Command(BaseCommand):
 
         y_pred = estimator.predict(X_test)
 
-        data_row_slice = (slice(None), year, slice(round_number, round_number))
-        prediction_data = data.data.loc[data_row_slice, :].assign(
-            predicted_margin=y_pred
-        )
-
-        build_match_prediction = partial(
-            self.__build_match_prediction, ml_model_record, prediction_data
-        )
-
-        return [build_match_prediction(match) for match in matches]
+        return data.data.loc[data_row_slice, :].assign(predicted_margin=y_pred)
 
     @staticmethod
     def __build_ml_model(

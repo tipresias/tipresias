@@ -249,18 +249,30 @@ class FootywireDataReader:
             .rename(columns={0: "home_team", 1: "away_team"})
         )
 
-        score_data_frame = (
-            valid_data_frame["Result"]
-            .str.split(RESULT_SEPARATOR, expand=True)
-            .rename(columns={0: "home_score", 1: "away_score"})
-            # For unplayed matches we convert scores to numeric, filling the resulting
-            # NaNs with 0
-            .assign(
-                home_score=lambda df: pd.to_numeric(df["home_score"], errors="coerce"),
-                away_score=lambda df: pd.to_numeric(df["away_score"], errors="coerce"),
+        if any(valid_data_frame["Result"]):
+            score_data_frame = (
+                valid_data_frame["Result"]
+                .str.split(RESULT_SEPARATOR, expand=True)
+                .rename(columns={0: "home_score", 1: "away_score"})
+                # For unplayed matches we convert scores to numeric, filling the resulting
+                # NaNs with 0
+                .assign(
+                    home_score=lambda df: pd.to_numeric(
+                        df["home_score"], errors="coerce"
+                    ),
+                    away_score=lambda df: pd.to_numeric(
+                        df["away_score"], errors="coerce"
+                    ),
+                )
+                .fillna(0)
             )
-            .fillna(0)
-        )
+        # If there are no played matches in the retrieved data, we need to create
+        # the score columns manually
+        else:
+            score_col = np.repeat(0, len(valid_data_frame))
+            score_data_frame = pd.DataFrame(
+                {"home_score": score_col, "away_score": score_col}
+            )
 
         cleaned_data_frame = (
             valid_data_frame.drop(["Home v Away Teams", "Result"], axis=1)

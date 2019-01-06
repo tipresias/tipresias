@@ -4,7 +4,7 @@
 
 import copy
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from unittest.mock import Mock
 from django.test import TestCase
 from faker import Faker
@@ -12,7 +12,7 @@ from freezegun import freeze_time
 import pandas as pd
 
 from project.settings.common import BASE_DIR
-from server.data_readers import FitzroyDataReader
+from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import tip
 from server.ml_models.betting_model import BettingModel, BettingModelData
@@ -46,26 +46,29 @@ TEAM_NAMES = [
 @freeze_time("2016-01-01")
 class TestTip(TestCase):
     def setUp(self):
-        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+        tomorrow = datetime.now() + timedelta(days=1)
         year = tomorrow.year
         team_names = TEAM_NAMES[:]
 
-        # Mock fitzRoy fixture data
+        # Mock footywire fixture data
         self.fixture_data = [
             {
-                "date": pd.Timestamp(tomorrow),
+                "date": tomorrow,
                 "season": year,
-                "season_game": 1,
                 "round": 1,
+                "round_label": "Round 1",
+                "crows": 1234,
                 "home_team": team_names.pop(),
                 "away_team": team_names.pop(),
+                "home_score": 50,
+                "away_score": 100,
                 "venue": FAKE.city(),
             }
             for idx in range(ROW_COUNT)
         ]
 
-        fitzroy = FitzroyDataReader()
-        fitzroy.get_fixture = Mock(return_value=pd.DataFrame(self.fixture_data))
+        footywire = FootywireDataReader()
+        footywire.get_fixture = Mock(return_value=pd.DataFrame(self.fixture_data))
 
         # Mock bulk_create to make assertions on calls
         pred_bulk_create = copy.copy(Prediction.objects.bulk_create)
@@ -90,7 +93,7 @@ class TestTip(TestCase):
             data_class_path=BettingModelData.class_path(),
         ).save()
 
-        self.tip_command = tip.Command(data_reader=fitzroy)
+        self.tip_command = tip.Command(data_reader=footywire)
 
     def test_handle(self):
         with self.subTest("with no existing match records in DB"):

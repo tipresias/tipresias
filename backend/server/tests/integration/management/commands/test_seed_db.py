@@ -2,7 +2,7 @@
 # model and fake data, because this is getting closer to an integration test with
 # each import
 
-from functools import reduce
+import itertools
 from datetime import datetime
 from unittest.mock import Mock
 from django.test import TestCase
@@ -85,9 +85,9 @@ class TestSeedDb(TestCase):
 
     def __generate_fixture_data_frame(self, year_range, valid=True):
         data = [self.__generate_year_data(year, valid=valid) for year in year_range]
-        reduced_data = reduce(lambda acc_list, curr_list: acc_list + curr_list, data)
+        reduced_data = list(itertools.chain.from_iterable(data))
 
-        return pd.DataFrame(reduced_data)
+        return pd.DataFrame(list(reduced_data))
 
     def __generate_year_data(self, year, valid=True):
         if valid:
@@ -96,16 +96,12 @@ class TestSeedDb(TestCase):
             sliced_data_frame = self.data.loc[
                 (slice(None), year, 1), ["team", "at_home"]
             ]
-            home_team = sliced_data_frame[sliced_data_frame["at_home"] == 1][
-                "team"
-            ].iloc[0]
-            away_team = sliced_data_frame[sliced_data_frame["at_home"] == 0][
-                "team"
-            ].iloc[0]
+            home_teams = sliced_data_frame[sliced_data_frame["at_home"] == 1]["team"]
+            away_teams = sliced_data_frame[sliced_data_frame["at_home"] == 0]["team"]
         else:
             # Using GWS & University because they never played each other
-            home_team = "GWS"
-            away_team = "University"
+            home_teams = pd.Series(["GWS"] * ROW_COUNT)
+            away_teams = pd.Series(["University"] * ROW_COUNT)
 
         return [
             {
@@ -113,9 +109,9 @@ class TestSeedDb(TestCase):
                 "season": year,
                 "round": 1,
                 "round_label": "Round 1",
-                "crows": 1234,
-                "home_team": home_team,
-                "away_team": away_team,
+                "crowd": 1234,
+                "home_team": home_teams.iloc[idx],
+                "away_team": away_teams.iloc[idx],
                 "home_score": 50,
                 "away_score": 100,
                 "venue": FAKE.city(),

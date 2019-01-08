@@ -2,9 +2,9 @@
 
 import itertools
 from datetime import datetime
-from functools import partial, reduce
+from functools import partial
 from pydoc import locate
-from typing import Tuple, List, Optional, Type, Iterator
+from typing import Tuple, List, Optional, Type
 from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
@@ -140,9 +140,7 @@ class Command(BaseCommand):
             raise ValueError("No match data found.")
 
         team_matches = [self.__build_match(match_data) for match_data in fixture_data]
-        team_matches_to_save = reduce(
-            lambda acc_list, curr_list: acc_list + curr_list, team_matches
-        )
+        team_matches_to_save = list(itertools.chain.from_iterable(team_matches))
 
         if not any(team_matches):
             raise ValueError("Something went wrong, and no team matches were saved.")
@@ -192,12 +190,12 @@ class Command(BaseCommand):
         model_predictions_list = [
             make_model_predictions(ml_model_record) for ml_model_record in ml_models
         ]
-        model_predictions = itertools.chain.from_iterable(model_predictions_list)
+        model_predictions = list(itertools.chain.from_iterable(model_predictions_list))
 
         if not any(model_predictions):
             raise ValueError("Could not find any predictions to save to the DB.")
 
-        Prediction.objects.bulk_create(list(model_predictions))
+        Prediction.objects.bulk_create(model_predictions)
 
         if self.verbose == 1:
             print("\nPredictions saved!")
@@ -207,7 +205,7 @@ class Command(BaseCommand):
         year_range: Tuple[int, int],
         ml_model_record: MLModel,
         round_number: Optional[int] = None,
-    ) -> Iterator[Prediction]:
+    ) -> List[Prediction]:
         if self.verbose == 1:
             print(f"\nMaking predictions with {ml_model_record.name}...")
 
@@ -224,8 +222,10 @@ class Command(BaseCommand):
             round_number=round_number,
         )
 
-        return itertools.chain.from_iterable(
-            [make_year_predictions(year) for year in range(*year_range)]
+        return list(
+            itertools.chain.from_iterable(
+                [make_year_predictions(year) for year in range(*year_range)]
+            )
         )
 
     # TODO: Got the following error when trying to implement multiprocessing:
@@ -257,25 +257,37 @@ class Command(BaseCommand):
         data_row_slice = (slice(None), year, slice(round_number, round_number))
         prediction_data = self.__predict(estimator, data, data_row_slice)
 
+        if prediction_data is None:
+            return []
+
         build_match_prediction = partial(
             self.__build_match_prediction, ml_model_record, prediction_data
         )
 
         return [build_match_prediction(match) for match in matches_to_predict]
 
-    @staticmethod
     def __predict(
+        self,
         estimator: ml_model.MLModel,
         data: ml_model.MLModelData,
         data_row_slice: Tuple[slice, int, slice],
-    ):
+    ) -> Optional[pd.DataFrame]:
         X_train, y_train = data.train_data()
         X_test, _ = data.test_data()
 
         # On the off chance that we try to run predictions for years that have no relevant
         # prediction data
         if X_train.empty or y_train.empty or X_test.empty:
-            return []
+            if self.verbose == 1:
+                print(
+                    "Some required data was missing for predicting for season "
+                    f"{data.test_years[0]}.\n"
+                    f"{'X_train is empty' if X_train.empty else ''}"
+                    f"{', y_train is empty' if y_train.empty else ''}"
+                    f"{', and y_test is empty.' if X_train.empty else ''}"
+                )
+
+            return None
 
         estimator.fit(X_train, y_train)
 

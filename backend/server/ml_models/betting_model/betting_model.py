@@ -9,7 +9,7 @@ from sklearn.base import BaseEstimator
 
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
-from server.data_readers import FootyWireDataReader
+from server.data_readers import FootywireDataReader
 from server.data_processors.feature_functions import (
     add_last_week_result,
     add_last_week_score,
@@ -107,8 +107,8 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
 ]
 DATA_READERS = [
-    FootyWireDataReader().get_betting_odds(),
-    FootyWireDataReader().get_fixture(),
+    FootywireDataReader().get_betting_odds(),
+    FootywireDataReader().get_fixture(),
 ]
 MODEL_ESTIMATORS = (StandardScaler(), Lasso())
 

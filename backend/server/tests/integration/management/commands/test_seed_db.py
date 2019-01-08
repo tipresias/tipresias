@@ -2,14 +2,14 @@
 # model and fake data, because this is getting closer to an integration test with
 # each import
 
-from functools import reduce, partial
-from datetime import datetime, timezone
+import itertools
+from datetime import datetime
 from unittest.mock import Mock
 from django.test import TestCase
 from faker import Faker
 import pandas as pd
 
-from server.data_readers import FitzroyDataReader
+from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_models.betting_model import BettingModel, BettingModelData
 from server.management.commands import seed_db
@@ -26,14 +26,14 @@ class TestSeedDb(TestCase):
         self.years = (2010, 2013)
         self.data = data_class().data
 
-        # Mock fitzRoy fixture data
+        # Mock footywire fixture data
         self.fixture_data_frame = self.__generate_fixture_data_frame(range(*self.years))
 
-        fitzroy = FitzroyDataReader()
-        fitzroy.get_fixture = Mock(side_effect=self.__side_effect)
+        footywire = FootywireDataReader()
+        footywire.get_fixture = Mock(side_effect=self.__side_effect)
 
         self.seed_command = seed_db.Command(
-            data_reader=fitzroy, estimators=[(estimator, data_class)]
+            data_reader=footywire, estimators=[(estimator, data_class)]
         )
 
     def test_handle(self):
@@ -69,86 +69,25 @@ class TestSeedDb(TestCase):
                         year_range=f"{self.years[0]}{symbol}{self.years[1]}", verbose=0
                     )
 
-        with self.subTest("when FitzroyDataReader raises a RuntimError"):
-            side_effect = partial(
-                self.__error_side_effect, (self.years[0], RuntimeError)
-            )
-            self.seed_command.data_reader.get_fixture = Mock(side_effect=side_effect)
+    def __side_effect(self, year_range=None):
+        return self.fixture_data_frame[
+            (self.fixture_data_frame["season"] >= year_range[0])
+            & (self.fixture_data_frame["season"] < year_range[1])
+        ]
 
-            self.assertIsNone(
-                self.seed_command.handle(f"{self.years[0]}-{self.years[1]}", verbose=0)
-            )
-
-        self.__clear_db()
-
-        with self.subTest(
-            "when FitzroyDataReader raises a ValueError and the requested season is 2015"
-        ):
-            side_effect = partial(self.__error_side_effect, (2015, ValueError))
-            self.seed_command.data_reader.get_fixture = Mock(side_effect=side_effect)
-
-            self.assertIsNone(
-                self.seed_command.handle(
-                    year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
-                )
-            )
-
-        self.__clear_db()
-
-        with self.subTest(
-            "when FitzroyDataReader raises a ValueError and the requested year is not 2015"
-        ):
-            side_effect = partial(self.__error_side_effect, (2012, ValueError))
-            self.seed_command.data_reader.get_fixture = Mock(side_effect=side_effect)
-
-            with self.assertRaises(ValueError):
-                self.seed_command.handle(
-                    year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
-                )
-
-    def test_handle_bad_data(self):
-        with self.subTest("when the requested season is known to have bad data"):
-            self.fixture_data_frame = self.fixture_data_frame.append(
-                self.__generate_fixture_data_frame(seed_db.DODGY_SEASONS, valid=False)
-            )
-
-            for season in seed_db.DODGY_SEASONS:
-                # handle will raise ValueError for empty data frame, but not the
-                # KeyError that would be the natural result of the mismatched data
-                with self.assertRaises(ValueError):
-                    self.seed_command.handle(
-                        year_range=f"{season}-{season + 1}", verbose=0
-                    )
-
-        self.__clear_db()
-
-        with self.subTest("when the requested season is supposedly correct"):
-            season = 2011
-            self.assertNotIn(season, seed_db.DODGY_SEASONS)
-
-            self.fixture_data_frame = self.fixture_data_frame.append(
-                self.__generate_fixture_data_frame([season], valid=False)
-            )
-
-            with self.assertRaises(KeyError):
-                self.seed_command.handle(year_range=f"{season}-{season + 1}", verbose=0)
-
-    def __side_effect(self, season=None):
-        return self.fixture_data_frame[self.fixture_data_frame["season"] == season]
-
-    def __error_side_effect(self, error, season=None):
+    def __error_side_effect(self, error, year_range=None):
         error_season, error = error
 
-        if season == error_season:
+        if year_range == error_season:
             raise error
 
-        return self.__side_effect(season=season)
+        return self.__side_effect(year_range=year_range)
 
     def __generate_fixture_data_frame(self, year_range, valid=True):
         data = [self.__generate_year_data(year, valid=valid) for year in year_range]
-        reduced_data = reduce(lambda acc_list, curr_list: acc_list + curr_list, data)
+        reduced_data = list(itertools.chain.from_iterable(data))
 
-        return pd.DataFrame(reduced_data)
+        return pd.DataFrame(list(reduced_data))
 
     def __generate_year_data(self, year, valid=True):
         if valid:
@@ -157,25 +96,24 @@ class TestSeedDb(TestCase):
             sliced_data_frame = self.data.loc[
                 (slice(None), year, 1), ["team", "at_home"]
             ]
-            home_team = sliced_data_frame[sliced_data_frame["at_home"] == 1][
-                "team"
-            ].iloc[0]
-            away_team = sliced_data_frame[sliced_data_frame["at_home"] == 0][
-                "team"
-            ].iloc[0]
+            home_teams = sliced_data_frame[sliced_data_frame["at_home"] == 1]["team"]
+            away_teams = sliced_data_frame[sliced_data_frame["at_home"] == 0]["team"]
         else:
             # Using GWS & University because they never played each other
-            home_team = "GWS"
-            away_team = "University"
+            home_teams = pd.Series(["GWS"] * ROW_COUNT)
+            away_teams = pd.Series(["University"] * ROW_COUNT)
 
         return [
             {
-                "date": datetime(year, 4, 1, idx, tzinfo=timezone.utc),
+                "date": datetime(year, 4, 1, idx),
                 "season": year,
-                "season_game": 1,
                 "round": 1,
-                "home_team": home_team,
-                "away_team": away_team,
+                "round_label": "Round 1",
+                "crowd": 1234,
+                "home_team": home_teams.iloc[idx],
+                "away_team": away_teams.iloc[idx],
+                "home_score": 50,
+                "away_score": 100,
                 "venue": FAKE.city(),
             }
             for idx in range(ROW_COUNT)

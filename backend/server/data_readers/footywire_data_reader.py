@@ -1,11 +1,11 @@
-"""Module for FootyWireDataReader, which scrapes footywire.com.au for betting & match data"""
+"""Module for FootywireDataReader, which scrapes footywire.com.au for betting & match data"""
 
-from typing import Optional, Tuple, List, Sequence, Pattern
+from typing import Optional, Tuple, List, Pattern
 import itertools
 import re
 from datetime import datetime
 from urllib.parse import urljoin
-from functools import reduce, partial
+from functools import partial
 import dateutil
 import requests
 from bs4 import BeautifulSoup, element
@@ -59,7 +59,7 @@ FINALS_WEEK: Pattern = re.compile(r"Finals\s+Week\s+(\d+)$", flags=re.I)
 FINALS_WEEK_ONE: Pattern = re.compile(r"Finals\s+Week\s+One", flags=re.I)
 
 
-class FootyWireDataReader:
+class FootywireDataReader:
     """Get data from footywire.com.au by scraping page or reading saved CSV"""
 
     def __init__(
@@ -75,7 +75,13 @@ class FootyWireDataReader:
     def get_fixture(
         self, year_range: Optional[Tuple[int, int]] = None, fresh_data: bool = False
     ) -> pd.DataFrame:
-        """Get AFL fixtures for given year range"""
+        """
+        Get AFL fixtures for given year range.
+
+        Returns pandas.DataFrame with columns:
+            date, venue, crowd, round, season, round_label, home_team, away_team,
+            home_score, away_score
+        """
 
         if fresh_data:
             return self.__clean_fixture_data_frame(
@@ -87,7 +93,15 @@ class FootyWireDataReader:
     def get_betting_odds(
         self, year_range: Optional[Tuple[int, int]] = None, fresh_data: bool = False
     ) -> pd.DataFrame:
-        """Get AFL betting data for given year range"""
+        """
+        Get AFL betting data for given year range.
+
+        Returns pandas.DataFrame with columns:
+            date, venue, round, round_label, season, home_team, home_score, home_margin,
+            home_win_odds, home_win_paid, home_line_odds, home_line_paid, away_team,
+            away_score, away_margin, away_win_odds, away_win_paid, away_line_odds,
+            away_line_paid
+        """
 
         if fresh_data:
             return self.__clean_betting_data_frame(
@@ -135,7 +149,7 @@ class FootyWireDataReader:
                 f"No data was found for the year range: {requested_year_range}"
             )
 
-        data = self.__reduce_array_dimension(yearly_data)
+        data = list(itertools.chain.from_iterable(yearly_data))
         columns = FIXTURE_COLS if url_path == FIXTURE_PATH else BETTING_COLS
 
         return pd.DataFrame(data, columns=columns)
@@ -162,7 +176,9 @@ class FootyWireDataReader:
         if not any(table_rows):
             return None
 
-        round_groups = self.__group_betting_by_round(table_rows)
+        are_round_labels = [any(row.select(".tbtitle")) for row in table_rows]
+        round_groups = self.__group_by_round(table_rows, are_round_labels)
+
         max_len = max(
             [
                 len(list(tr.stripped_strings))
@@ -176,25 +192,7 @@ class FootyWireDataReader:
             for round_group in round_groups
         ]
 
-        return self.__reduce_array_dimension(grouped_data)
-
-    @staticmethod
-    def __group_betting_by_round(
-        table_rows: List[element.Tag]
-    ) -> List[List[element.Tag]]:
-        are_round_labels = [any(row.select(".tbtitle")) for row in table_rows]
-        round_row_indices = np.argwhere(are_round_labels).flatten()
-        round_groups = []
-
-        for idx, lower_bound in enumerate(round_row_indices):
-            if idx + 1 < len(round_row_indices):
-                round_groups.append(
-                    table_rows[lower_bound : round_row_indices[idx + 1]]
-                )
-            else:
-                round_groups.append(table_rows[lower_bound:])
-
-        return round_groups
+        return list(itertools.chain.from_iterable(grouped_data))
 
     def __betting_data(
         self, year: int, max_len: int, round_group: List[element.Tag]
@@ -212,16 +210,22 @@ class FootyWireDataReader:
         return np.concatenate([round_rows, round_label_column, season_column], axis=1)
 
     def __get_fixture_data(self, soup: BeautifulSoup, year: int) -> np.ndarray:
-        round_groups = self.__group_fixture_by_round(soup)
+        # CSS selector for elements with round labels and all table data
+        data_html = soup.select(".tbtitle,.data")
 
-        if round_groups is None:
+        if not any(data_html):
             return None
+
+        are_round_labels = [
+            "tbtitle" in html_element.get("class") for html_element in data_html
+        ]
+        round_groups = self.__group_by_round(data_html, are_round_labels)
 
         grouped_data = [
             self.__fixture_data(year, round_group) for round_group in round_groups
         ]
 
-        return self.__reduce_array_dimension(grouped_data)
+        return list(itertools.chain.from_iterable(grouped_data))
 
     def __clean_fixture_data_frame(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         valid_data_frame = (
@@ -245,18 +249,30 @@ class FootyWireDataReader:
             .rename(columns={0: "home_team", 1: "away_team"})
         )
 
-        score_data_frame = (
-            valid_data_frame["Result"]
-            .str.split(RESULT_SEPARATOR, expand=True)
-            .rename(columns={0: "home_score", 1: "away_score"})
-            # For unplayed matches we convert scores to numeric, filling the resulting
-            # NaNs with 0
-            .assign(
-                home_score=lambda df: pd.to_numeric(df["home_score"], errors="coerce"),
-                away_score=lambda df: pd.to_numeric(df["home_score"], errors="coerce"),
+        if any(valid_data_frame["Result"]):
+            score_data_frame = (
+                valid_data_frame["Result"]
+                .str.split(RESULT_SEPARATOR, expand=True)
+                .rename(columns={0: "home_score", 1: "away_score"})
+                # For unplayed matches we convert scores to numeric, filling the resulting
+                # NaNs with 0
+                .assign(
+                    home_score=lambda df: pd.to_numeric(
+                        df["home_score"], errors="coerce"
+                    ),
+                    away_score=lambda df: pd.to_numeric(
+                        df["away_score"], errors="coerce"
+                    ),
+                )
+                .fillna(0)
             )
-            .fillna(0)
-        )
+        # If there are no played matches in the retrieved data, we need to create
+        # the score columns manually
+        else:
+            score_col = np.repeat(0, len(valid_data_frame))
+            score_data_frame = pd.DataFrame(
+                {"home_score": score_col, "away_score": score_col}
+            )
 
         cleaned_data_frame = (
             valid_data_frame.drop(["Home v Away Teams", "Result"], axis=1)
@@ -337,18 +353,9 @@ class FootyWireDataReader:
         return list(itertools.chain.from_iterable([padding, table_row_strings]))
 
     @staticmethod
-    def __group_fixture_by_round(
-        soup: BeautifulSoup
-    ) -> Optional[List[List[element.Tag]]]:
-        # CSS selector for elements with round labels and all table data
-        data_html = soup.select(".tbtitle,.data")
-
-        if not any(data_html):
-            return None
-
-        are_round_labels = [
-            "tbtitle" in html_element.get("class") for html_element in data_html
-        ]
+    def __group_by_round(
+        data_html: List[element.Tag], are_round_labels: List[bool]
+    ) -> List[List[element.Tag]]:
         round_row_indices = np.argwhere(are_round_labels).flatten()
         round_groups = []
 
@@ -378,12 +385,6 @@ class FootyWireDataReader:
         return np.concatenate(
             [round_table[:, :N_USEFUL_DATA_COLS], round_label_column, season_column],
             axis=1,
-        )
-
-    @staticmethod
-    def __reduce_array_dimension(arrays: Sequence[np.ndarray]) -> np.ndarray:
-        return reduce(
-            lambda acc_arr, curr_arr: np.append(acc_arr, curr_arr, axis=0), arrays
         )
 
     @staticmethod

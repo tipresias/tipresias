@@ -1,16 +1,19 @@
+"""Module for 'tip' command that updates predictions for upcoming AFL matches"""
+
 import os
 from functools import partial, reduce
 from pydoc import locate
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
 from mypy_extensions import TypedDict
 from django.core.management.base import BaseCommand
+from django import utils
 import pandas as pd
 import numpy as np
 from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR
-from server.data_readers import FitzroyDataReader
+from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_models import BettingModel, MatchModel, PlayerModel, AllModel, AvgModel
 from server.ml_models.betting_model import BettingModelData
@@ -42,20 +45,24 @@ ML_MODELS = [
 
 
 class Command(BaseCommand):
+    """manage.py command for 'tip' that updates predictions for upcoming AFL matches"""
+
     help = """
     Check if there are upcoming AFL matches and make predictions on results
     for all unplayed matches in the upcoming/current round.
     """
 
-    def __init__(self, *args, data_reader=FitzroyDataReader(), **kwargs) -> None:
+    def __init__(self, *args, data_reader=FootywireDataReader(), **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self.data_reader = data_reader
-        # Fitzroy fixture data uses UTC
-        self.right_now = datetime.now(timezone.utc)
+        # Fixture data uses UTC
+        self.right_now = datetime.now()
         self.current_year = self.right_now.year
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
+        """Run 'tip' command"""
+
         self.verbose = verbose  # pylint: disable=W0201
 
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
@@ -102,37 +109,31 @@ class Command(BaseCommand):
 
         return None
 
-    def __fetch_fixture_data(self, year: int, retry=True) -> Optional[pd.DataFrame]:
+    def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
         if self.verbose == 1:
             print(f"Fetching fixture for {year}...\n")
 
-        try:
-            fixture_data_frame = self.data_reader.get_fixture(season=year)
-        # fitzRoy raises RuntimeErrors when you try to fetch too far into the future
-        except RuntimeError:
-            raise ValueError(
-                f"No data found for {year}. It is likely that the fixture "
-                "is not yet available. Please try again later."
-            )
-
-        if not any(fixture_data_frame):
-            raise ValueError(f"No data found for {year}.")
-
+        fixture_data_frame = self.data_reader.get_fixture(
+            year_range=(year, year + 1), fresh_data=True
+        )
         latest_match = fixture_data_frame["date"].max()
 
-        if self.right_now > latest_match and retry:
-            if retry:
-                print(
-                    f"No unplayed matches found in {year}. We will try to fetch "
-                    f"fixture for {year + 1}.\n"
-                )
-
-                return self.__fetch_fixture_data((year + 1), retry=False)
-
-            raise ValueError(
-                f"No unplayed matches found in {year}, and we're not going "
-                "to keep trying. Please try a season that hasn't been completed.\n"
+        if self.right_now > latest_match:
+            print(
+                f"No unplayed matches found in {year}. We will try to fetch "
+                f"fixture for {year + 1}.\n"
             )
+
+            fixture_data_frame = self.data_reader.get_fixture(
+                year_range=(year + 1, year + 2), fresh_data=True
+            )
+            latest_match = fixture_data_frame["date"].max()
+
+            if self.right_now > latest_match:
+                raise ValueError(
+                    f"No unplayed matches found in {year + 1}, and we're not going "
+                    "to keep trying. Please try a season that hasn't been completed.\n"
+                )
 
         return fixture_data_frame
 
@@ -172,8 +173,16 @@ class Command(BaseCommand):
             print("Match data saved!\n")
 
     def __build_match(self, match_data: FixtureData) -> Optional[List[TeamMatch]]:
+        raw_date = match_data["date"].to_pydatetime()
+
+        # 'make_aware' raises error if datetime already has a timezone
+        if raw_date.tzinfo is None or raw_date.tzinfo.utcoffset(raw_date) is None:
+            match_date = utils.timezone.make_aware(raw_date)
+        else:
+            match_date = raw_date
+
         match, was_created = Match.objects.get_or_create(
-            start_date_time=match_data["date"].to_pydatetime(),
+            start_date_time=match_date,
             round_number=int(match_data["round"]),
             venue=match_data["venue"],
         )

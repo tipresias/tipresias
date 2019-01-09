@@ -3,7 +3,7 @@
 from typing import List, Sequence, Callable, Optional
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.base import BaseEstimator
+from sklearn.pipeline import make_pipeline, Pipeline
 from xgboost import XGBRegressor
 
 from server.types import DataFrameTransformer, YearPair
@@ -87,6 +87,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
 fitzroy = FitzroyDataReader()
 DATA_READERS: List[Callable] = [fitzroy.get_afltables_stats, fitzroy.match_results]
 MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
+PIPELINE = make_pipeline(*MODEL_ESTIMATORS)
 
 np.random.seed(42)
 
@@ -95,11 +96,9 @@ class PlayerModel(MLModel):
     """Create pipeline for fitting/predicting with model trained on player data"""
 
     def __init__(
-        self,
-        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
-        name: Optional[str] = None,
+        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
     ) -> None:
-        super().__init__(estimators=estimators, name=name)
+        super().__init__(pipeline=pipeline, name=name)
 
 
 class PlayerModelData(MLModelData, DataTransformerMixin):

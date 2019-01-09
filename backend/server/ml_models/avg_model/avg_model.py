@@ -1,8 +1,8 @@
 """Class for model trained on all AFL data and its associated data class"""
 
-from typing import Sequence, Optional
+from typing import Optional
 import numpy as np
-from sklearn.base import BaseEstimator
+from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge, Lasso
 from sklearn.svm import LinearSVR
@@ -13,14 +13,15 @@ from server.ml_models.ml_model import MLModel
 from server.ml_models.sklearn import AveragingRegressor
 
 ESTIMATORS = [
-    Ridge(),
-    GradientBoostingRegressor(),
-    LinearSVR(),
-    XGBRegressor(),
-    Lasso(),
-    RandomForestRegressor(n_estimators=100),
+    ("ridge", Ridge()),
+    ("gradientboostingregressor", GradientBoostingRegressor()),
+    ("linearsvr", LinearSVR()),
+    ("xgbregressor", XGBRegressor()),
+    ("lasso", Lasso()),
+    ("randomforestregressor", RandomForestRegressor(n_estimators=100)),
 ]
 MODEL_ESTIMATORS = (StandardScaler(), AveragingRegressor(ESTIMATORS))
+PIPELINE = make_pipeline(*MODEL_ESTIMATORS)
 
 np.random.seed(42)
 
@@ -29,8 +30,6 @@ class AvgModel(MLModel):
     """Model for averaging predictions of an ensemble of models"""
 
     def __init__(
-        self,
-        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
-        name: Optional[str] = None,
+        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
     ) -> None:
-        super().__init__(estimators=estimators, name=name)
+        super().__init__(pipeline=pipeline, name=name)

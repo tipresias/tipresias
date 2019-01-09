@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Lasso
-from sklearn.base import BaseEstimator
+from sklearn.pipeline import make_pipeline, Pipeline
 
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
@@ -111,6 +111,7 @@ DATA_READERS = [
     FootywireDataReader().get_fixture(),
 ]
 MODEL_ESTIMATORS = (StandardScaler(), Lasso())
+PIPELINE = make_pipeline(*MODEL_ESTIMATORS)
 
 np.random.seed(42)
 
@@ -125,11 +126,9 @@ class BettingModel(MLModel):
     """
 
     def __init__(
-        self,
-        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
-        name: Optional[str] = None,
+        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
     ) -> None:
-        super().__init__(estimators=estimators, name=name)
+        super().__init__(pipeline=pipeline, name=name)
 
 
 class BettingModelData(MLModelData, DataTransformerMixin):

@@ -1,12 +1,12 @@
 """Class for model trained on all AFL data and its associated data class"""
 
-from typing import List, Sequence, Optional, Type
+from typing import List, Optional, Type
 from datetime import datetime
 from functools import reduce
 import pandas as pd
 import numpy as np
-from sklearn.base import BaseEstimator
 from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline, Pipeline
 from xgboost import XGBRegressor
 
 from server.ml_models.betting_model import BettingModelData
@@ -23,6 +23,7 @@ DATA_READERS: List[Type[MLModelData]] = [
     MatchModelData,
 ]
 MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
+PIPELINE = make_pipeline(*MODEL_ESTIMATORS)
 
 np.random.seed(42)
 
@@ -31,11 +32,9 @@ class AllModel(MLModel):
     """Create pipeline for fitting/predicting with model trained on all AFL data"""
 
     def __init__(
-        self,
-        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
-        name: Optional[str] = None,
+        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
     ) -> None:
-        super().__init__(estimators=estimators, name=name)
+        super().__init__(pipeline=pipeline, name=name)
 
 
 class AllModelData(MLModelData):

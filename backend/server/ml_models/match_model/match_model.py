@@ -4,7 +4,7 @@ from typing import List, Optional, Sequence, Callable
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.base import BaseEstimator
+from sklearn.pipeline import make_pipeline, Pipeline
 from xgboost import XGBRegressor
 
 from server.types import DataFrameTransformer, YearPair
@@ -66,6 +66,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
 ]
 DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
 MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
+PIPELINE = make_pipeline(*MODEL_ESTIMATORS)
 
 np.random.seed(42)
 
@@ -74,11 +75,9 @@ class MatchModel(MLModel):
     """Create pipeline for fitting/predicting with model trained on match data"""
 
     def __init__(
-        self,
-        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
-        name: Optional[str] = None,
+        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
     ) -> None:
-        super().__init__(estimators=estimators, name=name)
+        super().__init__(pipeline=pipeline, name=name)
 
 
 class MatchModelData(MLModelData, DataTransformerMixin):

@@ -2,10 +2,11 @@
 
 import os
 import sys
-from typing import Sequence, Optional, Tuple, Union, List, Type
+from typing import Optional, Tuple, Union, List, Type
 from functools import reduce
-from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.pipeline import Pipeline
+from sklearn.utils.metaestimators import _BaseComposition
+from sklearn.base import RegressorMixin
 import pandas as pd
 import numpy as np
 
@@ -13,18 +14,14 @@ from project.settings.common import BASE_DIR
 from server.types import YearPair, DataFrameTransformer, M
 
 
-class MLModel(BaseEstimator, RegressorMixin):
+class MLModel(_BaseComposition, RegressorMixin):
     """Base ML model class"""
 
-    def __init__(
-        self, estimators: Sequence[BaseEstimator] = (), name: Optional[str] = None
-    ) -> None:
-        if not any(estimators):
-            raise ValueError("At least one estimator is required, but none were given.")
+    def __init__(self, pipeline: Pipeline, name: Optional[str] = None) -> None:
+        super().__init__()
 
         self._name = name
-        self.estimators = estimators
-        self._pipeline: Pipeline = make_pipeline(*estimators)
+        self.pipeline = pipeline
 
     @property
     def name(self) -> str:
@@ -50,14 +47,14 @@ class MLModel(BaseEstimator, RegressorMixin):
     ) -> Type[M]:
         """Fit estimator to the data"""
 
-        self._pipeline.fit(X, y)
+        self.pipeline.fit(X, y)
 
         return self
 
     def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         """Make predictions based on the data input"""
 
-        return self._pipeline.predict(X)
+        return self.pipeline.predict(X)
 
 
 class MLModelData:

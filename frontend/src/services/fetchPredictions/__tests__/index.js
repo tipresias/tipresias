@@ -8,16 +8,16 @@ axios.defaults.host = host;
 axios.defaults.adapter = httpAdapter;
 
 describe('fetchPredictions', () => {
-  it('sends a HTTP request with method set as GET', () => {
+  it('sends a HTTP request with endpoint passed as argument', () => {
     // arrange
-    const endpoint = '/fake/endpoint';
+    const mockEndpoint = '/mock/endpoint';
 
     const scope = nock(host)
-      .get(endpoint)
+      .get(mockEndpoint)
       .reply(200, '{"lorem":"ipsum"}');
 
     // act
-    return fetchPredictions().then(() => {
+    return fetchPredictions('/mock/endpoint').then(() => {
       // assert
       expect(scope.isDone()).toBe(true);
     });

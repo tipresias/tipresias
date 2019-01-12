@@ -21,7 +21,7 @@ from server.ml_models import PlayerModel
 from server.ml_models.player_model import PlayerModelData
 from server.ml_models import AllModel
 from server.ml_models.all_model import AllModelData
-from server.ml_models import AvgModel
+from server.ml_models import EnsembleModel
 
 from notebooks.src.data.data_builder import DataBuilder, BettingData, MatchData
 from notebooks.src.data.data_transformer import DataTransformer
@@ -32,7 +32,7 @@ ML_MODELS = [
     (MatchModel(name="match_data"), MatchModelData),
     (PlayerModel(name="player_data"), PlayerModelData),
     (AllModel(name="all_data"), AllModelData),
-    (AvgModel(name="avg_predictions"), AllModelData),
+    (EnsembleModel(name="avg_predictions"), AllModelData),
 ]
 
 np.random.seed(42)

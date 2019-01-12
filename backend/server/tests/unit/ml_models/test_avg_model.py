@@ -4,14 +4,14 @@ import numpy as np
 from sklearn.linear_model import Ridge, Lasso
 from faker import Faker
 
-from server.ml_models import AvgModel
+from server.ml_models import EnsembleModel
 from server.ml_models.sklearn import AveragingRegressor
 
 FAKE = Faker()
 N_ROWS = 10
 
 
-class TestAvgModel(TestCase):
+class TestEnsembleModel(TestCase):
     def setUp(self):
         data_frame = pd.DataFrame(
             {
@@ -24,7 +24,7 @@ class TestAvgModel(TestCase):
         )
         self.X = pd.get_dummies(data_frame.drop("oppo_score", axis=1)).astype(float)
         self.y = data_frame["oppo_score"]
-        self.model = AvgModel([AveragingRegressor([Ridge(), Lasso()])])
+        self.model = EnsembleModel([AveragingRegressor([Ridge(), Lasso()])])
 
     def test_predict(self):
         self.model.fit(self.X, self.y)

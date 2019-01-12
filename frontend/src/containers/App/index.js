@@ -26,7 +26,7 @@ class App extends Component<Props, State> {
   };
 
   componentDidMount() {
-    fetchPredictions().then((data) => {
+    fetchPredictions('/predictions').then((data) => {
       this.setState({ allGames: data }, () => {
         const { allGames, year } = this.state;
         this.setGamesByYear(allGames, year);

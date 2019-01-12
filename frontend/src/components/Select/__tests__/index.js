@@ -5,11 +5,19 @@ import Select from '../index';
 describe('select', () => {
   it('renders', () => {
     // arrange
-    const optionsMocked = [];
+    // props:
+    const optionsMocked = ['item1', 'item2', 'item3'];
+    const valueMocked = 'mocked_value';
+    const onChangeMocked = () => { console.log('onChange'); };
+
     // act
-    // const result = createBarGroups();
+    const wrapper = shallow(<Select
+      value={valueMocked}
+      onChange={onChangeMocked}
+      options={optionsMocked}
+    />);
+
     // assert
-    const wrapper = shallow(<Select value={value} onChange={onChange} options={optionsMocked} />);
     expect(wrapper).toMatchSnapshot();
   });
 });

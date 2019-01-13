@@ -119,18 +119,9 @@ class MLModelData:
     def test_years(self, years: YearPair) -> None:
         self._test_years = years
 
-    def __X(self, data_frame: pd.DataFrame) -> pd.DataFrame:
-        data_dummies = pd.get_dummies(self.data.select_dtypes("O"))
-        X_data = pd.get_dummies(data_frame.drop(["score", "oppo_score"], axis=1))
-
-        # Have to get missing dummy columns, because train & test years can have different
-        # teams/venues, resulting in data mismatch when trying to predict with a model
-        missing_cols = np.setdiff1d(data_dummies.columns, X_data.columns)
-        missing_df = pd.DataFrame(
-            {missing_col: 0 for missing_col in missing_cols}, index=X_data.index
-        )
-
-        return pd.concat([X_data, missing_df], axis=1).astype(float).sort_index()
+    @staticmethod
+    def __X(data_frame: pd.DataFrame) -> pd.DataFrame:
+        return data_frame.drop(["score", "oppo_score"], axis=1)
 
     @staticmethod
     def __y(data_frame: pd.DataFrame) -> pd.Series:

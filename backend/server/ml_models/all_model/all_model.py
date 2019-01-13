@@ -16,14 +16,14 @@ from server.ml_models.ml_model import MLModel, MLModelData
 from server.types import YearPair
 
 
+CATEGORY_COLS = ["team", "oppo_team"]
 START_DATE = "1965-01-01"
 DATA_READERS: List[Type[MLModelData]] = [
     BettingModelData,
     PlayerModelData,
     MatchModelData,
 ]
-MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
-PIPELINE = make_pipeline(*MODEL_ESTIMATORS)
+PIPELINE = make_pipeline(StandardScaler(), XGBRegressor())
 
 np.random.seed(42)
 
@@ -52,10 +52,8 @@ class AllModelData(MLModelData):
 
         data_frame = reduce(self.__concat_data_frames, data_readers, None)
 
-        data_frame_dtypes = data_frame.dtypes
-        numeric_cols_filter = (
-            (data_frame_dtypes == float) | (data_frame_dtypes == int)
-        ).values
+        data_frame_dtypes = data_frame.dtypes.values
+        numeric_cols_filter = (data_frame_dtypes == float) | (data_frame_dtypes == int)
         numeric_cols = data_frame.columns[numeric_cols_filter]
         fillna_dict = {col: 0 for col in numeric_cols}
 
@@ -63,8 +61,8 @@ class AllModelData(MLModelData):
         end_year = datetime.strptime(end_date, "%Y-%m-%d").year if end_date else np.Inf
 
         self._data = (
-            data_frame[
-                (data_frame["year"] >= start_year) & (data_frame["year"] <= end_year)
+            data_frame.loc[
+                (data_frame["year"] >= start_year) & (data_frame["year"] <= end_year),
             ]
             .fillna(fillna_dict)
             .dropna()

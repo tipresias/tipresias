@@ -55,4 +55,3 @@ VENUE_TRANSLATIONS = {
 }
 TEAM_NAMES = sorted(["Fitzroy", "University"] + list(set(TEAM_TRANSLATIONS.values())))
 ROUND_TYPES = ["Finals", "Regular"]
-

@@ -31,7 +31,7 @@ PIPELINE = make_pipeline(
                 OneHotEncoder(
                     categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES], sparse=False
                 ),
-                ["team", "oppo_team", "round_type"],
+                list(range(3)),
             )
         ],
         remainder="passthrough",

@@ -16,7 +16,7 @@ from server.ml_models.ml_model import MLModel, MLModelData
 from server.types import YearPair
 
 
-CATEGORY_COLS = ["team", "oppo_team"]
+CATEGORY_COLS = ["team", "oppo_team", "round_type"]
 START_DATE = "1965-01-01"
 DATA_READERS: List[Type[MLModelData]] = [
     BettingModelData,
@@ -51,20 +51,14 @@ class AllModelData(MLModelData):
         super().__init__(train_years=train_years, test_years=test_years)
 
         data_frame = reduce(self.__concat_data_frames, data_readers, None)
-
-        data_frame_dtypes = data_frame.dtypes.values
-        numeric_cols_filter = (data_frame_dtypes == float) | (data_frame_dtypes == int)
-        numeric_cols = data_frame.columns[numeric_cols_filter]
-        fillna_dict = {col: 0 for col in numeric_cols}
+        numeric_data_frame = data_frame.select_dtypes(include=np.number).fillna(0)
 
         start_year = datetime.strptime(start_date, "%Y-%m-%d").year if start_date else 0
         end_year = datetime.strptime(end_date, "%Y-%m-%d").year if end_date else np.Inf
 
         self._data = (
-            data_frame.loc[
-                (data_frame["year"] >= start_year) & (data_frame["year"] <= end_year),
-            ]
-            .fillna(fillna_dict)
+            pd.concat([data_frame[CATEGORY_COLS], numeric_data_frame], axis=1)
+            .loc[(data_frame["year"] >= start_year) & (data_frame["year"] <= end_year),]
             .dropna()
             .sort_index()
         )

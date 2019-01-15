@@ -5,7 +5,8 @@ from datetime import datetime
 from functools import reduce
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import make_pipeline, Pipeline
 from xgboost import XGBRegressor
 
@@ -14,6 +15,7 @@ from server.ml_models.match_model import MatchModelData
 from server.ml_models.player_model import PlayerModelData
 from server.ml_models.ml_model import MLModel, MLModelData
 from server.types import YearPair
+from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES
 
 
 CATEGORY_COLS = ["team", "oppo_team", "round_type"]
@@ -23,7 +25,22 @@ DATA_READERS: List[Type[MLModelData]] = [
     PlayerModelData,
     MatchModelData,
 ]
-PIPELINE = make_pipeline(StandardScaler(), XGBRegressor())
+PIPELINE = make_pipeline(
+    ColumnTransformer(
+        [
+            (
+                "onehotencoder",
+                OneHotEncoder(
+                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES], sparse=False
+                ),
+                ["team", "oppo_team", "round_type"],
+            )
+        ],
+        remainder="passthrough",
+    ),
+    StandardScaler(),
+    XGBRegressor(),
+)
 
 np.random.seed(42)
 

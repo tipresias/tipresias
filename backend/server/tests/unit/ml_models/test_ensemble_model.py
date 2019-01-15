@@ -2,6 +2,7 @@ from unittest import TestCase
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import Ridge, Lasso
+from sklearn.pipeline import make_pipeline
 from faker import Faker
 
 from server.ml_models import EnsembleModel
@@ -22,9 +23,14 @@ class TestEnsembleModel(TestCase):
                 "round_number": 15,
             }
         )
-        self.X = pd.get_dummies(data_frame.drop("oppo_score", axis=1)).astype(float)
-        self.y = data_frame["oppo_score"]
-        self.model = EnsembleModel([AveragingRegressor([Ridge(), Lasso()])])
+        self.X = pd.get_dummies(
+            data_frame.drop(["score", "oppo_score"], axis=1)
+        ).astype(float)
+        self.y = data_frame["score"] - data_frame["oppo_score"]
+        pipeline = make_pipeline(
+            AveragingRegressor([("ridge", Ridge()), ("lasso", Lasso())])
+        )
+        self.model = EnsembleModel(pipeline=pipeline)
 
     def test_predict(self):
         self.model.fit(self.X, self.y)

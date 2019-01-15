@@ -2,6 +2,10 @@ from unittest import TestCase
 from unittest.mock import Mock
 import pandas as pd
 import numpy as np
+from sklearn.linear_model import Ridge
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import make_pipeline
 from faker import Faker
 
 from project.settings.common import BASE_DIR
@@ -32,9 +36,16 @@ class TestAllModel(TestCase):
                 "round_number": 15,
             }
         )
-        self.X = pd.get_dummies(data_frame.drop("oppo_score", axis=1)).astype(float)
+        self.X = data_frame.drop("oppo_score", axis=1)
         self.y = data_frame["oppo_score"]
-        self.model = AllModel()
+        pipeline = make_pipeline(
+            ColumnTransformer(
+                [("onehot", OneHotEncoder(sparse=False), ["team"])],
+                remainder="passthrough",
+            ),
+            Ridge(),
+        )
+        self.model = AllModel(pipeline=pipeline)
 
     def test_predict(self):
         self.model.fit(self.X, self.y)
@@ -57,6 +68,8 @@ class TestAllModelData(TestCase):
             pd.DataFrame(
                 {
                     "team": teams,
+                    "oppo_team": list(reversed(teams)),
+                    "round_type": ["Regular"] * N_ROWS,
                     "year": years,
                     "score": scores,
                     "oppo_score": oppo_scores,
@@ -74,6 +87,8 @@ class TestAllModelData(TestCase):
             pd.DataFrame(
                 {
                     "team": teams,
+                    "oppo_team": list(reversed(teams)),
+                    "round_type": ["Regular"] * N_ROWS,
                     "year": years,
                     "score": scores,
                     "oppo_score": oppo_scores,
@@ -91,6 +106,8 @@ class TestAllModelData(TestCase):
             pd.DataFrame(
                 {
                     "team": teams,
+                    "oppo_team": list(reversed(teams)),
+                    "round_type": ["Regular"] * N_ROWS,
                     "year": years,
                     "score": scores,
                     "oppo_score": oppo_scores,
@@ -114,10 +131,7 @@ class TestAllModelData(TestCase):
         self.assertIsInstance(y_train, pd.Series)
         self.assertNotIn("score", X_train.columns)
         self.assertNotIn("oppo_score", X_train.columns)
-        # No columns should be composed of strings
-        self.assertFalse(
-            any([X_train[column].dtype == "O" for column in X_train.columns])
-        )
+
         # Applying StandardScaler to integer columns raises a warning
         self.assertFalse(
             any([X_train[column].dtype == int for column in X_train.columns])
@@ -130,10 +144,7 @@ class TestAllModelData(TestCase):
         self.assertIsInstance(y_test, pd.Series)
         self.assertNotIn("score", X_test.columns)
         self.assertNotIn("oppo_score", X_test.columns)
-        # No columns should be composed of strings
-        self.assertFalse(
-            any([X_test[column].dtype == "O" for column in X_test.columns])
-        )
+
         # Applying StandardScaler to integer columns raises a warning
         self.assertFalse(
             any([X_test[column].dtype == int for column in X_test.columns])

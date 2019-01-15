@@ -2,7 +2,8 @@
 
 from typing import List, Sequence, Callable, Optional
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import make_pipeline, Pipeline
 from xgboost import XGBRegressor
 
@@ -20,6 +21,7 @@ from server.data_processors.feature_functions import (
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
+from server.ml_models.data_config import TEAM_NAMES
 
 MATCH_STATS_COLS = [
     "at_home",
@@ -86,8 +88,20 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
 
 fitzroy = FitzroyDataReader()
 DATA_READERS: List[Callable] = [fitzroy.get_afltables_stats, fitzroy.match_results]
-MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
-PIPELINE = make_pipeline(*MODEL_ESTIMATORS)
+PIPELINE = make_pipeline(
+    ColumnTransformer(
+        [
+            (
+                "onehotencoder",
+                OneHotEncoder(categories=[TEAM_NAMES, TEAM_NAMES], sparse=False),
+                ["team", "oppo_team"],
+            )
+        ],
+        remainder="passthrough",
+    ),
+    StandardScaler(),
+    XGBRegressor(),
+)
 
 np.random.seed(42)
 

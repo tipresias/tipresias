@@ -3,7 +3,8 @@
 from typing import List, Optional, Sequence, Any
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import Lasso
 from sklearn.pipeline import make_pipeline, Pipeline
 
@@ -21,7 +22,8 @@ from server.data_processors.feature_functions import (
     add_win_streak,
 )
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_TRANSLATIONS
+from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS
+
 
 FEATURE_FUNCS: Sequence[DataFrameTransformer] = (
     add_last_week_result,
@@ -57,8 +59,21 @@ DATA_READERS = [
     FootywireDataReader().get_betting_odds(),
     FootywireDataReader().get_fixture(),
 ]
-MODEL_ESTIMATORS = (StandardScaler(), Lasso())
-PIPELINE = make_pipeline(*MODEL_ESTIMATORS)
+MODEL_ESTIMATORS = ()
+PIPELINE = make_pipeline(
+    ColumnTransformer(
+        [
+            (
+                "onehotencoder",
+                OneHotEncoder(categories=[TEAM_NAMES, TEAM_NAMES], sparse=False),
+                ["team", "oppo_team"],
+            )
+        ],
+        remainder="passthrough",
+    ),
+    StandardScaler(),
+    Lasso(),
+)
 
 np.random.seed(42)
 

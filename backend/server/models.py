@@ -4,28 +4,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-TEAM_NAMES = [
-    "Richmond",
-    "Carlton",
-    "Melbourne",
-    "Gold Coast",
-    "Essendon",
-    "Sydney",
-    "Collingwood",
-    "North Melbourne",
-    "Adelaide",
-    "Western Bulldogs",
-    "Fremantle",
-    "Port Adelaide",
-    "St Kilda",
-    "West Coast",
-    "Brisbane",
-    "Hawthorn",
-    "GWS",
-    "Geelong",
-    "Fitzroy",
-    "University",
-]
+from server.ml_models.data_config import TEAM_NAMES
+
 # Rough estimate, but exactitude isn't necessary here
 GAME_LENGTH_HRS = 3
 

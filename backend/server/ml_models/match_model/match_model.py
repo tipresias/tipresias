@@ -3,8 +3,9 @@
 from typing import List, Optional, Sequence, Callable
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.base import BaseEstimator
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.pipeline import make_pipeline, Pipeline
 from xgboost import XGBRegressor
 
 from server.types import DataFrameTransformer, YearPair
@@ -24,6 +25,7 @@ from server.data_processors.feature_functions import (
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
+from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES
 
 COL_TRANSLATIONS = {
     "home_points": "home_score",
@@ -65,7 +67,23 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
 ]
 DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
-MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
+MODEL_ESTIMATORS = ()
+PIPELINE = make_pipeline(
+    ColumnTransformer(
+        [
+            (
+                "onehotencoder",
+                OneHotEncoder(
+                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES], sparse=False
+                ),
+                ["team", "oppo_team", "round_type"],
+            )
+        ],
+        remainder="passthrough",
+    ),
+    StandardScaler(),
+    XGBRegressor()
+)
 
 np.random.seed(42)
 
@@ -74,11 +92,9 @@ class MatchModel(MLModel):
     """Create pipeline for fitting/predicting with model trained on match data"""
 
     def __init__(
-        self,
-        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
-        name: Optional[str] = None,
+        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
     ) -> None:
-        super().__init__(estimators=estimators, name=name)
+        super().__init__(pipeline=pipeline, name=name)
 
 
 class MatchModelData(MLModelData, DataTransformerMixin):

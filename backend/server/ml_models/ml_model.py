@@ -2,10 +2,11 @@
 
 import os
 import sys
-from typing import Sequence, Optional, Tuple, Union, List, Type
+from typing import Optional, Tuple, Union, List, Type
 from functools import reduce
-from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.pipeline import Pipeline
+from sklearn.utils.metaestimators import _BaseComposition
+from sklearn.base import RegressorMixin
 import pandas as pd
 import numpy as np
 
@@ -13,18 +14,14 @@ from project.settings.common import BASE_DIR
 from server.types import YearPair, DataFrameTransformer, M
 
 
-class MLModel(BaseEstimator, RegressorMixin):
+class MLModel(_BaseComposition, RegressorMixin):
     """Base ML model class"""
 
-    def __init__(
-        self, estimators: Sequence[BaseEstimator] = (), name: Optional[str] = None
-    ) -> None:
-        if not any(estimators):
-            raise ValueError("At least one estimator is required, but none were given.")
+    def __init__(self, pipeline: Pipeline, name: Optional[str] = None) -> None:
+        super().__init__()
 
         self._name = name
-        self.estimators = estimators
-        self._pipeline: Pipeline = make_pipeline(*estimators)
+        self.pipeline = pipeline
 
     @property
     def name(self) -> str:
@@ -50,14 +47,14 @@ class MLModel(BaseEstimator, RegressorMixin):
     ) -> Type[M]:
         """Fit estimator to the data"""
 
-        self._pipeline.fit(X, y)
+        self.pipeline.fit(X, y)
 
         return self
 
     def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         """Make predictions based on the data input"""
 
-        return self._pipeline.predict(X)
+        return self.pipeline.predict(X)
 
 
 class MLModelData:
@@ -122,18 +119,13 @@ class MLModelData:
     def test_years(self, years: YearPair) -> None:
         self._test_years = years
 
-    def __X(self, data_frame: pd.DataFrame) -> pd.DataFrame:
-        data_dummies = pd.get_dummies(self.data.select_dtypes("O"))
-        X_data = pd.get_dummies(data_frame.drop(["score", "oppo_score"], axis=1))
+    @staticmethod
+    def __X(data_frame: pd.DataFrame) -> pd.DataFrame:
+        features = data_frame.drop(["score", "oppo_score"], axis=1)
+        numeric_features = features.select_dtypes(np.number).astype(float)
+        categorical_features = features.drop(numeric_features.columns, axis=1)
 
-        # Have to get missing dummy columns, because train & test years can have different
-        # teams/venues, resulting in data mismatch when trying to predict with a model
-        missing_cols = np.setdiff1d(data_dummies.columns, X_data.columns)
-        missing_df = pd.DataFrame(
-            {missing_col: 0 for missing_col in missing_cols}, index=X_data.index
-        )
-
-        return pd.concat([X_data, missing_df], axis=1).astype(float).sort_index()
+        return pd.concat([categorical_features, numeric_features], axis=1)
 
     @staticmethod
     def __y(data_frame: pd.DataFrame) -> pd.Series:

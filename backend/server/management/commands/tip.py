@@ -15,7 +15,13 @@ from sklearn.externals import joblib
 from project.settings.common import BASE_DIR
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.ml_models import BettingModel, MatchModel, PlayerModel, AllModel, AvgModel
+from server.ml_models import (
+    BettingModel,
+    MatchModel,
+    PlayerModel,
+    AllModel,
+    EnsembleModel,
+)
 from server.ml_models.betting_model import BettingModelData
 from server.ml_models.match_model import MatchModelData
 from server.ml_models.player_model import PlayerModelData
@@ -40,7 +46,7 @@ ML_MODELS = [
     (MatchModel(name="match_data"), MatchModelData),
     (PlayerModel(name="player_data"), PlayerModelData),
     (AllModel(name="all_data"), AllModelData),
-    (AvgModel(name="avg_predictions"), AllModelData),
+    (EnsembleModel(name="avg_predictions"), AllModelData),
 ]
 
 

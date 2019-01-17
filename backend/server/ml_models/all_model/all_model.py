@@ -1,12 +1,13 @@
 """Class for model trained on all AFL data and its associated data class"""
 
-from typing import List, Sequence, Optional, Type
+from typing import List, Optional, Type
 from datetime import datetime
 from functools import reduce
 import pandas as pd
 import numpy as np
-from sklearn.base import BaseEstimator
-from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.pipeline import make_pipeline, Pipeline
 from xgboost import XGBRegressor
 
 from server.ml_models.betting_model import BettingModelData
@@ -14,15 +15,32 @@ from server.ml_models.match_model import MatchModelData
 from server.ml_models.player_model import PlayerModelData
 from server.ml_models.ml_model import MLModel, MLModelData
 from server.types import YearPair
+from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES
 
 
+CATEGORY_COLS = ["team", "oppo_team", "round_type"]
 START_DATE = "1965-01-01"
 DATA_READERS: List[Type[MLModelData]] = [
     BettingModelData,
     PlayerModelData,
     MatchModelData,
 ]
-MODEL_ESTIMATORS = (StandardScaler(), XGBRegressor())
+PIPELINE = make_pipeline(
+    ColumnTransformer(
+        [
+            (
+                "onehotencoder",
+                OneHotEncoder(
+                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES], sparse=False
+                ),
+                ["team", "oppo_team", "round_type"],
+            )
+        ],
+        remainder="passthrough",
+    ),
+    StandardScaler(),
+    XGBRegressor(),
+)
 
 np.random.seed(42)
 
@@ -31,11 +49,9 @@ class AllModel(MLModel):
     """Create pipeline for fitting/predicting with model trained on all AFL data"""
 
     def __init__(
-        self,
-        estimators: Sequence[BaseEstimator] = MODEL_ESTIMATORS,
-        name: Optional[str] = None,
+        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
     ) -> None:
-        super().__init__(estimators=estimators, name=name)
+        super().__init__(pipeline=pipeline, name=name)
 
 
 class AllModelData(MLModelData):
@@ -52,22 +68,14 @@ class AllModelData(MLModelData):
         super().__init__(train_years=train_years, test_years=test_years)
 
         data_frame = reduce(self.__concat_data_frames, data_readers, None)
-
-        data_frame_dtypes = data_frame.dtypes
-        numeric_cols_filter = (
-            (data_frame_dtypes == float) | (data_frame_dtypes == int)
-        ).values
-        numeric_cols = data_frame.columns[numeric_cols_filter]
-        fillna_dict = {col: 0 for col in numeric_cols}
+        numeric_data_frame = data_frame.select_dtypes(include=np.number).fillna(0)
 
         start_year = datetime.strptime(start_date, "%Y-%m-%d").year if start_date else 0
         end_year = datetime.strptime(end_date, "%Y-%m-%d").year if end_date else np.Inf
 
         self._data = (
-            data_frame[
-                (data_frame["year"] >= start_year) & (data_frame["year"] <= end_year)
-            ]
-            .fillna(fillna_dict)
+            pd.concat([data_frame[CATEGORY_COLS], numeric_data_frame], axis=1)
+            .loc[(data_frame["year"] >= start_year) & (data_frame["year"] <= end_year),]
             .dropna()
             .sort_index()
         )

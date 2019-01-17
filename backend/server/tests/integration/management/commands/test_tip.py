@@ -84,7 +84,7 @@ class TestTip(TestCase):
         betting_model = BettingModel(name="betting_data")
 
         pickle_filepath = os.path.abspath(
-            os.path.join(BASE_DIR, "server", "tests", "fixtures", "betting_data.pkl")
+            os.path.join(BASE_DIR, "server", "tests", "fixtures", "betting_model.pkl")
         )
         MLModel(
             name=betting_model.name,
@@ -115,6 +115,9 @@ class TestTip(TestCase):
             self.tip_command.handle(verbose=0)
 
             Prediction.objects.bulk_create.assert_called()
+
+            self.assertEqual(Match.objects.count(), ROW_COUNT)
+            self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
     @staticmethod
     def __pred_bulk_create(pred_bulk_create):

@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import type { Game } from '../../types';
 import fetchPredictions from '../../services/fetchPredictions';
 import filterDataByYear from '../../utils/filterGameByYear';
-import logo from '../../logo.svg';
+import logo from './tipresias-logo.svg';
 import './App.css';
 import BarChartContainer from '../BarChartContainer';
 import Select from '../../components/Select';

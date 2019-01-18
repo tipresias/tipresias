@@ -1,18 +1,18 @@
 // @flow
 import React, { Component } from 'react';
-import fetchPredictions from './helpers/fetchPredictions';
-import filterDataByYear from './helpers/filterDataByYear';
-import logo from './logo.svg';
+import type { Game } from '../../types';
+import fetchPredictions from '../../services/fetchPredictions';
+import filterDataByYear from '../../utils/filterGameByYear';
+import logo from './tipresias-logo.svg';
 import './App.css';
-import BarChartContainer from './components/BarChartContainer';
-import Select from './components/Select';
-import type { GameDataType } from './types';
+import BarChartContainer from '../BarChartContainer';
+import Select from '../../components/Select';
 
 type State = {
   isLoading: boolean,
   year: number,
-  allGames: Array<GameDataType>,
-  gamesByYear: Array<GameDataType>
+  allGames: Array<Game>,
+  gamesByYear: Array<Game>
 }
 
 type Props = {}
@@ -26,7 +26,7 @@ class App extends Component<Props, State> {
   };
 
   componentDidMount() {
-    fetchPredictions().then((data) => {
+    fetchPredictions('/predictions').then((data) => {
       this.setState({ allGames: data }, () => {
         const { allGames, year } = this.state;
         this.setGamesByYear(allGames, year);
@@ -47,7 +47,7 @@ class App extends Component<Props, State> {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
   }
 
-  setGamesByYear(allGames: Array<GameDataType>, year: number) {
+  setGamesByYear(allGames: Array<Game>, year: number) {
     const gamesByYear = filterDataByYear(allGames, year);
     this.setState({
       gamesByYear,

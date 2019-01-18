@@ -2,7 +2,7 @@
 import * as d3 from 'd3';
 import type {
   CumulTipPointPerModel,
-} from '../../../../types';
+} from '../../types';
 
 const margin = {
   top: 20,

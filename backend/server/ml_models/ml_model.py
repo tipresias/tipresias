@@ -7,6 +7,7 @@ from functools import reduce
 from sklearn.pipeline import Pipeline
 from sklearn.utils.metaestimators import _BaseComposition
 from sklearn.base import RegressorMixin
+from sklearn.externals import joblib
 import pandas as pd
 import numpy as np
 
@@ -35,17 +36,25 @@ class MLModel(_BaseComposition, RegressorMixin):
         if filepath is not None:
             return filepath
 
-        module_path = self.__module__
-        module_filepath = sys.modules[module_path].__file__
+        return os.path.join(self._default_directory(), f"{self.name}.pkl")
 
-        return os.path.abspath(
-            os.path.join(BASE_DIR, os.path.dirname(module_filepath), f"{self.name}.pkl")
+    def dump(self, filepath: str = None) -> None:
+        save_path = filepath or os.path.join(
+            self._default_directory(), f"{self.name}.pkl"
         )
+
+        joblib.dump(self, save_path)
 
     def fit(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
     ) -> Type[M]:
         """Fit estimator to the data"""
+
+        if not isinstance(self.pipeline, Pipeline):
+            raise TypeError(
+                f"Expected pipeline to be of type Pipeline, but got {type(self.pipeline)} "
+                "instead."
+            )
 
         self.pipeline.fit(X, y)
 
@@ -54,7 +63,19 @@ class MLModel(_BaseComposition, RegressorMixin):
     def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         """Make predictions based on the data input"""
 
+        if not isinstance(self.pipeline, Pipeline):
+            raise TypeError(
+                f"Expected pipeline to be of type Pipeline, but got {type(self.pipeline)} "
+                "instead."
+            )
+
         return self.pipeline.predict(X)
+
+    def _default_directory(self) -> str:
+        module_path = self.__module__
+        module_filepath = sys.modules[module_path].__file__
+
+        return os.path.abspath(os.path.join(BASE_DIR, os.path.dirname(module_filepath)))
 
 
 class MLModelData:

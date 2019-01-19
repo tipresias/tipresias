@@ -1,18 +1,17 @@
-# TODO: After refactoring, mock the bejeezus out of this test with a basic linear
-# model and fake data, because this is getting closer to an integration test with
-# each import
-
+import os
 import itertools
 from datetime import datetime
 from unittest.mock import Mock
 from django.test import TestCase
 from faker import Faker
 import pandas as pd
+from sklearn.externals import joblib
 
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_models.betting_model import BettingModel, BettingModelData
 from server.management.commands import seed_db
+from project.settings import BASE_DIR
 
 FAKE = Faker()
 ROW_COUNT = 5
@@ -20,11 +19,16 @@ ROW_COUNT = 5
 
 class TestSeedDb(TestCase):
     def setUp(self):
-        estimator = BettingModel(name="betting_data")
-        data_class = BettingModelData
+        self.estimator = BettingModel(name="betting_data")
+        self.estimator.pickle_filepath = Mock(
+            return_value=os.path.join(BASE_DIR, "server/tests/fixtures/test_model.pkl")
+        )
+        self.data_class = BettingModelData
+
+        joblib.dump = Mock()
 
         self.years = (2010, 2013)
-        self.data = data_class().data
+        self.data = self.data_class().data
 
         # Mock footywire fixture data
         self.fixture_data_frame = self.__generate_fixture_data_frame(range(*self.years))
@@ -33,25 +37,45 @@ class TestSeedDb(TestCase):
         footywire.get_fixture = Mock(side_effect=self.__side_effect)
 
         self.seed_command = seed_db.Command(
-            data_reader=footywire, estimators=[(estimator, data_class)]
+            data_reader=footywire, estimators=[(self.estimator, self.data_class)]
         )
 
     def test_handle(self):
-        self.seed_command.handle(
-            year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
-        )
+        with self.subTest("when the pickled model doesn't exist yet"):
+            self.seed_command.handle(
+                year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
+            )
 
-        self.assertGreater(Team.objects.count(), 0)
-        self.assertEqual(MLModel.objects.count(), 1)
-        self.assertEqual(Match.objects.count(), ROW_COUNT * len(range(*self.years)))
-        self.assertEqual(
-            TeamMatch.objects.count(), ROW_COUNT * len(range(*self.years)) * 2
-        )
-        # Should only have predictions for two years (2011 & 2012) due to betting data's
-        # limitations (i.e. training data starts in 2010, so test data starts in 2011)
-        self.assertEqual(
-            Prediction.objects.count(), ROW_COUNT * (len(range(*self.years)) - 1)
-        )
+            self.assertGreater(Team.objects.count(), 0)
+            self.assertEqual(MLModel.objects.count(), 1)
+            self.assertEqual(Match.objects.count(), ROW_COUNT * len(range(*self.years)))
+            self.assertEqual(
+                TeamMatch.objects.count(), ROW_COUNT * len(range(*self.years)) * 2
+            )
+            # Should only have predictions for two years (2011 & 2012) due to betting data's
+            # limitations (i.e. training data starts in 2010, so test data starts in 2011)
+            self.assertEqual(
+                Prediction.objects.count(), ROW_COUNT * (len(range(*self.years)) - 1)
+            )
+
+            joblib.dump.assert_called()
+
+        with self.subTest("when a pickeld model already exists"):
+            self.__clear_db()
+            joblib.dump.reset_mock()
+
+            self.estimator.pickle_filepath = Mock(
+                return_value=os.path.join(
+                    BASE_DIR, "server/tests/fixtures/betting_model.pkl"
+                )
+            )
+            self.seed_command.estimators = [(self.estimator, self.data_class)]
+
+            self.seed_command.handle(
+                year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
+            )
+
+            joblib.dump.assert_not_called()
 
     def test_handle_errors(self):
         with self.subTest(

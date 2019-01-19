@@ -1,5 +1,6 @@
 """Django command for seeding the DB with match & prediction data"""
 
+import os
 import itertools
 from datetime import datetime
 from functools import partial
@@ -222,11 +223,21 @@ class Command(BaseCommand):
             round_number=round_number,
         )
 
-        return list(
-            itertools.chain.from_iterable(
-                [make_year_predictions(year) for year in range(*year_range)]
-            )
-        )
+        year_prediction_lists = [
+            make_year_predictions(year) for year in range(*year_range)
+        ]
+
+        # estimator has been trained up to the last training season, which seems
+        # like a reasonable point for saving it as part of a seed action
+        if (
+            ml_model_record.filepath is not None
+            and ml_model_record.filepath != ""
+            # Don't overwrite existing picked models
+            and not os.path.isfile(ml_model_record.filepath)
+        ):
+            estimator.dump(ml_model_record.filepath)
+
+        return list(itertools.chain.from_iterable(year_prediction_lists))
 
     # TODO: Got the following error when trying to implement multiprocessing:
     # TypeError: cannot serialize '_io.TextIOWrapper' object
@@ -300,7 +311,9 @@ class Command(BaseCommand):
         estimator: ml_model.MLModel, data_class: Type[ml_model.MLModelData]
     ) -> MLModel:
         ml_model_record = MLModel(
-            name=estimator.name, data_class_path=data_class.class_path()
+            name=estimator.name,
+            data_class_path=data_class.class_path(),
+            filepath=estimator.pickle_filepath(),
         )
         ml_model_record.full_clean()
 

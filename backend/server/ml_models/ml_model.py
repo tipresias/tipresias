@@ -38,7 +38,7 @@ class MLModel(_BaseComposition, RegressorMixin):
 
         return os.path.join(self._default_directory(), f"{self.name}.pkl")
 
-    def save(self, filepath: str = None) -> None:
+    def dump(self, filepath: str = None) -> None:
         save_path = filepath or os.path.join(
             self._default_directory(), f"{self.name}.pkl"
         )

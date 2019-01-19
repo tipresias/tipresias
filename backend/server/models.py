@@ -3,7 +3,9 @@ from datetime import datetime, timezone, timedelta
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from sklearn.externals import joblib
 
+from server.ml_models import ml_model
 from server.ml_models.data_config import TEAM_NAMES
 
 # Rough estimate, but exactitude isn't necessary here
@@ -94,6 +96,9 @@ class MLModel(models.Model):
     data_class_path = models.CharField(
         max_length=500, null=True, blank=True, validators=[validate_module_path]
     )
+
+    def load_estimator(self) -> ml_model.MLModel:
+        return joblib.load(self.filepath)
 
 
 class Prediction(models.Model):

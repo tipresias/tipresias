@@ -18,7 +18,7 @@ from server.types import YearPair, DataFrameTransformer, M
 class MLModel(_BaseComposition, RegressorMixin):
     """Base ML model class"""
 
-    def __init__(self, pipeline: Pipeline, name: Optional[str] = None) -> None:
+    def __init__(self, pipeline: Pipeline = None, name: Optional[str] = None) -> None:
         super().__init__()
 
         self._name = name

@@ -1,5 +1,6 @@
 """Class for model trained on all AFL data and its associated data class"""
 
+import warnings
 from typing import List, Optional, Type
 from datetime import datetime
 from functools import reduce
@@ -8,6 +9,7 @@ import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import make_pipeline, Pipeline
+from sklearn.exceptions import DataConversionWarning
 from xgboost import XGBRegressor
 
 from server.ml_models.betting_model import BettingModelData
@@ -40,6 +42,11 @@ PIPELINE = make_pipeline(
     ),
     XGBRegressor(),
 )
+
+# Using ColumnTransformer to run OneHotEncoder & StandardScaler causes this warning
+# when using BaggingRegressor, because BR converts the DataFrame to a numpy array,
+# which results in all rows having type 'object', because they include strings and floats
+warnings.simplefilter("ignore", DataConversionWarning)
 
 np.random.seed(42)
 

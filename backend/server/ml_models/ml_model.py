@@ -18,7 +18,9 @@ from server.types import YearPair, DataFrameTransformer, M
 class MLModel(_BaseComposition, RegressorMixin):
     """Base ML model class"""
 
-    def __init__(self, pipeline: Pipeline = None, name: Optional[str] = None) -> None:
+    def __init__(
+        self, pipeline: Optional[Pipeline] = None, name: Optional[str] = None
+    ) -> None:
         super().__init__()
 
         self._name = name
@@ -50,11 +52,8 @@ class MLModel(_BaseComposition, RegressorMixin):
     ) -> Type[M]:
         """Fit estimator to the data"""
 
-        if not isinstance(self.pipeline, Pipeline):
-            raise TypeError(
-                f"Expected pipeline to be of type Pipeline, but got {type(self.pipeline)} "
-                "instead."
-            )
+        if self.pipeline is None:
+            raise TypeError("pipeline must be a scikit learn estimator but is None")
 
         self.pipeline.fit(X, y)
 
@@ -63,11 +62,8 @@ class MLModel(_BaseComposition, RegressorMixin):
     def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
         """Make predictions based on the data input"""
 
-        if not isinstance(self.pipeline, Pipeline):
-            raise TypeError(
-                f"Expected pipeline to be of type Pipeline, but got {type(self.pipeline)} "
-                "instead."
-            )
+        if self.pipeline is None:
+            raise TypeError("pipeline must be a scikit learn estimator but is None")
 
         return self.pipeline.predict(X)
 

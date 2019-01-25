@@ -169,7 +169,7 @@ def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
         data_frame["last_week_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
     )
     cum_oppo_last_week_score = (
-        data_frame["last_week_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
+        data_frame["oppo_last_week_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
     )
 
     return data_frame.assign(cum_percent=cum_last_week_score / cum_oppo_last_week_score)

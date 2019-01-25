@@ -11,6 +11,9 @@ from xgboost import XGBRegressor
 from server.ml_models.ml_model import MLModel
 from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES
 
+SEED = 42
+np.random.seed(SEED)
+
 BEST_PARAMS = {
     "baggingregressor__base_estimator__booster": "dart",
     "baggingregressor__base_estimator__colsample_bylevel": 0.932410481813671,
@@ -37,10 +40,8 @@ PIPELINE = make_pipeline(
         remainder="passthrough",
     ),
     StandardScaler(),
-    BaggingRegressor(base_estimator=XGBRegressor()),
+    BaggingRegressor(base_estimator=XGBRegressor(seed=SEED)),
 ).set_params(**BEST_PARAMS)
-
-np.random.seed(42)
 
 
 class EnsembleModel(MLModel):

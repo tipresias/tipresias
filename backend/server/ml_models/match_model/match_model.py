@@ -65,6 +65,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     ).transform,
     # Features dependent on oppo columns
     FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
+    OppoFeatureBuilder(oppo_feature_cols=["cum_percent", "ladder_position"]).transform,
 ]
 DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
 MODEL_ESTIMATORS = ()
@@ -82,7 +83,7 @@ PIPELINE = make_pipeline(
         remainder="passthrough",
     ),
     StandardScaler(),
-    XGBRegressor()
+    XGBRegressor(),
 )
 
 np.random.seed(42)

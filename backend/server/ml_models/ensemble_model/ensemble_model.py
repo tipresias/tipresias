@@ -37,9 +37,8 @@ PIPELINE = make_pipeline(
                 ["team", "oppo_team", "round_type"],
             )
         ],
-        remainder="passthrough",
+        remainder=StandardScaler(),
     ),
-    StandardScaler(),
     BaggingRegressor(base_estimator=XGBRegressor(seed=SEED)),
 ).set_params(**BEST_PARAMS)
 

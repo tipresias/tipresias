@@ -9,17 +9,32 @@ Returns:
     pandas.DataFrame
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import math
+from functools import partial, reduce
 import pandas as pd
 import numpy as np
 
 TEAM_LEVEL = 0
 YEAR_LEVEL = 1
+ROUND_LEVEL = 2
+REORDERED_TEAM_LEVEL = 2
+REORDERED_YEAR_LEVEL = 0
+REORDERED_ROUND_LEVEL = 1
 WIN_POINTS = 4
 AVG_SEASON_LENGTH = 23
 INDEX_COLS = ["team", "year", "round_number"]
 EARTH_RADIUS = 6371
+
+# Constants for ELO calculations
+BASE_RATING = 1000
+K = 35.6
+X = 0.49
+M = 130
+# Home Ground Advantage
+HGA = 9
+S = 250
+CARRYOVER = 0.575
 
 CITIES = {
     "Adelaide": {"state": "SA", "lat": -34.9285, "long": 138.6007},
@@ -116,6 +131,8 @@ VENUE_CITIES = {
     "Albury": "Albury",
 }
 
+EloIndexType = Tuple[int, int, str]
+
 
 def add_last_week_result(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's last week result (win, draw, loss) as float"""
@@ -169,7 +186,9 @@ def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
         data_frame["last_week_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
     )
     cum_oppo_last_week_score = (
-        data_frame["oppo_last_week_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
+        data_frame["oppo_last_week_score"]
+        .groupby(level=[TEAM_LEVEL, YEAR_LEVEL])
+        .cumsum()
     )
 
     return data_frame.assign(cum_percent=cum_last_week_score / cum_oppo_last_week_score)
@@ -565,3 +584,115 @@ def add_cum_matches_played(data_frame: pd.DataFrame):
     return data_frame.assign(
         cum_matches_played=data_frame.groupby("player_id").cumcount()
     )
+
+
+# Basing ELO calculations on:
+# http://www.matterofstats.com/mafl-stats-journal/2013/10/13/building-your-own-team-rating-system.html
+def _elo_formula(
+    prev_elo_rating: float, prev_oppo_elo_rating: float, margin: int, at_home: bool
+):
+    hga = HGA if at_home else HGA * -1
+    expected_outcome = 1 / (
+        1 + 10 ** ((prev_oppo_elo_rating - prev_elo_rating - hga) / S)
+    )
+    actual_outcome = X + 0.5 - X ** (1 + (margin / M))
+
+    return prev_elo_rating + (K * (actual_outcome - expected_outcome))
+
+
+def _calculate_elo_rating(prev_match: pd.Series, cum_elo_ratings: pd.Series, year: int):
+    if cum_elo_ratings is None or prev_match is None:
+        return BASE_RATING
+    else:
+        prev_year, prev_round, _ = prev_match.name
+
+        prev_elo_rating = cum_elo_ratings.loc[prev_match.name]
+        prev_oppo_elo_rating = cum_elo_ratings.loc[
+            prev_year, prev_round, prev_match["oppo_team"]
+        ]
+        prev_margin = prev_match["score"] - prev_match["oppo_score"]
+        prev_at_home = bool(prev_match["at_home"])
+
+        elo_rating = _elo_formula(
+            prev_elo_rating, prev_oppo_elo_rating, prev_margin, prev_at_home
+        )
+
+    if prev_match["year"] != year:
+        return (elo_rating * CARRYOVER) + (BASE_RATING * (1 - CARRYOVER))
+
+    return elo_rating
+
+
+def _get_previous_match(
+    data_frame: pd.DataFrame, year: int, round_number: int, team: str
+):
+    prev_team_matches = data_frame.loc[
+        (data_frame["team"] == team)
+        & (data_frame["year"] == year)
+        & (data_frame["round_number"] < round_number),
+        :,
+    ]
+
+    # If we can't find any previous matches this season, filter by last season
+    if not prev_team_matches.any().any():
+        prev_team_matches = data_frame.loc[
+            (data_frame["team"] == team) & (data_frame["year"] == year - 1), :
+        ]
+
+    if not prev_team_matches.any().any():
+        return None
+
+    return prev_team_matches.iloc[-1, :]
+
+
+# Assumes df sorted by year & round_number, with ascending=True in order to find teams'
+# previous matches
+def _calculate_match_elo_rating(
+    root_data_frame: pd.DataFrame,
+    cum_elo_ratings: Optional[pd.Series],
+    items: Tuple[EloIndexType, pd.Series],
+):
+    data_frame = root_data_frame.copy()
+    index, _ = items
+    year, round_number, team = index
+
+    prev_match = _get_previous_match(data_frame, year, round_number, team)
+    elo_rating = _calculate_elo_rating(prev_match, cum_elo_ratings, year)
+
+    elo_data = [elo_rating]
+    elo_index = pd.MultiIndex.from_tuples([(year, round_number, team)])
+    elo_ratings = pd.Series(data=elo_data, index=elo_index)
+
+    if cum_elo_ratings is None:
+        return elo_ratings.copy()
+
+    return cum_elo_ratings.append(elo_ratings)
+
+
+def add_elo_rating(data_frame: pd.DataFrame):
+    """Add ELO rating of team prior to matches"""
+
+    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
+        raise ValueError(
+            "To calculate ELO ratings, 'score' and 'oppo_score' must be "
+            "in the data frame, but the columns given were "
+            f"{list(data_frame.columns)}"
+        )
+
+    elo_data_frame = data_frame.reorder_levels(
+        [YEAR_LEVEL, ROUND_LEVEL, TEAM_LEVEL]
+    ).sort_index(ascending=True)
+
+    elo_column = (
+        reduce(
+            partial(_calculate_match_elo_rating, elo_data_frame),
+            elo_data_frame.iterrows(),
+            None,
+        )
+        .reorder_levels(
+            [REORDERED_TEAM_LEVEL, REORDERED_YEAR_LEVEL, REORDERED_ROUND_LEVEL]
+        )
+        .sort_index()
+    )
+
+    return data_frame.assign(elo_rating=elo_column)

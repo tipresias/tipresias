@@ -19,6 +19,7 @@ from server.data_processors.feature_functions import (
     add_last_year_brownlow_votes,
     add_rolling_player_stats,
     add_cum_matches_played,
+    add_elo_rating,
 )
 
 FAKE = Faker()
@@ -84,12 +85,12 @@ class TestFeatureFunctions(TestCase):
                     "team": teams,
                     "oppo_team": oppo_teams,
                     "year": [2015 for _ in range(10)],
-                    "round_number": [3 for _ in range(10)],
+                    "round_number": [3 for _ in range(5)] + [4 for _ in range(5)],
                     "score": np.random.randint(50, 150, 10),
                     "oppo_score": np.random.randint(50, 150, 10),
                 }
             )
-            .set_index(["year", "round_number", "team"], drop=False)
+            .set_index(["team", "year", "round_number"], drop=False)
             .rename_axis([None, None, None])
         )
 
@@ -405,6 +406,18 @@ class TestFeatureFunctions(TestCase):
             self,
             column_names=["cum_matches_played"],
             req_cols=("player_id",),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function,
+        )
+
+    def test_add_elo_rating(self):
+        feature_function = add_elo_rating
+        valid_data_frame = self.data_frame
+
+        make_column_assertions(
+            self,
+            column_names=["elo_rating"],
+            req_cols=("score", "oppo_score"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )

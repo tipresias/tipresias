@@ -12,6 +12,7 @@ tzlocal
 dask[complete]
 mlxtend
 category_encoders
+featuretools
 
 # Data vis packages
 seaborn

@@ -22,6 +22,7 @@ from server.data_processors.feature_functions import (
     add_travel_distance,
     add_last_week_goals,
     add_last_week_behinds,
+    add_elo_rating,
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
@@ -45,6 +46,7 @@ FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
     add_cum_win_points,
     add_rolling_last_week_win_rate,
     add_win_streak,
+    add_elo_rating,
 ]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     TeamDataStacker(index_cols=INDEX_COLS).transform,

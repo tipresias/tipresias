@@ -21,7 +21,7 @@ from server.data_processors.feature_functions import (
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES
+from server.ml_models.data_config import TEAM_NAMES, SEED
 
 MATCH_STATS_COLS = [
     "at_home",
@@ -103,7 +103,7 @@ PIPELINE = make_pipeline(
     XGBRegressor(),
 )
 
-np.random.seed(42)
+np.random.seed(SEED)
 
 
 class PlayerModel(MLModel):

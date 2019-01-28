@@ -22,7 +22,7 @@ from server.data_processors.feature_functions import (
     add_win_streak,
 )
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS
+from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED
 
 
 FEATURE_FUNCS: Sequence[DataFrameTransformer] = (
@@ -75,7 +75,7 @@ PIPELINE = make_pipeline(
     Lasso(),
 )
 
-np.random.seed(42)
+np.random.seed(SEED)
 
 
 class BettingModel(MLModel):

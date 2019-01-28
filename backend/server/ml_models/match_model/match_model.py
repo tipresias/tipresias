@@ -26,7 +26,13 @@ from server.data_processors.feature_functions import (
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES
+from server.ml_models.data_config import (
+    TEAM_NAMES,
+    ROUND_TYPES,
+    INDEX_COLS,
+    VENUES,
+    SEED,
+)
 
 COL_TRANSLATIONS = {
     "home_points": "home_score",
@@ -34,8 +40,7 @@ COL_TRANSLATIONS = {
     "margin": "home_margin",
     "season": "year",
 }
-INDEX_COLS = ["team", "year", "round_number"]
-REQUIRED_COLS: List[str] = ["year", "score", "oppo_score"]
+CATEGORY_COLS = ["team", "oppo_team", "round_type", "venue"]
 FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
     add_out_of_state,
     add_travel_distance,
@@ -63,6 +68,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
             "oppo_team",
             "venue",
             "round_type",
+            "date",
         ]
     ).transform,
     # Features dependent on oppo columns
@@ -70,16 +76,16 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     OppoFeatureBuilder(oppo_feature_cols=["cum_percent", "ladder_position"]).transform,
 ]
 DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
-MODEL_ESTIMATORS = ()
 PIPELINE = make_pipeline(
     ColumnTransformer(
         [
             (
                 "onehotencoder",
                 OneHotEncoder(
-                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES], sparse=False
+                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES, VENUES],
+                    sparse=False,
                 ),
-                ["team", "oppo_team", "round_type"],
+                CATEGORY_COLS,
             )
         ],
         remainder="passthrough",
@@ -88,7 +94,7 @@ PIPELINE = make_pipeline(
     XGBRegressor(),
 )
 
-np.random.seed(42)
+np.random.seed(SEED)
 
 
 class MatchModel(MLModel):
@@ -117,8 +123,13 @@ class MatchModelData(MLModelData, DataTransformerMixin):
         data_frame = (
             data_readers[0]()
             .rename(columns=COL_TRANSLATIONS)
+            # fitzRoy returns integers that represent some sort of datetime, and the only
+            # way to parse them is converting them to dates.
+            # NOTE: If the matches parsed only go back to 1990 (give or take, I can't remember)
+            # you can parse the date integers into datetime
+            .assign(date=lambda df: pd.to_datetime(df["date"], unit="D"))
             .astype({"year": int})
-            .drop(["round", "game", "date"], axis=1)
+            .drop(["round", "game"], axis=1)
         )
 
         # There was some sort of round-robin finals round in 1897 and figuring out
@@ -129,7 +140,6 @@ class MatchModelData(MLModelData, DataTransformerMixin):
 
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
-            .drop("venue", axis=1)
             .fillna(0)
             .sort_index()
         )

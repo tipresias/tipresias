@@ -139,8 +139,8 @@ class MLModelData:
     @staticmethod
     def __X(data_frame: pd.DataFrame) -> pd.DataFrame:
         features = data_frame.drop(["score", "oppo_score"], axis=1)
-        numeric_features = features.select_dtypes(np.number).astype(float)
-        categorical_features = features.drop(numeric_features.columns, axis=1)
+        numeric_features = features.select_dtypes("number").astype(float)
+        categorical_features = features.select_dtypes(exclude=["number", "datetime"])
 
         return pd.concat([categorical_features, numeric_features], axis=1)
 

@@ -2,7 +2,8 @@ from typing import List, Dict
 import pandas as pd
 import numpy as np
 
-INDEX_COLS: List[str] = ["team", "year", "round_number"]
+from server.ml_models.data_config import INDEX_COLS
+
 STATS_COLS = [
     "rolling_prev_match_kicks",
     "rolling_prev_match_marks",

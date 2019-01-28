@@ -9,7 +9,8 @@ from sklearn.ensemble import BaggingRegressor
 from xgboost import XGBRegressor
 
 from server.ml_models.ml_model import MLModel
-from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES
+from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES, VENUES
+from server.ml_models.match_model import CATEGORY_COLS
 
 SEED = 42
 np.random.seed(SEED)
@@ -32,9 +33,10 @@ PIPELINE = make_pipeline(
             (
                 "onehotencoder",
                 OneHotEncoder(
-                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES], sparse=False
+                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES, VENUES],
+                    sparse=False,
                 ),
-                ["team", "oppo_team", "round_type"],
+                CATEGORY_COLS,
             )
         ],
         remainder=StandardScaler(),

@@ -2,9 +2,9 @@ from typing import List, Sequence
 from functools import reduce, partial
 import pandas as pd
 
+from server.ml_models.data_config import INDEX_COLS
 from server.types import DataFrameTransformer
 
-INDEX_COLS: List[str] = ["team", "year", "round_number"]
 REQUIRED_COLS: List[str] = INDEX_COLS + ["oppo_team"]
 
 

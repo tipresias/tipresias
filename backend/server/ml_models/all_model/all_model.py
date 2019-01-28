@@ -13,14 +13,13 @@ from sklearn.exceptions import DataConversionWarning
 from xgboost import XGBRegressor
 
 from server.ml_models.betting_model import BettingModelData
-from server.ml_models.match_model import MatchModelData
+from server.ml_models.match_model import MatchModelData, CATEGORY_COLS
 from server.ml_models.player_model import PlayerModelData
 from server.ml_models.ml_model import MLModel, MLModelData
 from server.types import YearPair
-from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES
+from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES, VENUES, SEED
 
 
-CATEGORY_COLS = ["team", "oppo_team", "round_type"]
 START_DATE = "1965-01-01"
 DATA_READERS: List[Type[MLModelData]] = [
     BettingModelData,
@@ -33,9 +32,10 @@ PIPELINE = make_pipeline(
             (
                 "onehotencoder",
                 OneHotEncoder(
-                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES], sparse=False
+                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES, VENUES],
+                    sparse=False,
                 ),
-                ["team", "oppo_team", "round_type"],
+                CATEGORY_COLS,
             )
         ],
         remainder=StandardScaler(),
@@ -48,7 +48,7 @@ PIPELINE = make_pipeline(
 # which results in all rows having type 'object', because they include strings and floats
 warnings.simplefilter("ignore", DataConversionWarning)
 
-np.random.seed(42)
+np.random.seed(SEED)
 
 
 class AllModel(MLModel):
@@ -74,7 +74,9 @@ class AllModelData(MLModelData):
         super().__init__(train_years=train_years, test_years=test_years)
 
         data_frame = reduce(self.__concat_data_frames, data_readers, None)
-        numeric_data_frame = data_frame.select_dtypes(include=np.number).fillna(0)
+        numeric_data_frame = data_frame.select_dtypes(
+            include=["number", "datetime"]
+        ).fillna(0)
 
         start_year = datetime.strptime(start_date, "%Y-%m-%d").year if start_date else 0
         end_year = datetime.strptime(end_date, "%Y-%m-%d").year if end_date else np.Inf

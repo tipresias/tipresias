@@ -21,7 +21,7 @@ from server.data_processors.feature_functions import (
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES, SEED
+from server.ml_models.data_config import TEAM_NAMES, SEED, INDEX_COLS
 
 MATCH_STATS_COLS = [
     "at_home",
@@ -126,6 +126,7 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
         test_years: YearPair = (2016, 2016),
         start_date="1965-01-01",
         end_date="2016-12-31",
+        index_cols: List[str] = INDEX_COLS,
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
@@ -183,6 +184,8 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .fillna(0)
+            .set_index(index_cols, drop=False)
+            .rename_axis([None] * len(index_cols))
             .sort_index()
         )
 

@@ -131,3 +131,6 @@ yarn-error.log*
 
 # Folders added via docker volumes
 backend/data
+
+# Folders added via dask
+dask-worker-space

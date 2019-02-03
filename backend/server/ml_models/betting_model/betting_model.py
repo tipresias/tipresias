@@ -22,7 +22,7 @@ from server.data_processors.feature_functions import (
     add_win_streak,
 )
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED
+from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, INDEX_COLS
 
 
 FEATURE_FUNCS: Sequence[DataFrameTransformer] = (
@@ -102,6 +102,7 @@ class BettingModelData(MLModelData, DataTransformerMixin):
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
+        index_cols: List[str] = INDEX_COLS,
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
@@ -126,6 +127,8 @@ class BettingModelData(MLModelData, DataTransformerMixin):
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .astype({"year": int})
             .fillna(0)
+            .set_index(index_cols, drop=False)
+            .rename_axis([None] * len(index_cols))
             .sort_index()
         )
 

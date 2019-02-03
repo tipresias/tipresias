@@ -1,7 +1,7 @@
 """Class for model trained on all AFL data and its associated data class"""
 
 import warnings
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Dict, Any, Tuple
 from datetime import datetime
 from functools import reduce
 import pandas as pd
@@ -66,23 +66,37 @@ class AllModelData(MLModelData):
     def __init__(
         self,
         data_readers: List[Type[MLModelData]] = DATA_READERS,
+        data_reader_kwargs: List[Dict[str, Any]] = [{}, {}, {}],
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         start_date=None,
         end_date="2016-12-31",
+        category_cols=CATEGORY_COLS,
     ) -> None:
+        if len(data_readers) != len(data_reader_kwargs):
+            raise ValueError(
+                "There must be exactly one kwarg object per data reader object."
+            )
+
         super().__init__(train_years=train_years, test_years=test_years)
 
-        data_frame = reduce(self.__concat_data_frames, data_readers, None)
+        data_frame = reduce(
+            self.__concat_data_frames, zip(data_readers, data_reader_kwargs), None
+        )
         numeric_data_frame = data_frame.select_dtypes(
             include=["number", "datetime"]
         ).fillna(0)
+
+        if category_cols is None:
+            category_data_frame = data_frame.drop(numeric_data_frame.columns, axis=1)
+        else:
+            category_data_frame = data_frame[category_cols]
 
         start_year = datetime.strptime(start_date, "%Y-%m-%d").year if start_date else 0
         end_year = datetime.strptime(end_date, "%Y-%m-%d").year if end_date else np.Inf
 
         self._data = (
-            pd.concat([data_frame[CATEGORY_COLS], numeric_data_frame], axis=1)
+            pd.concat([category_data_frame, numeric_data_frame], axis=1)
             .loc[(data_frame["year"] >= start_year) & (data_frame["year"] <= end_year),]
             .dropna()
             .sort_index()
@@ -94,9 +108,11 @@ class AllModelData(MLModelData):
 
     @staticmethod
     def __concat_data_frames(
-        concated_data_frame: pd.DataFrame, data_reader: Type[MLModelData]
+        concated_data_frame: pd.DataFrame,
+        data: Tuple[Type[MLModelData], Dict[str, Any]],
     ) -> pd.DataFrame:
-        data_frame = data_reader().data
+        data_reader, data_kwargs = data
+        data_frame = data_reader(**data_kwargs).data
 
         if concated_data_frame is None:
             return data_frame

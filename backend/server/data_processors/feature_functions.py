@@ -514,6 +514,14 @@ def _calculate_elo_rating(prev_match: pd.Series, cum_elo_ratings: pd.Series, yea
         prev_year, prev_round, _ = prev_match.name
 
         prev_elo_rating = cum_elo_ratings.loc[prev_match.name]
+
+        if isinstance(prev_elo_rating, pd.Series):
+            raise TypeError(
+                f"ELO series returned a subsection of itself at index {prev_match.name} "
+                "when a single value is expected. Check the data frame for duplicate "
+                "index values."
+            )
+
         prev_oppo_elo_rating = cum_elo_ratings.loc[
             prev_year, prev_round, prev_match["oppo_team"]
         ]

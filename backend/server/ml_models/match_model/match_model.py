@@ -115,6 +115,7 @@ class MatchModelData(MLModelData, DataTransformerMixin):
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
+        index_cols: List[str] = INDEX_COLS,
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
@@ -132,15 +133,18 @@ class MatchModelData(MLModelData, DataTransformerMixin):
             .drop(["round", "game"], axis=1)
         )
 
-        # There was some sort of round-robin finals round in 1897 and figuring out
-        # a way to clean it up that makes sense is more trouble than just dropping a few rows
+        # There were some weird round-robin rounds in the early days, and it's easier to
+        # drop them rather than figure out how to split up the rounds.
         data_frame = data_frame[
-            (data_frame["year"] != 1897) | (data_frame["round_number"] != 15)
+            ((data_frame["year"] != 1897) | (data_frame["round_number"] != 15))
+            & ((data_frame["year"] != 1924) | (data_frame["round_number"] != 19))
         ]
 
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .fillna(0)
+            .set_index(index_cols, drop=False)
+            .rename_axis([None] * len(index_cols))
             .sort_index()
         )
 

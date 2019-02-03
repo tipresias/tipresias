@@ -63,7 +63,7 @@ CITIES = {
     "Adelaide": {"state": "SA", "lat": -34.9285, "long": 138.6007},
     "Sydney": {"state": "NSW", "lat": -33.8688, "long": 151.2093},
     "Melbourne": {"state": "VIC", "lat": -37.8136, "long": 144.9631},
-    "Geelong": {"state": "VIC", "lat": 38.1499, "long": 144.3617},
+    "Geelong": {"state": "VIC", "lat": -38.1499, "long": 144.3617},
     "Perth": {"state": "WA", "lat": -31.9505, "long": 115.8605},
     "Gold Coast": {"state": "QLD", "lat": -28.0167, "long": 153.4000},
     "Brisbane": {"state": "QLD", "lat": -27.4698, "long": 153.0251},
@@ -78,7 +78,7 @@ CITIES = {
     "Cairns": {"state": "QLD", "lat": -6.9186, "long": 145.7781},
     "Ballarat": {"state": "VIC", "lat": -37.5622, "long": 143.8503},
     "Shanghai": {"state": "CHN", "lat": 31.2304, "long": 121.4737},
-    "Albury": {"state": "NSW", "lat": 36.0737, "long": 146.9135},
+    "Albury": {"state": "NSW", "lat": -36.0737, "long": 146.9135},
 }
 
 TEAM_CITIES = {

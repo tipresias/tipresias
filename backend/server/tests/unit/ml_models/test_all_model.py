@@ -108,6 +108,7 @@ class TestAllModelData(TestCase):
                     "team": teams,
                     "oppo_team": list(reversed(teams)),
                     "round_type": ["Regular"] * N_ROWS,
+                    "venue": [FAKE.city() for _ in range(N_ROWS)],
                     "year": years,
                     "score": scores,
                     "oppo_score": oppo_scores,

@@ -1,6 +1,6 @@
 # Data packages
 numpy
-pandas
+pandas<0.24,>=0.23.0 # Required version for featuretools
 scikit-learn==0.20.1
 tensorflow==1.11.0
 scipy
@@ -12,7 +12,7 @@ tzlocal
 dask[complete]
 mlxtend
 category_encoders
-featuretools
+featuretools==0.6.0
 
 # Data vis packages
 seaborn

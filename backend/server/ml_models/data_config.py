@@ -159,3 +159,4 @@ ROUND_TYPES = ["Finals", "Regular"]
 VENUES = list(set(VENUE_CITIES.keys()))
 INDEX_COLS = ["team", "year", "round_number"]
 SEED = 42
+AVG_SEASON_LENGTH = 23

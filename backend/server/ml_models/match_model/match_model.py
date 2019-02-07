@@ -1,6 +1,6 @@
 """Module with wrapper class for XGBoost model and its associated data class"""
 
-from typing import List, Optional, Sequence, Callable
+from typing import List, Optional, Callable
 import pandas as pd
 import numpy as np
 from sklearn.compose import ColumnTransformer
@@ -15,7 +15,6 @@ from server.data_processors.feature_functions import (
     add_last_week_score,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_rate,
     add_ladder_position,
     add_win_streak,
     add_out_of_state,
@@ -23,6 +22,11 @@ from server.data_processors.feature_functions import (
     add_last_week_goals,
     add_last_week_behinds,
     add_elo_rating,
+    add_elo_pred_win,
+)
+from server.data_processors.feature_calculation import (
+    feature_calculator,
+    calculate_rolling_rate,
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
@@ -41,7 +45,7 @@ COL_TRANSLATIONS = {
     "season": "year",
 }
 CATEGORY_COLS = ["team", "oppo_team", "round_type", "venue"]
-FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
+FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_out_of_state,
     add_travel_distance,
     add_last_week_goals,
@@ -49,9 +53,9 @@ FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
     add_last_week_result,
     add_last_week_score,
     add_cum_win_points,
-    add_rolling_rate("last_week_result"),
     add_win_streak,
     add_elo_rating,
+    feature_calculator([(calculate_rolling_rate, ["last_week_result"])]),
 ]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     TeamDataStacker(index_cols=INDEX_COLS).transform,
@@ -72,8 +76,17 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
         ]
     ).transform,
     # Features dependent on oppo columns
-    FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
-    OppoFeatureBuilder(oppo_feature_cols=["cum_percent", "ladder_position"]).transform,
+    FeatureBuilder(
+        feature_funcs=[
+            add_cum_percent,
+            add_ladder_position,
+            add_elo_pred_win,
+            feature_calculator([(calculate_rolling_rate, ["elo_pred_win"])]),
+        ]
+    ).transform,
+    OppoFeatureBuilder(
+        oppo_feature_cols=["cum_percent", "ladder_position", "elo_pred_win"]
+    ).transform,
 ]
 DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
 PIPELINE = make_pipeline(

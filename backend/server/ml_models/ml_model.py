@@ -156,7 +156,7 @@ class DataTransformerMixin:
     def data_transformers(self) -> List[DataFrameTransformer]:
         """List of data transformer functions"""
 
-        raise NotImplementedError("The data_transformers() method must be defined.")
+        raise NotImplementedError("The data_transformers property must be defined.")
 
     @property
     def _compose_transformers(self) -> DataFrameTransformer:

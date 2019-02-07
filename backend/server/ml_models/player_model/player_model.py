@@ -1,6 +1,6 @@
 """Model class trained on player data and its associated data class"""
 
-from typing import List, Sequence, Callable, Optional
+from typing import List, Callable, Optional
 import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -71,7 +71,7 @@ COL_TRANSLATIONS = {
     "game": "match_id",
 }
 
-FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
+FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_last_year_brownlow_votes,
     add_rolling_player_stats,
     add_cum_matches_played,

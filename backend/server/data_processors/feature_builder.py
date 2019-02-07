@@ -1,14 +1,14 @@
-from typing import List, Sequence
-from functools import reduce, partial
+from typing import List
 import pandas as pd
 
+from server.ml_models.ml_model import DataTransformerMixin
 from server.ml_models.data_config import INDEX_COLS
 from server.types import DataFrameTransformer
 
 REQUIRED_COLS: List[str] = INDEX_COLS + ["oppo_team"]
 
 
-class FeatureBuilder:
+class FeatureBuilder(DataTransformerMixin):
     """Add features to data frames.
 
     Args:
@@ -21,15 +21,10 @@ class FeatureBuilder:
     def __init__(
         self,
         index_cols: List[str] = INDEX_COLS,
-        feature_funcs: Sequence[DataFrameTransformer] = [],
+        feature_funcs: List[DataFrameTransformer] = [],
     ) -> None:
         self.index_cols = index_cols
-        self.feature_funcs = [
-            partial(self.__add_feature, feature_func) for feature_func in feature_funcs
-        ]
-        self._compose_all = reduce(
-            self.__compose_two, reversed(self.feature_funcs), lambda x: x
-        )
+        self._data_transformers = feature_funcs
 
     def transform(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         """Add new features to the given data frame."""
@@ -43,21 +38,16 @@ class FeatureBuilder:
                 f"but the columns given were {data_frame.columns}"
             )
 
-        return self._compose_all(
+        return self._compose_transformers(  # pylint: disable=E1102
             data_frame.copy()
             .set_index(self.index_cols, drop=False)
             .rename_axis([None] * len(self.index_cols))
             .sort_index()
         )
 
-    @staticmethod
-    def __add_feature(
-        feature_func: DataFrameTransformer, data_frame: pd.DataFrame
-    ) -> pd.DataFrame:
-        """Use the given feature function to add the feature and opposition team feature
-        to the data frame"""
-
-        return feature_func(data_frame)
+    @property
+    def data_transformers(self) -> List[DataFrameTransformer]:
+        return self._data_transformers
 
     @staticmethod
     def __compose_two(

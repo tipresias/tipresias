@@ -1,6 +1,6 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
-from typing import List, Optional, Sequence, Any
+from typing import List, Optional, Any
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -16,24 +16,26 @@ from server.data_processors.feature_functions import (
     add_last_week_score,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_rate,
     add_ladder_position,
     add_win_streak,
     add_betting_pred_win,
+)
+from server.data_processors.feature_calculation import (
+    feature_calculator,
+    calculate_rolling_rate,
 )
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
 from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, INDEX_COLS
 
 
-FEATURE_FUNCS: Sequence[DataFrameTransformer] = (
+FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_last_week_result,
     add_last_week_score,
     add_cum_win_points,
     add_betting_pred_win,
-    add_rolling_rate("betting_pred_win"),
-    add_rolling_rate("last_week_result"),
     add_win_streak,
-)
+    feature_calculator([(calculate_rolling_rate, ["betting_pred_win"])]),
+]
 REQUIRED_COLS: List[str] = ["year", "score", "oppo_score"]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     TeamDataStacker().transform,

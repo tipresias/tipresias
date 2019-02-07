@@ -8,7 +8,6 @@ from server.data_processors.feature_functions import (
     add_last_week_score,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_rate,
     add_ladder_position,
     add_win_streak,
     add_last_week_goals,
@@ -176,20 +175,6 @@ class TestFeatureFunctions(TestCase):
             self,
             column_names=["elo_pred_win"],
             req_cols=("elo_rating", "oppo_elo_rating"),
-            valid_data_frame=valid_data_frame,
-            feature_function=feature_function,
-        )
-
-    def test_add_rolling_rate(self):
-        feature_function = add_rolling_rate("last_week_result")
-        valid_data_frame = self.data_frame.assign(
-            last_week_result=np.random.randint(0, 2, 10)
-        )
-
-        make_column_assertions(
-            self,
-            column_names=["rolling_last_week_result_rate"],
-            req_cols=("last_week_result",),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )

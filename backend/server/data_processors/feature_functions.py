@@ -9,7 +9,7 @@ Returns:
     pandas.DataFrame
 """
 
-from typing import List, Tuple, Optional, Callable
+from typing import List, Tuple, Optional
 import math
 from functools import partial, reduce
 import pandas as pd
@@ -24,7 +24,6 @@ REORDERED_TEAM_LEVEL = 2
 REORDERED_YEAR_LEVEL = 0
 REORDERED_ROUND_LEVEL = 1
 WIN_POINTS = 4
-AVG_SEASON_LENGTH = 23
 EARTH_RADIUS = 6371
 
 # Constants for ELO calculations
@@ -167,40 +166,6 @@ def add_elo_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
     predicted_results = is_favoured + (are_even * 0.5)
 
     return data_frame.assign(elo_pred_win=predicted_results)
-
-
-def _calculate_rolling_rate(
-    column: str, data_frame: pd.DataFrame
-) -> pd.DataFrame:
-    """Add a team's actual or predicted win rate"""
-
-    if column not in data_frame.columns:
-        raise ValueError(
-            f"To calculate rolling win rate, '{column}' "
-            "must be in data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
-
-    groups = data_frame[column].groupby(level=TEAM_LEVEL, group_keys=False)
-
-    # Using mean season length (23) for rolling window due to a combination of
-    # testing different window values for a previous model and finding 23 to be
-    # a good window for data vis.
-    # Not super scientific, but it works well enough.
-    rolling_rate = groups.rolling(window=AVG_SEASON_LENGTH).mean()
-
-    # Only select rows that are NaNs in rolling series
-    blank_rolling_rows = rolling_rate.isna()
-    expanding_rate = groups.expanding(1).mean()[blank_rolling_rows]
-    expanding_rolling_rate = (
-        pd.concat([rolling_rate, expanding_rate], join="inner").dropna().sort_index()
-    )
-
-    return data_frame.assign(**{f"rolling_{column}_rate": expanding_rolling_rate})
-
-
-def add_rolling_rate(column: str) -> Callable[[pd.DataFrame], pd.DataFrame]:
-    return partial(_calculate_rolling_rate, column)
 
 
 def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:

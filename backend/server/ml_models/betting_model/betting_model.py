@@ -16,10 +16,10 @@ from server.data_processors.feature_functions import (
     add_last_week_score,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_pred_win_rate,
-    add_rolling_last_week_win_rate,
+    add_rolling_rate,
     add_ladder_position,
     add_win_streak,
+    add_betting_pred_win,
 )
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
 from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, INDEX_COLS
@@ -29,8 +29,9 @@ FEATURE_FUNCS: Sequence[DataFrameTransformer] = (
     add_last_week_result,
     add_last_week_score,
     add_cum_win_points,
-    add_rolling_pred_win_rate,
-    add_rolling_last_week_win_rate,
+    add_betting_pred_win,
+    add_rolling_rate("betting_pred_win"),
+    add_rolling_rate("last_week_result"),
     add_win_streak,
 )
 REQUIRED_COLS: List[str] = ["year", "score", "oppo_score"]

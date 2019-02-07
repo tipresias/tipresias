@@ -9,7 +9,7 @@ Returns:
     pandas.DataFrame
 """
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Callable
 import math
 from functools import partial, reduce
 import pandas as pd
@@ -120,14 +120,14 @@ def add_cum_win_points(data_frame: pd.DataFrame) -> pd.DataFrame:
     return data_frame.assign(cum_win_points=cum_win_points_col)
 
 
-def add_rolling_pred_win_rate(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's predicted win rate per the betting odds"""
+def add_betting_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add whether a team is predicted to win per the betting odds"""
 
     odds_cols = ["win_odds", "oppo_win_odds", "line_odds", "oppo_line_odds"]
 
     if any((odds_col not in data_frame.columns for odds_col in odds_cols)):
         raise ValueError(
-            f"To calculate rolling predicted win rate, all odds columns ({odds_cols})"
+            f"To calculate betting predicted win, all odds columns ({odds_cols})"
             "must be in data frame, but the columns given were "
             f"{data_frame.columns}"
         )
@@ -144,54 +144,63 @@ def add_rolling_pred_win_rate(data_frame: pd.DataFrame) -> pd.DataFrame:
     # Give half point for predicted draws
     predicted_results = is_favoured + (odds_are_even * 0.5)
 
-    groups = predicted_results.groupby(level=TEAM_LEVEL, group_keys=False)
-
-    # Using mean season length (23) for rolling window due to a combination of
-    # testing different window values for a previous model and finding 23 to be
-    # a good window for data vis.
-    # Not super scientific, but it works well enough.
-    rolling_pred_win_rate = groups.rolling(window=AVG_SEASON_LENGTH).mean()
-
-    # Only select rows that are NaNs in rolling series
-    blank_rolling_rows = rolling_pred_win_rate.isna()
-    expanding_win_rate = groups.expanding(1).mean()[blank_rolling_rows]
-    expanding_rolling_pred_win_rate = (
-        pd.concat([rolling_pred_win_rate, expanding_win_rate], join="inner")
-        .dropna()
-        .sort_index()
-    )
-
-    return data_frame.assign(rolling_pred_win_rate=expanding_rolling_pred_win_rate)
+    return data_frame.assign(betting_pred_win=predicted_results)
 
 
-def add_rolling_last_week_win_rate(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's win rate through their previous match"""
+def add_elo_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add whether a team is predicted to win per elo ratings"""
 
-    if "last_week_result" not in data_frame.columns:
+    if (
+        "elo_rating" not in data_frame.columns
+        or "oppo_elo_rating" not in data_frame.columns
+    ):
         raise ValueError(
-            "To calculate rolling win rate, 'last_week_result' "
+            f"To calculate ELO predicted win, 'elo_rating' and 'oppo_elo_rating "
             "must be in data frame, but the columns given were "
             f"{data_frame.columns}"
         )
 
-    groups = data_frame["last_week_result"].groupby(level=TEAM_LEVEL, group_keys=False)
+    is_favoured = (data_frame["elo_rating"] > data_frame["oppo_elo_rating"]).astype(int)
+    are_even = (data_frame["elo_rating"] == data_frame["oppo_elo_rating"]).astype(int)
+
+    # Give half point for predicted draws
+    predicted_results = is_favoured + (are_even * 0.5)
+
+    return data_frame.assign(elo_pred_win=predicted_results)
+
+
+def _calculate_rolling_rate(
+    column: str, data_frame: pd.DataFrame
+) -> pd.DataFrame:
+    """Add a team's actual or predicted win rate"""
+
+    if column not in data_frame.columns:
+        raise ValueError(
+            f"To calculate rolling win rate, '{column}' "
+            "must be in data frame, but the columns given were "
+            f"{data_frame.columns}"
+        )
+
+    groups = data_frame[column].groupby(level=TEAM_LEVEL, group_keys=False)
 
     # Using mean season length (23) for rolling window due to a combination of
     # testing different window values for a previous model and finding 23 to be
     # a good window for data vis.
     # Not super scientific, but it works well enough.
-    rolling_win_rate = groups.rolling(window=AVG_SEASON_LENGTH).mean()
+    rolling_rate = groups.rolling(window=AVG_SEASON_LENGTH).mean()
 
     # Only select rows that are NaNs in rolling series
-    blank_rolling_rows = rolling_win_rate.isna()
-    expanding_win_rate = groups.expanding(1).mean()[blank_rolling_rows]
-    expanding_rolling_win_rate = (
-        pd.concat([rolling_win_rate, expanding_win_rate], join="inner")
-        .dropna()
-        .sort_index()
+    blank_rolling_rows = rolling_rate.isna()
+    expanding_rate = groups.expanding(1).mean()[blank_rolling_rows]
+    expanding_rolling_rate = (
+        pd.concat([rolling_rate, expanding_rate], join="inner").dropna().sort_index()
     )
 
-    return data_frame.assign(rolling_last_week_win_rate=expanding_rolling_win_rate)
+    return data_frame.assign(**{f"rolling_{column}_rate": expanding_rolling_rate})
+
+
+def add_rolling_rate(column: str) -> Callable[[pd.DataFrame], pd.DataFrame]:
+    return partial(_calculate_rolling_rate, column)
 
 
 def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:

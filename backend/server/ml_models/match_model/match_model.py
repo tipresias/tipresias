@@ -15,7 +15,7 @@ from server.data_processors.feature_functions import (
     add_last_week_score,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_last_week_win_rate,
+    add_rolling_rate,
     add_ladder_position,
     add_win_streak,
     add_out_of_state,
@@ -49,7 +49,7 @@ FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
     add_last_week_result,
     add_last_week_score,
     add_cum_win_points,
-    add_rolling_last_week_win_rate,
+    add_rolling_rate("last_week_result"),
     add_win_streak,
     add_elo_rating,
 ]

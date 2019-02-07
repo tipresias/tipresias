@@ -8,8 +8,7 @@ from server.data_processors.feature_functions import (
     add_last_week_score,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_pred_win_rate,
-    add_rolling_last_week_win_rate,
+    add_rolling_rate,
     add_ladder_position,
     add_win_streak,
     add_last_week_goals,
@@ -20,6 +19,8 @@ from server.data_processors.feature_functions import (
     add_rolling_player_stats,
     add_cum_matches_played,
     add_elo_rating,
+    add_betting_pred_win,
+    add_elo_pred_win,
 )
 
 FAKE = Faker()
@@ -147,33 +148,47 @@ class TestFeatureFunctions(TestCase):
             feature_function=feature_function,
         )
 
-    def test_add_rolling_pred_win_rate(self):
-        feature_function = add_rolling_pred_win_rate
+    def test_add_betting_pred_win(self):
+        feature_function = add_betting_pred_win
         valid_data_frame = self.data_frame.assign(
-            # Random float from 1 to 4 covers most odds values
-            win_odds=(3 * np.random.ranf(10)) + 1,
-            oppo_win_odds=(3 * np.random.ranf(10)) + 1,
-            line_odds=np.random.randint(-30, 30, 10),
-            oppo_line_odds=np.random.randint(-30, 30, 10),
+            win_odds=np.random.randint(0, 2, 10),
+            oppo_win_odds=np.random.randint(0, 2, 10),
+            line_odds=np.random.randint(-50, 50, 10),
+            oppo_line_odds=np.random.randint(-50, 50, 10),
         )
 
         make_column_assertions(
             self,
-            column_names=["rolling_pred_win_rate"],
+            column_names=["betting_pred_win"],
             req_cols=("win_odds", "oppo_win_odds", "line_odds", "oppo_line_odds"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
 
-    def test_add_rolling_last_week_win_rate(self):
-        feature_function = add_rolling_last_week_win_rate
+    def test_add_elo_pred_win(self):
+        feature_function = add_elo_pred_win
+        valid_data_frame = self.data_frame.assign(
+            elo_rating=np.random.randint(900, 1100, 10),
+            oppo_elo_rating=np.random.randint(900, 1100, 10),
+        )
+
+        make_column_assertions(
+            self,
+            column_names=["elo_pred_win"],
+            req_cols=("elo_rating", "oppo_elo_rating"),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function,
+        )
+
+    def test_add_rolling_rate(self):
+        feature_function = add_rolling_rate("last_week_result")
         valid_data_frame = self.data_frame.assign(
             last_week_result=np.random.randint(0, 2, 10)
         )
 
         make_column_assertions(
             self,
-            column_names=["rolling_last_week_win_rate"],
+            column_names=["rolling_last_week_result_rate"],
             req_cols=("last_week_result",),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,

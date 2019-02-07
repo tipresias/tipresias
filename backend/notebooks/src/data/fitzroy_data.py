@@ -13,7 +13,7 @@ from server.data_processors.feature_functions import (
     add_last_week_score,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_last_week_win_rate,
+    add_rolling_win_rate,
     add_ladder_position,
     add_win_streak,
 )
@@ -217,7 +217,7 @@ def fr_match_data():
         add_last_week_score,
         add_cum_percent,
         add_cum_win_points,
-        add_rolling_last_week_win_rate,
+        add_rolling_win_rate,
         add_ladder_position,
         add_win_streak,
     ]

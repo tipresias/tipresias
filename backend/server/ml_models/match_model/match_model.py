@@ -13,6 +13,7 @@ from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureB
 from server.data_processors.feature_functions import (
     add_last_week_result,
     add_last_week_score,
+    add_last_week_margin,
     add_cum_percent,
     add_cum_win_points,
     add_ladder_position,
@@ -52,6 +53,7 @@ FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_last_week_behinds,
     add_last_week_result,
     add_last_week_score,
+    add_last_week_margin,
     add_cum_win_points,
     add_win_streak,
     add_elo_rating,

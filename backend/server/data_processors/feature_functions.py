@@ -75,6 +75,28 @@ def add_last_week_score(data_frame: pd.DataFrame) -> pd.DataFrame:
     return data_frame.assign(last_week_score=last_week_score_col)
 
 
+def add_last_week_margin(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add a team's margin from their previous match"""
+
+    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
+        raise ValueError(
+            "To calculate last week result, 'score' and 'oppo_score' "
+            "must be in the data frame, but the columns given "
+            f"were {data_frame.columns}"
+        )
+
+    # Group by team (not team & year) to get final score from previous season for round 1.
+    # This reduces number of rows that need to be dropped and prevents a 'cold start'
+    # for cumulative features
+    last_week_margin_col = (
+        (data_frame["score"] - data_frame["oppo_score"])
+        .groupby(level=TEAM_LEVEL)
+        .shift()
+    )
+
+    return data_frame.assign(last_margin_score=last_week_margin_col)
+
+
 def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative percent (cumulative score / cumulative opponents' score)"""
 

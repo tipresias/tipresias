@@ -6,6 +6,7 @@ import numpy as np
 from server.data_processors.feature_functions import (
     add_last_week_result,
     add_last_week_score,
+    add_last_week_margin,
     add_cum_percent,
     add_cum_win_points,
     add_ladder_position,
@@ -113,6 +114,18 @@ class TestFeatureFunctions(TestCase):
         make_column_assertions(
             self,
             column_names=["last_week_score"],
+            req_cols=("score", "oppo_score"),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function,
+        )
+
+    def test_add_last_week_margin(self):
+        feature_function = add_last_week_margin
+        valid_data_frame = self.data_frame
+
+        make_column_assertions(
+            self,
+            column_names=["last_week_margin"],
             req_cols=("score", "oppo_score"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,

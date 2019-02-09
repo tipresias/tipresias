@@ -34,7 +34,7 @@ FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_cum_win_points,
     add_betting_pred_win,
     add_win_streak,
-    feature_calculator([(calculate_rolling_rate, ["betting_pred_win"])]),
+    feature_calculator([(calculate_rolling_rate, [("betting_pred_win",)])]),
 ]
 REQUIRED_COLS: List[str] = ["year", "score", "oppo_score"]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [

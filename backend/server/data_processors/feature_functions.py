@@ -94,7 +94,7 @@ def add_last_week_margin(data_frame: pd.DataFrame) -> pd.DataFrame:
         .shift()
     )
 
-    return data_frame.assign(last_margin_score=last_week_margin_col)
+    return data_frame.assign(last_week_margin=last_week_margin_col)
 
 
 def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:

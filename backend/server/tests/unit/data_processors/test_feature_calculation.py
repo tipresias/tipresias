@@ -6,6 +6,8 @@ import numpy as np
 from server.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
+    calculate_division,
+    calculate_multiplication,
 )
 
 FAKE = Faker()
@@ -42,12 +44,12 @@ class TestFeatureCalculations(TestCase):
         )
 
     def test_feature_calculator(self):
+        def calc_func(col):
+            return lambda df: df[col].rename(f"new_{col}")
+
         calculators = [
-            (lambda col: lambda df: df[col].rename(f"new_{col}"), ["team", "year"]),
-            (
-                lambda col: lambda df: df[col].rename(f"new_{col}"),
-                ["round_number", "score"],
-            ),
+            (calc_func, ["team", "year"]),
+            (calc_func, ["round_number", "score"]),
         ]
         calc_function = feature_calculator(calculators)
         calculated_data_frame = calc_function(self.data_frame)
@@ -56,7 +58,7 @@ class TestFeatureCalculations(TestCase):
         self.assertFalse(any(calculated_data_frame.columns.duplicated()))
 
     def test_calculate_rolling_rate(self):
-        calc_function = calculate_rolling_rate("score")
+        calc_function = calculate_rolling_rate(("score",))
 
         assert_required_columns(
             self,
@@ -68,3 +70,31 @@ class TestFeatureCalculations(TestCase):
         rolling_score = calc_function(self.data_frame)
         self.assertIsInstance(rolling_score, pd.Series)
         self.assertEqual(rolling_score.name, "rolling_score_rate")
+
+    def test_calculate_division(self):
+        calc_function = calculate_division(("score", "oppo_score"))
+
+        assert_required_columns(
+            self,
+            req_cols=("score", "oppo_score"),
+            valid_data_frame=self.data_frame,
+            feature_function=calc_function,
+        )
+
+        divided_scores = calc_function(self.data_frame)
+        self.assertIsInstance(divided_scores, pd.Series)
+        self.assertEqual(divided_scores.name, "score_divided_by_oppo_score")
+
+    def test_calculate_multiplication(self):
+        calc_function = calculate_multiplication(("score", "oppo_score"))
+
+        assert_required_columns(
+            self,
+            req_cols=("score", "oppo_score"),
+            valid_data_frame=self.data_frame,
+            feature_function=calc_function,
+        )
+
+        multiplied_scores = calc_function(self.data_frame)
+        self.assertIsInstance(multiplied_scores, pd.Series)
+        self.assertEqual(multiplied_scores.name, "score_multiplied_by_oppo_score")

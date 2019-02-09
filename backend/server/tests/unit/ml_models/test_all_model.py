@@ -122,7 +122,8 @@ class TestAllModelData(TestCase):
         )
 
         self.data = AllModelData(
-            data_readers=[betting_data_reader, player_data_reader, match_data_reader]
+            data_readers=[betting_data_reader, player_data_reader, match_data_reader],
+            data_transformers=[],
         )
 
     def test_train_data(self):

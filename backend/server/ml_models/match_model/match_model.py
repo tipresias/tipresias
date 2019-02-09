@@ -28,6 +28,7 @@ from server.data_processors.feature_functions import (
 from server.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
+    calculate_division,
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
@@ -57,7 +58,7 @@ FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_cum_win_points,
     add_win_streak,
     add_elo_rating,
-    feature_calculator([(calculate_rolling_rate, ["last_week_result"])]),
+    feature_calculator([(calculate_rolling_rate, [("last_week_result",)])]),
 ]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     TeamDataStacker(index_cols=INDEX_COLS).transform,
@@ -83,7 +84,12 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
             add_cum_percent,
             add_ladder_position,
             add_elo_pred_win,
-            feature_calculator([(calculate_rolling_rate, ["elo_pred_win"])]),
+            feature_calculator(
+                [
+                    (calculate_rolling_rate, [("elo_pred_win",)]),
+                    (calculate_division, [("elo_rating", "ladder_position")]),
+                ]
+            ),
         ]
     ).transform,
     OppoFeatureBuilder(

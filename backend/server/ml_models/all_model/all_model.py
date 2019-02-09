@@ -12,15 +12,34 @@ from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.exceptions import DataConversionWarning
 from xgboost import XGBRegressor
 
+from server.data_processors import FeatureBuilder
+from server.data_processors.feature_calculation import (
+    feature_calculator,
+    calculate_division,
+    calculate_multiplication,
+)
 from server.ml_models.betting_model import BettingModelData
 from server.ml_models.match_model import MatchModelData, CATEGORY_COLS
 from server.ml_models.player_model import PlayerModelData
-from server.ml_models.ml_model import MLModel, MLModelData
-from server.types import YearPair
+from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
+from server.types import YearPair, DataFrameTransformer
 from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES, VENUES, SEED
 
 
 START_DATE = "1965-01-01"
+
+DATA_TRANSFORMERS: List[DataFrameTransformer] = [
+    FeatureBuilder(
+        feature_funcs=[
+            feature_calculator(
+                [
+                    (calculate_division, [("elo_rating", "win_odds")]),
+                    (calculate_multiplication, [("win_odds", "ladder_position")]),
+                ]
+            )
+        ]
+    ).transform
+]
 DATA_READERS: List[Type[MLModelData]] = [
     BettingModelData,
     PlayerModelData,
@@ -60,7 +79,7 @@ class AllModel(MLModel):
         super().__init__(pipeline=pipeline, name=name)
 
 
-class AllModelData(MLModelData):
+class AllModelData(MLModelData, DataTransformerMixin):
     """Load and clean data from all data sources"""
 
     def __init__(
@@ -72,6 +91,7 @@ class AllModelData(MLModelData):
         start_date=None,
         end_date="2016-12-31",
         category_cols=CATEGORY_COLS,
+        data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
     ) -> None:
         if len(data_readers) != len(data_reader_kwargs):
             raise ValueError(
@@ -79,6 +99,8 @@ class AllModelData(MLModelData):
             )
 
         super().__init__(train_years=train_years, test_years=test_years)
+
+        self._data_transformers = data_transformers
 
         data_frame = reduce(
             self.__concat_data_frames, zip(data_readers, data_reader_kwargs), None
@@ -92,11 +114,13 @@ class AllModelData(MLModelData):
         else:
             category_data_frame = data_frame[category_cols]
 
+        sorted_data_frame = pd.concat([category_data_frame, numeric_data_frame], axis=1)
+
         start_year = datetime.strptime(start_date, "%Y-%m-%d").year if start_date else 0
         end_year = datetime.strptime(end_date, "%Y-%m-%d").year if end_date else np.Inf
 
         self._data = (
-            pd.concat([category_data_frame, numeric_data_frame], axis=1)
+            self._compose_transformers(sorted_data_frame)  # pylint: disable=E1102
             .loc[(data_frame["year"] >= start_year) & (data_frame["year"] <= end_year),]
             .dropna()
             .sort_index()
@@ -105,6 +129,10 @@ class AllModelData(MLModelData):
     @property
     def data(self) -> pd.DataFrame:
         return self._data
+
+    @property
+    def data_transformers(self):
+        return self._data_transformers
 
     @staticmethod
     def __concat_data_frames(

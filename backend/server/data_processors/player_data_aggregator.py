@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Union, Tuple
 import pandas as pd
 import numpy as np
 
@@ -35,17 +35,13 @@ REQUIRED_COLS = (
 
 
 class PlayerDataAggregator:
-    """Perform aggregations to turn player-match data into team-match data
+    """Perform aggregations to turn player-match data into team-match data."""
 
-    Args:
-        index_cols (list): Column names to be used as a multi-index.
-
-    Attributes:
-        index_cols (list): Column names to be used as a multi-index.
-    """
-
-    def __init__(self, index_cols: List[str] = INDEX_COLS) -> None:
+    def __init__(
+        self, index_cols: List[str] = INDEX_COLS, aggregations: List[str] = ["sum"]
+    ) -> None:
         self.index_cols = index_cols
+        self.aggregations = aggregations
 
     def transform(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         """Aggregate player stats by team.
@@ -70,20 +66,29 @@ class PlayerDataAggregator:
                 f"{missing_cols}"
             )
 
-        return (
+        # 'oppo_team' isn't an index column, but including it in the groupby
+        # doesn't change the grouping and makes it easier to keep for the final
+        # data frame.
+        agg_data_frame = (
             data_frame.drop(["player_id", "player_name"], axis=1)
-            # 'oppo_team' isn't an index column, but including it in the groupby
-            # doesn't change the grouping and makes it easier to keep for the final
-            # data frame.
             .groupby(self.index_cols + ["oppo_team"])
             .aggregate(self.__aggregations())
+        )
+
+        agg_data_frame.columns = [
+            self.__agg_column_name(column_pair)
+            for column_pair in agg_data_frame.columns.values
+        ]
+
+        # Various finals matches have been draws and replayed,
+        # and sometimes home/away is switched requiring us to drop duplicates
+        # at the end.
+        # This eliminates some matches from Round 15 in 1897, because they
+        # played some sort of round-robin tournament for finals, but I'm
+        # not too worried about the loss of that data.
+        return (
+            agg_data_frame.dropna(axis=1)
             .reset_index()
-            # Various finals matches have been draws and replayed,
-            # and sometimes home/away is switched requiring us to drop duplicates
-            # at the end.
-            # This eliminates some matches from Round 15 in 1897, because they
-            # played some sort of round-robin tournament for finals, but I'm
-            # not too worried about the loss of that data.
             .drop_duplicates(subset=self.index_cols, keep="last")
             .astype(
                 {
@@ -96,11 +101,18 @@ class PlayerDataAggregator:
             .sort_index()
         )
 
-    @staticmethod
-    def __aggregations() -> Dict[str, str]:
-        player_aggs = {col: "sum" for col in STATS_COLS}
+    def __aggregations(self) -> Dict[str, Union[str, List[str]]]:
+        player_aggs = {col: self.aggregations for col in STATS_COLS}
         # Since match stats are the same across player rows, taking the mean
         # is the easiest way to aggregate them
         match_aggs = {col: "mean" for col in MATCH_STATS_COLS}
 
         return {**player_aggs, **match_aggs}
+
+    @staticmethod
+    def __agg_column_name(column_pair: Tuple[str, str]) -> str:
+        column_label, _ = column_pair
+        return (
+            column_label if column_label in MATCH_STATS_COLS else "_".join(column_pair)
+        )
+

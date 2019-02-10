@@ -82,7 +82,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
         feature_funcs=FEATURE_FUNCS,
         index_cols=["team", "year", "round_number", "player_id"],
     ).transform,
-    PlayerDataAggregator().transform,
+    PlayerDataAggregator(aggregations=["sum", "max", "min", "skew", "std"]).transform,
     OppoFeatureBuilder(match_cols=MATCH_STATS_COLS).transform,
 ]
 

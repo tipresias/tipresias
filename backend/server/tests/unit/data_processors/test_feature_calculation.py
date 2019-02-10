@@ -8,6 +8,7 @@ from server.data_processors.feature_calculation import (
     calculate_rolling_rate,
     calculate_division,
     calculate_multiplication,
+    calculate_rolling_mean_by_dimension,
 )
 
 FAKE = Faker()
@@ -98,3 +99,19 @@ class TestFeatureCalculations(TestCase):
         multiplied_scores = calc_function(self.data_frame)
         self.assertIsInstance(multiplied_scores, pd.Series)
         self.assertEqual(multiplied_scores.name, "score_multiplied_by_oppo_score")
+
+    def test_calculate_rolling_mean_by_dimension(self):
+        calc_function = calculate_rolling_mean_by_dimension(("oppo_team", "score"))
+
+        assert_required_columns(
+            self,
+            req_cols=("oppo_team", "score"),
+            valid_data_frame=self.data_frame,
+            feature_function=calc_function,
+        )
+
+        rolling_oppo_team_score = calc_function(self.data_frame)
+        self.assertIsInstance(rolling_oppo_team_score, pd.Series)
+        self.assertEqual(
+            rolling_oppo_team_score.name, "rolling_mean_score_by_oppo_team"
+        )

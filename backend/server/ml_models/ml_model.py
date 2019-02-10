@@ -138,10 +138,23 @@ class MLModelData:
 
     @staticmethod
     def __X(data_frame: pd.DataFrame) -> pd.DataFrame:
-        features = data_frame.drop(["score", "oppo_score"], axis=1)
+        labels = [
+            "score",
+            "oppo_score",
+            "behinds",
+            "oppo_behinds",
+            "goals",
+            "oppo_goals",
+            "margin",
+            "result",
+        ]
+        label_cols = data_frame.filter(regex=f"^{'$|^'.join(labels)}$").columns
+        features = data_frame.drop(label_cols, axis=1)
         numeric_features = features.select_dtypes("number").astype(float)
         categorical_features = features.select_dtypes(exclude=["number", "datetime"])
 
+        # Sorting columns with categorical features first to allow for positional indexing
+        # for some data transformations further down the pipeline
         return pd.concat([categorical_features, numeric_features], axis=1)
 
     @staticmethod

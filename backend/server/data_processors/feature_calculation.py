@@ -1,7 +1,8 @@
-from typing import Tuple, List, Callable, Sequence
+from typing import Tuple, List, Callable, Sequence, Dict
 from functools import partial
 import itertools
 import pandas as pd
+import numpy as np
 
 from server.types import DataFrameTransformer
 from server.ml_models.data_config import AVG_SEASON_LENGTH
@@ -11,6 +12,10 @@ Calculator = Callable[[Sequence[str]], DataFrameCalculator]
 CalculatorPair = Tuple[Calculator, List[Sequence[str]]]
 
 TEAM_LEVEL = 0
+# Varies by season and number of teams, but teams play each other about 1.5 times per season,
+# and I found a rolling window of 3 for such aggregations to one of the most predictive
+N_TEAM_MATCHUPS_PER_TWO_SEASONS = 3
+ROLLING_WINDOWS = {"oppo_team": N_TEAM_MATCHUPS_PER_TWO_SEASONS}
 
 
 def _calculate_feature_col(
@@ -79,6 +84,68 @@ def calculate_rolling_rate(column: Sequence[str]) -> DataFrameCalculator:
     return partial(_rolling_rate, column[0])
 
 
+def _rolling_mean_by_dimension(
+    column_pair: Sequence[str],
+    rolling_windows: Dict[str, int],
+    data_frame: pd.DataFrame,
+) -> pd.Series:
+    dimension_column, metric_column = column_pair
+    required_columns = ["team", *column_pair]
+    rolling_window = (
+        rolling_windows[dimension_column]
+        if dimension_column in rolling_windows.keys()
+        else AVG_SEASON_LENGTH
+    )
+
+    if any([col not in data_frame.columns for col in required_columns]):
+        raise ValueError(
+            f"To calculate rolling rate, 'team', {dimension_column}, and '{metric_column}' "
+            "must be in data frame, but the columns given were "
+            f"{data_frame.columns}"
+        )
+
+    prev_match_values = (
+        data_frame.groupby(["team", dimension_column])[metric_column].shift().fillna(0)
+    )
+
+    groups = data_frame.assign(
+        **{f"prev_{metric_column}_by_{dimension_column}": prev_match_values}
+    ).groupby(["team", dimension_column], group_keys=False)[metric_column]
+
+    rolling_rate = groups.rolling(window=rolling_window).mean()
+
+    # Only select rows that are NaNs in rolling series
+    blank_rolling_rows = rolling_rate.isna()
+    expanding_rate = groups.expanding(1).mean()[blank_rolling_rows]
+
+    return (
+        pd.concat([rolling_rate, expanding_rate], join="inner")
+        .reset_index(level=[0, 1], drop=True)
+        .dropna()
+        .sort_index()
+        .rename(f"rolling_mean_{metric_column}_by_{dimension_column}")
+    )
+
+
+def calculate_rolling_mean_by_dimension(
+    column_pair: Sequence[str], rolling_windows: Dict[str, int] = ROLLING_WINDOWS
+) -> DataFrameCalculator:
+    """
+    Calculate the rolling mean of a team's metric column when grouped by a dimension column.
+    Note: Be sure not to use 'last_week'/'prev_match' metric columns, because that data
+    refers to the previous match's dimension, not the current one, so grouping the metric
+    values will result in incorrect aggregations.
+    """
+
+    if len(column_pair) != 2:
+        raise ValueError(
+            "Can only calculate one rolling average at a time, grouped by one dimension "
+            f"at a time, but received {column_pair}"
+        )
+
+    return partial(_rolling_mean_by_dimension, column_pair, rolling_windows)
+
+
 def _division(column_pair: Sequence[str], data_frame: pd.DataFrame) -> pd.Series:
     divisor, dividend = column_pair
 
@@ -89,8 +156,12 @@ def _division(column_pair: Sequence[str], data_frame: pd.DataFrame) -> pd.Series
             f"{data_frame.columns}"
         )
 
-    return (data_frame[divisor] / data_frame[dividend]).rename(
-        f"{divisor}_divided_by_{dividend}"
+    return (
+        (data_frame[divisor] / data_frame[dividend])
+        # Dividing by 0 results in inf, and I'd rather have it just be 0
+        .map(lambda val: 0 if val == np.inf else val).rename(
+            f"{divisor}_divided_by_{dividend}"
+        )
     )
 
 

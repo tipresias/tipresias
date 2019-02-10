@@ -14,8 +14,15 @@ CalculatorPair = Tuple[Calculator, List[Sequence[str]]]
 TEAM_LEVEL = 0
 # Varies by season and number of teams, but teams play each other about 1.5 times per season,
 # and I found a rolling window of 3 for such aggregations to one of the most predictive
-N_TEAM_MATCHUPS_PER_TWO_SEASONS = 3
-ROLLING_WINDOWS = {"oppo_team": N_TEAM_MATCHUPS_PER_TWO_SEASONS}
+# of match results
+ROLLING_OPPO_TEAM_WINDOW = 3
+# Kind of an awkward aggregation given the imbalance of number of matches a team plays
+# at each venue, but after some experimenting a window of 8 works well. It represents
+# a little less than a typical season for home venues, about 2-3 seasons for away Melbourne
+# venues, and about 5-6 seasons for most other away venues
+ROLLING_VENUE_WINDOW = 8
+
+ROLLING_WINDOWS = {"oppo_team": ROLLING_OPPO_TEAM_WINDOW, "venue": ROLLING_VENUE_WINDOW}
 
 
 def _calculate_feature_col(

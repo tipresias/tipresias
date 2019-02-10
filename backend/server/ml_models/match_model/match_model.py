@@ -27,6 +27,7 @@ from server.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
     calculate_division,
+    calculate_rolling_mean_by_dimension,
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
@@ -56,7 +57,22 @@ FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_cum_win_points,
     add_win_streak,
     add_elo_rating,
-    feature_calculator([(calculate_rolling_rate, [("result",)])]),
+    feature_calculator(
+        [
+            (calculate_rolling_rate, [("result",)]),
+            (
+                calculate_rolling_mean_by_dimension,
+                [
+                    ("oppo_team", "margin"),
+                    ("oppo_team", "result"),
+                    ("oppo_team", "score"),
+                    ("venue", "margin"),
+                    ("venue", "result"),
+                    ("venue", "score"),
+                ],
+            ),
+        ]
+    ),
 ]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     TeamDataStacker(index_cols=INDEX_COLS).transform,

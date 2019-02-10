@@ -40,100 +40,72 @@ CARRYOVER = 0.575
 EloIndexType = Tuple[int, int, str]
 
 
-def add_last_week_result(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's last week result (win, draw, loss) as float"""
+def add_result(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add a team's match result (win, draw, loss) as float"""
 
     if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
         raise ValueError(
-            "To calculate last week result, 'score' and 'oppo_score' "
+            "To calculate match result, 'score' and 'oppo_score' "
             "must be in the data frame, but the columns given were "
             f"{data_frame.columns}"
         )
 
     wins = (data_frame["score"] > data_frame["oppo_score"]).astype(int)
     draws = (data_frame["score"] == data_frame["oppo_score"]).astype(int) * 0.5
-    last_week_result_col = (wins + draws).groupby(level=TEAM_LEVEL).shift()
 
-    return data_frame.assign(last_week_result=last_week_result_col)
+    return data_frame.assign(result=wins + draws)
 
 
-def add_last_week_score(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's score from their previous match"""
+def add_margin(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add a team's margin from the match"""
 
     if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
         raise ValueError(
-            "To calculate last week result, 'score' and 'oppo_score' "
+            "To calculate margin, 'score' and 'oppo_score' "
             "must be in the data frame, but the columns given "
             f"were {data_frame.columns}"
         )
 
-    # Group by team (not team & year) to get final score from previous season for round 1.
-    # This reduces number of rows that need to be dropped and prevents a 'cold start'
-    # for cumulative features
-    last_week_score_col = data_frame.groupby(level=TEAM_LEVEL)["score"].shift()
-
-    return data_frame.assign(last_week_score=last_week_score_col)
-
-
-def add_last_week_margin(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's margin from their previous match"""
-
-    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
-        raise ValueError(
-            "To calculate last week result, 'score' and 'oppo_score' "
-            "must be in the data frame, but the columns given "
-            f"were {data_frame.columns}"
-        )
-
-    # Group by team (not team & year) to get final score from previous season for round 1.
-    # This reduces number of rows that need to be dropped and prevents a 'cold start'
-    # for cumulative features
-    last_week_margin_col = (
-        (data_frame["score"] - data_frame["oppo_score"])
-        .groupby(level=TEAM_LEVEL)
-        .shift()
-    )
-
-    return data_frame.assign(last_week_margin=last_week_margin_col)
+    return data_frame.assign(margin=data_frame["score"] - data_frame["oppo_score"])
 
 
 def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative percent (cumulative score / cumulative opponents' score)"""
 
     if (
-        "last_week_score" not in data_frame.columns
-        or "oppo_last_week_score" not in data_frame.columns
+        "prev_match_score" not in data_frame.columns
+        or "prev_match_oppo_score" not in data_frame.columns
     ):
         raise ValueError(
-            "To calculate cum percent, 'last_week_score' and "
-            "'oppo_last_week_score' must be in the data frame, "
+            "To calculate cum percent, 'prev_match_score' and "
+            "'prev_match_oppo_score' must be in the data frame, "
             f"but the columns given were {data_frame.columns}"
         )
 
-    cum_last_week_score = (
-        data_frame["last_week_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
+    cum_score = (
+        data_frame["prev_match_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
     )
-    cum_oppo_last_week_score = (
-        data_frame["oppo_last_week_score"]
+    cum_oppo_score = (
+        data_frame["prev_match_oppo_score"]
         .groupby(level=[TEAM_LEVEL, YEAR_LEVEL])
         .cumsum()
     )
 
-    return data_frame.assign(cum_percent=cum_last_week_score / cum_oppo_last_week_score)
+    return data_frame.assign(cum_percent=cum_score / cum_oppo_score)
 
 
 def add_cum_win_points(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative win points (based on cumulative result)"""
 
-    if "last_week_result" not in data_frame.columns:
+    if "prev_match_result" not in data_frame.columns:
         raise ValueError(
-            "To calculate cumulative win points, 'last_week_result' "
+            "To calculate cumulative win points, 'prev_match_result' "
             "must be in the data frame, but the columns given were "
             f"{data_frame.columns}"
         )
 
     cum_win_points_col = (
-        (data_frame["last_week_result"] * WIN_POINTS)
+        (data_frame["prev_match_result"] * WIN_POINTS)
         .groupby(level=[TEAM_LEVEL, YEAR_LEVEL])
         .cumsum()
     )
@@ -240,21 +212,21 @@ def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:
 # negative result subtracts 1. Changes in direction (i.e. broken streak) result in
 # starting at 1 or -1.
 def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's running win/loss streak through their previous match"""
+    """Add a team's running win/loss streak through the end of the current match"""
 
-    if "last_week_result" not in data_frame.columns:
+    if "prev_match_result" not in data_frame.columns:
         raise ValueError(
-            "To calculate win streak, 'last_week_result' "
+            "To calculate win streak, 'prev_match_result' "
             "must be in data frame, but the columns given were "
             f"{data_frame.columns}"
         )
 
-    last_week_win_groups = data_frame["last_week_result"].groupby(
+    win_groups = data_frame["prev_match_result"].groupby(
         level=TEAM_LEVEL, group_keys=False
     )
     streak_groups = []
 
-    for team_group_key, team_group in last_week_win_groups:
+    for team_group_key, team_group in win_groups:
         streaks: List = []
 
         for idx, result in enumerate(team_group):
@@ -284,38 +256,6 @@ def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
     return data_frame.assign(
         win_streak=pd.Series(streak_groups, index=data_frame.index)
     )
-
-
-def add_last_week_goals(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add the number of goals a team scored in their previous match."""
-
-    if any([req_col not in data_frame.columns for req_col in ["goals", "oppo_goals"]]):
-        raise ValueError(
-            "To calculate last week's goals, 'goals' and 'oppo_goals' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
-
-    return data_frame.assign(
-        last_week_goals=data_frame["goals"].groupby(level=0).shift()
-    ).drop(["goals", "oppo_goals"], axis=1)
-
-
-def add_last_week_behinds(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add the number of behinds a team scored in their previous match."""
-
-    if any(
-        [req_col not in data_frame.columns for req_col in ["behinds", "oppo_behinds"]]
-    ):
-        raise ValueError(
-            "To calculate last week's behinds, 'behinds' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
-
-    return data_frame.assign(
-        last_week_behinds=data_frame["behinds"].groupby(level=0).shift()
-    ).drop(["behinds", "oppo_behinds"], axis=1)
 
 
 def add_out_of_state(data_frame: pd.DataFrame) -> pd.DataFrame:
@@ -607,3 +547,44 @@ def add_elo_rating(data_frame: pd.DataFrame):
     )
 
     return data_frame.assign(elo_rating=elo_column)
+
+
+def _shift_features(columns: List[str], shift: bool, data_frame: pd.DataFrame):
+    columns_to_shift = (
+        columns if shift else list(data_frame.drop(columns, axis=1).columns)
+    )
+    shifted_col_names = {col: f"prev_match_{col}" for col in columns_to_shift}
+
+    # Group by team (not team & year) to get final score from previous season for round 1.
+    # This reduces number of rows that need to be dropped and prevents gaps
+    # for cumulative features
+    shifted_features = (
+        data_frame.groupby("team")[columns_to_shift]
+        .shift()
+        .fillna(0)
+        .rename(columns=shifted_col_names)
+    )
+
+    return pd.concat([data_frame, shifted_features], axis=1)
+
+
+def add_shifted_team_features(
+    shift_columns: List[str] = [], keep_columns: List[str] = []
+):
+    """
+    Group features by team and shift by one to get previous match stats.
+    Use shift_columns to indicate which features to shift or keep_columns for features
+    to leave unshifted, but not both.
+    """
+
+    if any(shift_columns) and any(keep_columns):
+        raise ValueError(
+            "To avoid conflicts, you can't include both match_cols "
+            "and oppo_feature_cols. Choose the shorter list to determine which "
+            "columns to skip and which to turn into opposition features."
+        )
+
+    shift = any(shift_columns)
+    columns = shift_columns if shift else keep_columns
+
+    return partial(_shift_features, columns, shift)

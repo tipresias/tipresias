@@ -4,15 +4,12 @@ import pandas as pd
 import numpy as np
 
 from server.data_processors.feature_functions import (
-    add_last_week_result,
-    add_last_week_score,
-    add_last_week_margin,
+    add_result,
+    add_margin,
     add_cum_percent,
     add_cum_win_points,
     add_ladder_position,
     add_win_streak,
-    add_last_week_goals,
-    add_last_week_behinds,
     add_out_of_state,
     add_travel_distance,
     add_last_year_brownlow_votes,
@@ -95,37 +92,25 @@ class TestFeatureFunctions(TestCase):
             .rename_axis([None, None, None])
         )
 
-    def test_add_last_week_result(self):
-        feature_function = add_last_week_result
+    def test_add_result(self):
+        feature_function = add_result
         valid_data_frame = self.data_frame
 
         make_column_assertions(
             self,
-            column_names=["last_week_result"],
+            column_names=["result"],
             req_cols=("score", "oppo_score"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
 
-    def test_add_last_week_score(self):
-        feature_function = add_last_week_score
+    def test_add_margin(self):
+        feature_function = add_margin
         valid_data_frame = self.data_frame
 
         make_column_assertions(
             self,
-            column_names=["last_week_score"],
-            req_cols=("score", "oppo_score"),
-            valid_data_frame=valid_data_frame,
-            feature_function=feature_function,
-        )
-
-    def test_add_last_week_margin(self):
-        feature_function = add_last_week_margin
-        valid_data_frame = self.data_frame
-
-        make_column_assertions(
-            self,
-            column_names=["last_week_margin"],
+            column_names=["margin"],
             req_cols=("score", "oppo_score"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
@@ -134,14 +119,14 @@ class TestFeatureFunctions(TestCase):
     def test_add_cum_percent(self):
         feature_function = add_cum_percent
         valid_data_frame = self.data_frame.assign(
-            last_week_score=np.random.randint(50, 150, 10),
-            oppo_last_week_score=np.random.randint(50, 150, 10),
+            prev_match_score=np.random.randint(50, 150, 10),
+            prev_match_oppo_score=np.random.randint(50, 150, 10),
         )
 
         make_column_assertions(
             self,
             column_names=["cum_percent"],
-            req_cols=("last_week_score", "oppo_last_week_score"),
+            req_cols=("prev_match_score", "prev_match_oppo_score"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
@@ -149,13 +134,13 @@ class TestFeatureFunctions(TestCase):
     def test_add_cum_win_points(self):
         feature_function = add_cum_win_points
         valid_data_frame = self.data_frame.assign(
-            last_week_result=np.random.randint(0, 2, 10)
+            prev_match_result=np.random.randint(0, 2, 10)
         )
 
         make_column_assertions(
             self,
             column_names=["cum_win_points"],
-            req_cols=("last_week_result",),
+            req_cols=("prev_match_result",),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
@@ -211,62 +196,13 @@ class TestFeatureFunctions(TestCase):
     def test_add_win_streak(self):
         feature_function = add_win_streak
         valid_data_frame = self.data_frame.assign(
-            last_week_result=np.random.randint(0, 2, 10)
+            prev_match_result=np.random.randint(0, 2, 10)
         )
 
         make_column_assertions(
             self,
             column_names=["win_streak"],
-            req_cols=("last_week_result",),
-            valid_data_frame=valid_data_frame,
-            feature_function=feature_function,
-        )
-
-    def test_add_last_week_goals(self):
-        feature_function = add_last_week_goals
-        valid_data_frame = self.data_frame.assign(
-            goals=np.random.randint(0, 10, 10), oppo_goals=np.random.randint(0, 10, 10)
-        )
-
-        with self.subTest(data_frame=valid_data_frame):
-            data_frame = valid_data_frame
-            transformed_data_frame = feature_function(data_frame)
-
-            # Adding 'last_week_goals' drops 'goals' & 'oppo_goals', so subtracts
-            # one column in total
-            self.assertEqual(
-                len(data_frame.columns) - 1, len(transformed_data_frame.columns)
-            )
-            self.assertIn("last_week_goals", transformed_data_frame.columns)
-
-        assert_required_columns(
-            self,
-            req_cols=("goals", "oppo_goals"),
-            valid_data_frame=valid_data_frame,
-            feature_function=feature_function,
-        )
-
-    def test_add_last_week_behinds(self):
-        feature_function = add_last_week_behinds
-        valid_data_frame = self.data_frame.assign(
-            behinds=np.random.randint(0, 10, 10),
-            oppo_behinds=np.random.randint(0, 10, 10),
-        )
-
-        with self.subTest(data_frame=valid_data_frame):
-            data_frame = valid_data_frame
-            transformed_data_frame = feature_function(data_frame)
-
-            # Adding 'last_week_behinds' drops 'behinds' & 'oppo_behinds', so subtracts
-            # one column in total
-            self.assertEqual(
-                len(data_frame.columns) - 1, len(transformed_data_frame.columns)
-            )
-            self.assertIn("last_week_behinds", transformed_data_frame.columns)
-
-        assert_required_columns(
-            self,
-            req_cols=("behinds", "oppo_behinds"),
+            req_cols=("prev_match_result",),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )

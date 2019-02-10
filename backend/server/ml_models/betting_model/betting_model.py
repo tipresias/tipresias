@@ -12,13 +12,13 @@ from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
 from server.data_readers import FootywireDataReader
 from server.data_processors.feature_functions import (
-    add_last_week_result,
-    add_last_week_score,
+    add_result,
     add_cum_percent,
     add_cum_win_points,
     add_ladder_position,
     add_win_streak,
     add_betting_pred_win,
+    add_shifted_team_features,
 )
 from server.data_processors.feature_calculation import (
     feature_calculator,
@@ -29,8 +29,8 @@ from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, IN
 
 
 FEATURE_FUNCS: List[DataFrameTransformer] = [
-    add_last_week_result,
-    add_last_week_score,
+    add_result,
+    add_shifted_team_features(shift_columns=["score", "oppo_score", "result"]),
     add_cum_win_points,
     add_betting_pred_win,
     add_win_streak,

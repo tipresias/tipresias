@@ -11,19 +11,17 @@ from xgboost import XGBRegressor
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
 from server.data_processors.feature_functions import (
-    add_last_week_result,
-    add_last_week_score,
-    add_last_week_margin,
+    add_result,
+    add_margin,
     add_cum_percent,
     add_cum_win_points,
     add_ladder_position,
     add_win_streak,
     add_out_of_state,
     add_travel_distance,
-    add_last_week_goals,
-    add_last_week_behinds,
     add_elo_rating,
     add_elo_pred_win,
+    add_shifted_team_features,
 )
 from server.data_processors.feature_calculation import (
     feature_calculator,
@@ -50,15 +48,15 @@ CATEGORY_COLS = ["team", "oppo_team", "round_type", "venue"]
 FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_out_of_state,
     add_travel_distance,
-    add_last_week_goals,
-    add_last_week_behinds,
-    add_last_week_result,
-    add_last_week_score,
-    add_last_week_margin,
+    add_result,
+    add_margin,
+    add_shifted_team_features(
+        shift_columns=["score", "oppo_score", "result", "margin", "goals", "behinds"]
+    ),
     add_cum_win_points,
     add_win_streak,
     add_elo_rating,
-    feature_calculator([(calculate_rolling_rate, [("last_week_result",)])]),
+    feature_calculator([(calculate_rolling_rate, [("result",)])]),
 ]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     TeamDataStacker(index_cols=INDEX_COLS).transform,

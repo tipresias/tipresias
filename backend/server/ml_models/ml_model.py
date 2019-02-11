@@ -139,14 +139,11 @@ class MLModelData:
     @staticmethod
     def __X(data_frame: pd.DataFrame) -> pd.DataFrame:
         labels = [
-            "score",
-            "oppo_score",
-            "behinds",
-            "oppo_behinds",
-            "goals",
-            "oppo_goals",
-            "margin",
-            "result",
+            "(?:oppo_)*score",
+            "(?:oppo_)*behinds",
+            "(?:oppo_)*goals",
+            "(?:oppo_)*margin",
+            "(?:oppo_)*result",
         ]
         label_cols = data_frame.filter(regex=f"^{'$|^'.join(labels)}$").columns
         features = data_frame.drop(label_cols, axis=1)

@@ -18,6 +18,7 @@ from server.data_processors.feature_functions import (
     add_elo_rating,
     add_betting_pred_win,
     add_elo_pred_win,
+    add_shifted_team_features,
 )
 
 FAKE = Faker()
@@ -370,3 +371,46 @@ class TestFeatureFunctions(TestCase):
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
+
+    def test_add_shifted_team_features(self):
+        feature_function = add_shifted_team_features(shift_columns=["score"])
+        valid_data_frame = self.data_frame.assign(team=FAKE.company())
+
+        make_column_assertions(
+            self,
+            column_names=["prev_match_score"],
+            req_cols=("score",),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function,
+        )
+
+        shifted_data_frame = feature_function(valid_data_frame)
+        self.assertEqual(shifted_data_frame["prev_match_score"].iloc[0], 0)
+        self.assertEqual(
+            shifted_data_frame["prev_match_score"].iloc[1],
+            shifted_data_frame["score"].iloc[0],
+        )
+
+        with self.subTest("using keep_columns argument"):
+            keep_columns = [col for col in self.data_frame if col != "score"]
+            feature_function = add_shifted_team_features(keep_columns=keep_columns)
+            valid_data_frame = self.data_frame.assign(team=FAKE.company())
+
+            assert_column_added(
+                self,
+                column_names=["prev_match_score"],
+                valid_data_frame=valid_data_frame,
+                feature_function=feature_function,
+            )
+
+            shifted_data_frame = feature_function(valid_data_frame)
+            self.assertEqual(shifted_data_frame["prev_match_score"].iloc[0], 0)
+            self.assertEqual(
+                shifted_data_frame["prev_match_score"].iloc[1],
+                shifted_data_frame["score"].iloc[0],
+            )
+            prev_match_columns = [
+                col for col in shifted_data_frame.columns if "prev_match" in col
+            ]
+            self.assertEqual(len(prev_match_columns), 1)
+

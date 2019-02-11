@@ -550,9 +550,18 @@ def add_elo_rating(data_frame: pd.DataFrame):
 
 
 def _shift_features(columns: List[str], shift: bool, data_frame: pd.DataFrame):
-    columns_to_shift = (
-        columns if shift else list(data_frame.drop(columns, axis=1).columns)
-    )
+    if shift:
+        columns_to_shift = columns
+    else:
+        columns_to_shift = [col for col in data_frame.columns if col not in columns]
+
+    if any((shift_col not in data_frame.columns for shift_col in columns_to_shift)):
+        raise ValueError(
+            f"To calculate betting predicted win, all shift columns ({columns_to_shift}) "
+            "must be in data frame, but the columns given were "
+            f"{data_frame.columns}"
+        )
+
     shifted_col_names = {col: f"prev_match_{col}" for col in columns_to_shift}
 
     # Group by team (not team & year) to get final score from previous season for round 1.

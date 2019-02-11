@@ -59,7 +59,7 @@ FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_elo_rating,
     feature_calculator(
         [
-            (calculate_rolling_rate, [("result",)]),
+            (calculate_rolling_rate, [("prev_match_result",)]),
             (
                 calculate_rolling_mean_by_dimension,
                 [
@@ -84,6 +84,14 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
             "round_number",
             "score",
             "oppo_score",
+            "goals",
+            "oppo_goals",
+            "behinds",
+            "oppo_behinds",
+            "result",
+            "oppo_result",
+            "margin",
+            "oppo_margin",
             "out_of_state",
             "at_home",
             "oppo_team",
@@ -106,9 +114,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
             ),
         ]
     ).transform,
-    OppoFeatureBuilder(
-        oppo_feature_cols=["cum_percent", "ladder_position", "elo_pred_win"]
-    ).transform,
+    OppoFeatureBuilder(oppo_feature_cols=["cum_percent", "ladder_position"]).transform,
 ]
 DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
 PIPELINE = make_pipeline(

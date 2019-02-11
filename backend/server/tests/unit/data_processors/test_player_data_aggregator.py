@@ -52,12 +52,11 @@ class TestPlayerDataAggregator(TestCase):
 
             # Match data should remain unchanged
             self.assertEqual(
-                round(valid_data_frame["score"].mean(), 2),
-                round(transformed_df["score"].mean(), 2),
+                valid_data_frame["score"].mean(), transformed_df["score"].mean()
             )
             self.assertEqual(
-                round(valid_data_frame["oppo_score"].mean(), 2),
-                round(transformed_df["oppo_score"].mean(), 2),
+                valid_data_frame["oppo_score"].mean(),
+                transformed_df["oppo_score"].mean(),
             )
 
             # Player data should be aggregated, but same sum

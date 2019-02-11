@@ -114,10 +114,11 @@ def _rolling_mean_by_dimension(
     prev_match_values = (
         data_frame.groupby(["team", dimension_column])[metric_column].shift().fillna(0)
     )
+    prev_match_values_label = f"prev_{metric_column}_by_{dimension_column}"
 
-    groups = data_frame.assign(
-        **{f"prev_{metric_column}_by_{dimension_column}": prev_match_values}
-    ).groupby(["team", dimension_column], group_keys=False)[metric_column]
+    groups = data_frame.assign(**{prev_match_values_label: prev_match_values}).groupby(
+        ["team", dimension_column], group_keys=False
+    )[prev_match_values_label]
 
     rolling_rate = groups.rolling(window=rolling_window).mean()
 

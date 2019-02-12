@@ -9,6 +9,7 @@ from server.data_processors.feature_calculation import (
     calculate_division,
     calculate_multiplication,
     calculate_rolling_mean_by_dimension,
+    calculate_addition,
 )
 
 FAKE = Faker()
@@ -115,3 +116,17 @@ class TestFeatureCalculations(TestCase):
         self.assertEqual(
             rolling_oppo_team_score.name, "rolling_mean_score_by_oppo_team"
         )
+
+    def test_calculate_addition(self):
+        calc_function = calculate_addition(("score", "oppo_score"))
+
+        assert_required_columns(
+            self,
+            req_cols=("score", "oppo_score"),
+            valid_data_frame=self.data_frame,
+            feature_function=calc_function,
+        )
+
+        addition_scores = calc_function(self.data_frame)
+        self.assertIsInstance(addition_scores, pd.Series)
+        self.assertEqual(addition_scores.name, "score_plus_oppo_score")

@@ -1,5 +1,5 @@
 from typing import Tuple, List, Callable, Sequence, Dict
-from functools import partial
+from functools import partial, reduce
 import itertools
 import pandas as pd
 import numpy as np
@@ -209,3 +209,37 @@ def calculate_multiplication(column_pair: Sequence[str]) -> DataFrameCalculator:
         )
 
     return partial(_multiplication, column_pair)
+
+
+def _add_columns(
+    data_frame: pd.DataFrame, addition_column: pd.Series, column_label: str
+):
+    if addition_column is None:
+        return data_frame.loc[:, column_label]
+
+    return addition_column + data_frame[column_label]
+
+
+def _addition(columns: Sequence[str], data_frame: pd.DataFrame) -> pd.Series:
+    if any([col not in data_frame.columns for col in columns]):
+        raise ValueError(
+            f"To calculate addition of all columns: {columns}, "
+            "all must be in data frame, but the columns given were "
+            f"{data_frame.columns}"
+        )
+
+    addition_column = reduce(partial(_add_columns, data_frame), columns, None)
+    column_label = "_plus_".join(columns)
+
+    return addition_column.rename(column_label)
+
+
+def calculate_addition(columns: Sequence[str]) -> DataFrameCalculator:
+    """Adds the values of the columns"""
+
+    if len(columns) < 2:
+        raise ValueError(
+            "Must have at least two columns to add together, but received " f"{columns}"
+        )
+
+    return partial(_addition, columns)

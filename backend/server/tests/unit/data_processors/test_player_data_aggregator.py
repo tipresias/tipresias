@@ -50,14 +50,17 @@ class TestPlayerDataAggregator(TestCase):
             expected_col_count = len(valid_data_frame.columns) - 2 + len(STATS_COLS)
             self.assertEqual(expected_col_count, len(transformed_df.columns))
 
-            # Match data should remain unchanged
-            self.assertEqual(
-                valid_data_frame["score"].mean(), transformed_df["score"].mean()
-            )
-            self.assertEqual(
-                valid_data_frame["oppo_score"].mean(),
-                transformed_df["oppo_score"].mean(),
-            )
+            # Match data should remain unchanged (requires a little extra manipulation,
+            # because I can't be bothred to make the score data realistic)
+            for idx, value in (
+                enumerate(valid_data_frame.groupby("team")["score"].mean().astype(int))
+            ):
+                self.assertEqual(value, transformed_df["score"].iloc[idx])
+
+            for idx, value in (
+                enumerate(valid_data_frame.groupby("team")["oppo_score"].mean().astype(int))
+            ):
+                self.assertEqual(value, transformed_df["oppo_score"].iloc[idx])
 
             # Player data should be aggregated, but same sum
             self.assertEqual(

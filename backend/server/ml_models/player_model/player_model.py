@@ -19,6 +19,11 @@ from server.data_processors.feature_functions import (
     add_rolling_player_stats,
     add_cum_matches_played,
 )
+from server.data_processors.feature_calculation import (
+    feature_calculator,
+    calculate_division,
+    calculate_addition,
+)
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
 from server.ml_models.data_config import TEAM_NAMES, SEED, INDEX_COLS
@@ -75,6 +80,27 @@ FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_last_year_brownlow_votes,
     add_rolling_player_stats,
     add_cum_matches_played,
+    feature_calculator(
+        [
+            (
+                calculate_addition,
+                [("rolling_prev_match_goals", "rolling_prev_match_behinds")],
+            )
+        ]
+    ),
+    feature_calculator(
+        [
+            (
+                calculate_division,
+                [
+                    (
+                        "rolling_prev_match_goals",
+                        "rolling_prev_match_goals_plus_rolling_prev_match_behinds",
+                    )
+                ],
+            )
+        ]
+    ),
 ]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     PlayerDataStacker().transform,

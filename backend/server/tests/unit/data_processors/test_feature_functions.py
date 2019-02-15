@@ -413,4 +413,3 @@ class TestFeatureFunctions(TestCase):
                 col for col in shifted_data_frame.columns if "prev_match" in col
             ]
             self.assertEqual(len(prev_match_columns), 1)
-

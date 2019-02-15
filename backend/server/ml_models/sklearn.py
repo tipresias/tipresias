@@ -3,10 +3,10 @@
 from typing import Sequence, Type, List, Union, Optional, Any, Tuple
 import pandas as pd
 import numpy as np
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator, RegressorMixin, TransformerMixin
 from sklearn.utils.metaestimators import _BaseComposition
 
-from server.types import M
+from server.types import R, T
 
 
 class AveragingRegressor(_BaseComposition, RegressorMixin):
@@ -26,7 +26,7 @@ class AveragingRegressor(_BaseComposition, RegressorMixin):
 
     def fit(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
-    ) -> Type[M]:
+    ) -> Type[R]:
         """Fit estimators to data"""
 
         self.__validate_estimators_weights_equality()
@@ -60,3 +60,43 @@ class AveragingRegressor(_BaseComposition, RegressorMixin):
                 f"Received {len(self.estimators)} estimators and {len(self.weights)}"
                 "weight values, but they must have the same number."
             )
+
+
+class CorrelationSelector(TransformerMixin, BaseEstimator):
+    """
+    Proprocessing transformer for filtering out features that are less correlated with labels
+    """
+
+    def __init__(
+        self,
+        labels: Optional[pd.Series] = None,
+        cols_to_keep: List[str] = [],
+        threshold: Optional[float] = None,
+    ) -> None:
+        self.labels = labels if labels is None else labels.rename("labels")
+        self.threshold = threshold
+        self.cols_to_keep = cols_to_keep
+        self._cols_to_keep = self.cols_to_keep
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        return X[self._cols_to_keep]
+
+    def fit(self, X: pd.DataFrame) -> Type[T]:
+        if self.labels is None:
+            raise TypeError(
+                "Labels for calculating feature correlations haven't been defined."
+            )
+
+        data_frame = pd.concat([X, self.labels], axis=1).drop(self.cols_to_keep, axis=1)
+        label_correlations = data_frame.corr().fillna(0)["labels"].abs()
+
+        if self.threshold is None:
+            correlated_columns = data_frame.columns
+        else:
+            correlated_columns = data_frame.columns[label_correlations > self.threshold]
+
+        self._cols_to_keep = self.cols_to_keep + [
+            col for col in correlated_columns if col in X.columns
+        ]
+
+        return self

@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 
 from project.settings.common import BASE_DIR
-from server.types import YearPair, DataFrameTransformer, M
+from server.types import YearPair, DataFrameTransformer, R
 
 
 class MLModel(_BaseComposition, RegressorMixin):
@@ -49,7 +49,7 @@ class MLModel(_BaseComposition, RegressorMixin):
 
     def fit(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
-    ) -> Type[M]:
+    ) -> Type[R]:
         """Fit estimator to the data"""
 
         if self.pipeline is None:

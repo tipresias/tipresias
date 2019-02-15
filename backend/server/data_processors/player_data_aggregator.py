@@ -115,4 +115,3 @@ class PlayerDataAggregator:
         return (
             column_label if column_label in MATCH_STATS_COLS else "_".join(column_pair)
         )
-

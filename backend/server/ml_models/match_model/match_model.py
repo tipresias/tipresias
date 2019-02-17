@@ -1,6 +1,6 @@
 """Module with wrapper class for XGBoost model and its associated data class"""
 
-from typing import List, Optional, Sequence, Callable
+from typing import List, Optional, Callable
 import pandas as pd
 import numpy as np
 from sklearn.compose import ColumnTransformer
@@ -11,21 +11,33 @@ from xgboost import XGBRegressor
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
 from server.data_processors.feature_functions import (
-    add_last_week_result,
-    add_last_week_score,
+    add_result,
+    add_margin,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_last_week_win_rate,
     add_ladder_position,
     add_win_streak,
     add_out_of_state,
     add_travel_distance,
-    add_last_week_goals,
-    add_last_week_behinds,
+    add_elo_rating,
+    add_elo_pred_win,
+    add_shifted_team_features,
+)
+from server.data_processors.feature_calculation import (
+    feature_calculator,
+    calculate_rolling_rate,
+    calculate_division,
+    calculate_rolling_mean_by_dimension,
 )
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES
+from server.ml_models.data_config import (
+    TEAM_NAMES,
+    ROUND_TYPES,
+    INDEX_COLS,
+    VENUES,
+    SEED,
+)
 
 COL_TRANSLATIONS = {
     "home_points": "home_score",
@@ -33,18 +45,34 @@ COL_TRANSLATIONS = {
     "margin": "home_margin",
     "season": "year",
 }
-INDEX_COLS = ["team", "year", "round_number"]
-REQUIRED_COLS: List[str] = ["year", "score", "oppo_score"]
-FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
+CATEGORY_COLS = ["team", "oppo_team", "round_type", "venue"]
+FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_out_of_state,
     add_travel_distance,
-    add_last_week_goals,
-    add_last_week_behinds,
-    add_last_week_result,
-    add_last_week_score,
+    add_result,
+    add_margin,
+    add_shifted_team_features(
+        shift_columns=["score", "oppo_score", "result", "margin", "goals", "behinds"]
+    ),
     add_cum_win_points,
-    add_rolling_last_week_win_rate,
     add_win_streak,
+    add_elo_rating,
+    feature_calculator(
+        [
+            (calculate_rolling_rate, [("prev_match_result",)]),
+            (
+                calculate_rolling_mean_by_dimension,
+                [
+                    ("oppo_team", "margin"),
+                    ("oppo_team", "result"),
+                    ("oppo_team", "score"),
+                    ("venue", "margin"),
+                    ("venue", "result"),
+                    ("venue", "score"),
+                ],
+            ),
+        ]
+    ),
 ]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     TeamDataStacker(index_cols=INDEX_COLS).transform,
@@ -56,36 +84,58 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
             "round_number",
             "score",
             "oppo_score",
+            "goals",
+            "oppo_goals",
+            "behinds",
+            "oppo_behinds",
+            "result",
+            "oppo_result",
+            "margin",
+            "oppo_margin",
             "out_of_state",
             "at_home",
             "oppo_team",
             "venue",
             "round_type",
+            "date",
         ]
     ).transform,
     # Features dependent on oppo columns
-    FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
+    FeatureBuilder(
+        feature_funcs=[
+            add_cum_percent,
+            add_ladder_position,
+            add_elo_pred_win,
+            feature_calculator(
+                [
+                    (calculate_rolling_rate, [("elo_pred_win",)]),
+                    (calculate_division, [("elo_rating", "ladder_position")]),
+                ]
+            ),
+        ]
+    ).transform,
+    OppoFeatureBuilder(oppo_feature_cols=["cum_percent", "ladder_position"]).transform,
 ]
 DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
-MODEL_ESTIMATORS = ()
 PIPELINE = make_pipeline(
     ColumnTransformer(
         [
             (
                 "onehotencoder",
                 OneHotEncoder(
-                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES], sparse=False
+                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES, VENUES],
+                    sparse=False,
                 ),
-                ["team", "oppo_team", "round_type"],
+                CATEGORY_COLS,
             )
         ],
         remainder="passthrough",
     ),
     StandardScaler(),
-    XGBRegressor()
+    XGBRegressor(),
 )
 
-np.random.seed(42)
+np.random.seed(SEED)
 
 
 class MatchModel(MLModel):
@@ -106,6 +156,7 @@ class MatchModelData(MLModelData, DataTransformerMixin):
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
+        index_cols: List[str] = INDEX_COLS,
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
@@ -114,20 +165,27 @@ class MatchModelData(MLModelData, DataTransformerMixin):
         data_frame = (
             data_readers[0]()
             .rename(columns=COL_TRANSLATIONS)
+            # fitzRoy returns integers that represent some sort of datetime, and the only
+            # way to parse them is converting them to dates.
+            # NOTE: If the matches parsed only go back to 1990 (give or take, I can't remember)
+            # you can parse the date integers into datetime
+            .assign(date=lambda df: pd.to_datetime(df["date"], unit="D"))
             .astype({"year": int})
-            .drop(["round", "game", "date"], axis=1)
+            .drop(["round", "game"], axis=1)
         )
 
-        # There was some sort of round-robin finals round in 1897 and figuring out
-        # a way to clean it up that makes sense is more trouble than just dropping a few rows
+        # There were some weird round-robin rounds in the early days, and it's easier to
+        # drop them rather than figure out how to split up the rounds.
         data_frame = data_frame[
-            (data_frame["year"] != 1897) | (data_frame["round_number"] != 15)
+            ((data_frame["year"] != 1897) | (data_frame["round_number"] != 15))
+            & ((data_frame["year"] != 1924) | (data_frame["round_number"] != 19))
         ]
 
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
-            .drop("venue", axis=1)
             .fillna(0)
+            .set_index(index_cols, drop=False)
+            .rename_axis([None] * len(index_cols))
             .sort_index()
         )
 

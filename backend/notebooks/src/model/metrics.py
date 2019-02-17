@@ -1,5 +1,7 @@
+from functools import partial
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import make_scorer, mean_absolute_error, log_loss, accuracy_score
 
@@ -139,16 +141,36 @@ def measure_estimators(
     )
 
 
-def yearly_performance_score(estimators, features, labels, year, data_frame):
-    feat_train = features[features["year"] < year]
-    feat_test = features[features["year"] == year]
-    X_train = feat_train
-    X_test = feat_test
+def _estimator_score(year, data, estimator_params):
+    X_train, X_test, y_train, y_test = data
+    estimator_name, root_estimator, estimator_kwargs = estimator_params
+    estimator = clone(root_estimator)
 
-    lab_train = labels.loc[feat_train.index]
-    lab_test = labels.loc[feat_test.index]
-    y_train = lab_train
-    y_test = lab_test
+    print(f"\tGetting scores for {estimator_name}")
+
+    estimator.fit(X_train, y_train, **estimator_kwargs)
+
+    y_pred = estimator.predict(X_test)
+
+    if isinstance(y_pred, np.ndarray):
+        y_pred = y_pred.reshape((-1,))
+
+    return {
+        "year": year,
+        "model": estimator_name,
+        "error": mean_absolute_error(y_test, y_pred),
+        "accuracy": regression_accuracy(y_test, y_pred),
+    }
+
+
+def _yearly_performance_score(estimators, features, labels, data_frame, year):
+    print(f"Getting scores for {year}")
+
+    X_train = features[features["year"] < year]
+    X_test = features[features["year"] == year]
+
+    y_train = labels.loc[X_train.index]
+    y_test = labels.loc[X_test.index]
 
     if not data_frame:
         X_train = X_train.values
@@ -157,24 +179,11 @@ def yearly_performance_score(estimators, features, labels, year, data_frame):
         y_train = y_train.values
         y_test = y_test.values
 
-    scores = []
+    estimator_score = partial(
+        _estimator_score, year, (X_train, X_test, y_train, y_test)
+    )
 
-    for estimator_name, estimator, kwargs in estimators:
-        estimator.fit(X_train, y_train, **kwargs)
-
-        y_pred = estimator.predict(X_test)
-
-        if isinstance(y_pred, np.ndarray):
-            y_pred = y_pred.reshape((-1,))
-
-        scores.append(
-            {
-                "year": year,
-                "model": estimator_name,
-                "error": mean_absolute_error(y_test, y_pred),
-                "accuracy": regression_accuracy(y_test, y_pred),
-            }
-        )
+    scores = [estimator_score(estimator) for estimator in estimators]
 
     return scores
 
@@ -182,18 +191,14 @@ def yearly_performance_score(estimators, features, labels, year, data_frame):
 def yearly_performance_scores(
     estimators, features, labels, parallel=True, data_frame=False
 ):
+    yearly_performance_score = partial(
+        _yearly_performance_score, estimators, features, labels, data_frame
+    )
+
     if parallel:
-        scores = [
-            delayed(yearly_performance_score)(
-                estimators, features, labels, year, data_frame
-            )
-            for year in range(2011, 2017)
-        ]
+        scores = [delayed(yearly_performance_score)(year) for year in range(2011, 2017)]
         results = compute(scores, scheduler="processes")
     else:
-        results = [
-            yearly_performance_score(estimators, features, labels, year, data_frame)
-            for year in range(2011, 2017)
-        ]
+        results = [yearly_performance_score(year) for year in range(2011, 2017)]
 
     return pd.DataFrame(list(np.array(results).flatten()))

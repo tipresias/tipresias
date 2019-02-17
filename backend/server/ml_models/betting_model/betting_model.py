@@ -1,6 +1,6 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
-from typing import List, Optional, Sequence, Any
+from typing import List, Optional, Any
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -12,27 +12,30 @@ from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
 from server.data_readers import FootywireDataReader
 from server.data_processors.feature_functions import (
-    add_last_week_result,
-    add_last_week_score,
+    add_result,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_pred_win_rate,
-    add_rolling_last_week_win_rate,
     add_ladder_position,
     add_win_streak,
+    add_betting_pred_win,
+    add_shifted_team_features,
+)
+from server.data_processors.feature_calculation import (
+    feature_calculator,
+    calculate_rolling_rate,
 )
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS
+from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, INDEX_COLS
 
 
-FEATURE_FUNCS: Sequence[DataFrameTransformer] = (
-    add_last_week_result,
-    add_last_week_score,
+FEATURE_FUNCS: List[DataFrameTransformer] = [
+    add_result,
+    add_shifted_team_features(shift_columns=["score", "oppo_score", "result"]),
     add_cum_win_points,
-    add_rolling_pred_win_rate,
-    add_rolling_last_week_win_rate,
+    add_betting_pred_win,
     add_win_streak,
-)
+    feature_calculator([(calculate_rolling_rate, [("betting_pred_win",)])]),
+]
 REQUIRED_COLS: List[str] = ["year", "score", "oppo_score"]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     TeamDataStacker().transform,
@@ -75,7 +78,7 @@ PIPELINE = make_pipeline(
     Lasso(),
 )
 
-np.random.seed(42)
+np.random.seed(SEED)
 
 
 class BettingModel(MLModel):
@@ -102,6 +105,7 @@ class BettingModelData(MLModelData, DataTransformerMixin):
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
+        index_cols: List[str] = INDEX_COLS,
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
@@ -126,6 +130,8 @@ class BettingModelData(MLModelData, DataTransformerMixin):
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .astype({"year": int})
             .fillna(0)
+            .set_index(index_cols, drop=False)
+            .rename_axis([None] * len(index_cols))
             .sort_index()
         )
 

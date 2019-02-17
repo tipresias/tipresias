@@ -108,6 +108,7 @@ class TestAllModelData(TestCase):
                     "team": teams,
                     "oppo_team": list(reversed(teams)),
                     "round_type": ["Regular"] * N_ROWS,
+                    "venue": [FAKE.city() for _ in range(N_ROWS)],
                     "year": years,
                     "score": scores,
                     "oppo_score": oppo_scores,
@@ -121,7 +122,8 @@ class TestAllModelData(TestCase):
         )
 
         self.data = AllModelData(
-            data_readers=[betting_data_reader, player_data_reader, match_data_reader]
+            data_readers=[betting_data_reader, player_data_reader, match_data_reader],
+            data_transformers=[],
         )
 
     def test_train_data(self):

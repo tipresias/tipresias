@@ -9,184 +9,103 @@ Returns:
     pandas.DataFrame
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import math
+from functools import partial, reduce
 import pandas as pd
 import numpy as np
 
+from server.ml_models.data_config import INDEX_COLS, CITIES, TEAM_CITIES, VENUE_CITIES
+
 TEAM_LEVEL = 0
 YEAR_LEVEL = 1
+ROUND_LEVEL = 2
+REORDERED_TEAM_LEVEL = 2
+REORDERED_YEAR_LEVEL = 0
+REORDERED_ROUND_LEVEL = 1
 WIN_POINTS = 4
-AVG_SEASON_LENGTH = 23
-INDEX_COLS = ["team", "year", "round_number"]
 EARTH_RADIUS = 6371
 
-CITIES = {
-    "Adelaide": {"state": "SA", "lat": -34.9285, "long": 138.6007},
-    "Sydney": {"state": "NSW", "lat": -33.8688, "long": 151.2093},
-    "Melbourne": {"state": "VIC", "lat": -37.8136, "long": 144.9631},
-    "Geelong": {"state": "VIC", "lat": 38.1499, "long": 144.3617},
-    "Perth": {"state": "WA", "lat": -31.9505, "long": 115.8605},
-    "Gold Coast": {"state": "QLD", "lat": -28.0167, "long": 153.4000},
-    "Brisbane": {"state": "QLD", "lat": -27.4698, "long": 153.0251},
-    "Launceston": {"state": "TAS", "lat": -41.4332, "long": 147.1441},
-    "Canberra": {"state": "ACT", "lat": -35.2809, "long": 149.1300},
-    "Hobart": {"state": "TAS", "lat": -42.8821, "long": 147.3272},
-    "Darwin": {"state": "NT", "lat": -12.4634, "long": 130.8456},
-    "Alice Springs": {"state": "NT", "lat": -23.6980, "long": 133.8807},
-    "Wellington": {"state": "NZ", "lat": -41.2865, "long": 174.7762},
-    "Euroa": {"state": "VIC", "lat": -36.7500, "long": 145.5667},
-    "Yallourn": {"state": "VIC", "lat": -38.1803, "long": 146.3183},
-    "Cairns": {"state": "QLD", "lat": -6.9186, "long": 145.7781},
-    "Ballarat": {"state": "VIC", "lat": -37.5622, "long": 143.8503},
-    "Shanghai": {"state": "CHN", "lat": 31.2304, "long": 121.4737},
-    "Albury": {"state": "NSW", "lat": 36.0737, "long": 146.9135},
-}
-
-TEAM_CITIES = {
-    "Adelaide": "Adelaide",
-    "Brisbane": "Brisbane",
-    "Carlton": "Melbourne",
-    "Collingwood": "Melbourne",
-    "Essendon": "Melbourne",
-    "Fitzroy": "Melbourne",
-    "Western Bulldogs": "Melbourne",
-    "Fremantle": "Perth",
-    "GWS": "Sydney",
-    "Geelong": "Geelong",
-    "Gold Coast": "Gold Coast",
-    "Hawthorn": "Melbourne",
-    "Melbourne": "Melbourne",
-    "North Melbourne": "Melbourne",
-    "Port Adelaide": "Adelaide",
-    "Richmond": "Melbourne",
-    "St Kilda": "Melbourne",
-    "Sydney": "Sydney",
-    "University": "Melbourne",
-    "West Coast": "Perth",
-}
-
-VENUE_CITIES = {
-    "Football Park": "Adelaide",
-    "S.C.G.": "Sydney",
-    "Windy Hill": "Melbourne",
-    "Subiaco": "Perth",
-    "Moorabbin Oval": "Melbourne",
-    "M.C.G.": "Melbourne",
-    "Kardinia Park": "Geelong",
-    "Victoria Park": "Melbourne",
-    "Waverley Park": "Melbourne",
-    "Princes Park": "Melbourne",
-    "Western Oval": "Melbourne",
-    "W.A.C.A.": "Perth",
-    "Carrara": "Gold Coast",
-    "Gabba": "Brisbane",
-    "Docklands": "Melbourne",
-    "York Park": "Launceston",
-    "Manuka Oval": "Canberra",
-    "Sydney Showground": "Sydney",
-    "Adelaide Oval": "Adelaide",
-    "Bellerive Oval": "Hobart",
-    "Marrara Oval": "Darwin",
-    "Traeger Park": "Alice Springs",
-    "Perth Stadium": "Perth",
-    "Stadium Australia": "Sydney",
-    "Wellington": "Wellington",
-    "Lake Oval": "Melbourne",
-    "East Melbourne": "Melbourne",
-    "Corio Oval": "Geelong",
-    "Junction Oval": "Melbourne",
-    "Brunswick St": "Melbourne",
-    "Punt Rd": "Melbourne",
-    "Glenferrie Oval": "Melbourne",
-    "Arden St": "Melbourne",
-    "Olympic Park": "Melbourne",
-    "Yarraville Oval": "Melbourne",
-    "Toorak Park": "Melbourne",
-    "Euroa": "Euroa",
-    "Coburg Oval": "Melbourne",
-    "Brisbane Exhibition": "Brisbane",
-    "North Hobart": "Hobart",
-    "Bruce Stadium": "Canberra",
-    "Yallourn": "Yallourn",
-    "Cazaly's Stadium": "Cairns",
-    "Eureka Stadium": "Ballarat",
-    "Blacktown": "Sydney",
-    "Jiangwan Stadium": "Shanghai",
-    "Albury": "Albury",
-}
+# Constants for ELO calculations
+BASE_RATING = 1000
+K = 35.6
+X = 0.49
+M = 130
+# Home Ground Advantage
+HGA = 9
+S = 250
+CARRYOVER = 0.575
 
 
-def add_last_week_result(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's last week result (win, draw, loss) as float"""
+EloIndexType = Tuple[int, int, str]
+
+
+def add_result(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add a team's match result (win, draw, loss) as float"""
 
     if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
         raise ValueError(
-            "To calculate last week result, 'score' and 'oppo_score' "
+            "To calculate match result, 'score' and 'oppo_score' "
             "must be in the data frame, but the columns given were "
             f"{data_frame.columns}"
         )
 
     wins = (data_frame["score"] > data_frame["oppo_score"]).astype(int)
     draws = (data_frame["score"] == data_frame["oppo_score"]).astype(int) * 0.5
-    last_week_result_col = (wins + draws).groupby(level=TEAM_LEVEL).shift()
 
-    return data_frame.assign(last_week_result=last_week_result_col)
+    return data_frame.assign(result=wins + draws)
 
 
-def add_last_week_score(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's score from their previous match"""
+def add_margin(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add a team's margin from the match"""
 
     if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
         raise ValueError(
-            "To calculate last week result, 'score' and 'oppo_score' "
+            "To calculate margin, 'score' and 'oppo_score' "
             "must be in the data frame, but the columns given "
             f"were {data_frame.columns}"
         )
 
-    # Group by team (not team & year) to get final score from previous season for round 1.
-    # This reduces number of rows that need to be dropped and prevents a 'cold start'
-    # for cumulative features
-    last_week_score_col = data_frame.groupby(level=TEAM_LEVEL)["score"].shift()
-
-    return data_frame.assign(last_week_score=last_week_score_col)
+    return data_frame.assign(margin=data_frame["score"] - data_frame["oppo_score"])
 
 
 def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative percent (cumulative score / cumulative opponents' score)"""
 
     if (
-        "last_week_score" not in data_frame.columns
-        or "oppo_last_week_score" not in data_frame.columns
+        "prev_match_score" not in data_frame.columns
+        or "prev_match_oppo_score" not in data_frame.columns
     ):
         raise ValueError(
-            "To calculate cum percent, 'last_week_score' and "
-            "'oppo_last_week_score' must be in the data frame, "
+            "To calculate cum percent, 'prev_match_score' and "
+            "'prev_match_oppo_score' must be in the data frame, "
             f"but the columns given were {data_frame.columns}"
         )
 
-    cum_last_week_score = (
-        data_frame["last_week_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
+    cum_score = (
+        data_frame["prev_match_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
     )
-    cum_oppo_last_week_score = (
-        data_frame["last_week_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
+    cum_oppo_score = (
+        data_frame["prev_match_oppo_score"]
+        .groupby(level=[TEAM_LEVEL, YEAR_LEVEL])
+        .cumsum()
     )
 
-    return data_frame.assign(cum_percent=cum_last_week_score / cum_oppo_last_week_score)
+    return data_frame.assign(cum_percent=cum_score / cum_oppo_score)
 
 
 def add_cum_win_points(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative win points (based on cumulative result)"""
 
-    if "last_week_result" not in data_frame.columns:
+    if "prev_match_result" not in data_frame.columns:
         raise ValueError(
-            "To calculate cumulative win points, 'last_week_result' "
+            "To calculate cumulative win points, 'prev_match_result' "
             "must be in the data frame, but the columns given were "
             f"{data_frame.columns}"
         )
 
     cum_win_points_col = (
-        (data_frame["last_week_result"] * WIN_POINTS)
+        (data_frame["prev_match_result"] * WIN_POINTS)
         .groupby(level=[TEAM_LEVEL, YEAR_LEVEL])
         .cumsum()
     )
@@ -194,14 +113,14 @@ def add_cum_win_points(data_frame: pd.DataFrame) -> pd.DataFrame:
     return data_frame.assign(cum_win_points=cum_win_points_col)
 
 
-def add_rolling_pred_win_rate(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's predicted win rate per the betting odds"""
+def add_betting_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add whether a team is predicted to win per the betting odds"""
 
     odds_cols = ["win_odds", "oppo_win_odds", "line_odds", "oppo_line_odds"]
 
     if any((odds_col not in data_frame.columns for odds_col in odds_cols)):
         raise ValueError(
-            f"To calculate rolling predicted win rate, all odds columns ({odds_cols})"
+            f"To calculate betting predicted win, all odds columns ({odds_cols})"
             "must be in data frame, but the columns given were "
             f"{data_frame.columns}"
         )
@@ -218,54 +137,29 @@ def add_rolling_pred_win_rate(data_frame: pd.DataFrame) -> pd.DataFrame:
     # Give half point for predicted draws
     predicted_results = is_favoured + (odds_are_even * 0.5)
 
-    groups = predicted_results.groupby(level=TEAM_LEVEL, group_keys=False)
-
-    # Using mean season length (23) for rolling window due to a combination of
-    # testing different window values for a previous model and finding 23 to be
-    # a good window for data vis.
-    # Not super scientific, but it works well enough.
-    rolling_pred_win_rate = groups.rolling(window=AVG_SEASON_LENGTH).mean()
-
-    # Only select rows that are NaNs in rolling series
-    blank_rolling_rows = rolling_pred_win_rate.isna()
-    expanding_win_rate = groups.expanding(1).mean()[blank_rolling_rows]
-    expanding_rolling_pred_win_rate = (
-        pd.concat([rolling_pred_win_rate, expanding_win_rate], join="inner")
-        .dropna()
-        .sort_index()
-    )
-
-    return data_frame.assign(rolling_pred_win_rate=expanding_rolling_pred_win_rate)
+    return data_frame.assign(betting_pred_win=predicted_results)
 
 
-def add_rolling_last_week_win_rate(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's win rate through their previous match"""
+def add_elo_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add whether a team is predicted to win per elo ratings"""
 
-    if "last_week_result" not in data_frame.columns:
+    if (
+        "elo_rating" not in data_frame.columns
+        or "oppo_elo_rating" not in data_frame.columns
+    ):
         raise ValueError(
-            "To calculate rolling win rate, 'last_week_result' "
+            f"To calculate ELO predicted win, 'elo_rating' and 'oppo_elo_rating "
             "must be in data frame, but the columns given were "
             f"{data_frame.columns}"
         )
 
-    groups = data_frame["last_week_result"].groupby(level=TEAM_LEVEL, group_keys=False)
+    is_favoured = (data_frame["elo_rating"] > data_frame["oppo_elo_rating"]).astype(int)
+    are_even = (data_frame["elo_rating"] == data_frame["oppo_elo_rating"]).astype(int)
 
-    # Using mean season length (23) for rolling window due to a combination of
-    # testing different window values for a previous model and finding 23 to be
-    # a good window for data vis.
-    # Not super scientific, but it works well enough.
-    rolling_win_rate = groups.rolling(window=AVG_SEASON_LENGTH).mean()
+    # Give half point for predicted draws
+    predicted_results = is_favoured + (are_even * 0.5)
 
-    # Only select rows that are NaNs in rolling series
-    blank_rolling_rows = rolling_win_rate.isna()
-    expanding_win_rate = groups.expanding(1).mean()[blank_rolling_rows]
-    expanding_rolling_win_rate = (
-        pd.concat([rolling_win_rate, expanding_win_rate], join="inner")
-        .dropna()
-        .sort_index()
-    )
-
-    return data_frame.assign(rolling_last_week_win_rate=expanding_rolling_win_rate)
+    return data_frame.assign(elo_pred_win=predicted_results)
 
 
 def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:
@@ -318,21 +212,21 @@ def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:
 # negative result subtracts 1. Changes in direction (i.e. broken streak) result in
 # starting at 1 or -1.
 def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add a team's running win/loss streak through their previous match"""
+    """Add a team's running win/loss streak through the end of the current match"""
 
-    if "last_week_result" not in data_frame.columns:
+    if "prev_match_result" not in data_frame.columns:
         raise ValueError(
-            "To calculate win streak, 'last_week_result' "
+            "To calculate win streak, 'prev_match_result' "
             "must be in data frame, but the columns given were "
             f"{data_frame.columns}"
         )
 
-    last_week_win_groups = data_frame["last_week_result"].groupby(
+    win_groups = data_frame["prev_match_result"].groupby(
         level=TEAM_LEVEL, group_keys=False
     )
     streak_groups = []
 
-    for team_group_key, team_group in last_week_win_groups:
+    for team_group_key, team_group in win_groups:
         streaks: List = []
 
         for idx, result in enumerate(team_group):
@@ -362,38 +256,6 @@ def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
     return data_frame.assign(
         win_streak=pd.Series(streak_groups, index=data_frame.index)
     )
-
-
-def add_last_week_goals(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add the number of goals a team scored in their previous match."""
-
-    if any([req_col not in data_frame.columns for req_col in ["goals", "oppo_goals"]]):
-        raise ValueError(
-            "To calculate last week's goals, 'goals' and 'oppo_goals' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
-
-    return data_frame.assign(
-        last_week_goals=data_frame["goals"].groupby(level=0).shift()
-    ).drop(["goals", "oppo_goals"], axis=1)
-
-
-def add_last_week_behinds(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Add the number of behinds a team scored in their previous match."""
-
-    if any(
-        [req_col not in data_frame.columns for req_col in ["behinds", "oppo_behinds"]]
-    ):
-        raise ValueError(
-            "To calculate last week's behinds, 'behinds' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
-
-    return data_frame.assign(
-        last_week_behinds=data_frame["behinds"].groupby(level=0).shift()
-    ).drop(["behinds", "oppo_behinds"], axis=1)
 
 
 def add_out_of_state(data_frame: pd.DataFrame) -> pd.DataFrame:
@@ -565,3 +427,173 @@ def add_cum_matches_played(data_frame: pd.DataFrame):
     return data_frame.assign(
         cum_matches_played=data_frame.groupby("player_id").cumcount()
     )
+
+
+# Basing ELO calculations on:
+# http://www.matterofstats.com/mafl-stats-journal/2013/10/13/building-your-own-team-rating-system.html
+def _elo_formula(
+    prev_elo_rating: float, prev_oppo_elo_rating: float, margin: int, at_home: bool
+):
+    hga = HGA if at_home else HGA * -1
+    expected_outcome = 1 / (
+        1 + 10 ** ((prev_oppo_elo_rating - prev_elo_rating - hga) / S)
+    )
+    actual_outcome = X + 0.5 - X ** (1 + (margin / M))
+
+    return prev_elo_rating + (K * (actual_outcome - expected_outcome))
+
+
+def _calculate_elo_rating(prev_match: pd.Series, cum_elo_ratings: pd.Series, year: int):
+    if cum_elo_ratings is None or prev_match is None:
+        return BASE_RATING
+    else:
+        prev_year, prev_round, _ = prev_match.name
+
+        prev_elo_rating = cum_elo_ratings.loc[prev_match.name]
+
+        if isinstance(prev_elo_rating, pd.Series):
+            raise TypeError(
+                f"ELO series returned a subsection of itself at index {prev_match.name} "
+                "when a single value is expected. Check the data frame for duplicate "
+                "index values."
+            )
+
+        prev_oppo_elo_rating = cum_elo_ratings.loc[
+            prev_year, prev_round, prev_match["oppo_team"]
+        ]
+        prev_margin = prev_match["score"] - prev_match["oppo_score"]
+        prev_at_home = bool(prev_match["at_home"])
+
+        elo_rating = _elo_formula(
+            prev_elo_rating, prev_oppo_elo_rating, prev_margin, prev_at_home
+        )
+
+    if prev_match["year"] != year:
+        return (elo_rating * CARRYOVER) + (BASE_RATING * (1 - CARRYOVER))
+
+    return elo_rating
+
+
+def _get_previous_match(
+    data_frame: pd.DataFrame, year: int, round_number: int, team: str
+):
+    prev_team_matches = data_frame.loc[
+        (data_frame["team"] == team)
+        & (data_frame["year"] == year)
+        & (data_frame["round_number"] < round_number),
+        :,
+    ]
+
+    # If we can't find any previous matches this season, filter by last season
+    if not prev_team_matches.any().any():
+        prev_team_matches = data_frame.loc[
+            (data_frame["team"] == team) & (data_frame["year"] == year - 1), :
+        ]
+
+    if not prev_team_matches.any().any():
+        return None
+
+    return prev_team_matches.iloc[-1, :]
+
+
+# Assumes df sorted by year & round_number, with ascending=True in order to find teams'
+# previous matches
+def _calculate_match_elo_rating(
+    root_data_frame: pd.DataFrame,
+    cum_elo_ratings: Optional[pd.Series],
+    items: Tuple[EloIndexType, pd.Series],
+):
+    data_frame = root_data_frame.copy()
+    index, _ = items
+    year, round_number, team = index
+
+    prev_match = _get_previous_match(data_frame, year, round_number, team)
+    elo_rating = _calculate_elo_rating(prev_match, cum_elo_ratings, year)
+
+    elo_data = [elo_rating]
+    elo_index = pd.MultiIndex.from_tuples([(year, round_number, team)])
+    elo_ratings = pd.Series(data=elo_data, index=elo_index)
+
+    if cum_elo_ratings is None:
+        return elo_ratings.copy()
+
+    return cum_elo_ratings.append(elo_ratings)
+
+
+def add_elo_rating(data_frame: pd.DataFrame):
+    """Add ELO rating of team prior to matches"""
+
+    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
+        raise ValueError(
+            "To calculate ELO ratings, 'score' and 'oppo_score' must be "
+            "in the data frame, but the columns given were "
+            f"{list(data_frame.columns)}"
+        )
+
+    elo_data_frame = data_frame.reorder_levels(
+        [YEAR_LEVEL, ROUND_LEVEL, TEAM_LEVEL]
+    ).sort_index(ascending=True)
+
+    elo_column = (
+        reduce(
+            partial(_calculate_match_elo_rating, elo_data_frame),
+            elo_data_frame.iterrows(),
+            None,
+        )
+        .reorder_levels(
+            [REORDERED_TEAM_LEVEL, REORDERED_YEAR_LEVEL, REORDERED_ROUND_LEVEL]
+        )
+        .sort_index()
+    )
+
+    return data_frame.assign(elo_rating=elo_column)
+
+
+def _shift_features(columns: List[str], shift: bool, data_frame: pd.DataFrame):
+    if shift:
+        columns_to_shift = columns
+    else:
+        columns_to_shift = [col for col in data_frame.columns if col not in columns]
+
+    if any((shift_col not in data_frame.columns for shift_col in columns_to_shift)):
+        raise ValueError(
+            f"To calculate betting predicted win, all shift columns ({columns_to_shift}) "
+            "must be in data frame, but the columns given were "
+            f"{data_frame.columns}"
+        )
+
+    shifted_col_names = {col: f"prev_match_{col}" for col in columns_to_shift}
+
+    # Group by team (not team & year) to get final score from previous season for round 1.
+    # This reduces number of rows that need to be dropped and prevents gaps
+    # for cumulative features
+    shifted_features = (
+        data_frame.groupby("team")[columns_to_shift]
+        .shift()
+        .fillna(0)
+        .rename(columns=shifted_col_names)
+    )
+
+    return pd.concat([data_frame, shifted_features], axis=1)
+
+
+def add_shifted_team_features(
+    shift_columns: List[str] = [], keep_columns: List[str] = []
+):
+    """
+    Group features by team and shift by one to get previous match stats.
+    Use shift_columns to indicate which features to shift or keep_columns for features
+    to leave unshifted, but not both.
+    """
+
+    if any(shift_columns) and any(keep_columns):
+        raise ValueError(
+            "To avoid conflicts, you can't include both match_cols "
+            "and oppo_feature_cols. Choose the shorter list to determine which "
+            "columns to skip and which to turn into opposition features."
+        )
+
+    shift = any(shift_columns)
+    columns = shift_columns if shift else keep_columns
+
+    return partial(_shift_features, columns, shift)

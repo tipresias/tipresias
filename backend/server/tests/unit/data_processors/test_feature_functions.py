@@ -4,21 +4,21 @@ import pandas as pd
 import numpy as np
 
 from server.data_processors.feature_functions import (
-    add_last_week_result,
-    add_last_week_score,
+    add_result,
+    add_margin,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_pred_win_rate,
-    add_rolling_last_week_win_rate,
     add_ladder_position,
     add_win_streak,
-    add_last_week_goals,
-    add_last_week_behinds,
     add_out_of_state,
     add_travel_distance,
     add_last_year_brownlow_votes,
     add_rolling_player_stats,
     add_cum_matches_played,
+    add_elo_rating,
+    add_betting_pred_win,
+    add_elo_pred_win,
+    add_shifted_team_features,
 )
 
 FAKE = Faker()
@@ -84,34 +84,34 @@ class TestFeatureFunctions(TestCase):
                     "team": teams,
                     "oppo_team": oppo_teams,
                     "year": [2015 for _ in range(10)],
-                    "round_number": [3 for _ in range(10)],
+                    "round_number": [3 for _ in range(5)] + [4 for _ in range(5)],
                     "score": np.random.randint(50, 150, 10),
                     "oppo_score": np.random.randint(50, 150, 10),
                 }
             )
-            .set_index(["year", "round_number", "team"], drop=False)
+            .set_index(["team", "year", "round_number"], drop=False)
             .rename_axis([None, None, None])
         )
 
-    def test_add_last_week_result(self):
-        feature_function = add_last_week_result
+    def test_add_result(self):
+        feature_function = add_result
         valid_data_frame = self.data_frame
 
         make_column_assertions(
             self,
-            column_names=["last_week_result"],
+            column_names=["result"],
             req_cols=("score", "oppo_score"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
 
-    def test_add_last_week_score(self):
-        feature_function = add_last_week_score
+    def test_add_margin(self):
+        feature_function = add_margin
         valid_data_frame = self.data_frame
 
         make_column_assertions(
             self,
-            column_names=["last_week_score"],
+            column_names=["margin"],
             req_cols=("score", "oppo_score"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
@@ -120,14 +120,14 @@ class TestFeatureFunctions(TestCase):
     def test_add_cum_percent(self):
         feature_function = add_cum_percent
         valid_data_frame = self.data_frame.assign(
-            last_week_score=np.random.randint(50, 150, 10),
-            oppo_last_week_score=np.random.randint(50, 150, 10),
+            prev_match_score=np.random.randint(50, 150, 10),
+            prev_match_oppo_score=np.random.randint(50, 150, 10),
         )
 
         make_column_assertions(
             self,
             column_names=["cum_percent"],
-            req_cols=("last_week_score", "oppo_last_week_score"),
+            req_cols=("prev_match_score", "prev_match_oppo_score"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
@@ -135,45 +135,45 @@ class TestFeatureFunctions(TestCase):
     def test_add_cum_win_points(self):
         feature_function = add_cum_win_points
         valid_data_frame = self.data_frame.assign(
-            last_week_result=np.random.randint(0, 2, 10)
+            prev_match_result=np.random.randint(0, 2, 10)
         )
 
         make_column_assertions(
             self,
             column_names=["cum_win_points"],
-            req_cols=("last_week_result",),
+            req_cols=("prev_match_result",),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
 
-    def test_add_rolling_pred_win_rate(self):
-        feature_function = add_rolling_pred_win_rate
+    def test_add_betting_pred_win(self):
+        feature_function = add_betting_pred_win
         valid_data_frame = self.data_frame.assign(
-            # Random float from 1 to 4 covers most odds values
-            win_odds=(3 * np.random.ranf(10)) + 1,
-            oppo_win_odds=(3 * np.random.ranf(10)) + 1,
-            line_odds=np.random.randint(-30, 30, 10),
-            oppo_line_odds=np.random.randint(-30, 30, 10),
+            win_odds=np.random.randint(0, 2, 10),
+            oppo_win_odds=np.random.randint(0, 2, 10),
+            line_odds=np.random.randint(-50, 50, 10),
+            oppo_line_odds=np.random.randint(-50, 50, 10),
         )
 
         make_column_assertions(
             self,
-            column_names=["rolling_pred_win_rate"],
+            column_names=["betting_pred_win"],
             req_cols=("win_odds", "oppo_win_odds", "line_odds", "oppo_line_odds"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
 
-    def test_add_rolling_last_week_win_rate(self):
-        feature_function = add_rolling_last_week_win_rate
+    def test_add_elo_pred_win(self):
+        feature_function = add_elo_pred_win
         valid_data_frame = self.data_frame.assign(
-            last_week_result=np.random.randint(0, 2, 10)
+            elo_rating=np.random.randint(900, 1100, 10),
+            oppo_elo_rating=np.random.randint(900, 1100, 10),
         )
 
         make_column_assertions(
             self,
-            column_names=["rolling_last_week_win_rate"],
-            req_cols=("last_week_result",),
+            column_names=["elo_pred_win"],
+            req_cols=("elo_rating", "oppo_elo_rating"),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
@@ -197,62 +197,13 @@ class TestFeatureFunctions(TestCase):
     def test_add_win_streak(self):
         feature_function = add_win_streak
         valid_data_frame = self.data_frame.assign(
-            last_week_result=np.random.randint(0, 2, 10)
+            prev_match_result=np.random.randint(0, 2, 10)
         )
 
         make_column_assertions(
             self,
             column_names=["win_streak"],
-            req_cols=("last_week_result",),
-            valid_data_frame=valid_data_frame,
-            feature_function=feature_function,
-        )
-
-    def test_add_last_week_goals(self):
-        feature_function = add_last_week_goals
-        valid_data_frame = self.data_frame.assign(
-            goals=np.random.randint(0, 10, 10), oppo_goals=np.random.randint(0, 10, 10)
-        )
-
-        with self.subTest(data_frame=valid_data_frame):
-            data_frame = valid_data_frame
-            transformed_data_frame = feature_function(data_frame)
-
-            # Adding 'last_week_goals' drops 'goals' & 'oppo_goals', so subtracts
-            # one column in total
-            self.assertEqual(
-                len(data_frame.columns) - 1, len(transformed_data_frame.columns)
-            )
-            self.assertIn("last_week_goals", transformed_data_frame.columns)
-
-        assert_required_columns(
-            self,
-            req_cols=("goals", "oppo_goals"),
-            valid_data_frame=valid_data_frame,
-            feature_function=feature_function,
-        )
-
-    def test_add_last_week_behinds(self):
-        feature_function = add_last_week_behinds
-        valid_data_frame = self.data_frame.assign(
-            behinds=np.random.randint(0, 10, 10),
-            oppo_behinds=np.random.randint(0, 10, 10),
-        )
-
-        with self.subTest(data_frame=valid_data_frame):
-            data_frame = valid_data_frame
-            transformed_data_frame = feature_function(data_frame)
-
-            # Adding 'last_week_behinds' drops 'behinds' & 'oppo_behinds', so subtracts
-            # one column in total
-            self.assertEqual(
-                len(data_frame.columns) - 1, len(transformed_data_frame.columns)
-            )
-            self.assertIn("last_week_behinds", transformed_data_frame.columns)
-
-        assert_required_columns(
-            self,
-            req_cols=("behinds", "oppo_behinds"),
+            req_cols=("prev_match_result",),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
@@ -408,3 +359,57 @@ class TestFeatureFunctions(TestCase):
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
         )
+
+    def test_add_elo_rating(self):
+        feature_function = add_elo_rating
+        valid_data_frame = self.data_frame
+
+        make_column_assertions(
+            self,
+            column_names=["elo_rating"],
+            req_cols=("score", "oppo_score"),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function,
+        )
+
+    def test_add_shifted_team_features(self):
+        feature_function = add_shifted_team_features(shift_columns=["score"])
+        valid_data_frame = self.data_frame.assign(team=FAKE.company())
+
+        make_column_assertions(
+            self,
+            column_names=["prev_match_score"],
+            req_cols=("score",),
+            valid_data_frame=valid_data_frame,
+            feature_function=feature_function,
+        )
+
+        shifted_data_frame = feature_function(valid_data_frame)
+        self.assertEqual(shifted_data_frame["prev_match_score"].iloc[0], 0)
+        self.assertEqual(
+            shifted_data_frame["prev_match_score"].iloc[1],
+            shifted_data_frame["score"].iloc[0],
+        )
+
+        with self.subTest("using keep_columns argument"):
+            keep_columns = [col for col in self.data_frame if col != "score"]
+            feature_function = add_shifted_team_features(keep_columns=keep_columns)
+            valid_data_frame = self.data_frame.assign(team=FAKE.company())
+
+            assert_column_added(
+                self,
+                column_names=["prev_match_score"],
+                valid_data_frame=valid_data_frame,
+                feature_function=feature_function,
+            )
+
+            shifted_data_frame = feature_function(valid_data_frame)
+            self.assertEqual(shifted_data_frame["prev_match_score"].iloc[0], 0)
+            self.assertEqual(
+                shifted_data_frame["prev_match_score"].iloc[1],
+                shifted_data_frame["score"].iloc[0],
+            )
+            prev_match_columns = [
+                col for col in shifted_data_frame.columns if "prev_match" in col
+            ]
+            self.assertEqual(len(prev_match_columns), 1)

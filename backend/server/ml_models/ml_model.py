@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 
 from project.settings.common import BASE_DIR
-from server.types import YearPair, DataFrameTransformer, M
+from server.types import YearPair, DataFrameTransformer, R
 
 
 class MLModel(_BaseComposition, RegressorMixin):
@@ -49,7 +49,7 @@ class MLModel(_BaseComposition, RegressorMixin):
 
     def fit(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
-    ) -> Type[M]:
+    ) -> Type[R]:
         """Fit estimator to the data"""
 
         if self.pipeline is None:
@@ -138,10 +138,20 @@ class MLModelData:
 
     @staticmethod
     def __X(data_frame: pd.DataFrame) -> pd.DataFrame:
-        features = data_frame.drop(["score", "oppo_score"], axis=1)
-        numeric_features = features.select_dtypes(np.number).astype(float)
-        categorical_features = features.drop(numeric_features.columns, axis=1)
+        labels = [
+            "(?:oppo_)*score",
+            "(?:oppo_)*behinds",
+            "(?:oppo_)*goals",
+            "(?:oppo_)*margin",
+            "(?:oppo_)*result",
+        ]
+        label_cols = data_frame.filter(regex=f"^{'$|^'.join(labels)}$").columns
+        features = data_frame.drop(label_cols, axis=1)
+        numeric_features = features.select_dtypes("number").astype(float)
+        categorical_features = features.select_dtypes(exclude=["number", "datetime"])
 
+        # Sorting columns with categorical features first to allow for positional indexing
+        # for some data transformations further down the pipeline
         return pd.concat([categorical_features, numeric_features], axis=1)
 
     @staticmethod
@@ -156,7 +166,7 @@ class DataTransformerMixin:
     def data_transformers(self) -> List[DataFrameTransformer]:
         """List of data transformer functions"""
 
-        raise NotImplementedError("The data_transformers() method must be defined.")
+        raise NotImplementedError("The data_transformers property must be defined.")
 
     @property
     def _compose_transformers(self) -> DataFrameTransformer:

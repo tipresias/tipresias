@@ -2,7 +2,8 @@ from typing import List, Callable
 import pandas as pd
 import numpy as np
 
-INDEX_COLS: List[str] = ["team", "year", "round_number"]
+from server.ml_models.data_config import INDEX_COLS
+
 REQUIRED_COLS: List[str] = ["home_team", "year", "round_number"]
 
 

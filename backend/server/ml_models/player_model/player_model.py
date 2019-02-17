@@ -1,6 +1,6 @@
 """Model class trained on player data and its associated data class"""
 
-from typing import List, Sequence, Callable, Optional
+from typing import List, Callable, Optional
 import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -19,9 +19,14 @@ from server.data_processors.feature_functions import (
     add_rolling_player_stats,
     add_cum_matches_played,
 )
+from server.data_processors.feature_calculation import (
+    feature_calculator,
+    calculate_division,
+    calculate_addition,
+)
 from server.data_readers import FitzroyDataReader
 from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES
+from server.ml_models.data_config import TEAM_NAMES, SEED, INDEX_COLS
 
 MATCH_STATS_COLS = [
     "at_home",
@@ -71,10 +76,31 @@ COL_TRANSLATIONS = {
     "game": "match_id",
 }
 
-FEATURE_FUNCS: Sequence[DataFrameTransformer] = [
+FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_last_year_brownlow_votes,
     add_rolling_player_stats,
     add_cum_matches_played,
+    feature_calculator(
+        [
+            (
+                calculate_addition,
+                [("rolling_prev_match_goals", "rolling_prev_match_behinds")],
+            )
+        ]
+    ),
+    feature_calculator(
+        [
+            (
+                calculate_division,
+                [
+                    (
+                        "rolling_prev_match_goals",
+                        "rolling_prev_match_goals_plus_rolling_prev_match_behinds",
+                    )
+                ],
+            )
+        ]
+    ),
 ]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     PlayerDataStacker().transform,
@@ -82,7 +108,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
         feature_funcs=FEATURE_FUNCS,
         index_cols=["team", "year", "round_number", "player_id"],
     ).transform,
-    PlayerDataAggregator().transform,
+    PlayerDataAggregator(aggregations=["sum", "max", "min", "skew", "std"]).transform,
     OppoFeatureBuilder(match_cols=MATCH_STATS_COLS).transform,
 ]
 
@@ -103,7 +129,7 @@ PIPELINE = make_pipeline(
     XGBRegressor(),
 )
 
-np.random.seed(42)
+np.random.seed(SEED)
 
 
 class PlayerModel(MLModel):
@@ -126,6 +152,7 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
         test_years: YearPair = (2016, 2016),
         start_date="1965-01-01",
         end_date="2016-12-31",
+        index_cols: List[str] = INDEX_COLS,
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
@@ -183,6 +210,8 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .fillna(0)
+            .set_index(index_cols, drop=False)
+            .rename_axis([None] * len(index_cols))
             .sort_index()
         )
 

@@ -74,6 +74,8 @@ class TestMatchModelData(TestCase):
         self.assertNotIn("oppo_goals", X_train.columns)
         self.assertNotIn("behinds", X_train.columns)
         self.assertNotIn("oppo_behinds", X_train.columns)
+        self.assertNotIn("margin", X_train.columns)
+        self.assertNotIn("result", X_train.columns)
 
         # Applying StandardScaler to integer columns raises a warning
         self.assertFalse(
@@ -91,6 +93,7 @@ class TestMatchModelData(TestCase):
         self.assertNotIn("oppo_goals", X_test.columns)
         self.assertNotIn("behinds", X_test.columns)
         self.assertNotIn("oppo_behinds", X_test.columns)
+        self.assertNotIn("result", X_test.columns)
 
         # Applying StandardScaler to integer columns raises a warning
         self.assertFalse(

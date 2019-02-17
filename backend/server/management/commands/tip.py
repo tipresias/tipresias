@@ -147,8 +147,8 @@ class Command(BaseCommand):
         if not any(fixture_data):
             raise ValueError("No fixture data found.")
 
-        round_number = set([match_data["round"] for match_data in fixture_data]).pop()
-        year = set([match_data["season"] for match_data in fixture_data]).pop()
+        round_number = {match_data["round"] for match_data in fixture_data}.pop()
+        year = {match_data["season"] for match_data in fixture_data}.pop()
 
         team_match_lists = [
             self.__build_match(match_data) for match_data in fixture_data

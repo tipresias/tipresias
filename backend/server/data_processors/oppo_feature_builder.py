@@ -1,7 +1,7 @@
 from typing import List, Optional
 import pandas as pd
 
-from server.ml_models.data_config import INDEX_COLS
+from server.data_config import INDEX_COLS
 
 REQUIRED_COLS: List[str] = INDEX_COLS + ["oppo_team"]
 

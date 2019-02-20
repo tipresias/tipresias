@@ -1,9 +1,9 @@
 from typing import List
 import pandas as pd
 
-from server.ml_models.ml_model import DataTransformerMixin
-from server.ml_models.data_config import INDEX_COLS
 from server.types import DataFrameTransformer
+from server.data_config import INDEX_COLS
+from server.utils import DataTransformerMixin
 
 REQUIRED_COLS: List[str] = INDEX_COLS + ["oppo_team"]
 

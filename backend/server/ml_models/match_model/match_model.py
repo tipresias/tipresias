@@ -30,14 +30,9 @@ from server.data_processors.feature_calculation import (
     calculate_rolling_mean_by_dimension,
 )
 from server.data_readers import FitzroyDataReader
-from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import (
-    TEAM_NAMES,
-    ROUND_TYPES,
-    INDEX_COLS,
-    VENUES,
-    SEED,
-)
+from server.ml_models.ml_model import MLModel, MLModelData
+from server.data_config import TEAM_NAMES, ROUND_TYPES, INDEX_COLS, VENUES, SEED
+from server.utils import DataTransformerMixin
 
 COL_TRANSLATIONS = {
     "home_points": "home_score",

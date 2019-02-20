@@ -24,8 +24,9 @@ from server.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
 )
-from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, INDEX_COLS
+from server.ml_models.ml_model import MLModel, MLModelData
+from server.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, INDEX_COLS
+from server.utils import DataTransformerMixin
 
 
 FEATURE_FUNCS: List[DataFrameTransformer] = [

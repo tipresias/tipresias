@@ -2,6 +2,7 @@
 
 from typing import List, Callable, Optional
 import numpy as np
+import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import make_pipeline, Pipeline
@@ -24,9 +25,10 @@ from server.data_processors.feature_calculation import (
     calculate_division,
     calculate_addition,
 )
-from server.data_readers import FitzroyDataReader
-from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES, SEED, INDEX_COLS
+from server.data_readers import FitzroyDataReader, afl_data_reader
+from server.ml_models.ml_model import MLModel, MLModelData
+from server.data_config import TEAM_NAMES, SEED, INDEX_COLS
+from server.utils import DataTransformerMixin
 
 MATCH_STATS_COLS = [
     "at_home",

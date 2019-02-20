@@ -21,9 +21,10 @@ from server.data_processors.feature_calculation import (
 from server.ml_models.betting_model import BettingModelData
 from server.ml_models.match_model import MatchModelData, CATEGORY_COLS
 from server.ml_models.player_model import PlayerModelData
-from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
+from server.ml_models.ml_model import MLModel, MLModelData
 from server.types import YearPair, DataFrameTransformer
-from server.ml_models.data_config import TEAM_NAMES, ROUND_TYPES, VENUES, SEED
+from server.data_config import TEAM_NAMES, ROUND_TYPES, VENUES, SEED
+from server.utils import DataTransformerMixin
 
 
 START_DATE = "1965-01-01"

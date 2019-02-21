@@ -61,7 +61,7 @@ def _fetch_rosters(round_number: Optional[int]) -> List[Dict[str, str]]:
     round_param = {} if round_number is None else {"round": round_number}
     response = requests.get(urljoin(AFL_DOMAIN, "news/teams"), params=round_param)
     soup = BeautifulSoup(response.text, "html5lib")
-    game_elements = soup.elect(".game")
+    game_elements = soup.select(".game")
 
     if not any(game_elements):
         raise ValueError(

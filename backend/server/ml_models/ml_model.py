@@ -2,8 +2,7 @@
 
 import os
 import sys
-from typing import Optional, Tuple, Union, List, Type
-from functools import reduce
+from typing import Optional, Tuple, Union, Type
 from sklearn.pipeline import Pipeline
 from sklearn.utils.metaestimators import _BaseComposition
 from sklearn.base import RegressorMixin
@@ -12,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 from project.settings.common import BASE_DIR
-from server.types import YearPair, DataFrameTransformer, R
+from server.types import YearPair, R
 
 
 class MLModel(_BaseComposition, RegressorMixin):

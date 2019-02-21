@@ -215,7 +215,7 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
             & (~data_frame["match_id"].isin(duplicate_matches))
         ]
 
-        if get_rosters:
+        if get_rosters and len(data_readers) > 2:
             roster_data_frame = self.__create_roster_data_frame(
                 data_readers[2], data_frame
             )

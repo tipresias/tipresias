@@ -170,8 +170,8 @@ class FootywireDataReader:
     def __get_betting_data(
         self, soup: BeautifulSoup, year: int
     ) -> Optional[np.ndarray]:
-        # afl_betting page nests the data table inside of an outer table
-        table_rows = soup.select(".datadiv table table tr")
+        # afl_betting page nests the data table inside of multiple outer tables
+        table_rows = soup.select("form table table table tr")
 
         if not any(table_rows):
             return None

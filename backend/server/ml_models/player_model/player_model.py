@@ -1,7 +1,9 @@
 """Model class trained on player data and its associated data class"""
 
 from typing import List, Callable, Optional
+from datetime import date
 import numpy as np
+import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import make_pipeline, Pipeline
@@ -24,9 +26,10 @@ from server.data_processors.feature_calculation import (
     calculate_division,
     calculate_addition,
 )
-from server.data_readers import FitzroyDataReader
-from server.ml_models.ml_model import MLModel, MLModelData, DataTransformerMixin
-from server.ml_models.data_config import TEAM_NAMES, SEED, INDEX_COLS
+from server.data_readers import FitzroyDataReader, afl_data_reader
+from server.ml_models.ml_model import MLModel, MLModelData
+from server.data_config import TEAM_NAMES, SEED, INDEX_COLS
+from server.utils import DataTransformerMixin
 
 MATCH_STATS_COLS = [
     "at_home",
@@ -113,7 +116,11 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
 ]
 
 fitzroy = FitzroyDataReader()
-DATA_READERS: List[Callable] = [fitzroy.get_afltables_stats, fitzroy.match_results]
+DATA_READERS: List[Callable] = [
+    fitzroy.get_afltables_stats,
+    fitzroy.match_results,
+    afl_data_reader.get_rosters,
+]
 PIPELINE = make_pipeline(
     ColumnTransformer(
         [
@@ -153,6 +160,7 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
         start_date="1965-01-01",
         end_date="2016-12-31",
         index_cols: List[str] = INDEX_COLS,
+        get_rosters: bool = True,
     ) -> None:
         super().__init__(train_years=train_years, test_years=test_years)
 
@@ -176,7 +184,7 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
             # and easier than munging team names
             .dropna()
             .rename(columns=COL_TRANSLATIONS)
-            .astype({"year": int, "match_id": int})
+            .astype({"year": int, "match_id": str, "player_id": str})
             .assign(
                 player_name=lambda x: x["first_name"] + " " + x["surname"],
                 # Need to add year to ID, because there are some
@@ -207,6 +215,14 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
             & (~data_frame["match_id"].isin(duplicate_matches))
         ]
 
+        if get_rosters and len(data_readers) > 2:
+            roster_data_frame = self.__create_roster_data_frame(
+                data_readers[2], data_frame
+            )
+            data_frame = pd.concat([data_frame, roster_data_frame], sort=False).fillna(
+                0
+            )
+
         self._data = (
             self._compose_transformers(data_frame)  # pylint: disable=E1102
             .fillna(0)
@@ -222,6 +238,37 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
     @property
     def data_transformers(self):
         return self._data_transformers
+
+    def __create_roster_data_frame(
+        self, data_reader: Callable, data_frame: pd.DataFrame
+    ) -> pd.DataFrame:
+        year = date.today().year
+        round_number = (
+            data_frame["round_number"].max() + 1
+            if data_frame["year"].max() == year
+            else 1
+        )
+
+        roster_data_frame = (
+            data_reader(round_number=round_number, year=year)
+            .merge(
+                data_frame[["player_name", "player_id"]], on=["player_name"], how="left"
+            )
+            .sort_values("player_id", ascending=False)
+            # There are some duplicate player names over the years, so we drop the oldest,
+            # hoping that the contemporary player matches the one with the most-recent
+            # entry into the AFL. If two players with the same name are playing in the
+            # league at the same time, that will likely result in errors
+            .drop_duplicates(subset=["player_name"], keep="first")
+            .assign(year=year)
+        )
+        # If a player is new to the league, he won't have a player_id per AFL Tables data,
+        # so we make one up just using his name
+        roster_data_frame["player_id"].fillna(
+            roster_data_frame["player_name"], inplace=True
+        )
+
+        return roster_data_frame.assign(id=self.__id_col).set_index("id")
 
     @staticmethod
     def __id_col(data_frame):

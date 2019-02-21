@@ -15,7 +15,7 @@ from functools import partial, reduce
 import pandas as pd
 import numpy as np
 
-from server.ml_models.data_config import INDEX_COLS, CITIES, TEAM_CITIES, VENUE_CITIES
+from server.data_config import INDEX_COLS, CITIES, TEAM_CITIES, VENUE_CITIES
 
 TEAM_LEVEL = 0
 YEAR_LEVEL = 1
@@ -405,8 +405,9 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
 
     rolling_stats = player_groups.rolling(window=23).mean()
     expanding_stats = player_groups.expanding(1).mean()
+
     player_stats = (
-        rolling_stats.fillna(expanding_stats).drop("player_id", axis=1).sort_index()
+        rolling_stats.fillna(expanding_stats).sort_index()
     )
 
     return player_data_frame.assign(**player_stats.to_dict("series")).rename(

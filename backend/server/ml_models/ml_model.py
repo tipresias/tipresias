@@ -2,8 +2,7 @@
 
 import os
 import sys
-from typing import Optional, Tuple, Union, List, Type
-from functools import reduce
+from typing import Optional, Tuple, Union, Type
 from sklearn.pipeline import Pipeline
 from sklearn.utils.metaestimators import _BaseComposition
 from sklearn.base import RegressorMixin
@@ -12,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 from project.settings.common import BASE_DIR
-from server.types import YearPair, DataFrameTransformer, R
+from server.types import YearPair, R
 
 
 class MLModel(_BaseComposition, RegressorMixin):
@@ -157,31 +156,3 @@ class MLModelData:
     @staticmethod
     def __y(data_frame: pd.DataFrame) -> pd.Series:
         return (data_frame["score"] - data_frame["oppo_score"]).rename("margin")
-
-
-class DataTransformerMixin:
-    """Mixin class for MLModelData classes that use data transformers"""
-
-    @property
-    def data_transformers(self) -> List[DataFrameTransformer]:
-        """List of data transformer functions"""
-
-        raise NotImplementedError("The data_transformers property must be defined.")
-
-    @property
-    def _compose_transformers(self) -> DataFrameTransformer:
-        """Combine data transformation functions via composition"""
-
-        # Need to reverse the transformation steps, because composition makes the output
-        # of each new function the argument for the previous
-        return reduce(
-            self.__compose_two_transformers,
-            reversed(self.data_transformers),
-            lambda x: x,
-        )
-
-    @staticmethod
-    def __compose_two_transformers(
-        composed_func: DataFrameTransformer, func_element: DataFrameTransformer
-    ) -> DataFrameTransformer:
-        return lambda x: composed_func(func_element(x))

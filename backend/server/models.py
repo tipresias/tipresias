@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from sklearn.externals import joblib
 
 from server.ml_models import ml_model
-from server.ml_models.data_config import TEAM_NAMES
+from server.data_config import TEAM_NAMES
 
 # Rough estimate, but exactitude isn't necessary here
 GAME_LENGTH_HRS = 3

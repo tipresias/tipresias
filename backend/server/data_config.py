@@ -160,3 +160,4 @@ VENUES = list(set(VENUE_CITIES.keys()))
 INDEX_COLS = ["team", "year", "round_number"]
 SEED = 42
 AVG_SEASON_LENGTH = 23
+CATEGORY_COLS = ["team", "oppo_team", "round_type", "venue"]

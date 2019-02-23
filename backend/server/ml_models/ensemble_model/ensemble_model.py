@@ -9,8 +9,7 @@ from sklearn.ensemble import BaggingRegressor
 from xgboost import XGBRegressor
 
 from server.ml_models.ml_model import MLModel
-from server.data_config import TEAM_NAMES, ROUND_TYPES, VENUES
-from server.ml_models.match_model import CATEGORY_COLS
+from server.data_config import TEAM_NAMES, ROUND_TYPES, VENUES, CATEGORY_COLS
 from server.ml_models.sklearn import CorrelationSelector
 
 SEED = 42

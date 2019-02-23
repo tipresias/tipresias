@@ -35,7 +35,6 @@ COL_TRANSLATIONS = {
     "margin": "home_margin",
     "season": "year",
 }
-CATEGORY_COLS = ["team", "oppo_team", "round_type", "venue"]
 FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_out_of_state,
     add_travel_distance,

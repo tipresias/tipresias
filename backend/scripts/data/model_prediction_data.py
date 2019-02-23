@@ -15,8 +15,6 @@ if BASE_DIR not in sys.path:
 from project.settings.common import DATA_DIR
 from server.ml_models import BettingModel
 from server.ml_models.betting_model import BettingModelData
-from server.ml_models import MatchModel
-from server.ml_models.match_model import MatchModelData
 from server.ml_models import AllModel
 from server.ml_models.all_model import AllModelData
 from server.ml_models import EnsembleModel
@@ -27,7 +25,6 @@ from notebooks.src.data.data_transformer import DataTransformer
 DATA_FILES: Tuple[str, str] = ("afl_betting.csv", "ft_match_list.csv")
 ML_MODELS = [
     (BettingModel(name="betting_data"), BettingModelData),
-    (MatchModel(name="match_data"), MatchModelData),
     (AllModel(name="all_data"), AllModelData),
     (EnsembleModel(name="avg_predictions"), AllModelData),
 ]

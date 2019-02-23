@@ -1,1 +1,1 @@
-from .match_model import MatchModel, MatchModelData, CATEGORY_COLS
+from .match_model import MatchModelData, CATEGORY_COLS

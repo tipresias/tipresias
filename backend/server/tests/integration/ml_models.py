@@ -2,7 +2,6 @@ from django.test import TestCase
 
 from server.ml_models.betting_model import BettingModel, BettingModelData
 from server.ml_models.match_model import MatchModel, MatchModelData
-from server.ml_models.player_model import PlayerModel, PlayerModelData
 from server.ml_models.all_model import AllModel, AllModelData
 from server.ml_models.ensemble_model import EnsembleModel
 from server.tests.helpers import regression_accuracy
@@ -18,10 +17,6 @@ class TestMLModels(TestCase):
             (
                 MatchModel(),
                 MatchModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
-            ),
-            (
-                PlayerModel(),
-                PlayerModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
             ),
             (
                 AllModel(),

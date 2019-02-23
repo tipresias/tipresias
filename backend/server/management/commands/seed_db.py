@@ -18,7 +18,6 @@ from server.ml_models import ml_model
 from server.ml_models.betting_model import BettingModel, BettingModelData
 from server.ml_models.match_model import MatchModel, MatchModelData
 from server.ml_models.all_model import AllModel, AllModelData
-from server.ml_models.player_model import PlayerModel, PlayerModelData
 from server.ml_models import EnsembleModel
 
 FixtureData = TypedDict(
@@ -39,7 +38,6 @@ YEAR_RANGE = "2011-2017"
 ESTIMATORS: List[EstimatorTuple] = [
     (BettingModel(name="betting_data"), BettingModelData),
     (MatchModel(name="match_data"), MatchModelData),
-    (PlayerModel(name="player_data"), PlayerModelData),
     (AllModel(name="all_data"), AllModelData),
     (EnsembleModel(name="tipresias"), AllModelData),
 ]
@@ -395,8 +393,6 @@ class Command(BaseCommand):
             return BettingModel(name=ml_model_record.name)
         if ml_model_record.name == "match_data":
             return MatchModel(name=ml_model_record.name)
-        if ml_model_record.name == "player_data":
-            return PlayerModel(name=ml_model_record.name)
         if ml_model_record.name == "all_data":
             return AllModel(name=ml_model_record.name)
         if ml_model_record.name == "tipresias":

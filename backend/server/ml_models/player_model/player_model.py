@@ -1,13 +1,8 @@
 """Model class trained on player data and its associated data class"""
 
-from typing import List, Callable, Optional
+from typing import List, Callable
 from datetime import date
-import numpy as np
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.pipeline import make_pipeline, Pipeline
-from xgboost import XGBRegressor
 
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import (
@@ -27,8 +22,8 @@ from server.data_processors.feature_calculation import (
     calculate_addition,
 )
 from server.data_readers import FitzroyDataReader, afl_data_reader
-from server.ml_models.ml_model import MLModel, MLModelData
-from server.data_config import TEAM_NAMES, SEED, INDEX_COLS
+from server.ml_models.ml_model import MLModelData
+from server.data_config import INDEX_COLS
 from server.utils import DataTransformerMixin
 
 MATCH_STATS_COLS = [
@@ -121,31 +116,6 @@ DATA_READERS: List[Callable] = [
     fitzroy.match_results,
     afl_data_reader.get_rosters,
 ]
-PIPELINE = make_pipeline(
-    ColumnTransformer(
-        [
-            (
-                "onehotencoder",
-                OneHotEncoder(categories=[TEAM_NAMES, TEAM_NAMES], sparse=False),
-                ["team", "oppo_team"],
-            )
-        ],
-        remainder="passthrough",
-    ),
-    StandardScaler(),
-    XGBRegressor(),
-)
-
-np.random.seed(SEED)
-
-
-class PlayerModel(MLModel):
-    """Create pipeline for fitting/predicting with model trained on player data"""
-
-    def __init__(
-        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
-    ) -> None:
-        super().__init__(pipeline=pipeline, name=name)
 
 
 class PlayerModelData(MLModelData, DataTransformerMixin):

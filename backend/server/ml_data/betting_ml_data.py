@@ -1,7 +1,6 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
 from typing import List, Any
-import numpy as np
 import pandas as pd
 
 from server.types import DataFrameTransformer, YearPair
@@ -20,8 +19,8 @@ from server.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
 )
-from server.ml_models.ml_model import MLModelData
-from server.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, INDEX_COLS
+from server.ml_data import BaseMLData
+from server.data_config import TEAM_TRANSLATIONS, INDEX_COLS
 from server.utils import DataTransformerMixin
 
 
@@ -62,7 +61,7 @@ DATA_READERS = [
 MODEL_ESTIMATORS = ()
 
 
-class BettingModelData(MLModelData, DataTransformerMixin):
+class BettingMLData(BaseMLData, DataTransformerMixin):
     """Load and clean betting data"""
 
     def __init__(

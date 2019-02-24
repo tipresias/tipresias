@@ -5,7 +5,7 @@ from server.types import DataFrameTransformer
 
 
 class DataTransformerMixin:
-    """Mixin class for MLModelData classes that use data transformers"""
+    """Mixin class for estimator and data classes that use data transformers"""
 
     @property
     def data_transformers(self) -> List[DataFrameTransformer]:

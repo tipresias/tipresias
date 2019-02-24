@@ -13,8 +13,8 @@ if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
 from project.settings.common import DATA_DIR
+from server.ml_data import JoinedMLData
 from server.ml_models import AllModel
-from server.ml_models.all_model import AllModelData
 from server.ml_models import EnsembleModel
 
 from notebooks.src.data.data_builder import DataBuilder, BettingData, MatchData
@@ -22,8 +22,8 @@ from notebooks.src.data.data_transformer import DataTransformer
 
 DATA_FILES: Tuple[str, str] = ("afl_betting.csv", "ft_match_list.csv")
 ML_MODELS = [
-    (AllModel(name="all_data"), AllModelData),
-    (EnsembleModel(name="avg_predictions"), AllModelData),
+    (AllModel(name="all_data"), JoinedMLData),
+    (EnsembleModel(name="avg_predictions"), JoinedMLData),
 ]
 
 np.random.seed(42)

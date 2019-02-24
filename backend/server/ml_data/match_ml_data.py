@@ -25,7 +25,7 @@ from server.data_processors.feature_calculation import (
     calculate_rolling_mean_by_dimension,
 )
 from server.data_readers import FitzroyDataReader
-from server.ml_models.ml_model import MLModelData
+from server.ml_data import BaseMLData
 from server.data_config import INDEX_COLS
 from server.utils import DataTransformerMixin
 
@@ -108,7 +108,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
 DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
 
 
-class MatchModelData(MLModelData, DataTransformerMixin):
+class MatchMLData(BaseMLData, DataTransformerMixin):
     """Load and clean match data"""
 
     def __init__(

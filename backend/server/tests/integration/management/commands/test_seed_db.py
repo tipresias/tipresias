@@ -8,7 +8,7 @@ from sklearn.externals import joblib
 
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.ml_models.betting_model import BettingModelData
+from server.ml_data import BettingMLData
 from server.management.commands import seed_db
 from server.tests.fixtures import TestEstimator
 
@@ -20,7 +20,7 @@ ROW_COUNT = 5
 class TestSeedDb(TestCase):
     def setUp(self):
         self.estimator = TestEstimator()
-        self.data_class = BettingModelData
+        self.data_class = BettingMLData
 
         joblib.dump = Mock()
 

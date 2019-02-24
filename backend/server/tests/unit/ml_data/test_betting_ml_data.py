@@ -3,12 +3,12 @@ import pandas as pd
 import numpy as np
 from faker import Faker
 
-from server.ml_models.betting_model import BettingModelData
+from server.ml_data import BettingMLData
 
 FAKE = Faker()
 
 
-class TestBettingModelData(TestCase):
+class TestBettingMLData(TestCase):
     def setUp(self):
         self.data_frame = pd.DataFrame(
             {
@@ -18,7 +18,7 @@ class TestBettingModelData(TestCase):
                 "oppo_score": np.random.randint(50, 150, 10),
             }
         )
-        self.data = BettingModelData(train_years=(2015, 2015), test_years=(2016, 2016))
+        self.data = BettingMLData(train_years=(2015, 2015), test_years=(2016, 2016))
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()

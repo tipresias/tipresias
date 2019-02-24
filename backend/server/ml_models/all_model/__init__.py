@@ -1,1 +1,1 @@
-from .all_model import AllModel, AllModelData
+from .all_model import AllModel

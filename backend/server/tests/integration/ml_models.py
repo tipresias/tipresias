@@ -1,7 +1,7 @@
 from django.test import TestCase
 
-from server.ml_models.all_model import AllModel, AllModelData
-from server.ml_models.ensemble_model import EnsembleModel
+from server.ml_data import JoinedMLData
+from server.ml_models import AllModel, EnsembleModel
 from server.tests.helpers import regression_accuracy
 
 
@@ -10,11 +10,11 @@ class TestMLModels(TestCase):
         self.estimators = [
             (
                 AllModel(),
-                AllModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
+                JoinedMLData(train_years=(2010, 2015), test_years=(2016, 2016)),
             ),
             (
                 EnsembleModel(),
-                AllModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
+                JoinedMLData(train_years=(2010, 2015), test_years=(2016, 2016)),
             ),
         ]
 

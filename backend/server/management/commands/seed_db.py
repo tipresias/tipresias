@@ -1,6 +1,5 @@
 """Django command for seeding the DB with match & prediction data"""
 
-import os
 import itertools
 from datetime import datetime
 from functools import partial
@@ -14,9 +13,9 @@ from django.core.management.base import BaseCommand
 
 from server.data_readers import FootywireDataReader
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
-from server.ml_models import ml_model
-from server.ml_models.all_model import AllModel, AllModelData
-from server.ml_models import EnsembleModel
+from server.ml_models import BaseMLModel
+from server.ml_data import BaseMLData, JoinedMLData
+from server.ml_models import AllModel, EnsembleModel
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -30,12 +29,12 @@ FixtureData = TypedDict(
         "venue": str,
     },
 )
-EstimatorTuple = Tuple[ml_model.MLModel, Type[ml_model.MLModelData]]
+EstimatorTuple = Tuple[BaseMLModel, Type[BaseMLData]]
 
 YEAR_RANGE = "2011-2017"
 ESTIMATORS: List[EstimatorTuple] = [
-    (AllModel(name="all_data"), AllModelData),
-    (EnsembleModel(name="tipresias"), AllModelData),
+    (AllModel(name="all_data"), JoinedMLData),
+    (EnsembleModel(name="tipresias"), JoinedMLData),
 ]
 NO_SCORE = 0
 JAN = 1
@@ -229,8 +228,8 @@ class Command(BaseCommand):
     def __make_year_predictions(
         self,
         ml_model_record: MLModel,
-        estimator: ml_model.MLModel,
-        data: ml_model.MLModelData,
+        estimator: BaseMLModel,
+        data: BaseMLData,
         year: int,
         round_number: Optional[int] = None,
     ) -> List[Prediction]:
@@ -263,8 +262,8 @@ class Command(BaseCommand):
 
     def __predict(
         self,
-        estimator: ml_model.MLModel,
-        data: ml_model.MLModelData,
+        estimator: BaseMLModel,
+        data: BaseMLData,
         data_row_slice: Tuple[slice, int, slice],
     ) -> Optional[pd.DataFrame]:
         X_train, y_train = data.train_data()
@@ -292,7 +291,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def __build_ml_model(
-        estimator: ml_model.MLModel, data_class: Type[ml_model.MLModelData]
+        estimator: BaseMLModel, data_class: Type[BaseMLData]
     ) -> MLModel:
         ml_model_record = MLModel(
             name=estimator.name,

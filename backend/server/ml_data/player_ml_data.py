@@ -22,7 +22,7 @@ from server.data_processors.feature_calculation import (
     calculate_addition,
 )
 from server.data_readers import FitzroyDataReader, afl_data_reader
-from server.ml_models.ml_model import MLModelData
+from server.ml_data import BaseMLData
 from server.data_config import INDEX_COLS
 from server.utils import DataTransformerMixin
 
@@ -118,7 +118,7 @@ DATA_READERS: List[Callable] = [
 ]
 
 
-class PlayerModelData(MLModelData, DataTransformerMixin):
+class PlayerMLData(BaseMLData, DataTransformerMixin):
     """Load and clean player data"""
 
     def __init__(

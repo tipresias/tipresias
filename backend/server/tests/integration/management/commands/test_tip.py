@@ -9,7 +9,7 @@ import pandas as pd
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import tip
-from server.ml_models.betting_model import BettingModelData
+from server.ml_data import BettingMLData
 from server.tests.fixtures import TestEstimator
 
 FAKE = Faker()
@@ -82,7 +82,7 @@ class TestTip(TestCase):
             name=test_estimator.name,
             description="Test estimator model",
             filepath=test_estimator.pickle_filepath(),
-            data_class_path=BettingModelData.class_path(),
+            data_class_path=BettingMLData.class_path(),
         ).save()
 
         self.tip_command = tip.Command(data_reader=footywire)

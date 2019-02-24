@@ -16,7 +16,7 @@ from project.settings.common import BASE_DIR
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_models import AllModel, EnsembleModel
-from server.ml_models.all_model import AllModelData
+from server.ml_data import JoinedMLData
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -33,8 +33,8 @@ FixtureData = TypedDict(
 
 NO_SCORE = 0
 ML_MODELS = [
-    (AllModel(name="all_data"), AllModelData),
-    (EnsembleModel(name="avg_predictions"), AllModelData),
+    (AllModel(name="all_data"), JoinedMLData),
+    (EnsembleModel(name="avg_predictions"), JoinedMLData),
 ]
 
 

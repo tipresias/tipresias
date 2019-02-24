@@ -4,20 +4,25 @@ import pandas as pd
 from faker import Faker
 
 from project.settings.common import BASE_DIR
-
-from server.ml_models.match_model import MatchModelData
+from server.ml_data import PlayerMLData
 
 FAKE = Faker()
 
+get_afltables_stats_df = pd.read_csv(
+    f"{BASE_DIR}/server/tests/fixtures/fitzroy_get_afltables_stats.csv"
+)
 match_results_df = pd.read_csv(
     f"{BASE_DIR}/server/tests/fixtures/fitzroy_match_results.csv"
 )
+get_afltables_stats_mock = Mock(return_value=get_afltables_stats_df)
 match_results_mock = Mock(return_value=match_results_df)
 
 
-class TestMatchModelData(TestCase):
+class TestPlayerMLData(TestCase):
     def setUp(self):
-        self.data = MatchModelData(data_readers=[match_results_mock])
+        self.data = PlayerMLData(
+            data_readers=[get_afltables_stats_mock, match_results_mock]
+        )
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()
@@ -30,8 +35,6 @@ class TestMatchModelData(TestCase):
         self.assertNotIn("oppo_goals", X_train.columns)
         self.assertNotIn("behinds", X_train.columns)
         self.assertNotIn("oppo_behinds", X_train.columns)
-        self.assertNotIn("margin", X_train.columns)
-        self.assertNotIn("result", X_train.columns)
 
         # Applying StandardScaler to integer columns raises a warning
         self.assertFalse(
@@ -49,7 +52,6 @@ class TestMatchModelData(TestCase):
         self.assertNotIn("oppo_goals", X_test.columns)
         self.assertNotIn("behinds", X_test.columns)
         self.assertNotIn("oppo_behinds", X_test.columns)
-        self.assertNotIn("result", X_test.columns)
 
         # Applying StandardScaler to integer columns raises a warning
         self.assertFalse(

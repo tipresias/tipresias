@@ -3,8 +3,8 @@ from sklearn.pipeline import make_pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 
-from server.ml_models.ml_model import MLModel
-from server.ml_models.betting_model import BettingModelData
+from server.ml_models import BaseMLModel
+from server.ml_data import BettingMLData
 from server.data_config import TEAM_NAMES
 
 CATEGORY_COLS = ["team", "oppo_team"]
@@ -23,7 +23,7 @@ PIPELINE = make_pipeline(
 )
 
 
-class TestEstimator(MLModel):
+class TestEstimator(BaseMLModel):
     """Create test MLModel for use in integration tests"""
 
     def __init__(self, pipeline=PIPELINE, name="test_estimator"):
@@ -32,7 +32,7 @@ class TestEstimator(MLModel):
 
 def pickle_test_estimator():
     estimator = TestEstimator()
-    data = BettingModelData()
+    data = BettingMLData()
 
     estimator.fit(*data.train_data())
     estimator.dump()

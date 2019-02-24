@@ -15,10 +15,14 @@ class BaseMLData:
         return f"{cls.__module__}.{cls.__name__}"
 
     def __init__(
-        self, train_years: YearPair = (None, 2015), test_years: YearPair = (2016, 2016)
+        self,
+        train_years: YearPair = (None, 2015),
+        test_years: YearPair = (2016, 2016),
+        fetch_data: bool = False,
     ) -> None:
         self._train_years = train_years
         self._test_years = test_years
+        self.fetch_data = fetch_data
 
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data"""

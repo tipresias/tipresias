@@ -48,17 +48,20 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
         data_reader_kwargs: List[Dict[str, Any]] = [{}, {}, {}],
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
-        start_date=None,
-        end_date="2016-12-31",
-        category_cols=CATEGORY_COLS,
+        start_date: str = None,
+        end_date: str = "2016-12-31",
+        category_cols: List[str] = CATEGORY_COLS,
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
+        fetch_data: bool = False,
     ) -> None:
         if len(data_readers) != len(data_reader_kwargs):
             raise ValueError(
                 "There must be exactly one kwarg object per data reader object."
             )
 
-        super().__init__(train_years=train_years, test_years=test_years)
+        super().__init__(
+            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+        )
 
         self._data_transformers = data_transformers
 
@@ -94,12 +97,14 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
     def data_transformers(self):
         return self._data_transformers
 
-    @staticmethod
     def __concat_data_frames(
-        concated_data_frame: pd.DataFrame, data: Tuple[Type[BaseMLData], Dict[str, Any]]
+        self,
+        concated_data_frame: pd.DataFrame,
+        data: Tuple[Type[BaseMLData], Dict[str, Any]],
     ) -> pd.DataFrame:
         data_reader, data_kwargs = data
-        data_frame = data_reader(**data_kwargs).data
+        data_reader_kwargs = {**data_kwargs, **{"fetch_data": self.fetch_data}}
+        data_frame = data_reader(**data_reader_kwargs).data
 
         if concated_data_frame is None:
             return data_frame

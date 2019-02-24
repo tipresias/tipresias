@@ -130,9 +130,11 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
         start_date="1965-01-01",
         end_date="2016-12-31",
         index_cols: List[str] = INDEX_COLS,
-        get_rosters: bool = True,
+        fetch_data: bool = False,
     ) -> None:
-        super().__init__(train_years=train_years, test_years=test_years)
+        super().__init__(
+            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+        )
 
         self._data_transformers = data_transformers
 
@@ -144,7 +146,9 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
             # The easiest way to add correct ones is to graft on the IDs
             # from match_results. Also, match_results round_numbers are more useful.
             .merge(
-                data_readers[1]()[["date", "venue", "round_number", "game"]],
+                data_readers[1](fetch_data=fetch_data)[
+                    ["date", "venue", "round_number", "game"]
+                ],
                 on=["date", "venue"],
                 how="left",
             )
@@ -185,7 +189,7 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
             & (~data_frame["match_id"].isin(duplicate_matches))
         ]
 
-        if get_rosters and len(data_readers) > 2:
+        if fetch_data and len(data_readers) > 2:
             roster_data_frame = self.__create_roster_data_frame(
                 data_readers[2], data_frame
             )

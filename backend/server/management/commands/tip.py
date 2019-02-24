@@ -3,7 +3,7 @@
 import os
 from functools import partial, reduce
 from pydoc import locate
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from mypy_extensions import TypedDict
 from django.core.management.base import BaseCommand
@@ -46,12 +46,15 @@ class Command(BaseCommand):
     for all unplayed matches in the upcoming/current round.
     """
 
-    def __init__(self, *args, data_reader=FootywireDataReader(), **kwargs) -> None:
+    def __init__(
+        self, *args, data_reader=FootywireDataReader(), fetch_data=True, **kwargs
+    ) -> None:
         super().__init__(*args, **kwargs)
 
         self.data_reader = data_reader
+        self.fetch_data = fetch_data
         # Fixture data uses UTC
-        self.right_now = datetime.now()
+        self.right_now = datetime.now(tz=timezone.utc)
         self.current_year = self.right_now.year
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
@@ -108,7 +111,7 @@ class Command(BaseCommand):
             print(f"Fetching fixture for {year}...\n")
 
         fixture_data_frame = self.data_reader.get_fixture(
-            year_range=(year, year + 1), fresh_data=True
+            year_range=(year, year + 1), fetch_data=self.fetch_data
         )
         latest_match = fixture_data_frame["date"].max()
 
@@ -119,7 +122,7 @@ class Command(BaseCommand):
             )
 
             fixture_data_frame = self.data_reader.get_fixture(
-                year_range=(year + 1, year + 2), fresh_data=True
+                year_range=(year + 1, year + 2), fetch_data=self.fetch_data
             )
             latest_match = fixture_data_frame["date"].max()
 
@@ -230,7 +233,7 @@ class Command(BaseCommand):
     ) -> List[Optional[Prediction]]:
         loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model_record.filepath))
         data_class = locate(ml_model_record.data_class_path)
-        data = data_class(test_years=(year, year))
+        data = data_class(test_years=(year, year), fetch_data=self.fetch_data)
 
         X_test, _ = data.test_data(test_round=round_number)
         y_pred = loaded_model.predict(X_test)

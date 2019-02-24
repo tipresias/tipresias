@@ -1,6 +1,6 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
-from typing import List, Any
+from typing import List, Any, Callable
 import pandas as pd
 
 from server.types import DataFrameTransformer, YearPair
@@ -55,8 +55,8 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
 ]
 DATA_READERS = [
-    FootywireDataReader().get_betting_odds(),
-    FootywireDataReader().get_fixture(),
+    FootywireDataReader().get_betting_odds,
+    FootywireDataReader().get_fixture,
 ]
 MODEL_ESTIMATORS = ()
 
@@ -71,8 +71,11 @@ class BettingMLData(BaseMLData, DataTransformerMixin):
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         index_cols: List[str] = INDEX_COLS,
+        fetch_data: bool = False,
     ) -> None:
-        super().__init__(train_years=train_years, test_years=test_years)
+        super().__init__(
+            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+        )
 
         self._data_transformers = data_transformers
 
@@ -108,10 +111,9 @@ class BettingMLData(BaseMLData, DataTransformerMixin):
     def data_transformers(self):
         return self._data_transformers
 
-    @staticmethod
-    def __concat_data_input(data_frames: List[pd.DataFrame]) -> pd.DataFrame:
+    def __concat_data_input(self, data_readers: List[Callable]) -> pd.DataFrame:
         betting_data = (
-            data_frames[0]
+            data_readers[0](fetch_data=self.fetch_data)
             .drop(
                 [
                     "date",
@@ -129,7 +131,9 @@ class BettingMLData(BaseMLData, DataTransformerMixin):
                 away_team=lambda df: df["away_team"].map(TEAM_TRANSLATIONS),
             )
         )
-        match_data = data_frames[1].drop(["date", "venue", "round_label"], axis=1)
+        match_data = data_readers[1](fetch_data=self.fetch_data).drop(
+            ["date", "venue", "round_label"], axis=1
+        )
 
         return betting_data.merge(
             match_data, on=["home_team", "away_team", "round", "season"]

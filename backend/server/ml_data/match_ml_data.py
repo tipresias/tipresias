@@ -118,13 +118,16 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         index_cols: List[str] = INDEX_COLS,
+        fetch_data: bool = False,
     ) -> None:
-        super().__init__(train_years=train_years, test_years=test_years)
+        super().__init__(
+            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+        )
 
         self._data_transformers = data_transformers
 
         data_frame = (
-            data_readers[0]()
+            data_readers[0](fetch_data=fetch_data)
             .rename(columns=COL_TRANSLATIONS)
             # fitzRoy returns integers that represent some sort of datetime, and the only
             # way to parse them is converting them to dates.

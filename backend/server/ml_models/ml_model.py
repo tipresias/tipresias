@@ -40,9 +40,7 @@ class MLModel(_BaseComposition, RegressorMixin):
         return os.path.join(self._default_directory(), f"{self.name}.pkl")
 
     def dump(self, filepath: str = None) -> None:
-        save_path = filepath or os.path.join(
-            self._default_directory(), f"{self.name}.pkl"
-        )
+        save_path = filepath or self.pickle_filepath()
 
         joblib.dump(self, save_path)
 

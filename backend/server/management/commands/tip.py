@@ -15,8 +15,7 @@ from sklearn.externals import joblib
 from project.settings.common import BASE_DIR
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.ml_models import BettingModel, AllModel, EnsembleModel
-from server.ml_models.betting_model import BettingModelData
+from server.ml_models import AllModel, EnsembleModel
 from server.ml_models.all_model import AllModelData
 
 FixtureData = TypedDict(
@@ -34,7 +33,6 @@ FixtureData = TypedDict(
 
 NO_SCORE = 0
 ML_MODELS = [
-    (BettingModel(name="betting_data"), BettingModelData),
     (AllModel(name="all_data"), AllModelData),
     (EnsembleModel(name="avg_predictions"), AllModelData),
 ]

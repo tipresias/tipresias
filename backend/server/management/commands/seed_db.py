@@ -15,7 +15,6 @@ from django.core.management.base import BaseCommand
 from server.data_readers import FootywireDataReader
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
 from server.ml_models import ml_model
-from server.ml_models.betting_model import BettingModel, BettingModelData
 from server.ml_models.all_model import AllModel, AllModelData
 from server.ml_models import EnsembleModel
 
@@ -35,7 +34,6 @@ EstimatorTuple = Tuple[ml_model.MLModel, Type[ml_model.MLModelData]]
 
 YEAR_RANGE = "2011-2017"
 ESTIMATORS: List[EstimatorTuple] = [
-    (BettingModel(name="betting_data"), BettingModelData),
     (AllModel(name="all_data"), AllModelData),
     (EnsembleModel(name="tipresias"), AllModelData),
 ]
@@ -206,7 +204,7 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print(f"\nMaking predictions with {ml_model_record.name}...")
 
-        estimator = self.__estimator(ml_model_record)
+        estimator = ml_model_record.load_estimator()
         data_class = locate(ml_model_record.data_class_path)
 
         data = data_class()
@@ -222,16 +220,6 @@ class Command(BaseCommand):
         year_prediction_lists = [
             make_year_predictions(year) for year in range(*year_range)
         ]
-
-        # estimator has been trained up to the last training season, which seems
-        # like a reasonable point for saving it as part of a seed action
-        if (
-            ml_model_record.filepath is not None
-            and ml_model_record.filepath != ""
-            # Don't overwrite existing picked models
-            and not os.path.isfile(ml_model_record.filepath)
-        ):
-            estimator.dump(ml_model_record.filepath)
 
         return list(itertools.chain.from_iterable(year_prediction_lists))
 
@@ -384,14 +372,3 @@ class Command(BaseCommand):
         prediction.clean()
 
         return prediction
-
-    @staticmethod
-    def __estimator(ml_model_record: MLModel) -> ml_model.MLModel:
-        if ml_model_record.name == "betting_data":
-            return BettingModel(name=ml_model_record.name)
-        if ml_model_record.name == "all_data":
-            return AllModel(name=ml_model_record.name)
-        if ml_model_record.name == "tipresias":
-            return EnsembleModel(name=ml_model_record.name)
-
-        raise ValueError(f"{ml_model_record.name} is not a recognized ML model name.")

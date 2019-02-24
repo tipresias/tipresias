@@ -1,1 +1,1 @@
-from .betting_model import BettingModel, BettingModelData
+from .betting_model import BettingModelData

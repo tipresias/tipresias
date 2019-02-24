@@ -1,6 +1,5 @@
 from django.test import TestCase
 
-from server.ml_models.betting_model import BettingModel, BettingModelData
 from server.ml_models.all_model import AllModel, AllModelData
 from server.ml_models.ensemble_model import EnsembleModel
 from server.tests.helpers import regression_accuracy
@@ -9,10 +8,6 @@ from server.tests.helpers import regression_accuracy
 class TestMLModels(TestCase):
     def setUp(self):
         self.estimators = [
-            (
-                BettingModel(),
-                BettingModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
-            ),
             (
                 AllModel(),
                 AllModelData(train_years=(2010, 2015), test_years=(2016, 2016)),

@@ -1,12 +1,8 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
-from typing import List, Optional, Any
+from typing import List, Any
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import Lasso
-from sklearn.pipeline import make_pipeline, Pipeline
 
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
@@ -24,7 +20,7 @@ from server.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
 )
-from server.ml_models.ml_model import MLModel, MLModelData
+from server.ml_models.ml_model import MLModelData
 from server.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, INDEX_COLS
 from server.utils import DataTransformerMixin
 
@@ -64,37 +60,6 @@ DATA_READERS = [
     FootywireDataReader().get_fixture(),
 ]
 MODEL_ESTIMATORS = ()
-PIPELINE = make_pipeline(
-    ColumnTransformer(
-        [
-            (
-                "onehotencoder",
-                OneHotEncoder(categories=[TEAM_NAMES, TEAM_NAMES], sparse=False),
-                ["team", "oppo_team"],
-            )
-        ],
-        remainder="passthrough",
-    ),
-    StandardScaler(),
-    Lasso(),
-)
-
-np.random.seed(SEED)
-
-
-class BettingModel(MLModel):
-    """Create pipeline for for fitting/predicting with lasso model.
-
-    Attributes:
-        _pipeline (sklearn.pipeline.Pipeline): Scikit Learn pipeline
-            with transformers & Lasso estimator.
-        name (string): Name of final estimator in the pipeline ('Lasso').
-    """
-
-    def __init__(
-        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
-    ) -> None:
-        super().__init__(pipeline=pipeline, name=name)
 
 
 class BettingModelData(MLModelData, DataTransformerMixin):

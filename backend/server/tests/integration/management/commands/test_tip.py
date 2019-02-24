@@ -1,9 +1,4 @@
-# TODO: After refactoring, mock the bejeezus out of this test with a basic linear
-# model and fake data, because this is getting closer to an integration test with
-# each import
-
 import copy
-import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 from django.test import TestCase
@@ -11,11 +6,11 @@ from faker import Faker
 from freezegun import freeze_time
 import pandas as pd
 
-from project.settings.common import BASE_DIR
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import tip
-from server.ml_models.betting_model import BettingModel, BettingModelData
+from server.ml_models.betting_model import BettingModelData
+from server.tests.fixtures import TestEstimator
 
 FAKE = Faker()
 ROW_COUNT = 5
@@ -81,15 +76,12 @@ class TestTip(TestCase):
             Team(name=match_data["home_team"]).save()
             Team(name=match_data["away_team"]).save()
 
-        betting_model = BettingModel(name="betting_data")
+        test_estimator = TestEstimator()
 
-        pickle_filepath = os.path.abspath(
-            os.path.join(BASE_DIR, "server", "tests", "fixtures", "betting_model.pkl")
-        )
         MLModel(
-            name=betting_model.name,
-            description="Betting data model",
-            filepath=pickle_filepath,
+            name=test_estimator.name,
+            description="Test estimator model",
+            filepath=test_estimator.pickle_filepath(),
             data_class_path=BettingModelData.class_path(),
         ).save()
 

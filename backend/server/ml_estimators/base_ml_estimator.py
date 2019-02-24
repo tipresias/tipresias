@@ -14,7 +14,7 @@ from project.settings.common import BASE_DIR
 from server.types import R
 
 
-class BaseMLModel(_BaseComposition, RegressorMixin):
+class BaseMLEstimator(_BaseComposition, RegressorMixin):
     """Base ML model class"""
 
     def __init__(

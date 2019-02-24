@@ -11,7 +11,7 @@ from sklearn.exceptions import DataConversionWarning
 from xgboost import XGBRegressor
 
 from server.data_config import TEAM_NAMES, ROUND_TYPES, VENUES, SEED, CATEGORY_COLS
-from .. import BaseMLModel
+from .. import BaseMLEstimator
 
 PIPELINE = make_pipeline(
     ColumnTransformer(
@@ -38,7 +38,7 @@ warnings.simplefilter("ignore", DataConversionWarning)
 np.random.seed(SEED)
 
 
-class AllModel(BaseMLModel):
+class BenchmarkEstimator(BaseMLEstimator):
     """Create pipeline for fitting/predicting with model trained on all AFL data"""
 
     def __init__(

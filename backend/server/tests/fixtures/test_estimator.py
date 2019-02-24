@@ -3,7 +3,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 
-from server.ml_models import BaseMLModel
+from server.ml_estimators import BaseMLEstimator
 from server.ml_data import BettingMLData
 from server.data_config import TEAM_NAMES
 
@@ -23,7 +23,7 @@ PIPELINE = make_pipeline(
 )
 
 
-class TestEstimator(BaseMLModel):
+class TestEstimator(BaseMLEstimator):
     """Create test MLModel for use in integration tests"""
 
     def __init__(self, pipeline=PIPELINE, name="test_estimator"):

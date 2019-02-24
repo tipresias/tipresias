@@ -15,7 +15,7 @@ from sklearn.externals import joblib
 from project.settings.common import BASE_DIR
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.ml_models import AllModel, EnsembleModel
+from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
 from server.ml_data import JoinedMLData
 
 FixtureData = TypedDict(
@@ -33,8 +33,8 @@ FixtureData = TypedDict(
 
 NO_SCORE = 0
 ML_MODELS = [
-    (AllModel(name="all_data"), JoinedMLData),
-    (EnsembleModel(name="avg_predictions"), JoinedMLData),
+    (BenchmarkEstimator(name="all_data"), JoinedMLData),
+    (BaggingEstimator(name="avg_predictions"), JoinedMLData),
 ]
 
 

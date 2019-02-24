@@ -5,14 +5,14 @@ from sklearn.linear_model import Ridge, Lasso
 from sklearn.pipeline import make_pipeline
 from faker import Faker
 
-from server.ml_models import EnsembleModel
-from server.ml_models.sklearn import AveragingRegressor
+from server.ml_estimators import BaggingEstimator
+from server.ml_estimators.sklearn import AveragingRegressor
 
 FAKE = Faker()
 N_ROWS = 10
 
 
-class TestEnsembleModel(TestCase):
+class TestBaggingEstimator(TestCase):
     def setUp(self):
         data_frame = pd.DataFrame(
             {
@@ -30,7 +30,7 @@ class TestEnsembleModel(TestCase):
         pipeline = make_pipeline(
             AveragingRegressor([("ridge", Ridge()), ("lasso", Lasso())])
         )
-        self.model = EnsembleModel(pipeline=pipeline)
+        self.model = BaggingEstimator(pipeline=pipeline)
 
     def test_predict(self):
         self.model.fit(self.X, self.y)

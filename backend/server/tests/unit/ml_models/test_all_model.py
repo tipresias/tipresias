@@ -9,7 +9,7 @@ from sklearn.pipeline import make_pipeline
 from faker import Faker
 
 from project.settings.common import BASE_DIR
-from server.ml_models import AllModel
+from server.ml_estimators import BenchmarkEstimator
 
 FAKE = Faker()
 N_ROWS = 10
@@ -24,7 +24,7 @@ get_afltables_stats_mock = Mock(return_value=get_afltables_stats_df)
 match_results_mock = Mock(return_value=match_results_df)
 
 
-class TestAllModel(TestCase):
+class TestBenchmarkEstimator(TestCase):
     def setUp(self):
         data_frame = pd.DataFrame(
             {
@@ -44,7 +44,7 @@ class TestAllModel(TestCase):
             ),
             Ridge(),
         )
-        self.model = AllModel(pipeline=pipeline)
+        self.model = BenchmarkEstimator(pipeline=pipeline)
 
     def test_predict(self):
         self.model.fit(self.X, self.y)

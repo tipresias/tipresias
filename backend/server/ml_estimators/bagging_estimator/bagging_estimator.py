@@ -9,8 +9,8 @@ from sklearn.ensemble import BaggingRegressor
 from xgboost import XGBRegressor
 
 from server.data_config import TEAM_NAMES, ROUND_TYPES, VENUES, CATEGORY_COLS
-from server.ml_models.sklearn import CorrelationSelector
-from .. import BaseMLModel
+from server.ml_estimators.sklearn import CorrelationSelector
+from .. import BaseMLEstimator
 
 SEED = 42
 np.random.seed(SEED)
@@ -47,7 +47,7 @@ PIPELINE = make_pipeline(
 ).set_params(**BEST_PARAMS)
 
 
-class EnsembleModel(BaseMLModel):
+class BaggingEstimator(BaseMLEstimator):
     """Model for averaging predictions of an ensemble of models"""
 
     def __init__(

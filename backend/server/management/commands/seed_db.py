@@ -13,9 +13,9 @@ from django.core.management.base import BaseCommand
 
 from server.data_readers import FootywireDataReader
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
-from server.ml_models import BaseMLModel
+from server.ml_estimators import BaseMLEstimator
 from server.ml_data import BaseMLData, JoinedMLData
-from server.ml_models import AllModel, EnsembleModel
+from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -29,12 +29,12 @@ FixtureData = TypedDict(
         "venue": str,
     },
 )
-EstimatorTuple = Tuple[BaseMLModel, Type[BaseMLData]]
+EstimatorTuple = Tuple[BaseMLEstimator, Type[BaseMLData]]
 
 YEAR_RANGE = "2011-2017"
 ESTIMATORS: List[EstimatorTuple] = [
-    (AllModel(name="all_data"), JoinedMLData),
-    (EnsembleModel(name="tipresias"), JoinedMLData),
+    (BenchmarkEstimator(name="all_data"), JoinedMLData),
+    (BaggingEstimator(name="tipresias"), JoinedMLData),
 ]
 NO_SCORE = 0
 JAN = 1
@@ -228,7 +228,7 @@ class Command(BaseCommand):
     def __make_year_predictions(
         self,
         ml_model_record: MLModel,
-        estimator: BaseMLModel,
+        estimator: BaseMLEstimator,
         data: BaseMLData,
         year: int,
         round_number: Optional[int] = None,
@@ -262,7 +262,7 @@ class Command(BaseCommand):
 
     def __predict(
         self,
-        estimator: BaseMLModel,
+        estimator: BaseMLEstimator,
         data: BaseMLData,
         data_row_slice: Tuple[slice, int, slice],
     ) -> Optional[pd.DataFrame]:
@@ -291,7 +291,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def __build_ml_model(
-        estimator: BaseMLModel, data_class: Type[BaseMLData]
+        estimator: BaseMLEstimator, data_class: Type[BaseMLData]
     ) -> MLModel:
         ml_model_record = MLModel(
             name=estimator.name,

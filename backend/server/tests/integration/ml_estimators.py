@@ -1,19 +1,19 @@
 from django.test import TestCase
 
 from server.ml_data import JoinedMLData
-from server.ml_models import AllModel, EnsembleModel
+from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
 from server.tests.helpers import regression_accuracy
 
 
-class TestMLModels(TestCase):
+class TestMLEstimators(TestCase):
     def setUp(self):
         self.estimators = [
             (
-                AllModel(),
+                BenchmarkEstimator(),
                 JoinedMLData(train_years=(2010, 2015), test_years=(2016, 2016)),
             ),
             (
-                EnsembleModel(),
+                BaggingEstimator(),
                 JoinedMLData(train_years=(2010, 2015), test_years=(2016, 2016)),
             ),
         ]

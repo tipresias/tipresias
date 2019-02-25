@@ -1,35 +1,20 @@
 from django.test import TestCase
 
-from server.ml_models.betting_model import BettingModel, BettingModelData
-from server.ml_models.match_model import MatchModel, MatchModelData
-from server.ml_models.player_model import PlayerModel, PlayerModelData
-from server.ml_models.all_model import AllModel, AllModelData
-from server.ml_models.ensemble_model import EnsembleModel
+from server.ml_data import JoinedMLData
+from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
 from server.tests.helpers import regression_accuracy
 
 
-class TestMLModels(TestCase):
+class TestMLEstimators(TestCase):
     def setUp(self):
         self.estimators = [
             (
-                BettingModel(),
-                BettingModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
+                BenchmarkEstimator(),
+                JoinedMLData(train_years=(2010, 2015), test_years=(2016, 2016)),
             ),
             (
-                MatchModel(),
-                MatchModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
-            ),
-            (
-                PlayerModel(),
-                PlayerModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
-            ),
-            (
-                AllModel(),
-                AllModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
-            ),
-            (
-                EnsembleModel(),
-                AllModelData(train_years=(2010, 2015), test_years=(2016, 2016)),
+                BaggingEstimator(),
+                JoinedMLData(train_years=(2010, 2015), test_years=(2016, 2016)),
             ),
         ]
 

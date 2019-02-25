@@ -1,6 +1,5 @@
 """Django command for seeding the DB with match & prediction data"""
 
-import os
 import itertools
 from datetime import datetime
 from functools import partial
@@ -14,12 +13,9 @@ from django.core.management.base import BaseCommand
 
 from server.data_readers import FootywireDataReader
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
-from server.ml_models import ml_model
-from server.ml_models.betting_model import BettingModel, BettingModelData
-from server.ml_models.match_model import MatchModel, MatchModelData
-from server.ml_models.all_model import AllModel, AllModelData
-from server.ml_models.player_model import PlayerModel, PlayerModelData
-from server.ml_models import EnsembleModel
+from server.ml_estimators import BaseMLEstimator
+from server.ml_data import BaseMLData, JoinedMLData
+from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -33,15 +29,12 @@ FixtureData = TypedDict(
         "venue": str,
     },
 )
-EstimatorTuple = Tuple[ml_model.MLModel, Type[ml_model.MLModelData]]
+EstimatorTuple = Tuple[BaseMLEstimator, Type[BaseMLData]]
 
 YEAR_RANGE = "2011-2017"
 ESTIMATORS: List[EstimatorTuple] = [
-    (BettingModel(name="betting_data"), BettingModelData),
-    (MatchModel(name="match_data"), MatchModelData),
-    (PlayerModel(name="player_data"), PlayerModelData),
-    (AllModel(name="all_data"), AllModelData),
-    (EnsembleModel(name="tipresias"), AllModelData),
+    (BenchmarkEstimator(name="all_data"), JoinedMLData),
+    (BaggingEstimator(name="tipresias"), JoinedMLData),
 ]
 NO_SCORE = 0
 JAN = 1
@@ -210,7 +203,7 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print(f"\nMaking predictions with {ml_model_record.name}...")
 
-        estimator = self.__estimator(ml_model_record)
+        estimator = ml_model_record.load_estimator()
         data_class = locate(ml_model_record.data_class_path)
 
         data = data_class()
@@ -227,16 +220,6 @@ class Command(BaseCommand):
             make_year_predictions(year) for year in range(*year_range)
         ]
 
-        # estimator has been trained up to the last training season, which seems
-        # like a reasonable point for saving it as part of a seed action
-        if (
-            ml_model_record.filepath is not None
-            and ml_model_record.filepath != ""
-            # Don't overwrite existing picked models
-            and not os.path.isfile(ml_model_record.filepath)
-        ):
-            estimator.dump(ml_model_record.filepath)
-
         return list(itertools.chain.from_iterable(year_prediction_lists))
 
     # TODO: Got the following error when trying to implement multiprocessing:
@@ -245,8 +228,8 @@ class Command(BaseCommand):
     def __make_year_predictions(
         self,
         ml_model_record: MLModel,
-        estimator: ml_model.MLModel,
-        data: ml_model.MLModelData,
+        estimator: BaseMLEstimator,
+        data: BaseMLData,
         year: int,
         round_number: Optional[int] = None,
     ) -> List[Prediction]:
@@ -279,8 +262,8 @@ class Command(BaseCommand):
 
     def __predict(
         self,
-        estimator: ml_model.MLModel,
-        data: ml_model.MLModelData,
+        estimator: BaseMLEstimator,
+        data: BaseMLData,
         data_row_slice: Tuple[slice, int, slice],
     ) -> Optional[pd.DataFrame]:
         X_train, y_train = data.train_data()
@@ -308,7 +291,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def __build_ml_model(
-        estimator: ml_model.MLModel, data_class: Type[ml_model.MLModelData]
+        estimator: BaseMLEstimator, data_class: Type[BaseMLData]
     ) -> MLModel:
         ml_model_record = MLModel(
             name=estimator.name,
@@ -388,18 +371,3 @@ class Command(BaseCommand):
         prediction.clean()
 
         return prediction
-
-    @staticmethod
-    def __estimator(ml_model_record: MLModel) -> ml_model.MLModel:
-        if ml_model_record.name == "betting_data":
-            return BettingModel(name=ml_model_record.name)
-        if ml_model_record.name == "match_data":
-            return MatchModel(name=ml_model_record.name)
-        if ml_model_record.name == "player_data":
-            return PlayerModel(name=ml_model_record.name)
-        if ml_model_record.name == "all_data":
-            return AllModel(name=ml_model_record.name)
-        if ml_model_record.name == "tipresias":
-            return EnsembleModel(name=ml_model_record.name)
-
-        raise ValueError(f"{ml_model_record.name} is not a recognized ML model name.")

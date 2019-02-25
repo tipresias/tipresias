@@ -1,13 +1,8 @@
 """Model class trained on player data and its associated data class"""
 
-from typing import List, Callable, Optional
+from typing import List, Callable
 from datetime import date
-import numpy as np
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.pipeline import make_pipeline, Pipeline
-from xgboost import XGBRegressor
 
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import (
@@ -27,8 +22,8 @@ from server.data_processors.feature_calculation import (
     calculate_addition,
 )
 from server.data_readers import FitzroyDataReader, afl_data_reader
-from server.ml_models.ml_model import MLModel, MLModelData
-from server.data_config import TEAM_NAMES, SEED, INDEX_COLS
+from server.ml_data import BaseMLData
+from server.data_config import INDEX_COLS
 from server.utils import DataTransformerMixin
 
 MATCH_STATS_COLS = [
@@ -121,34 +116,9 @@ DATA_READERS: List[Callable] = [
     fitzroy.match_results,
     afl_data_reader.get_rosters,
 ]
-PIPELINE = make_pipeline(
-    ColumnTransformer(
-        [
-            (
-                "onehotencoder",
-                OneHotEncoder(categories=[TEAM_NAMES, TEAM_NAMES], sparse=False),
-                ["team", "oppo_team"],
-            )
-        ],
-        remainder="passthrough",
-    ),
-    StandardScaler(),
-    XGBRegressor(),
-)
-
-np.random.seed(SEED)
 
 
-class PlayerModel(MLModel):
-    """Create pipeline for fitting/predicting with model trained on player data"""
-
-    def __init__(
-        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
-    ) -> None:
-        super().__init__(pipeline=pipeline, name=name)
-
-
-class PlayerModelData(MLModelData, DataTransformerMixin):
+class PlayerMLData(BaseMLData, DataTransformerMixin):
     """Load and clean player data"""
 
     def __init__(
@@ -160,9 +130,11 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
         start_date="1965-01-01",
         end_date="2016-12-31",
         index_cols: List[str] = INDEX_COLS,
-        get_rosters: bool = True,
+        fetch_data: bool = False,
     ) -> None:
-        super().__init__(train_years=train_years, test_years=test_years)
+        super().__init__(
+            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+        )
 
         self._data_transformers = data_transformers
 
@@ -174,7 +146,9 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
             # The easiest way to add correct ones is to graft on the IDs
             # from match_results. Also, match_results round_numbers are more useful.
             .merge(
-                data_readers[1]()[["date", "venue", "round_number", "game"]],
+                data_readers[1](fetch_data=fetch_data)[
+                    ["date", "venue", "round_number", "game"]
+                ],
                 on=["date", "venue"],
                 how="left",
             )
@@ -215,7 +189,7 @@ class PlayerModelData(MLModelData, DataTransformerMixin):
             & (~data_frame["match_id"].isin(duplicate_matches))
         ]
 
-        if get_rosters and len(data_readers) > 2:
+        if fetch_data and len(data_readers) > 2:
             roster_data_frame = self.__create_roster_data_frame(
                 data_readers[2], data_frame
             )

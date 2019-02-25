@@ -1,4 +1,3 @@
-import os
 import itertools
 from datetime import datetime
 from unittest.mock import Mock
@@ -9,9 +8,10 @@ from sklearn.externals import joblib
 
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.ml_models.betting_model import BettingModel, BettingModelData
+from server.ml_data import BettingMLData
 from server.management.commands import seed_db
-from project.settings import BASE_DIR
+from server.tests.fixtures import TestEstimator
+
 
 FAKE = Faker()
 ROW_COUNT = 5
@@ -19,11 +19,8 @@ ROW_COUNT = 5
 
 class TestSeedDb(TestCase):
     def setUp(self):
-        self.estimator = BettingModel(name="betting_data")
-        self.estimator.pickle_filepath = Mock(
-            return_value=os.path.join(BASE_DIR, "server/tests/fixtures/test_model.pkl")
-        )
-        self.data_class = BettingModelData
+        self.estimator = TestEstimator()
+        self.data_class = BettingMLData
 
         joblib.dump = Mock()
 
@@ -41,41 +38,21 @@ class TestSeedDb(TestCase):
         )
 
     def test_handle(self):
-        with self.subTest("when the pickled model doesn't exist yet"):
-            self.seed_command.handle(
-                year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
-            )
+        self.seed_command.handle(
+            year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
+        )
 
-            self.assertGreater(Team.objects.count(), 0)
-            self.assertEqual(MLModel.objects.count(), 1)
-            self.assertEqual(Match.objects.count(), ROW_COUNT * len(range(*self.years)))
-            self.assertEqual(
-                TeamMatch.objects.count(), ROW_COUNT * len(range(*self.years)) * 2
-            )
-            # Should only have predictions for two years (2011 & 2012) due to betting data's
-            # limitations (i.e. training data starts in 2010, so test data starts in 2011)
-            self.assertEqual(
-                Prediction.objects.count(), ROW_COUNT * (len(range(*self.years)) - 1)
-            )
-
-            joblib.dump.assert_called()
-
-        with self.subTest("when a pickeld model already exists"):
-            self.__clear_db()
-            joblib.dump.reset_mock()
-
-            self.estimator.pickle_filepath = Mock(
-                return_value=os.path.join(
-                    BASE_DIR, "server/tests/fixtures/betting_model.pkl"
-                )
-            )
-            self.seed_command.estimators = [(self.estimator, self.data_class)]
-
-            self.seed_command.handle(
-                year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
-            )
-
-            joblib.dump.assert_not_called()
+        self.assertGreater(Team.objects.count(), 0)
+        self.assertEqual(MLModel.objects.count(), 1)
+        self.assertEqual(Match.objects.count(), ROW_COUNT * len(range(*self.years)))
+        self.assertEqual(
+            TeamMatch.objects.count(), ROW_COUNT * len(range(*self.years)) * 2
+        )
+        # Should only have predictions for two years (2011 & 2012) due to betting data's
+        # limitations (i.e. training data starts in 2010, so test data starts in 2011)
+        self.assertEqual(
+            Prediction.objects.count(), ROW_COUNT * (len(range(*self.years)) - 1)
+        )
 
     def test_handle_errors(self):
         with self.subTest(

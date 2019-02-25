@@ -3,7 +3,7 @@
 import os
 from functools import partial, reduce
 from pydoc import locate
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from mypy_extensions import TypedDict
 from django.core.management.base import BaseCommand
@@ -15,17 +15,8 @@ from sklearn.externals import joblib
 from project.settings.common import BASE_DIR
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.ml_models import (
-    BettingModel,
-    MatchModel,
-    PlayerModel,
-    AllModel,
-    EnsembleModel,
-)
-from server.ml_models.betting_model import BettingModelData
-from server.ml_models.match_model import MatchModelData
-from server.ml_models.player_model import PlayerModelData
-from server.ml_models.all_model import AllModelData
+from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
+from server.ml_data import JoinedMLData
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -42,11 +33,8 @@ FixtureData = TypedDict(
 
 NO_SCORE = 0
 ML_MODELS = [
-    (BettingModel(name="betting_data"), BettingModelData),
-    (MatchModel(name="match_data"), MatchModelData),
-    (PlayerModel(name="player_data"), PlayerModelData),
-    (AllModel(name="all_data"), AllModelData),
-    (EnsembleModel(name="avg_predictions"), AllModelData),
+    (BenchmarkEstimator(name="all_data"), JoinedMLData),
+    (BaggingEstimator(name="avg_predictions"), JoinedMLData),
 ]
 
 
@@ -58,12 +46,15 @@ class Command(BaseCommand):
     for all unplayed matches in the upcoming/current round.
     """
 
-    def __init__(self, *args, data_reader=FootywireDataReader(), **kwargs) -> None:
+    def __init__(
+        self, *args, data_reader=FootywireDataReader(), fetch_data=True, **kwargs
+    ) -> None:
         super().__init__(*args, **kwargs)
 
         self.data_reader = data_reader
+        self.fetch_data = fetch_data
         # Fixture data uses UTC
-        self.right_now = datetime.now()
+        self.right_now = datetime.now(tz=timezone.utc)
         self.current_year = self.right_now.year
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
@@ -120,7 +111,7 @@ class Command(BaseCommand):
             print(f"Fetching fixture for {year}...\n")
 
         fixture_data_frame = self.data_reader.get_fixture(
-            year_range=(year, year + 1), fresh_data=True
+            year_range=(year, year + 1), fetch_data=self.fetch_data
         )
         latest_match = fixture_data_frame["date"].max()
 
@@ -131,7 +122,7 @@ class Command(BaseCommand):
             )
 
             fixture_data_frame = self.data_reader.get_fixture(
-                year_range=(year + 1, year + 2), fresh_data=True
+                year_range=(year + 1, year + 2), fetch_data=self.fetch_data
             )
             latest_match = fixture_data_frame["date"].max()
 
@@ -242,7 +233,7 @@ class Command(BaseCommand):
     ) -> List[Optional[Prediction]]:
         loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model_record.filepath))
         data_class = locate(ml_model_record.data_class_path)
-        data = data_class(test_years=(year, year))
+        data = data_class(test_years=(year, year), fetch_data=self.fetch_data)
 
         X_test, _ = data.test_data(test_round=round_number)
         y_pred = loaded_model.predict(X_test)

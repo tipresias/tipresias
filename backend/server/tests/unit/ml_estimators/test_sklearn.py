@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from faker import Faker
 
-from server.ml_models.sklearn import AveragingRegressor, CorrelationSelector
+from server.ml_estimators.sklearn import AveragingRegressor, CorrelationSelector
 
 FAKE = Faker()
 ROW_COUNT = 10

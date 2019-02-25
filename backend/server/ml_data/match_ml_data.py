@@ -1,12 +1,7 @@
 """Module with wrapper class for XGBoost model and its associated data class"""
 
-from typing import List, Optional, Callable
+from typing import List, Callable
 import pandas as pd
-import numpy as np
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.pipeline import make_pipeline, Pipeline
-from xgboost import XGBRegressor
 
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
@@ -30,8 +25,8 @@ from server.data_processors.feature_calculation import (
     calculate_rolling_mean_by_dimension,
 )
 from server.data_readers import FitzroyDataReader
-from server.ml_models.ml_model import MLModel, MLModelData
-from server.data_config import TEAM_NAMES, ROUND_TYPES, INDEX_COLS, VENUES, SEED
+from server.ml_data import BaseMLData
+from server.data_config import INDEX_COLS
 from server.utils import DataTransformerMixin
 
 COL_TRANSLATIONS = {
@@ -40,7 +35,6 @@ COL_TRANSLATIONS = {
     "margin": "home_margin",
     "season": "year",
 }
-CATEGORY_COLS = ["team", "oppo_team", "round_type", "venue"]
 FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_out_of_state,
     add_travel_distance,
@@ -112,37 +106,9 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     OppoFeatureBuilder(oppo_feature_cols=["cum_percent", "ladder_position"]).transform,
 ]
 DATA_READERS: List[Callable] = [FitzroyDataReader().match_results]
-PIPELINE = make_pipeline(
-    ColumnTransformer(
-        [
-            (
-                "onehotencoder",
-                OneHotEncoder(
-                    categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES, VENUES],
-                    sparse=False,
-                ),
-                CATEGORY_COLS,
-            )
-        ],
-        remainder="passthrough",
-    ),
-    StandardScaler(),
-    XGBRegressor(),
-)
-
-np.random.seed(SEED)
 
 
-class MatchModel(MLModel):
-    """Create pipeline for fitting/predicting with model trained on match data"""
-
-    def __init__(
-        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
-    ) -> None:
-        super().__init__(pipeline=pipeline, name=name)
-
-
-class MatchModelData(MLModelData, DataTransformerMixin):
+class MatchMLData(BaseMLData, DataTransformerMixin):
     """Load and clean match data"""
 
     def __init__(
@@ -152,13 +118,16 @@ class MatchModelData(MLModelData, DataTransformerMixin):
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         index_cols: List[str] = INDEX_COLS,
+        fetch_data: bool = False,
     ) -> None:
-        super().__init__(train_years=train_years, test_years=test_years)
+        super().__init__(
+            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+        )
 
         self._data_transformers = data_transformers
 
         data_frame = (
-            data_readers[0]()
+            data_readers[0](fetch_data=fetch_data)
             .rename(columns=COL_TRANSLATIONS)
             # fitzRoy returns integers that represent some sort of datetime, and the only
             # way to parse them is converting them to dates.

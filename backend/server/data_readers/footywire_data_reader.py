@@ -1,11 +1,13 @@
 """Module for FootywireDataReader, which scrapes footywire.com.au for betting & match data"""
 
 from typing import Optional, Tuple, List, Pattern
+import warnings
 import itertools
 import re
 from datetime import datetime
 from urllib.parse import urljoin
 from functools import partial
+from urllib3.exceptions import SystemTimeWarning
 import dateutil
 import requests
 from bs4 import BeautifulSoup, element
@@ -58,6 +60,9 @@ FINALS_WEEK: Pattern = re.compile(r"Finals\s+Week\s+(\d+)$", flags=re.I)
 # One bloody week in 2010 uses 'One' instead of '1' on afl_betting
 FINALS_WEEK_ONE: Pattern = re.compile(r"Finals\s+Week\s+One", flags=re.I)
 
+# I get this warning when I run tests, but not in other contexts
+warnings.simplefilter("ignore", SystemTimeWarning)
+
 
 class FootywireDataReader:
     """Get data from footywire.com.au by scraping page or reading saved CSV"""
@@ -73,7 +78,7 @@ class FootywireDataReader:
         self.betting_filename = betting_filename
 
     def get_fixture(
-        self, year_range: Optional[Tuple[int, int]] = None, fresh_data: bool = False
+        self, year_range: Optional[Tuple[int, int]] = None, fetch_data: bool = False
     ) -> pd.DataFrame:
         """
         Get AFL fixtures for given year range.
@@ -83,7 +88,7 @@ class FootywireDataReader:
             home_score, away_score
         """
 
-        if fresh_data:
+        if fetch_data:
             return self.__clean_fixture_data_frame(
                 self.__fetch_data(FIXTURE_PATH, year_range)
             )
@@ -91,7 +96,7 @@ class FootywireDataReader:
         return self.__read_data_csv(self.fixture_filename, year_range)
 
     def get_betting_odds(
-        self, year_range: Optional[Tuple[int, int]] = None, fresh_data: bool = False
+        self, year_range: Optional[Tuple[int, int]] = None, fetch_data: bool = False
     ) -> pd.DataFrame:
         """
         Get AFL betting data for given year range.
@@ -103,7 +108,7 @@ class FootywireDataReader:
             away_line_paid
         """
 
-        if fresh_data:
+        if fetch_data:
             return self.__clean_betting_data_frame(
                 self.__fetch_data(BETTING_PATH, year_range)
             )
@@ -317,6 +322,14 @@ class FootywireDataReader:
             )
             .drop_duplicates(
                 subset=["home_team", "away_team", "season", "round_label"], keep="last"
+            )
+            .astype(
+                {
+                    "home_win_odds": float,
+                    "home_line_odds": float,
+                    "away_win_odds": float,
+                    "away_line_odds": float,
+                }
             )
         )
         sorted_cols = BETTING_MATCH_COLS + [

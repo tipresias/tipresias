@@ -1,12 +1,7 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
-from typing import List, Optional, Any
-import numpy as np
+from typing import List, Any, Callable
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import Lasso
-from sklearn.pipeline import make_pipeline, Pipeline
 
 from server.types import DataFrameTransformer, YearPair
 from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
@@ -24,8 +19,8 @@ from server.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
 )
-from server.ml_models.ml_model import MLModel, MLModelData
-from server.data_config import TEAM_NAMES, TEAM_TRANSLATIONS, SEED, INDEX_COLS
+from server.ml_data import BaseMLData
+from server.data_config import TEAM_TRANSLATIONS, INDEX_COLS
 from server.utils import DataTransformerMixin
 
 
@@ -60,44 +55,13 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     FeatureBuilder(feature_funcs=[add_cum_percent, add_ladder_position]).transform,
 ]
 DATA_READERS = [
-    FootywireDataReader().get_betting_odds(),
-    FootywireDataReader().get_fixture(),
+    FootywireDataReader().get_betting_odds,
+    FootywireDataReader().get_fixture,
 ]
 MODEL_ESTIMATORS = ()
-PIPELINE = make_pipeline(
-    ColumnTransformer(
-        [
-            (
-                "onehotencoder",
-                OneHotEncoder(categories=[TEAM_NAMES, TEAM_NAMES], sparse=False),
-                ["team", "oppo_team"],
-            )
-        ],
-        remainder="passthrough",
-    ),
-    StandardScaler(),
-    Lasso(),
-)
-
-np.random.seed(SEED)
 
 
-class BettingModel(MLModel):
-    """Create pipeline for for fitting/predicting with lasso model.
-
-    Attributes:
-        _pipeline (sklearn.pipeline.Pipeline): Scikit Learn pipeline
-            with transformers & Lasso estimator.
-        name (string): Name of final estimator in the pipeline ('Lasso').
-    """
-
-    def __init__(
-        self, pipeline: Pipeline = PIPELINE, name: Optional[str] = None
-    ) -> None:
-        super().__init__(pipeline=pipeline, name=name)
-
-
-class BettingModelData(MLModelData, DataTransformerMixin):
+class BettingMLData(BaseMLData, DataTransformerMixin):
     """Load and clean betting data"""
 
     def __init__(
@@ -107,8 +71,11 @@ class BettingModelData(MLModelData, DataTransformerMixin):
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         index_cols: List[str] = INDEX_COLS,
+        fetch_data: bool = False,
     ) -> None:
-        super().__init__(train_years=train_years, test_years=test_years)
+        super().__init__(
+            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+        )
 
         self._data_transformers = data_transformers
 
@@ -144,10 +111,9 @@ class BettingModelData(MLModelData, DataTransformerMixin):
     def data_transformers(self):
         return self._data_transformers
 
-    @staticmethod
-    def __concat_data_input(data_frames: List[pd.DataFrame]) -> pd.DataFrame:
+    def __concat_data_input(self, data_readers: List[Callable]) -> pd.DataFrame:
         betting_data = (
-            data_frames[0]
+            data_readers[0](fetch_data=self.fetch_data)
             .drop(
                 [
                     "date",
@@ -165,7 +131,9 @@ class BettingModelData(MLModelData, DataTransformerMixin):
                 away_team=lambda df: df["away_team"].map(TEAM_TRANSLATIONS),
             )
         )
-        match_data = data_frames[1].drop(["date", "venue", "round_label"], axis=1)
+        match_data = data_readers[1](fetch_data=self.fetch_data).drop(
+            ["date", "venue", "round_label"], axis=1
+        )
 
         return betting_data.merge(
             match_data, on=["home_team", "away_team", "round", "season"]

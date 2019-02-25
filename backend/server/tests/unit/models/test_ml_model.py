@@ -1,18 +1,17 @@
-import os
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from sklearn.base import BaseEstimator
 
 from server.models import MLModel
-from project.settings import BASE_DIR
+from server.tests.fixtures import TestEstimator
 
 
 class TestMLModel(TestCase):
     def setUp(self):
-        pickle_path = os.path.join(
-            BASE_DIR, "server", "tests", "fixtures", "betting_model.pkl"
+        self.estimator = TestEstimator()
+        self.ml_model = MLModel(
+            name=self.estimator.name, filepath=self.estimator.pickle_filepath()
         )
-        self.ml_model = MLModel(name="my_estimator", filepath=pickle_path)
 
     def test_validation(self):
         with self.subTest("when the data_class_path isn't a module path"):
@@ -25,7 +24,7 @@ class TestMLModel(TestCase):
             self.ml_model.data_class_path = "some.perfectly.fine.path"
             self.ml_model.save()
 
-            duplicate_model = MLModel(name="my_estimator")
+            duplicate_model = MLModel(name=self.estimator.name)
 
             with self.assertRaises(ValidationError):
                 duplicate_model.full_clean()

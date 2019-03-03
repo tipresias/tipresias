@@ -62,7 +62,7 @@ class AveragingRegressor(_BaseComposition, RegressorMixin):
             )
 
 
-class CorrelationSelector(TransformerMixin, BaseEstimator):
+class CorrelationSelector(BaseEstimator, TransformerMixin):
     """
     Proprocessing transformer for filtering out features that are less correlated with labels
     """
@@ -73,30 +73,39 @@ class CorrelationSelector(TransformerMixin, BaseEstimator):
         cols_to_keep: List[str] = [],
         threshold: Optional[float] = None,
     ) -> None:
-        self.labels = labels if labels is None else labels.rename("labels")
+        self.labels = labels
         self.threshold = threshold
-        self.cols_to_keep = cols_to_keep
-        self._cols_to_keep = self.cols_to_keep
+        self._cols_to_keep = cols_to_keep
+        self._above_threshold_columns = cols_to_keep
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        return X[self._cols_to_keep]
+    def transform(self, X: pd.DataFrame, _y=None) -> pd.DataFrame:
+        return X[self._above_threshold_columns]
 
-    def fit(self, X: pd.DataFrame) -> Type[T]:
+    def fit(self, X: pd.DataFrame, y=None) -> Type[T]:
         if self.labels is None:
             raise TypeError(
                 "Labels for calculating feature correlations haven't been defined."
             )
 
         data_frame = pd.concat([X, self.labels], axis=1).drop(self.cols_to_keep, axis=1)
-        label_correlations = data_frame.corr().fillna(0)["labels"].abs()
+        label_correlations = data_frame.corr().fillna(0)[self.labels.name].abs()
 
         if self.threshold is None:
             correlated_columns = data_frame.columns
         else:
             correlated_columns = data_frame.columns[label_correlations > self.threshold]
 
-        self._cols_to_keep = self.cols_to_keep + [
+        self._above_threshold_columns = self.cols_to_keep + [
             col for col in correlated_columns if col in X.columns
         ]
 
         return self
+
+    @property
+    def cols_to_keep(self) -> List[str]:
+        return self._cols_to_keep
+
+    @cols_to_keep.setter
+    def cols_to_keep(self, cols_to_keep: List[str]) -> None:
+        self._cols_to_keep = cols_to_keep
+        self._above_threshold_columns = self._cols_to_keep

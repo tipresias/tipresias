@@ -4,7 +4,7 @@ from typing import Optional, Tuple, List, Pattern
 import warnings
 import itertools
 import re
-from datetime import datetime
+from datetime import date
 from urllib.parse import urljoin
 from functools import partial
 from urllib3.exceptions import SystemTimeWarning
@@ -135,7 +135,8 @@ class FootywireDataReader:
     def __fetch_data(
         self, url_path: str, year_range: Optional[Tuple[int, int]]
     ) -> pd.DataFrame:
-        requested_year_range = year_range or (0, datetime.now().year + 1)
+        this_year = date.today().year
+        requested_year_range = year_range or (0, this_year + 1)
         yearly_data = []
 
         # Counting backwards to make sure we get all available years when year_range
@@ -144,6 +145,11 @@ class FootywireDataReader:
             year_data = self.__fetch_year(url_path, year)
 
             if year_data is None:
+                # Depending on the month, there might not be betting data for the current year
+                # yet, so keep going if the first result is blank
+                if year == this_year:
+                    continue
+
                 break
 
             yearly_data.append(year_data)

@@ -2,10 +2,8 @@
 
 from typing import Type, List, Dict, Any, Tuple
 from functools import reduce
-from datetime import datetime
 
 import pandas as pd
-import numpy as np
 
 from server.data_processors import FeatureBuilder
 from server.data_processors.feature_calculation import (
@@ -48,8 +46,6 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
         data_reader_kwargs: List[Dict[str, Any]] = [{}, {}, {}],
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
-        start_date: str = None,
-        end_date: str = "2016-12-31",
         category_cols: List[str] = CATEGORY_COLS,
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         fetch_data: bool = False,
@@ -68,9 +64,7 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
         data_frame = reduce(
             self.__concat_data_frames, zip(data_readers, data_reader_kwargs), None
         )
-        numeric_data_frame = data_frame.select_dtypes(
-            include=["number", "datetime"]
-        ).fillna(0)
+        numeric_data_frame = data_frame.select_dtypes(include="number").fillna(0)
 
         if category_cols is None:
             category_data_frame = data_frame.drop(numeric_data_frame.columns, axis=1)
@@ -79,15 +73,16 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
 
         sorted_data_frame = pd.concat([category_data_frame, numeric_data_frame], axis=1)
 
-        start_year = datetime.strptime(start_date, "%Y-%m-%d").year if start_date else 0
-        end_year = datetime.strptime(end_date, "%Y-%m-%d").year if end_date else np.Inf
-
         self._data = (
             self._compose_transformers(sorted_data_frame)  # pylint: disable=E1102
-            .loc[(data_frame["year"] >= start_year) & (data_frame["year"] <= end_year),]
             .dropna()
             .sort_index()
         )
+
+        # For some reason the 'date' column in MatchMLData gets converted from 'datetime64'
+        # to 'object' as part of the concatenation process.
+        if "date" in self._data.columns:
+            self._data.loc[:, "date"] = self._data["date"].pipe(pd.to_datetime)
 
     @property
     def data(self) -> pd.DataFrame:

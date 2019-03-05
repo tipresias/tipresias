@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <div>
+      <h3>Tips for Round {{ round_number }}</h3>
+      <table>
+        <thead>
+          {% for header in prediction_headers %}
+          <th>{{ header }}</th>
+          {% endfor %}
+        </thead>
+        <tbody>
+          {% for row in prediction_rows %}
+          <tr>
+            {% for element in row %}
+            <td>{{ element }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

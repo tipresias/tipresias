@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timezone, date
+from typing import List, Union
 
 from django.core.management.base import BaseCommand
 from django.template.loader import get_template
@@ -59,6 +60,26 @@ class Command(BaseCommand):
             for prediction in latest_round_predictions
         ]
 
+        self.__send_tips_email(prediction_rows, latest_round)
+
+    @staticmethod
+    def __map_prediction_to_row(prediction: Prediction) -> List[Union[str, int]]:
+        match = prediction.match
+        home_team = match.teammatch_set.get(at_home=True).team.name
+        away_team = match.teammatch_set.get(at_home=False).team.name
+
+        return [
+            str(match.start_date_time),
+            home_team,
+            away_team,
+            prediction.predicted_winner.name,
+            prediction.predicted_margin,
+        ]
+
+    @staticmethod
+    def __send_tips_email(
+        prediction_rows: List[Union[str, int]], latest_round: int
+    ) -> None:
         prediction_mail_params = {
             "prediction_headers": PREDICTION_HEADERS,
             "prediction_rows": prediction_rows,
@@ -92,17 +113,3 @@ class Command(BaseCommand):
         sendgrid.SendGridAPIClient(apikey=api_key).client.mail.send.post(
             request_body=mail.get()
         )
-
-    @staticmethod
-    def __map_prediction_to_row(prediction: Prediction):
-        match = prediction.match
-        home_team = match.teammatch_set.get(at_home=True).team.name
-        away_team = match.teammatch_set.get(at_home=False).team.name
-
-        return [
-            str(match.start_date_time),
-            home_team,
-            away_team,
-            prediction.predicted_winner.name,
-            prediction.predicted_margin,
-        ]

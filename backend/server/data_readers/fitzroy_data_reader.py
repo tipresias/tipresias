@@ -70,7 +70,7 @@ class FitzroyDataReader:
 
     @staticmethod
     def __r_to_pandas(r_data_frame: vectors.DataFrame) -> pd.DataFrame:
-        return pandas2ri.ri2py(r_data_frame).rename(
+        return pandas2ri.rpy2py_dataframe(r_data_frame).rename(
             columns=lambda x: x.lower().replace(".", "_")
         )
 

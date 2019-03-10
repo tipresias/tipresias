@@ -33,7 +33,7 @@ EstimatorTuple = Tuple[BaseMLEstimator, Type[BaseMLData]]
 
 YEAR_RANGE = "2011-2017"
 ESTIMATORS: List[EstimatorTuple] = [
-    (BenchmarkEstimator(name="all_data"), JoinedMLData),
+    (BenchmarkEstimator(name="benchmark_estimator"), JoinedMLData),
     (BaggingEstimator(name="tipresias"), JoinedMLData),
 ]
 NO_SCORE = 0

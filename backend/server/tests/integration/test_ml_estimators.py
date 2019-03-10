@@ -26,6 +26,13 @@ class TestMLEstimators(TestCase):
 
             with self.subTest(test_label):
                 X_train, y_train = data.train_data()
+
+                if (
+                    "pipeline__correlationselector__labels"
+                    in estimator.get_params().keys()
+                ):
+                    estimator.set_params(pipeline__correlationselector__labels=y_train)
+
                 estimator.fit(X_train, y_train)
                 X_test, y_test = data.test_data()
                 y_pred = estimator.predict(X_test)

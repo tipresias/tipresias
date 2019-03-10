@@ -81,7 +81,7 @@ class CorrelationSelector(BaseEstimator, TransformerMixin):
     def transform(self, X: pd.DataFrame, _y=None) -> pd.DataFrame:
         return X[self._above_threshold_columns]
 
-    def fit(self, X: pd.DataFrame, y=None) -> Type[T]:
+    def fit(self, X: pd.DataFrame, _y=None) -> Type[T]:
         if self.labels is None:
             raise TypeError(
                 "Labels for calculating feature correlations haven't been defined."

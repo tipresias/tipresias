@@ -12,6 +12,8 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
+      - EMAIL_RECIPIENT=test@test.com
+      - SENDGRID_API_KEY=test
     command: python3 manage.py runserver 0.0.0.0:8000
   frontend:
     image: cfranklin11/tipresias_client:master

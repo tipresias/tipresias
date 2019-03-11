@@ -81,6 +81,10 @@ class TestSendEmail(TestCase):
                 lambda x: x
             )
 
-            self.send_email_command.handle()
+            with patch.dict(
+                "os.environ",
+                {"EMAIL_RECIPIENT": "test@test.com", "SENDGRID_API_KEY": "test"},
+            ):
+                self.send_email_command.handle()
 
-            MockClient.assert_called()
+                MockClient.assert_called()

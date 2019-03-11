@@ -17,16 +17,16 @@ np.random.seed(SEED)
 
 BEST_PARAMS = {
     "baggingregressor__base_estimator__booster": "dart",
-    "baggingregressor__base_estimator__colsample_bylevel": 0.9366527037650917,
-    "baggingregressor__base_estimator__colsample_bytree": 0.9219993315565242,
-    "baggingregressor__base_estimator__learning_rate": 0.11665974558680822,
+    "baggingregressor__base_estimator__colsample_bylevel": 0.9471809226392005,
+    "baggingregressor__base_estimator__colsample_bytree": 0.9696256190933767,
+    "baggingregressor__base_estimator__learning_rate": 0.10491107558650835,
     "baggingregressor__base_estimator__max_depth": 4,
     "baggingregressor__base_estimator__n_estimators": 110,
-    "baggingregressor__base_estimator__reg_alpha": 0.03644721755761247,
-    "baggingregressor__base_estimator__reg_lambda": 1.1276807051588262,
-    "baggingregressor__base_estimator__subsample": 0.885031174898249,
+    "baggingregressor__base_estimator__reg_alpha": 0.08214627818071266,
+    "baggingregressor__base_estimator__reg_lambda": 0.12815784540554037,
+    "baggingregressor__base_estimator__subsample": 0.9821248007080609,
     "baggingregressor__n_estimators": 10,
-    "correlationselector__threshold": 0.038121046704238715,
+    "correlationselector__threshold": 0.036836347033957516,
 }
 PIPELINE = make_pipeline(
     CorrelationSelector(cols_to_keep=CATEGORY_COLS),

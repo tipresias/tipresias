@@ -1,0 +1,199 @@
+Date,Home Team,Away Team,Home Win Predicted
+2018-08-24 00:00:00,Port Adelaide,Essendon,1.0
+2018-08-25 00:00:00,Carlton,Adelaide,0.0
+2018-08-25 00:00:00,Fremantle,Collingwood,0.0
+2018-08-25 00:00:00,Geelong,Gold Coast,1.0
+2018-08-25 00:00:00,Richmond,Western Bulldogs,1.0
+2018-08-25 00:00:00,Sydney,Hawthorn,1.0
+2018-08-26 00:00:00,Brisbane,West Coast,0.0
+2018-08-26 00:00:00,Melbourne,GWS,1.0
+2018-08-26 00:00:00,St Kilda,North Melbourne,0.0
+2018-08-17 00:00:00,Richmond,Essendon,1.0
+2018-08-18 00:00:00,Collingwood,Port Adelaide,1.0
+2018-08-18 00:00:00,GWS,Sydney,1.0
+2018-08-18 00:00:00,Geelong,Fremantle,1.0
+2018-08-18 00:00:00,Gold Coast,Brisbane,0.0
+2018-08-18 00:00:00,St Kilda,Hawthorn,0.0
+2018-08-19 00:00:00,Adelaide,North Melbourne,1.0
+2018-08-19 00:00:00,Carlton,Western Bulldogs,0.0
+2018-08-19 00:00:00,West Coast,Melbourne,1.0
+2018-08-10 00:00:00,Essendon,St Kilda,1.0
+2018-08-11 00:00:00,Collingwood,Brisbane,1.0
+2018-08-11 00:00:00,GWS,Adelaide,1.0
+2018-08-11 00:00:00,Gold Coast,Richmond,0.0
+2018-08-11 00:00:00,Hawthorn,Geelong,1.0
+2018-08-11 00:00:00,Port Adelaide,West Coast,1.0
+2018-08-12 00:00:00,Fremantle,Carlton,1.0
+2018-08-12 00:00:00,Melbourne,Sydney,1.0
+2018-08-12 00:00:00,North Melbourne,Western Bulldogs,1.0
+2018-08-03 00:00:00,Richmond,Geelong,1.0
+2018-08-04 00:00:00,Adelaide,Port Adelaide,1.0
+2018-08-04 00:00:00,Brisbane,North Melbourne,1.0
+2018-08-04 00:00:00,Hawthorn,Essendon,1.0
+2018-08-04 00:00:00,St Kilda,Western Bulldogs,1.0
+2018-08-04 00:00:00,Sydney,Collingwood,1.0
+2018-08-05 00:00:00,Carlton,GWS,0.0
+2018-08-05 00:00:00,Melbourne,Gold Coast,1.0
+2018-08-05 00:00:00,West Coast,Fremantle,1.0
+2018-07-27 00:00:00,Essendon,Sydney,1.0
+2018-07-28 00:00:00,Adelaide,Melbourne,1.0
+2018-07-28 00:00:00,GWS,St Kilda,1.0
+2018-07-28 00:00:00,Geelong,Brisbane,1.0
+2018-07-28 00:00:00,Gold Coast,Carlton,1.0
+2018-07-28 00:00:00,Richmond,Collingwood,1.0
+2018-07-29 00:00:00,Fremantle,Hawthorn,0.0
+2018-07-29 00:00:00,North Melbourne,West Coast,1.0
+2018-07-29 00:00:00,Western Bulldogs,Port Adelaide,0.0
+2018-07-20 00:00:00,St Kilda,Richmond,0.0
+2018-07-21 00:00:00,Brisbane,Adelaide,0.0
+2018-07-21 00:00:00,Collingwood,North Melbourne,1.0
+2018-07-21 00:00:00,Essendon,Fremantle,1.0
+2018-07-21 00:00:00,Geelong,Melbourne,1.0
+2018-07-21 00:00:00,Sydney,Gold Coast,1.0
+2018-07-22 00:00:00,Carlton,Hawthorn,0.0
+2018-07-22 00:00:00,Port Adelaide,GWS,1.0
+2018-07-22 00:00:00,West Coast,Western Bulldogs,1.0
+2018-07-12 00:00:00,Adelaide,Geelong,1.0
+2018-07-13 00:00:00,St Kilda,Carlton,1.0
+2018-07-14 00:00:00,GWS,Richmond,1.0
+2018-07-14 00:00:00,Gold Coast,Essendon,0.0
+2018-07-14 00:00:00,Hawthorn,Brisbane,1.0
+2018-07-14 00:00:00,Melbourne,Western Bulldogs,1.0
+2018-07-15 00:00:00,Collingwood,West Coast,1.0
+2018-07-15 00:00:00,Fremantle,Port Adelaide,0.0
+2018-07-15 00:00:00,North Melbourne,Sydney,1.0
+2018-07-05 00:00:00,Sydney,Geelong,1.0
+2018-07-06 00:00:00,Richmond,Adelaide,1.0
+2018-07-07 00:00:00,Brisbane,Carlton,1.0
+2018-07-07 00:00:00,Melbourne,Fremantle,1.0
+2018-07-07 00:00:00,Port Adelaide,St Kilda,1.0
+2018-07-07 00:00:00,Western Bulldogs,Hawthorn,0.0
+2018-07-08 00:00:00,Essendon,Collingwood,0.0
+2018-07-08 00:00:00,North Melbourne,Gold Coast,1.0
+2018-07-08 00:00:00,West Coast,GWS,1.0
+2018-06-28 00:00:00,Richmond,Sydney,1.0
+2018-06-29 00:00:00,Western Bulldogs,Geelong,0.0
+2018-06-30 00:00:00,Adelaide,West Coast,1.0
+2018-06-30 00:00:00,Carlton,Port Adelaide,0.0
+2018-06-30 00:00:00,GWS,Hawthorn,1.0
+2018-06-30 00:00:00,Gold Coast,Collingwood,0.0
+2018-07-01 00:00:00,Essendon,North Melbourne,1.0
+2018-07-01 00:00:00,Fremantle,Brisbane,1.0
+2018-07-01 00:00:00,Melbourne,St Kilda,1.0
+2018-06-21 00:00:00,West Coast,Essendon,1.0
+2018-06-22 00:00:00,Port Adelaide,Melbourne,1.0
+2018-06-23 00:00:00,Brisbane,GWS,0.0
+2018-06-23 00:00:00,Hawthorn,Gold Coast,1.0
+2018-06-23 00:00:00,Western Bulldogs,North Melbourne,0.0
+2018-06-24 00:00:00,Collingwood,Carlton,1.0
+2018-06-14 00:00:00,Port Adelaide,Western Bulldogs,1.0
+2018-06-15 00:00:00,Sydney,West Coast,1.0
+2018-06-16 00:00:00,Carlton,Fremantle,0.0
+2018-06-16 00:00:00,Gold Coast,St Kilda,1.0
+2018-06-16 00:00:00,Hawthorn,Adelaide,1.0
+2018-06-17 00:00:00,Geelong,Richmond,0.0
+2018-06-08 00:00:00,Port Adelaide,Richmond,1.0
+2018-06-09 00:00:00,GWS,Gold Coast,1.0
+2018-06-09 00:00:00,Geelong,North Melbourne,1.0
+2018-06-09 00:00:00,St Kilda,Sydney,0.0
+2018-06-10 00:00:00,Brisbane,Essendon,1.0
+2018-06-10 00:00:00,Fremantle,Adelaide,0.0
+2018-06-11 00:00:00,Melbourne,Collingwood,1.0
+2018-06-01 00:00:00,Sydney,Carlton,1.0
+2018-06-02 00:00:00,Essendon,Richmond,0.0
+2018-06-02 00:00:00,Gold Coast,Geelong,0.0
+2018-06-02 00:00:00,Hawthorn,Port Adelaide,1.0
+2018-06-02 00:00:00,West Coast,St Kilda,1.0
+2018-06-02 00:00:00,Western Bulldogs,Melbourne,0.0
+2018-06-03 00:00:00,Adelaide,GWS,1.0
+2018-06-03 00:00:00,Collingwood,Fremantle,1.0
+2018-06-03 00:00:00,North Melbourne,Brisbane,1.0
+2018-05-25 00:00:00,Collingwood,Western Bulldogs,1.0
+2018-05-26 00:00:00,Brisbane,Sydney,0.0
+2018-05-26 00:00:00,GWS,Essendon,1.0
+2018-05-26 00:00:00,Geelong,Carlton,1.0
+2018-05-26 00:00:00,Richmond,St Kilda,1.0
+2018-05-27 00:00:00,Fremantle,North Melbourne,1.0
+2018-05-27 00:00:00,Hawthorn,West Coast,1.0
+2018-05-27 00:00:00,Melbourne,Adelaide,1.0
+2018-05-18 00:00:00,Adelaide,Western Bulldogs,1.0
+2018-05-19 00:00:00,Essendon,Geelong,0.0
+2018-05-19 00:00:00,Gold Coast,Port Adelaide,0.0
+2018-05-19 00:00:00,North Melbourne,GWS,1.0
+2018-05-19 00:00:00,St Kilda,Collingwood,0.0
+2018-05-19 00:00:00,Sydney,Fremantle,1.0
+2018-05-20 00:00:00,Brisbane,Hawthorn,0.0
+2018-05-20 00:00:00,Carlton,Melbourne,0.0
+2018-05-20 00:00:00,West Coast,Richmond,1.0
+2018-05-11 00:00:00,Hawthorn,Sydney,1.0
+2018-05-12 00:00:00,Carlton,Essendon,0.0
+2018-05-12 00:00:00,Fremantle,St Kilda,1.0
+2018-05-12 00:00:00,GWS,West Coast,1.0
+2018-05-12 00:00:00,Gold Coast,Melbourne,0.0
+2018-05-12 00:00:00,Port Adelaide,Adelaide,0.0
+2018-05-12 00:00:00,Western Bulldogs,Brisbane,1.0
+2018-05-13 00:00:00,Collingwood,Geelong,1.0
+2018-05-13 00:00:00,North Melbourne,Richmond,0.0
+2018-05-04 00:00:00,Geelong,GWS,1.0
+2018-05-05 00:00:00,Adelaide,Carlton,1.0
+2018-05-05 00:00:00,Essendon,Hawthorn,0.0
+2018-05-05 00:00:00,Sydney,North Melbourne,1.0
+2018-05-05 00:00:00,West Coast,Port Adelaide,1.0
+2018-05-05 00:00:00,Western Bulldogs,Gold Coast,1.0
+2018-05-06 00:00:00,Brisbane,Collingwood,0.0
+2018-05-06 00:00:00,Richmond,Fremantle,1.0
+2018-05-06 00:00:00,St Kilda,Melbourne,0.0
+2018-04-27 00:00:00,Western Bulldogs,Carlton,1.0
+2018-04-28 00:00:00,Adelaide,Gold Coast,1.0
+2018-04-28 00:00:00,GWS,Brisbane,1.0
+2018-04-28 00:00:00,Geelong,Sydney,1.0
+2018-04-28 00:00:00,Hawthorn,St Kilda,1.0
+2018-04-28 00:00:00,North Melbourne,Port Adelaide,1.0
+2018-04-29 00:00:00,Collingwood,Richmond,0.0
+2018-04-29 00:00:00,Essendon,Melbourne,1.0
+2018-04-29 00:00:00,Fremantle,West Coast,1.0
+2018-04-20 00:00:00,Sydney,Adelaide,1.0
+2018-04-21 00:00:00,Carlton,West Coast,0.0
+2018-04-21 00:00:00,Fremantle,Western Bulldogs,1.0
+2018-04-21 00:00:00,Port Adelaide,Geelong,1.0
+2018-04-21 00:00:00,St Kilda,GWS,0.0
+2018-04-22 00:00:00,Brisbane,Gold Coast,1.0
+2018-04-22 00:00:00,North Melbourne,Hawthorn,1.0
+2018-04-24 00:00:00,Melbourne,Richmond,0.0
+2018-04-25 00:00:00,Collingwood,Essendon,1.0
+2018-04-13 00:00:00,Adelaide,Collingwood,1.0
+2018-04-14 00:00:00,GWS,Fremantle,1.0
+2018-04-14 00:00:00,North Melbourne,Carlton,1.0
+2018-04-14 00:00:00,Richmond,Brisbane,1.0
+2018-04-14 00:00:00,West Coast,Gold Coast,1.0
+2018-04-14 00:00:00,Western Bulldogs,Sydney,0.0
+2018-04-15 00:00:00,Essendon,Port Adelaide,1.0
+2018-04-15 00:00:00,Geelong,St Kilda,1.0
+2018-04-15 00:00:00,Hawthorn,Melbourne,1.0
+2018-04-06 00:00:00,Carlton,Collingwood,1.0
+2018-04-07 00:00:00,Gold Coast,Fremantle,1.0
+2018-04-07 00:00:00,Melbourne,North Melbourne,1.0
+2018-04-07 00:00:00,Port Adelaide,Brisbane,1.0
+2018-04-07 00:00:00,St Kilda,Adelaide,0.0
+2018-04-07 00:00:00,Sydney,GWS,1.0
+2018-04-08 00:00:00,Richmond,Hawthorn,1.0
+2018-04-08 00:00:00,West Coast,Geelong,0.0
+2018-04-08 00:00:00,Western Bulldogs,Essendon,0.0
+2018-03-29 00:00:00,Adelaide,Richmond,1.0
+2018-03-30 00:00:00,North Melbourne,St Kilda,0.0
+2018-03-31 00:00:00,Carlton,Gold Coast,1.0
+2018-03-31 00:00:00,Collingwood,GWS,0.0
+2018-03-31 00:00:00,Brisbane,Melbourne,0.0
+2018-03-31 00:00:00,Fremantle,Essendon,0.0
+2018-04-01 00:00:00,Western Bulldogs,West Coast,1.0
+2018-04-01 00:00:00,Sydney,Port Adelaide,1.0
+2018-04-02 00:00:00,Geelong,Hawthorn,1.0
+2018-03-25 00:00:00,Melbourne,Geelong,1.0
+2018-03-25 00:00:00,West Coast,Sydney,0.0
+2018-03-25 00:00:00,GWS,Western Bulldogs,1.0
+2018-03-24 00:00:00,Gold Coast,North Melbourne,1.0
+2018-03-24 00:00:00,Hawthorn,Collingwood,1.0
+2018-03-24 00:00:00,St Kilda,Brisbane,1.0
+2018-03-24 00:00:00,Port Adelaide,Fremantle,1.0
+2018-03-23 00:00:00,Essendon,Adelaide,0.0
+2018-03-22 00:00:00,Richmond,Carlton,1.0

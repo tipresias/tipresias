@@ -1,3 +1,4 @@
+from unittest import skip
 from django.test import TestCase
 
 from server.ml_data import JoinedMLData
@@ -5,6 +6,10 @@ from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
 from server.tests.helpers import regression_accuracy
 
 
+@skip(
+    "These tests are mostly a sanity check for data transformations, but they take way too long, "
+    "and the problems caught here would probably be caught while working on data or model changes."
+)
 class TestMLEstimators(TestCase):
     def setUp(self):
         self.estimators = [
@@ -26,6 +31,13 @@ class TestMLEstimators(TestCase):
 
             with self.subTest(test_label):
                 X_train, y_train = data.train_data()
+
+                if (
+                    "pipeline__correlationselector__labels"
+                    in estimator.get_params().keys()
+                ):
+                    estimator.set_params(pipeline__correlationselector__labels=y_train)
+
                 estimator.fit(X_train, y_train)
                 X_test, y_test = data.test_data()
                 y_pred = estimator.predict(X_test)

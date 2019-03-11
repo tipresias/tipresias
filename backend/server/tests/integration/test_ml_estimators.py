@@ -1,3 +1,4 @@
+from unittest import skip
 from django.test import TestCase
 
 from server.ml_data import JoinedMLData
@@ -5,6 +6,10 @@ from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
 from server.tests.helpers import regression_accuracy
 
 
+@skip(
+    "These tests are mostly a sanity check for data transformations, but they take way too long, "
+    "and the problems caught here would probably be caught while working on data or model changes."
+)
 class TestMLEstimators(TestCase):
     def setUp(self):
         self.estimators = [

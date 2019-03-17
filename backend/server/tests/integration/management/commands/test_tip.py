@@ -1,5 +1,5 @@
 import copy
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from unittest.mock import Mock
 from django.test import TestCase
 from faker import Faker
@@ -41,7 +41,7 @@ TEAM_NAMES = [
 @freeze_time("2016-01-01")
 class TestTip(TestCase):
     def setUp(self):
-        tomorrow = datetime.now(tz=timezone.utc) + timedelta(days=1)
+        tomorrow = datetime.now() + timedelta(days=1)
         year = tomorrow.year
         team_names = TEAM_NAMES[:]
 

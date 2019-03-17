@@ -127,8 +127,11 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
+        # Defaulting to start_date as the 1965 season, because earlier seasons don't
+        # have much in the way of player stats, just goals and behinds, which we
+        # already have at the team level.
         start_date="1965-01-01",
-        end_date="2016-12-31",
+        end_date=str(date.today()),
         index_cols: List[str] = INDEX_COLS,
         fetch_data: bool = False,
     ) -> None:
@@ -193,6 +196,7 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
             roster_data_frame = self.__create_roster_data_frame(
                 data_readers[2], data_frame
             )
+
             data_frame = pd.concat([data_frame, roster_data_frame], sort=False).fillna(
                 0
             )

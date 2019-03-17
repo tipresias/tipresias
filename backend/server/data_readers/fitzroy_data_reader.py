@@ -1,8 +1,8 @@
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 import pandas as pd
 from rpy2.robjects import pandas2ri, vectors, r
-
+from rpy2.rinterface import embedded
 
 TEAM_TRANSLATIONS = {
     "Brisbane Lions": "Brisbane",
@@ -16,7 +16,7 @@ class FitzroyDataReader:
     """Get data from the fitzRoy R package and return it as a pandas DataFrame."""
 
     def __init__(self):
-        self.current_year = datetime.now().year
+        self.current_year = date.today().year
 
     def get_fixture(self, season: Optional[int] = None) -> pd.DataFrame:
         """Get AFL fixture for given year"""
@@ -41,9 +41,7 @@ class FitzroyDataReader:
         return self.__data(method_string)
 
     def get_afltables_stats(
-        self,
-        start_date: Optional[str] = "1965-01-01",
-        end_date: Optional[str] = "2016-12-31",
+        self, start_date: str = "1965-01-01", end_date: str = str(date.today())
     ) -> pd.DataFrame:
         """Get player data from AFL tables
         Args:
@@ -54,10 +52,29 @@ class FitzroyDataReader:
             pandas.DataFrame
         """
 
-        return self.__data(
-            f'get_afltables_stats(start_date = "{start_date}", '
-            f'end_date = "{end_date}")'
-        ).assign(playing_for=self.__translate_team_column("playing_for"))
+        try:
+            data_frame = self.__data(
+                f'get_afltables_stats(start_date = "{start_date}", '
+                f'end_date = "{end_date}")'
+            )
+        except embedded.RRuntimeError:
+            earlier_end_date = date(date.today().year - 1, 12, 31)
+
+            if datetime.strptime(end_date, "%Y-%m-%d").date() > earlier_end_date:
+                print(
+                    f"end_date of {end_date} is in a year for which AFLTables has no data. "
+                    "Retrying with an end_date of the end of last year "
+                    f"({earlier_end_date})."
+                )
+
+                data_frame = self.__data(
+                    f'get_afltables_stats(start_date = "{start_date}", '
+                    f'end_date = "{earlier_end_date}")'
+                )
+
+        return data_frame.assign(
+            playing_for=self.__translate_team_column("playing_for")
+        )
 
     def __data(self, method_string: str):
         return self.__r_to_pandas(r(f"fitzRoy::{method_string}")).assign(

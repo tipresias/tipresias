@@ -280,7 +280,8 @@ class FootywireDataReader:
         else:
             score_col = np.repeat(0, len(valid_data_frame))
             score_data_frame = pd.DataFrame(
-                {"home_score": score_col, "away_score": score_col}
+                {"home_score": score_col, "away_score": score_col},
+                index=valid_data_frame.index,
             )
 
         cleaned_data_frame = (

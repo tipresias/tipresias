@@ -222,10 +222,13 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
             if data_frame["year"].max() == year
             else 1
         )
+        raw_roster_data_frame = data_reader(round_number=round_number, year=year)
+
+        if not raw_roster_data_frame.any().any():
+            return raw_roster_data_frame.assign(player_id=[])
 
         roster_data_frame = (
-            data_reader(round_number=round_number, year=year)
-            .merge(
+            raw_roster_data_frame.merge(
                 data_frame[["player_name", "player_id"]], on=["player_name"], how="left"
             )
             .sort_values("player_id", ascending=False)

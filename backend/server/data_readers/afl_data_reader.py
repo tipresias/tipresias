@@ -84,7 +84,22 @@ def get_rosters(
 
     year = date.today().year if year is None else year
     roster_data = _fetch_rosters(round_number)
-    roster_data_frame = pd.DataFrame(roster_data).assign()
+
+    if not any(roster_data):
+        return pd.DataFrame(
+            columns=[
+                "round_number",
+                "year",
+                "match_id",
+                "playing_for",
+                "player_name",
+                "home_team",
+                "away_team",
+            ]
+        )
+
+    roster_data_frame = pd.DataFrame(roster_data)
+
     return roster_data_frame.assign(
         round_number=round_number,
         year=year,

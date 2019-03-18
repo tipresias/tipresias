@@ -206,7 +206,7 @@ class Command(BaseCommand):
         estimator = ml_model_record.load_estimator()
         data_class = locate(ml_model_record.data_class_path)
 
-        data = data_class()
+        data = data_class(fetch_data=True)
 
         make_year_predictions = partial(
             self.__make_year_predictions,

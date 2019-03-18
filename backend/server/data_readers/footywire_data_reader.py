@@ -190,12 +190,10 @@ class FootywireDataReader:
         are_round_labels = [any(row.select(".tbtitle")) for row in table_rows]
         round_groups = self.__group_by_round(table_rows, are_round_labels)
 
+        # Due to some elements using rowspan to cover multiple rows, we need to get the
+        # max length of all rows, then pad the shorter rows and forward fill the values
         max_len = max(
-            [
-                len(list(tr.stripped_strings))
-                for tr in table_rows
-                if any(tr.select(".data"))
-            ]
+            [len(tr.find_all("td")) for tr in table_rows if any(tr.select(".data"))]
         )
 
         grouped_data = [
@@ -282,7 +280,8 @@ class FootywireDataReader:
         else:
             score_col = np.repeat(0, len(valid_data_frame))
             score_data_frame = pd.DataFrame(
-                {"home_score": score_col, "away_score": score_col}
+                {"home_score": score_col, "away_score": score_col},
+                index=valid_data_frame.index,
             )
 
         cleaned_data_frame = (
@@ -366,7 +365,10 @@ class FootywireDataReader:
 
     @staticmethod
     def __betting_row(max_len: int, tr: element.Tag) -> List[Optional[str]]:
-        table_row_strings = list(tr.stripped_strings)
+        # Can't used stripped_strings method on tr, because it removes blank <td>
+        # elements (e.g. 'Margin' column before a match is played), resulting in row
+        # values not matching column labels
+        table_row_strings = [td.get_text(strip=True) for td in tr.find_all("td")]
         padding = [None] * (max_len - len(table_row_strings))
 
         return list(itertools.chain.from_iterable([padding, table_row_strings]))

@@ -112,7 +112,8 @@ class Command(BaseCommand):
 
         fixture_data_frame = self.data_reader.get_fixture(
             year_range=(year, year + 1), fetch_data=self.fetch_data
-        )
+        ).assign(date=lambda df: df["date"].dt.tz_localize(timezone.utc))
+
         latest_match = fixture_data_frame["date"].max()
 
         if self.right_now > latest_match:

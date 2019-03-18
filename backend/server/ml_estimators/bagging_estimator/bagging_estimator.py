@@ -17,16 +17,16 @@ np.random.seed(SEED)
 
 BEST_PARAMS = {
     "baggingregressor__base_estimator__booster": "dart",
-    "baggingregressor__base_estimator__colsample_bylevel": 0.9471809226392005,
-    "baggingregressor__base_estimator__colsample_bytree": 0.9696256190933767,
-    "baggingregressor__base_estimator__learning_rate": 0.10491107558650835,
-    "baggingregressor__base_estimator__max_depth": 4,
-    "baggingregressor__base_estimator__n_estimators": 110,
-    "baggingregressor__base_estimator__reg_alpha": 0.08214627818071266,
-    "baggingregressor__base_estimator__reg_lambda": 0.12815784540554037,
-    "baggingregressor__base_estimator__subsample": 0.9821248007080609,
-    "baggingregressor__n_estimators": 10,
-    "correlationselector__threshold": 0.036836347033957516,
+    "baggingregressor__base_estimator__colsample_bylevel": 0.9593085973720467,
+    "baggingregressor__base_estimator__colsample_bytree": 0.8366869579732328,
+    "baggingregressor__base_estimator__learning_rate": 0.13118764001091077,
+    "baggingregressor__base_estimator__max_depth": 6,
+    "baggingregressor__base_estimator__n_estimators": 149,
+    "baggingregressor__base_estimator__reg_alpha": 0.07296244459829336,
+    "baggingregressor__base_estimator__reg_lambda": 0.11334834444556088,
+    "baggingregressor__base_estimator__subsample": 0.8285733635843882,
+    "baggingregressor__n_estimators": 7,
+    "correlationselector__threshold": 0.030411689885916048,
 }
 PIPELINE = make_pipeline(
     CorrelationSelector(cols_to_keep=CATEGORY_COLS),

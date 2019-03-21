@@ -1,5 +1,6 @@
 from unittest import TestCase
 from unittest.mock import Mock
+from datetime import date
 import pandas as pd
 from faker import Faker
 
@@ -14,10 +15,29 @@ match_results_df = pd.read_csv(
 )
 match_results_mock = Mock(return_value=match_results_df)
 
+fixture_df = pd.read_csv(f"{BASE_DIR}/server/tests/fixtures/ft_match_list.csv")
+fixture_mock_df = (
+    fixture_df.sort_values("date", ascending=False)
+    .iloc[:10, :]
+    .drop_duplicates(subset="round")
+    .assign(date=FAKE.date_time_this_month(after_now=True, before_now=False))
+)
+# Try to grab one round's worth of match data and change date to be in the future to mock
+# fetching data for upcoming round
+fixture_mock = Mock(return_value=fixture_mock_df)
+
 
 class TestMatchMLData(TestCase):
     def setUp(self):
-        self.data = MatchMLData(data_readers=[match_results_mock])
+        self.data = MatchMLData(data_readers=[match_results_mock, fixture_mock])
+
+    def test_fetch_data(self):
+        fetched_data = MatchMLData(
+            data_readers=[match_results_mock, fixture_mock], fetch_data=True
+        )
+        current_year = date.today().year
+
+        self.assertTrue(current_year in fetched_data.data["year"].values)
 
     def test_train_data(self):
         X_train, y_train = self.data.train_data()

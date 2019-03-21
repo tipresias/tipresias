@@ -225,7 +225,7 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
                 f"fixture for {self.current_year + 1}.\n"
             )
 
-            fixture_data_frame = data_reader.get_fixture(
+            fixture_data_frame = data_reader(
                 year_range=(self.current_year + 1, self.current_year + 2),
                 fetch_data=self.fetch_data,
             ).assign(date=lambda df: df["date"].dt.tz_localize(timezone.utc))

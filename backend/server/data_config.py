@@ -32,7 +32,7 @@ TEAM_TRANSLATIONS = {
 # for the sake of joining the two data sets, but no longer use venues to join them.
 # It was a pain to put this together, though, so I'm keeping it around in case I need
 # it later.
-# VENUE_TRANSLATIONS = {
+# BETTING_VENUE_TRANSLATIONS = {
 #     "AAMI": "AAMI Stadium",
 #     "ANZ": "ANZ Stadium",
 #     "Adelaide": "Adelaide Oval",
@@ -58,6 +58,29 @@ TEAM_TRANSLATIONS = {
 #     "Westpac": "Westpac Stadium",
 #     "TIO Traegar Park": "TIO Stadium",
 # }
+
+# For when we fetch upcoming matches in the fixture and need to make Footywire venue
+# names consistent with AFL tables venue names
+FOOTYWIRE_VENUE_TRANSLATIONS = {
+    "AAMI Stadium": "Melbourne",
+    "ANZ Stadium": "Stadium Australia",
+    "UTAS Stadium": "York Park",
+    "Blacktown International": "Blacktown",
+    "Blundstone Arena": "Bellerive Oval",
+    "Domain Stadium": "Subiaco",
+    "Etihad Stadium": "Docklands",
+    "GMHBA Stadium": "Kardinia Park",
+    "MCG": "M.C.G.",
+    "Mars Stadium": "Eureka Stadium",
+    "Metricon Stadium": "Carrara",
+    "Optus Stadium": "Perth Stadium",
+    "SCG": "S.C.G.",
+    "Spotless Stadium": "Sydney Showground",
+    "Showground Stadium": "Sydney Showground",
+    "TIO Stadium": "Marrara Oval",
+    "Westpac Stadium": "Wellington",
+    "Marvel Stadium": "Docklands",
+}
 
 CITIES = {
     "Adelaide": {"state": "SA", "lat": -34.9285, "long": 138.6007},
@@ -105,6 +128,7 @@ TEAM_CITIES = {
 }
 
 VENUE_CITIES = {
+    # AFL Tables venues
     "Football Park": "Adelaide",
     "S.C.G.": "Sydney",
     "Windy Hill": "Melbourne",
@@ -152,6 +176,24 @@ VENUE_CITIES = {
     "Blacktown": "Sydney",
     "Jiangwan Stadium": "Shanghai",
     "Albury": "Albury",
+    # Footywire venues
+    "AAMI Stadium": "Melbourne",
+    "ANZ Stadium": "Sydney",
+    "UTAS Stadium": "Launceston",
+    "Blacktown International": "Sydney",
+    "Blundstone Arena": "Hobart",
+    "Domain Stadium": "Perth",
+    "Etihad Stadium": "Melbourne",
+    "GMHBA Stadium": "Geelong",
+    "MCG": "Melbourne",
+    "Mars Stadium": "Ballarat",
+    "Metricon Stadium": "Gold Coast",
+    "Optus Stadium": "Perth",
+    "SCG": "Sydney",
+    "Spotless Stadium": "Sydney",
+    "TIO Stadium": "Darwin",
+    "Westpac Stadium": "Wellington",
+    "Marvel Stadium": "Melbourne",
 }
 
 TEAM_NAMES = sorted(["Fitzroy", "University"] + list(set(TEAM_TRANSLATIONS.values())))

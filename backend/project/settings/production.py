@@ -7,7 +7,7 @@ DEBUG = False
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-ALLOWED_HOSTS = ["tipresias.herokuapp.com"]
+ALLOWED_HOSTS = ["tipresias.herokuapp.com", "159.89.42.53"]
 
 INSTALLED_APPS.extend(["whitenoise.runserver_nostatic", "django.contrib.staticfiles"])
 

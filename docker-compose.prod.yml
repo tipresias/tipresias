@@ -13,8 +13,16 @@ services:
       - DJANGO_SETTINGS_MODULE=project.settings.production
       - DATABASE_HOST=db
       - NODE_ENV=production
+    networks:
+      - app-network
     command: python3 ./backend/manage.py runserver 0.0.0.0:8000
   db:
     image: postgres
     environment:
       - POSTGRES_DB=tipresias
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

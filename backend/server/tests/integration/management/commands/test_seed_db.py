@@ -24,7 +24,13 @@ class TestSeedDb(TestCase):
 
         joblib.dump = Mock()
 
-        self.years = (2010, 2013)
+        min_seed_year = int(seed_db.YEAR_RANGE.split("-")[0])
+        # Min year needs to be greather than 2010, or weird stuff can happen
+        # due to betting data only going back to 2010
+        self.assertGreater(min_seed_year, 2010)
+
+        # We only need a couple of valid years to test functionality
+        self.years = (int(min_seed_year), int(min_seed_year + 2))
         self.data = self.data_class().data
 
         # Mock footywire fixture data
@@ -48,10 +54,8 @@ class TestSeedDb(TestCase):
         self.assertEqual(
             TeamMatch.objects.count(), ROW_COUNT * len(range(*self.years)) * 2
         )
-        # Should only have predictions for two years (2011 & 2012) due to betting data's
-        # limitations (i.e. training data starts in 2010, so test data starts in 2011)
         self.assertEqual(
-            Prediction.objects.count(), ROW_COUNT * (len(range(*self.years)) - 1)
+            Prediction.objects.count(), ROW_COUNT * len(range(*self.years))
         )
 
     def test_handle_errors(self):

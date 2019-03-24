@@ -7,7 +7,7 @@ DEBUG = False
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-ALLOWED_HOSTS = ["tipresias.herokuapp.com"]
+ALLOWED_HOSTS = ["tipresias.herokuapp.com", "159.89.42.53"]
 
 INSTALLED_APPS.extend(["whitenoise.runserver_nostatic", "django.contrib.staticfiles"])
 
@@ -33,7 +33,6 @@ TEMPLATES = [
 
 if os.environ.get("DATABASE_URL"):
     DATABASES["default"] = dj_database_url.config(conn_max_age=600, ssl_require=True)
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/

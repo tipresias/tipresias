@@ -1,7 +1,6 @@
 """Django command for seeding the DB with match & prediction data"""
 
 import itertools
-from datetime import datetime
 from functools import partial
 from pydoc import locate
 from typing import Tuple, List, Optional, Type
@@ -38,9 +37,6 @@ ESTIMATORS: List[EstimatorTuple] = [
 ]
 NO_SCORE = 0
 JAN = 1
-DEC = 12
-RESCUE_LIMIT = datetime(2019, 2, 1)
-DODGY_SEASONS = [2012, 2013, 2014, 2016]
 
 
 class Command(BaseCommand):

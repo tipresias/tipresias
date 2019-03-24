@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
-from typing import List, Dict, Union, Any
+from typing import List, Dict, Any
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -70,7 +70,16 @@ WSGI_APPLICATION = "project.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-DATABASES: Dict[str, Dict[str, Union[str, int]]] = {}
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "tipresias",
+        "HOST": os.getenv("DATABASE_HOST") or "",
+        "USER": "postgres",
+        "PASSWORD": "",
+        "PORT": 5432,
+    }
+}
 
 
 # Password validation

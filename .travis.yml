@@ -8,12 +8,10 @@ before_install:
 - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv
   -in deploy_rsa.enc -out deploy_rsa -d
 - sudo rm /usr/local/bin/docker-compose
-- curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname
-  -s`-`uname -m` > docker-compose
-- chmod +x docker-compose
-- sudo mv docker-compose /usr/local/bin
-- curl -L https://github.com/docker/machine/releases/download/${DOCKER_MACHINE_VERSION}/docker-machine-`uname -s`-`uname -m` > docker-machine
-- sudo install docker-machine /usr/local/bin/docker-machine
+- sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+- sudo chmod +x /usr/local/bin/docker-compose
+# - sudo curl -L "https://github.com/docker/machine/releases/download/v0.16.0/docker-machine-$(uname -s)-$(uname -m)" > /tmp/docker-machine
+# - sudo install /tmp/docker-machine /usr/local/bin/docker-machine
 script:
 - docker pull cfranklin11/tipresias_server:master
 - docker build --cache-from cfranklin11/tipresias_server:master -t cfranklin11/tipresias_server:master
@@ -32,11 +30,12 @@ after_success:
 - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
 - docker push cfranklin11/tipresias_server:master
 - docker push cfranklin11/tipresias_client:master
-deploy:
-  provider: script
-  script:
-    - docker-machine create --driver generic --generic-ip-address=159.89.42.53 --generic-ssh-key=./deploy_rsa tipresias
-    - eval $(docker-machine env tipresias)
-    - docker-compose build
-    - docker-compose start
-  on: master
+# deploy:
+#   provider: script
+#   script:
+#     - docker-machine create --driver generic --generic-ip-address 159.89.42.53 --generic-ssh-key ./deploy_rsa tipresias
+#     - docker-machine ls
+#     - eval $(docker-machine env tipresias)
+#     - docker-compose build
+#     - docker-compose start
+#   on: master

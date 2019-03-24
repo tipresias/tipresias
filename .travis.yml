@@ -3,6 +3,7 @@ services:
 - docker
 env:
   DOCKER_COMPOSE_VERSION: 1.22.0
+  DOCKER_MACHINE_VERSION: 1.16.1
 before_install:
 - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv
   -in deploy_rsa.enc -out deploy_rsa -d
@@ -11,6 +12,8 @@ before_install:
   -s`-`uname -m` > docker-compose
 - chmod +x docker-compose
 - sudo mv docker-compose /usr/local/bin
+- curl -L https://github.com/docker/machine/releases/download/${DOCKER_MACHINE_VERSION}/docker-machine-`uname -s`-`uname -m` > docker-machine
+- sudo install docker-machine /usr/local/bin/docker-machine
 script:
 - docker pull cfranklin11/tipresias_server:master
 - docker build --cache-from cfranklin11/tipresias_server:master -t cfranklin11/tipresias_server:master
@@ -36,4 +39,4 @@ deploy:
     - eval $(docker-machine env tipresias)
     - docker-compose build
     - docker-compose start
-  # on: master
+  on: master

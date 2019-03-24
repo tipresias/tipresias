@@ -53,9 +53,6 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
     - In the Travis dashboard, navigate to the tipresias repository.
     - Under 'More Options', trigger a build on `master`.
     - This will build the image, run tests, and deploy to Heroku.
-- Via heroku CLI (skips CI):
-    - If your stack isn't set to container, run `heroku stack:set container`
-    - `git push heroku master`
 
 ## Pro-Tips
 

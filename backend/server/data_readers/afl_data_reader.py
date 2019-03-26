@@ -3,6 +3,7 @@
 from typing import Optional, Dict, List
 import itertools
 from datetime import date
+import warnings
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup, element
 import requests
@@ -64,10 +65,11 @@ def _fetch_rosters(round_number: Optional[int]) -> List[Dict[str, str]]:
     game_elements = soup.select(".game")
 
     if not any(game_elements):
-        raise ValueError(
+        warnings.warn(
             "Could not find any game data. This is likely due to round number "
-            f"{round_number} not having any data yet."
+            f"{round_number} not having any data yet. Returning an empty list."
         )
+        return []
 
     round_data = [
         _parse_game_data(game_index, game_element)

@@ -1,28 +1,31 @@
 version: "3.2"
+
 services:
   app:
-    build: .
+    image: cfranklin11/tipresias_app:latest
     ports:
       - "8000:8000"
     stdin_open: true
     tty: true
     depends_on:
       - db
-    env_file: ./backend/.env
+    env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.production
       - DATABASE_HOST=db
       - NODE_ENV=production
     networks:
-      - app-network
+      - webnet
+    restart: unless-stopped
     command: python3 ./backend/manage.py runserver 0.0.0.0:8000
   db:
     image: postgres
     environment:
       - POSTGRES_DB=tipresias
     networks:
-      - app-network
+      - webnet
+    restart: unless-stopped
 
 networks:
-  app-network:
+  webnet:
     driver: bridge

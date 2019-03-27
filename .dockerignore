@@ -77,3 +77,15 @@ venv.bak/
 
 # JS stuff
 node_modules
+
+# Data files
+/data
+
+# Dev stuff
+.git
+.gitignore
+LICENSE
+README.md
+deploy_rsa.enc
+.travis.yml
+.vscode

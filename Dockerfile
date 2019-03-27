@@ -26,7 +26,9 @@ WORKDIR /app/frontend
 COPY ./frontend/package.json ./frontend/yarn.lock /app/frontend/
 RUN $HOME/.yarn/bin/yarn install
 
-# Add the rest of the code
+# Add the rest of the code, ignoring files not needed in prod
+ENV STR=$'notebooks'
+RUN echo "$STR" >> .dockerignore
 COPY . /app/
 
 # Build static files

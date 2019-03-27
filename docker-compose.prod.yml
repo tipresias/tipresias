@@ -14,6 +14,7 @@ services:
       - DJANGO_SETTINGS_MODULE=project.settings.production
       - DATABASE_HOST=db
       - NODE_ENV=production
+      - PRODUCTION_HOST=104.248.155.53
     networks:
       - webnet
     restart: unless-stopped

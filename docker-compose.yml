@@ -11,7 +11,7 @@ services:
     tty: true
     depends_on:
       - db
-    env_file: ./backend/.env
+    env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db

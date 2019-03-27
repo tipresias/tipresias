@@ -1,5 +1,6 @@
 from typing import Optional
 from datetime import datetime, date
+import warnings
 import pandas as pd
 from rpy2.robjects import pandas2ri, vectors, r
 from rpy2.rinterface import embedded
@@ -61,7 +62,7 @@ class FitzroyDataReader:
             earlier_end_date = date(date.today().year - 1, 12, 31)
 
             if datetime.strptime(end_date, "%Y-%m-%d").date() > earlier_end_date:
-                print(
+                warnings.warn(
                     f"end_date of {end_date} is in a year for which AFLTables has no data. "
                     "Retrying with an end_date of the end of last year "
                     f"({earlier_end_date})."

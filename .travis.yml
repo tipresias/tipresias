@@ -1,41 +1,38 @@
 sudo: required
 services:
-- docker
+  - docker
 env:
   DOCKER_COMPOSE_VERSION: 1.22.0
-  DOCKER_MACHINE_VERSION: 1.16.1
+  IP_ADDRESS: 104.248.155.53
 before_install:
-- openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv
-  -in deploy_rsa.enc -out deploy_rsa -d
-- sudo rm /usr/local/bin/docker-compose
-- sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-- sudo chmod +x /usr/local/bin/docker-compose
-# - sudo curl -L "https://github.com/docker/machine/releases/download/v0.16.0/docker-machine-$(uname -s)-$(uname -m)" > /tmp/docker-machine
-# - sudo install /tmp/docker-machine /usr/local/bin/docker-machine
+  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv
+    -in deploy_rsa.enc -out deploy_rsa -d
+  - sudo rm /usr/local/bin/docker-compose
+  - sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  - sudo chmod +x /usr/local/bin/docker-compose
 script:
-- docker pull cfranklin11/tipresias_server:master
-- docker build --cache-from cfranklin11/tipresias_server:master -t cfranklin11/tipresias_server:master
-  ./backend
-- docker run cfranklin11/tipresias_server:master pylint --disable=R server project
-  scripts
-- docker run cfranklin11/tipresias_server:master mypy server project scripts
-- docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
-- docker pull cfranklin11/tipresias_client:master
-- docker build --cache-from cfranklin11/tipresias_client:master -t cfranklin11/tipresias_client:master
-  ./frontend
-- docker run cfranklin11/tipresias_client:master yarn run eslint src
-- docker run cfranklin11/tipresias_client:master yarn run flow
-- docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit
+  - docker pull cfranklin11/tipresias_server:master
+  - docker build --cache-from cfranklin11/tipresias_server:master -t cfranklin11/tipresias_server:master
+    ./backend
+  - docker run cfranklin11/tipresias_server:master pylint --disable=R server project
+    scripts
+  - docker run cfranklin11/tipresias_server:master mypy server project scripts
+  - docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
+  - docker pull cfranklin11/tipresias_client:master
+  - docker build --cache-from cfranklin11/tipresias_client:master -t cfranklin11/tipresias_client:master
+    ./frontend
+  - docker run cfranklin11/tipresias_client:master yarn run eslint src
+  - docker run cfranklin11/tipresias_client:master yarn run flow
+  - docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit
 after_success:
-- echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
-- docker push cfranklin11/tipresias_server:master
-- docker push cfranklin11/tipresias_client:master
-# deploy:
-#   provider: script
-#   script:
-#     - docker-machine create --driver generic --generic-ip-address 159.89.42.53 --generic-ssh-key ./deploy_rsa tipresias
-#     - docker-machine ls
-#     - eval $(docker-machine env tipresias)
-#     - docker-compose build
-#     - docker-compose start
-#   on: master
+  - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
+  - docker push cfranklin11/tipresias_server:master
+  - docker push cfranklin11/tipresias_client:master
+deploy:
+  provider: script
+  script:
+    - docker pull cfranklin11/tipresias_app:latest
+    - docker build --cache-from cfranklin11/tipresias_app:latest -t cfranklin11/tipresias_app:latest .
+    - docker push cfranklin11/tipresias_app:latest
+    - ssh -i deploy_rsa ${DEPLOY_USER}@${IP_ADDRESS} "docker pull cfranklin11/tipresias_app:latest && docker-compose restart"
+  on: master

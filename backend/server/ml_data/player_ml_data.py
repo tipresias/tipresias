@@ -222,7 +222,7 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
     ) -> pd.DataFrame:
         year = date.today().year
         round_number = (
-            data_frame["round_number"].max() + 1
+            data_frame.query(f"year == {year}")["round_number"].max() + 1
             if data_frame["year"].max() == year
             else 1
         )

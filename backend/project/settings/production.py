@@ -9,7 +9,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 ALLOWED_HOSTS = ["tipresias.herokuapp.com", os.environ.get("PRODUCTION_HOST")]
 
-INSTALLED_APPS.extend(["whitenoise.runserver_nostatic", "django.contrib.staticfiles"])
+INSTALLED_APPS.extend(
+    ["whitenoise.runserver_nostatic", "django.contrib.staticfiles"]
+)
 
 # Must insert after SecurityMiddleware, which is first in settings/common.py
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")

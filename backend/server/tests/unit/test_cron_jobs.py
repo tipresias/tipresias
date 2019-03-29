@@ -11,7 +11,8 @@ from server.data_readers import FootywireDataReader
 THURSDAY = "2019-3-28"
 FRIDAY = "2019-3-29"
 SATURDAY = "2019-3-30"
-SEVEN_O_CLOCK = 7
+SEVEN_PM = 19
+MELBOURNE_TIMEZONE_OFFSET = 11
 
 
 class TestSendTips(TestCase):
@@ -22,7 +23,7 @@ class TestSendTips(TestCase):
         fixture_data_frame = pd.DataFrame(
             [
                 {
-                    "date": datetime(year, friday.month, friday.day, SEVEN_O_CLOCK),
+                    "date": datetime(year, friday.month, friday.day, SEVEN_PM),
                     "home_team": "Richmond",
                     "away_team": "Carlton",
                     "home_score": 0,
@@ -34,9 +35,21 @@ class TestSendTips(TestCase):
                     "season": year,
                 },
                 {
-                    "date": datetime(year, friday.month, friday.day + 1, SEVEN_O_CLOCK),
+                    "date": datetime(year, friday.month, friday.day + 1, SEVEN_PM),
                     "home_team": "Melbourne",
                     "away_team": "Sydney",
+                    "home_score": 0,
+                    "away_score": 0,
+                    "venue": "MCG",
+                    "crowd": 0,
+                    "round_label": "Round 1",
+                    "round": 1,
+                    "season": year,
+                },
+                {
+                    "date": datetime(year, friday.month, friday.day + 2, SEVEN_PM),
+                    "home_team": "Collingwood",
+                    "away_team": "Brisbane",
                     "home_score": 0,
                     "away_score": 0,
                     "venue": "MCG",
@@ -48,10 +61,8 @@ class TestSendTips(TestCase):
             ]
         )
 
-        data_reader = FootywireDataReader()
-        data_reader.get_fixture = Mock(return_value=fixture_data_frame)
-
-        self.job = SendTips(data_reader=data_reader)
+        self.data_reader = FootywireDataReader()
+        self.data_reader.get_fixture = Mock(return_value=fixture_data_frame)
 
     def test_do(self):
         with patch("server.management.commands.tip.Command") as MockTipCommand:
@@ -61,13 +72,11 @@ class TestSendTips(TestCase):
             ) as MockSendCommand:
                 MockSendCommand.return_value.handle = Mock()
 
-                with freeze_time(FRIDAY):
+                # Need to create a new instance of SendTips with each freeze_time,
+                # because the datetime is set in __init__
+                with freeze_time(FRIDAY, tz_offset=MELBOURNE_TIMEZONE_OFFSET):
                     with self.subTest("on Friday with a match"):
-                        self.job.do()
-
-                        import pdb
-
-                        pdb.set_trace()
+                        SendTips(data_reader=self.data_reader).do()
 
                         MockTipCommand().handle.assert_called()
                         MockSendCommand().handle.assert_called()
@@ -75,18 +84,16 @@ class TestSendTips(TestCase):
                         MockTipCommand().handle.reset_mock()
                         MockSendCommand().handle.reset_mock()
 
-                        pdb.set_trace()
-
-                with freeze_time(THURSDAY):
+                with freeze_time(THURSDAY, tz_offset=MELBOURNE_TIMEZONE_OFFSET):
                     with self.subTest("on Thursday without a match"):
-                        self.job.do()
+                        SendTips(data_reader=self.data_reader).do()
 
                         MockTipCommand().handle.assert_not_called()
                         MockSendCommand().handle.assert_not_called()
 
-                with freeze_time(SATURDAY):
+                with freeze_time(SATURDAY, tz_offset=MELBOURNE_TIMEZONE_OFFSET):
                     with self.subTest("on Saturday with a match"):
-                        self.job.do()
+                        SendTips(data_reader=self.data_reader).do()
 
                         MockTipCommand().handle.assert_not_called()
                         MockSendCommand().handle.assert_not_called()

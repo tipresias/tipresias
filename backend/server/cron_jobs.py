@@ -43,7 +43,8 @@ class SendTips(CronJobBase):
         # the rest of the matches (they usually get announced on Thursday around
         # 6:30 pm). So, we'll want to update tips for the rest of the round on Friday.
         if self.__is_match_today(fixture_dates) and is_before_saturday:
-            pass
+            tip.Command().handle()
+            send_email.Command().handle()
 
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
         fixture_data_frame = self.data_reader.get_fixture(
@@ -72,4 +73,4 @@ class SendTips(CronJobBase):
         return fixture_data_frame
 
     def __is_match_today(self, fixture_dates: pd.Series) -> bool:
-        return fixture_dates[fixture_dates == self.right_now.date].any()
+        return (fixture_dates == self.right_now.date()).any()

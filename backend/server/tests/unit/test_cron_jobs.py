@@ -65,19 +65,28 @@ class TestSendTips(TestCase):
                     with self.subTest("on Friday with a match"):
                         self.job.do()
 
-                        MockTipCommand.handle.assert_called()
-                        MockSendCommand.handle.assert_called()
+                        import pdb
+
+                        pdb.set_trace()
+
+                        MockTipCommand().handle.assert_called()
+                        MockSendCommand().handle.assert_called()
+
+                        MockTipCommand().handle.reset_mock()
+                        MockSendCommand().handle.reset_mock()
+
+                        pdb.set_trace()
 
                 with freeze_time(THURSDAY):
                     with self.subTest("on Thursday without a match"):
                         self.job.do()
 
-                        MockTipCommand.handle.assert_not_called()
-                        MockSendCommand.handle.assert_not_called()
+                        MockTipCommand().handle.assert_not_called()
+                        MockSendCommand().handle.assert_not_called()
 
                 with freeze_time(SATURDAY):
                     with self.subTest("on Saturday with a match"):
                         self.job.do()
 
-                        MockTipCommand.handle.assert_not_called()
-                        MockSendCommand.handle.assert_not_called()
+                        MockTipCommand().handle.assert_not_called()
+                        MockSendCommand().handle.assert_not_called()

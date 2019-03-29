@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 from typing import List, Dict, Any
+from datetime import timezone, timedelta
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -47,9 +48,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CRON_CLASSES = [
-    "server.cron_jobs.SendTips"
-]
+CRON_CLASSES = ["server.cron_jobs.SendTips"]
 
 ROOT_URLCONF = "project.urls"
 
@@ -101,6 +100,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 STATIC_URL = ""
 STATICFILES_DIRS: List = []
+
+HOURS_FROM_UTC_TO_MELBOURNE = 11
+MELBOURNE_TIMEZONE = timezone(timedelta(hours=HOURS_FROM_UTC_TO_MELBOURNE))
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/

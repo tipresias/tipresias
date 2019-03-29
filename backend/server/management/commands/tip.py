@@ -17,6 +17,7 @@ from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
 from server.ml_data import JoinedMLData
+from project.settings.common import MELBOURNE_TIMEZONE
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -54,7 +55,7 @@ class Command(BaseCommand):
         self.data_reader = data_reader
         self.fetch_data = fetch_data
         # Fixture data uses UTC
-        self.right_now = datetime.now(tz=timezone.utc)
+        self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.current_year = self.right_now.year
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
@@ -112,7 +113,7 @@ class Command(BaseCommand):
 
         fixture_data_frame = self.data_reader.get_fixture(
             year_range=(year, year + 1), fetch_data=self.fetch_data
-        ).assign(date=lambda df: df["date"].dt.tz_localize(timezone.utc))
+        ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
 
         latest_match = fixture_data_frame["date"].max()
 

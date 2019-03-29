@@ -1,6 +1,6 @@
 """Cron jobs to be run in production"""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from django_cron import CronJobBase, Schedule
 import pandas as pd
 
@@ -8,8 +8,8 @@ import pandas as pd
 # used in this cron job, but I want to get something working, so I'm gonna be lazy
 from server.management.commands import tip, send_email
 from server.data_readers import FootywireDataReader
+from project.settings.common import MELBOURNE_TIMEZONE
 
-MINUTES_PER_HOUR = 60
 # Note that Python starts weeks on Monday (index = 0) and ends them on Sunday
 # (index = 6)
 SATURDAY = 5
@@ -30,7 +30,7 @@ class SendTips(CronJobBase):
 
         # TODO: Need to set server timezone to Melbourne time for this to work as
         # intended
-        self.right_now = datetime.now(tz=timezone.utc)
+        self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.data_reader = data_reader
 
     def do(self):
@@ -49,7 +49,7 @@ class SendTips(CronJobBase):
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
         fixture_data_frame = self.data_reader.get_fixture(
             year_range=(year, year + 1), fetch_data=True
-        ).assign(date=lambda df: df["date"].dt.tz_localize(timezone.utc))
+        ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
 
         latest_match = fixture_data_frame["date"].max()
 

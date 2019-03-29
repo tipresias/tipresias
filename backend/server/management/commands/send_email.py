@@ -8,6 +8,7 @@ import sendgrid
 from sendgrid.helpers.mail import Mail
 
 from server.models import Match, Prediction
+from project.settings.common import MELBOURNE_TIMEZONE
 
 JAN = 1
 FIRST = 1
@@ -46,7 +47,7 @@ class Command(BaseCommand):
             Prediction.objects.filter(
                 ml_model__name="tipresias",
                 match__start_date_time__gt=datetime(
-                    latest_year, JAN, FIRST, tzinfo=timezone.utc
+                    latest_year, JAN, FIRST, tzinfo=MELBOURNE_TIMEZONE
                 ),
                 match__round_number=latest_round,
             )

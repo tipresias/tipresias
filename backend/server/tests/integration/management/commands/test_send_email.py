@@ -24,7 +24,7 @@ class TestSendEmail(TestCase):
                 "season": year,
                 "round": 1,
                 "round_label": "Round 1",
-                "crows": 1234,
+                "crowd": 1234,
                 "home_team": team_names.pop(),
                 "away_team": team_names.pop(),
                 "home_score": 50,

@@ -12,7 +12,7 @@ from project.settings.common import MELBOURNE_TIMEZONE
 
 JAN = 1
 FIRST = 1
-EMAIL_FROM = "tips@tipresias.com"
+EMAIL_FROM = "tipresias@tipresias.com"
 PREDICTION_HEADERS = [
     "Date",
     "Home Team",

@@ -3,7 +3,7 @@
 import os
 from functools import partial, reduce
 from pydoc import locate
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
 from mypy_extensions import TypedDict
 from django.core.management.base import BaseCommand
@@ -12,12 +12,11 @@ import pandas as pd
 import numpy as np
 from sklearn.externals import joblib
 
-from project.settings.common import BASE_DIR
+from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
 from server.ml_data import JoinedMLData
-from project.settings.common import MELBOURNE_TIMEZONE
 
 FixtureData = TypedDict(
     "FixtureData",

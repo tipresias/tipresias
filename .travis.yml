@@ -10,17 +10,15 @@ before_install:
   - sudo rm /usr/local/bin/docker-compose
   - sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   - sudo chmod +x /usr/local/bin/docker-compose
-script:
+before_script:
   - docker pull cfranklin11/tipresias_server:master
-  - docker build --cache-from cfranklin11/tipresias_server:master -t cfranklin11/tipresias_server:master
-    ./backend
-  - docker run cfranklin11/tipresias_server:master pylint --disable=R server project
-    scripts
+  - docker pull cfranklin11/tipresias_client:master
+script:
+  - docker build --cache-from cfranklin11/tipresias_server:master -t cfranklin11/tipresias_server:master ./backend
+  - docker run cfranklin11/tipresias_server:master pylint --disable=R server project scripts
   - docker run cfranklin11/tipresias_server:master mypy server project scripts
   - docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
-  - docker pull cfranklin11/tipresias_client:master
-  - docker build --cache-from cfranklin11/tipresias_client:master -t cfranklin11/tipresias_client:master
-    ./frontend
+  - docker build --cache-from cfranklin11/tipresias_client:master -t cfranklin11/tipresias_client:master ./frontend
   - docker run cfranklin11/tipresias_client:master yarn run eslint src
   - docker run cfranklin11/tipresias_client:master yarn run flow
   - docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit

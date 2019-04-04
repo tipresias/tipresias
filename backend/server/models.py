@@ -1,5 +1,5 @@
 from functools import reduce
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _

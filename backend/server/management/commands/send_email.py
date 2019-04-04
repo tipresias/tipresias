@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone, date
+from datetime import datetime, date
 from typing import List, Union
 
 from django.core.management.base import BaseCommand

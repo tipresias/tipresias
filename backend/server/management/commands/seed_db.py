@@ -202,7 +202,21 @@ class Command(BaseCommand):
         estimator = ml_model_record.load_estimator()
         data_class = locate(ml_model_record.data_class_path)
 
-        data = data_class(fetch_data=True)
+        if (
+            data_class is None
+            or not isinstance(data_class, type)
+            or not issubclass(data_class, BaseMLData)
+        ):
+            raise ValueError(
+                f"Data class found at {ml_model_record.data_class_path} is not an "
+                "instance of BaseMLData. Check associated model "
+                f"{ml_model_record.name}."
+            )
+
+        # I know we've already checked if it's None, but mypy kept complaining until
+        # I added this check for some reason.
+        if data_class is not None:
+            data = data_class(fetch_data=True)
 
         make_year_predictions = partial(
             self.__make_year_predictions,

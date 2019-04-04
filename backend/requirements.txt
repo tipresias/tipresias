@@ -40,5 +40,5 @@ black
 pytest
 pytest-env
 faker
-mypy
+mypy>=0.70
 freezegun

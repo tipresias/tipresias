@@ -2,7 +2,7 @@
 
 from typing import List, Callable, Any, Pattern
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 import pandas as pd
 
 from server.types import DataFrameTransformer, YearPair

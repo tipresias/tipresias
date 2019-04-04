@@ -5,13 +5,14 @@ from typing import List, Union
 from django.core.management.base import BaseCommand
 from django.template.loader import get_template
 import sendgrid
-from sendgrid.helpers.mail import Email, Content, Mail
+from sendgrid.helpers.mail import Mail
 
 from server.models import Match, Prediction
+from project.settings.common import MELBOURNE_TIMEZONE
 
 JAN = 1
 FIRST = 1
-EMAIL_FROM = "tips@tipresias.com"
+EMAIL_FROM = "tipresias@tipresias.com"
 PREDICTION_HEADERS = [
     "Date",
     "Home Team",
@@ -46,7 +47,7 @@ class Command(BaseCommand):
             Prediction.objects.filter(
                 ml_model__name="tipresias",
                 match__start_date_time__gt=datetime(
-                    latest_year, JAN, FIRST, tzinfo=timezone.utc
+                    latest_year, JAN, FIRST, tzinfo=MELBOURNE_TIMEZONE
                 ),
                 match__round_number=latest_round,
             )
@@ -104,12 +105,11 @@ class Command(BaseCommand):
                 "'SENDGRID_API_KEY' in order to send tips emails."
             )
 
-        from_email = Email(EMAIL_FROM)
-        to_email = Email(email_recipient)
-        subject = f"Footy Tips for {date.today()}"
-        content = Content("text/html", email_body)
-        mail = Mail(from_email, subject, to_email, content)
-
-        sendgrid.SendGridAPIClient(apikey=api_key).client.mail.send.post(
-            request_body=mail.get()
+        mail = Mail(
+            from_email=EMAIL_FROM,
+            to_emails=email_recipient,
+            subject=f"Footy Tips for {date.today()}",
+            html_content=email_body,
         )
+
+        sendgrid.SendGridAPIClient(api_key).send(mail)

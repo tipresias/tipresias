@@ -3,17 +3,17 @@
   <body>
     <div>
       <h3>Tips for Round {{ round_number }}</h3>
-      <table>
+      <table style="border-collapse: collapse;">
         <thead>
           {% for header in prediction_headers %}
-          <th>{{ header }}</th>
+          <th style="border: 1px solid black;padding: 2px 10px 2px 10px;">{{ header }}</th>
           {% endfor %}
         </thead>
         <tbody>
           {% for row in prediction_rows %}
           <tr>
             {% for element in row %}
-            <td>{{ element }}</td>
+            <td style="border: 1px solid black;padding: 2px 10px 2px 10px;">{{ element }}</td>
             {% endfor %}
           </tr>
           {% endfor %}

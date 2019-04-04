@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 from server.models import Match, Team
+from project.settings.common import MELBOURNE_TIMEZONE
 
 
 class TestMatch(TestCase):
@@ -47,7 +48,9 @@ class TestMatch(TestCase):
             team_match.score = 100
             team_match.save()
 
-            self.match.start_date_time = datetime.now(timezone.utc) - timedelta(hours=1)
+            self.match.start_date_time = datetime.now(MELBOURNE_TIMEZONE) - timedelta(
+                hours=1
+            )
             self.match.save()
 
             self.assertFalse(self.match.has_been_played)

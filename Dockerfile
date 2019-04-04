@@ -2,7 +2,7 @@
 # Specifying the sha is to guarantee that CI will not try to rebuild from the
 # source image (i.e. python:3.6), which apparently CIs are bad at avoiding on
 # their own
-FROM python:3.6@sha256:be8258268093afd16846564e3963af3059fd341e16677d7cd0bc157f0d7fcdfa
+FROM python:3.6@sha256:00110125bd9c23f200cfd2cfa82e68b8ab2006e1358f7a048e005794aa51568f
 
 # Install R to use rpy2 for access to R packages
 RUN apt-get update && apt-get -y install r-base

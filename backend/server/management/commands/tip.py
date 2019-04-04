@@ -3,7 +3,7 @@
 import os
 from functools import partial, reduce
 from pydoc import locate
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
 from mypy_extensions import TypedDict
 from django.core.management.base import BaseCommand
@@ -12,11 +12,11 @@ import pandas as pd
 import numpy as np
 from sklearn.externals import joblib
 
-from project.settings.common import BASE_DIR
+from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
-from server.ml_data import JoinedMLData
+from server.ml_data import JoinedMLData, BaseMLData
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -54,7 +54,7 @@ class Command(BaseCommand):
         self.data_reader = data_reader
         self.fetch_data = fetch_data
         # Fixture data uses UTC
-        self.right_now = datetime.now(tz=timezone.utc)
+        self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.current_year = self.right_now.year
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
@@ -112,7 +112,7 @@ class Command(BaseCommand):
 
         fixture_data_frame = self.data_reader.get_fixture(
             year_range=(year, year + 1), fetch_data=self.fetch_data
-        ).assign(date=lambda df: df["date"].dt.tz_localize(timezone.utc))
+        ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
 
         latest_match = fixture_data_frame["date"].max()
 
@@ -123,8 +123,9 @@ class Command(BaseCommand):
             )
 
             fixture_data_frame = self.data_reader.get_fixture(
-                year_range=(year + 1, year + 2), fetch_data=self.fetch_data
-            )
+                year_range=(year, year + 1), fetch_data=self.fetch_data
+            ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
+
             latest_match = fixture_data_frame["date"].max()
 
             if self.right_now > latest_match:
@@ -234,7 +235,22 @@ class Command(BaseCommand):
     ) -> List[Optional[Prediction]]:
         loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model_record.filepath))
         data_class = locate(ml_model_record.data_class_path)
-        data = data_class(test_years=(year, year), fetch_data=self.fetch_data)
+
+        if (
+            data_class is None
+            or not isinstance(data_class, type)
+            or not issubclass(data_class, BaseMLData)
+        ):
+            raise ValueError(
+                f"Data class found at {ml_model_record.data_class_path} is not an "
+                "instance of BaseMLData. Check associated model "
+                f"{ml_model_record.name}."
+            )
+
+        # I know we've already checked if it's None, but mypy kept complaining until
+        # I added this check for some reason.
+        if data_class is not None:
+            data = data_class(test_years=(year, year), fetch_data=self.fetch_data)
 
         X_test, _ = data.test_data(test_round=round_number)
         y_pred = loaded_model.predict(X_test)

@@ -2,7 +2,7 @@
 
 from typing import List, Callable, Any, Pattern
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 import pandas as pd
 
 from server.types import DataFrameTransformer, YearPair
@@ -30,6 +30,7 @@ from server.data_readers import FitzroyDataReader, FootywireDataReader
 from server.ml_data import BaseMLData
 from server.data_config import INDEX_COLS, FOOTYWIRE_VENUE_TRANSLATIONS
 from server.utils import DataTransformerMixin
+from project.settings.common import MELBOURNE_TIMEZONE
 
 COL_TRANSLATIONS = {
     "home_points": "home_score",
@@ -132,7 +133,7 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
         )
 
         self._data_transformers = data_transformers
-        self.right_now = datetime.now(tz=timezone.utc)
+        self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.current_year = self.right_now.year
 
         data_frame = (
@@ -215,7 +216,7 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
         fixture_data_frame = data_reader(
             year_range=(self.current_year, self.current_year + 1),
             fetch_data=self.fetch_data,
-        ).assign(date=lambda df: df["date"].dt.tz_localize(timezone.utc))
+        ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
 
         latest_match_date = fixture_data_frame["date"].max()
 
@@ -228,7 +229,7 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
             fixture_data_frame = data_reader(
                 year_range=(self.current_year + 1, self.current_year + 2),
                 fetch_data=self.fetch_data,
-            ).assign(date=lambda df: df["date"].dt.tz_localize(timezone.utc))
+            ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
             latest_match_date = fixture_data_frame["date"].max()
 
             if self.right_now > latest_match_date:

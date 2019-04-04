@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -7,6 +7,7 @@ from faker import Faker
 from server.data_config import TEAM_NAMES
 from server.models import Match, Team, TeamMatch, Prediction, MLModel
 from server.management.commands import send_email
+from project.settings.common import MELBOURNE_TIMEZONE
 
 FAKE = Faker()
 ROW_COUNT = 10
@@ -14,7 +15,7 @@ ROW_COUNT = 10
 
 class TestSendEmail(TestCase):
     def setUp(self):
-        today = datetime.now(tz=timezone.utc)
+        today = datetime.now(tz=MELBOURNE_TIMEZONE)
         year = today.year
         team_names = TEAM_NAMES[:]
 
@@ -24,7 +25,7 @@ class TestSendEmail(TestCase):
                 "season": year,
                 "round": 1,
                 "round_label": "Round 1",
-                "crows": 1234,
+                "crowd": 1234,
                 "home_team": team_names.pop(),
                 "away_team": team_names.pop(),
                 "home_score": 50,

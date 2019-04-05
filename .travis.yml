@@ -5,11 +5,12 @@ env:
   DOCKER_COMPOSE_VERSION: 1.22.0
   IP_ADDRESS: 104.248.155.53
 before_install:
-  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv
-    -in deploy_rsa.enc -out deploy_rsa -d
   - sudo rm /usr/local/bin/docker-compose
   - sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   - sudo chmod +x /usr/local/bin/docker-compose
+install:
+  - echo "$PUBLIC_KEY" >> $HOME/.ssh/known_hosts
+  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in deploy_rsa.enc -out ~/.ssh/deploy_rsa -d
 before_script:
   - docker pull cfranklin11/tipresias_server:master
   - docker pull cfranklin11/tipresias_client:master

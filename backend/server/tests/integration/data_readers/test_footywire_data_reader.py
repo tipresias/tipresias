@@ -14,18 +14,18 @@ class TestFootywireDataReader(TestCase):
     def test_get_fixture(self):
         with self.subTest("when fetch_data is True"):
             data_frame = self.data_reader.get_fixture(
-                year_range=(2014, 2015), fetch_data=True
+                year_range=(2004, 2005), fetch_data=True
             )
 
             self.assertIsInstance(data_frame, pd.DataFrame)
 
             seasons = data_frame["season"].drop_duplicates()
             self.assertEqual(len(seasons), 1)
-            self.assertEqual(seasons.iloc[0], 2014)
+            self.assertEqual(seasons.iloc[0], 2004)
 
             date_years = data_frame["date"].dt.year.drop_duplicates()
             self.assertEqual(len(date_years), 1)
-            self.assertEqual(date_years.iloc[0], 2014)
+            self.assertEqual(date_years.iloc[0], 2004)
 
         with self.subTest("when fetch_data is False"):
             data_frame = self.data_reader.get_fixture(fetch_data=False)

@@ -63,7 +63,7 @@ class TestSeedDb(TestCase):
             )
 
             self.seed_command.handle(
-                year_range=f"{self.years[0]}-{self.years[1]}", verbose=1
+                year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
             )
 
         self.assertGreater(Team.objects.count(), 0)

@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, date
+from datetime import datetime
 from typing import List, Union
 
 from django.core.management.base import BaseCommand
@@ -108,7 +108,7 @@ class Command(BaseCommand):
         mail = Mail(
             from_email=EMAIL_FROM,
             to_emails=email_recipient,
-            subject=f"Footy Tips for {date.today()}",
+            subject=f"Footy Tips for Round {latest_round}",
             html_content=email_body,
         )
 

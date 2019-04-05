@@ -3,6 +3,8 @@ version: "3.2"
 services:
   app:
     image: cfranklin11/tipresias_app:latest
+    volumes:
+      - ./data:/app/data
     ports:
       - "8000:8000"
     stdin_open: true

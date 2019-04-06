@@ -179,7 +179,9 @@ class Command(BaseCommand):
 
         # 'make_aware' raises error if datetime already has a timezone
         if raw_date.tzinfo is None or raw_date.tzinfo.utcoffset(raw_date) is None:
-            match_date = utils.timezone.make_aware(raw_date)
+            match_date = utils.timezone.make_aware(
+                raw_date, timezone=MELBOURNE_TIMEZONE
+            )
         else:
             match_date = raw_date
 

@@ -75,34 +75,37 @@ class Command(BaseCommand):
             start_date_time__gt=self.right_now
         ).count()
 
-        if self.verbose == 1:
-            if saved_match_count == 0:
+        if saved_match_count == 0:
+            if self.verbose == 1:
                 print(
                     f"No existing match records found for round {upcoming_round}. "
                     "Creating new match and prediction records...\n"
                 )
-            else:
+
+            upcoming_fixture = fixture_data_frame[
+                (fixture_data_frame["round"] == upcoming_round)
+                & (fixture_data_frame["date"] > self.right_now)
+            ]
+
+            if self.verbose == 1:
                 print(
-                    f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
-                    "Updating associated prediction records with new model predictions."
+                    f"Saving Match and TeamMatch records for round {upcoming_round}..."
                 )
 
-        upcoming_fixture = fixture_data_frame[
-            (fixture_data_frame["round"] == upcoming_round)
-            & (fixture_data_frame["date"] > self.right_now)
-        ]
-
-        if self.verbose == 1:
-            print(f"Saving Match and TeamMatch records for round {upcoming_round}...\n")
-
-        self.__create_matches(upcoming_fixture.to_dict("records"))
+            self.__create_matches(upcoming_fixture.to_dict("records"))
+        else:
+            if self.verbose == 1:
+                print(
+                    f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
+                    "Updating associated prediction records with new model predictions.\n"
+                )
 
         upcoming_round_year = fixture_data_frame["date"].map(lambda x: x.year).max()
 
-        self.__make_predictions(upcoming_round_year, round_number=upcoming_round)
-
         if self.verbose == 1:
-            print("Match and prediction data were updated!\n")
+            print("Saving prediction records...")
+
+        self.__make_predictions(upcoming_round_year, round_number=upcoming_round)
 
         return None
 
@@ -233,6 +236,9 @@ class Command(BaseCommand):
         ml_model_record: MLModel,
         round_number: Optional[int] = None,
     ) -> List[Optional[Prediction]]:
+        if self.verbose == 1:
+            print(f"\tMaking predictions with {ml_model_record.name}")
+
         loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model_record.filepath))
         data_class = locate(ml_model_record.data_class_path)
 

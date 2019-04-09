@@ -2,7 +2,7 @@ from typing import List, Callable
 import pandas as pd
 import numpy as np
 
-from server.data_config import INDEX_COLS
+from machine_learning.data_config import INDEX_COLS
 
 REQUIRED_COLS: List[str] = ["home_team", "year", "round_number"]
 

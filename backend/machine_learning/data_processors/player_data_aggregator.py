@@ -2,7 +2,7 @@ from typing import List, Dict, Union, Tuple
 import pandas as pd
 import numpy as np
 
-from server.data_config import INDEX_COLS
+from machine_learning.data_config import INDEX_COLS
 
 STATS_COLS = [
     "rolling_prev_match_kicks",

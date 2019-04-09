@@ -13,10 +13,10 @@ import numpy as np
 from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
-from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
-from server.ml_data import JoinedMLData, BaseMLData
+from machine_learning.data_readers import FootywireDataReader
+from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
+from machine_learning.ml_data import JoinedMLData, BaseMLData
 
 FixtureData = TypedDict(
     "FixtureData",

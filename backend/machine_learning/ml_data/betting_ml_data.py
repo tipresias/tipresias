@@ -3,10 +3,10 @@
 from typing import List, Callable
 import pandas as pd
 
-from server.types import DataFrameTransformer, YearPair
-from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
-from server.data_readers import FootywireDataReader
-from server.data_processors.feature_functions import (
+from machine_learning.types import DataFrameTransformer, YearPair
+from machine_learning.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
+from machine_learning.data_readers import FootywireDataReader
+from machine_learning.data_processors.feature_functions import (
     add_result,
     add_cum_percent,
     add_cum_win_points,
@@ -15,13 +15,13 @@ from server.data_processors.feature_functions import (
     add_betting_pred_win,
     add_shifted_team_features,
 )
-from server.data_processors.feature_calculation import (
+from machine_learning.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
 )
-from server.ml_data import BaseMLData
-from server.data_config import TEAM_TRANSLATIONS, INDEX_COLS
-from server.utils import DataTransformerMixin
+from machine_learning.ml_data import BaseMLData
+from machine_learning.data_config import TEAM_TRANSLATIONS, INDEX_COLS
+from machine_learning.utils import DataTransformerMixin
 
 
 FEATURE_FUNCS: List[DataFrameTransformer] = [

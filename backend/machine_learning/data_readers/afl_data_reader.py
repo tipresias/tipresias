@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup, element
 import requests
 import pandas as pd
 
-from server.data_config import TEAM_TRANSLATIONS
+from machine_learning.data_config import TEAM_TRANSLATIONS
 
 AFL_DOMAIN = "https://www.afl.com.au"
 

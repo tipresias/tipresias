@@ -8,8 +8,8 @@ from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import BaggingRegressor
 from xgboost import XGBRegressor
 
-from server.data_config import TEAM_NAMES, ROUND_TYPES, VENUES, CATEGORY_COLS
-from server.ml_estimators.sklearn import CorrelationSelector
+from machine_learning.data_config import TEAM_NAMES, ROUND_TYPES, VENUES, CATEGORY_COLS
+from machine_learning.ml_estimators.sklearn import CorrelationSelector
 from .. import BaseMLEstimator
 
 SEED = 42

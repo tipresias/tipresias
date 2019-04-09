@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin, TransformerMixin
 from sklearn.utils.metaestimators import _BaseComposition
 
-from server.types import R, T
+from machine_learning.types import R, T
 
 
 class AveragingRegressor(_BaseComposition, RegressorMixin):

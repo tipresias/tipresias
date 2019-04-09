@@ -9,10 +9,10 @@ from machine_learning.ml_data import PlayerMLData
 FAKE = Faker()
 
 get_afltables_stats_df = pd.read_csv(
-    f"{BASE_DIR}/server/tests/fixtures/fitzroy_get_afltables_stats.csv"
+    f"{BASE_DIR}/machine_learning/tests/fixtures/fitzroy_get_afltables_stats.csv"
 )
 match_results_df = pd.read_csv(
-    f"{BASE_DIR}/server/tests/fixtures/fitzroy_match_results.csv"
+    f"{BASE_DIR}/machine_learning/tests/fixtures/fitzroy_match_results.csv"
 )
 get_afltables_stats_mock = Mock(return_value=get_afltables_stats_df)
 match_results_mock = Mock(return_value=match_results_df)

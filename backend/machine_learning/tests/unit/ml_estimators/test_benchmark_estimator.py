@@ -9,7 +9,7 @@ from sklearn.pipeline import make_pipeline
 from faker import Faker
 
 from project.settings.common import BASE_DIR
-from server.ml_estimators import BenchmarkEstimator
+from machine_learning.ml_estimators import BenchmarkEstimator
 
 FAKE = Faker()
 N_ROWS = 10

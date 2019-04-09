@@ -2,7 +2,7 @@ import os
 from django.test import TestCase
 import pandas as pd
 
-from server.data_readers import FootywireDataReader
+from machine_learning.data_readers import FootywireDataReader
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../fixtures"))
 

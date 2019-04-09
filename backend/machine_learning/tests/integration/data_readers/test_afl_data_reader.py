@@ -1,7 +1,7 @@
 from django.test import TestCase
 import pandas as pd
 
-from server.data_readers import afl_data_reader
+from machine_learning.data_readers import afl_data_reader
 
 
 class TestAflDataReader(TestCase):

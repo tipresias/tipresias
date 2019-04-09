@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from faker import Faker
 
-from server.ml_data import JoinedMLData
+from machine_learning.ml_data import JoinedMLData
 
 
 FAKE = Faker()

@@ -3,8 +3,8 @@ from faker import Faker
 import pandas as pd
 import numpy as np
 
-from server.data_processors import PlayerDataStacker
-from server.data_processors.player_data_stacker import REQUIRED_COLS
+from machine_learning.data_processors import PlayerDataStacker
+from machine_learning.data_processors.player_data_stacker import REQUIRED_COLS
 
 FAKE = Faker()
 

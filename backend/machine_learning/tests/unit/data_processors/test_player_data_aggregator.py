@@ -3,8 +3,8 @@ from faker import Faker
 import pandas as pd
 import numpy as np
 
-from server.data_processors import PlayerDataAggregator
-from server.data_processors.player_data_aggregator import REQUIRED_COLS, STATS_COLS
+from machine_learning.data_processors import PlayerDataAggregator
+from machine_learning.data_processors.player_data_aggregator import REQUIRED_COLS, STATS_COLS
 
 FAKE = Faker()
 N_ROWS = 10

@@ -3,7 +3,7 @@ from faker import Faker
 import pandas as pd
 import numpy as np
 
-from server.data_processors.feature_calculation import (
+from machine_learning.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
     calculate_division,

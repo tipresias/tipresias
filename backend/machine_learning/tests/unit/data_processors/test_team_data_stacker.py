@@ -3,7 +3,7 @@ from faker import Faker
 import pandas as pd
 import numpy as np
 
-from server.data_processors import TeamDataStacker
+from machine_learning.data_processors import TeamDataStacker
 
 FAKE = Faker()
 

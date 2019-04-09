@@ -6,7 +6,7 @@ from faker import Faker
 
 from project.settings.common import BASE_DIR
 
-from server.ml_data import MatchMLData
+from machine_learning.ml_data import MatchMLData
 
 FAKE = Faker()
 

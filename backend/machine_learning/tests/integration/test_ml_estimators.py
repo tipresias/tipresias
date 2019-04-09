@@ -1,9 +1,9 @@
 from unittest import skip
 from django.test import TestCase
 
-from server.ml_data import JoinedMLData
-from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
-from server.tests.helpers import regression_accuracy
+from machine_learning.ml_data import JoinedMLData
+from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
+from machine_learning.tests.helpers import regression_accuracy
 
 
 @skip(

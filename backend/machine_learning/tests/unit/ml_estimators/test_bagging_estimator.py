@@ -5,8 +5,8 @@ from sklearn.linear_model import Ridge, Lasso
 from sklearn.pipeline import make_pipeline
 from faker import Faker
 
-from server.ml_estimators import BaggingEstimator
-from server.ml_estimators.sklearn import AveragingRegressor
+from machine_learning.ml_estimators import BaggingEstimator
+from machine_learning.ml_estimators.sklearn import AveragingRegressor
 
 FAKE = Faker()
 N_ROWS = 10

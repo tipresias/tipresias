@@ -3,9 +3,9 @@ from sklearn.pipeline import make_pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 
-from server.ml_estimators import BaseMLEstimator
-from server.ml_data import BettingMLData
-from server.data_config import TEAM_NAMES
+from machine_learning.ml_estimators import BaseMLEstimator
+from machine_learning.ml_data import BettingMLData
+from machine_learning.data_config import TEAM_NAMES
 
 CATEGORY_COLS = ["team", "oppo_team"]
 PIPELINE = make_pipeline(

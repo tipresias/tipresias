@@ -3,7 +3,7 @@ from faker import Faker
 import pandas as pd
 import numpy as np
 
-from server.data_processors.feature_functions import (
+from machine_learning.data_processors.feature_functions import (
     add_result,
     add_margin,
     add_cum_percent,

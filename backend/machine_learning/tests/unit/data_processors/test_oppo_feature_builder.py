@@ -4,8 +4,8 @@ from faker import Faker
 import pandas as pd
 import numpy as np
 
-from server.data_processors import OppoFeatureBuilder
-from server.data_processors.oppo_feature_builder import REQUIRED_COLS
+from machine_learning.data_processors import OppoFeatureBuilder
+from machine_learning.data_processors.oppo_feature_builder import REQUIRED_COLS
 
 FAKE = Faker()
 

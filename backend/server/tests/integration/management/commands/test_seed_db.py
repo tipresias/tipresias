@@ -7,9 +7,9 @@ import pandas as pd
 from sklearn.externals import joblib
 
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.ml_data import BettingMLData
 from server.management.commands import seed_db
-from server.tests.fixtures import TestEstimator
+from machine_learning.ml_data import BettingMLData
+from machine_learning.tests.fixtures import TestEstimator
 
 
 FAKE = Faker()
@@ -37,7 +37,7 @@ class TestSeedDb(TestCase):
         self.betting_data_frame = self.__generate_betting_data_frame(range(*data_years))
 
         with patch(
-            "server.ml_data.betting_ml_data.FootywireDataReader"
+            "machine_learning.ml_data.betting_ml_data.FootywireDataReader"
         ) as MockDataReader:
             MockDataReader.return_value.get_fixture = Mock(
                 side_effect=self.__fixture_side_effect
@@ -53,7 +53,7 @@ class TestSeedDb(TestCase):
 
     def test_handle(self):
         with patch(
-            "server.ml_data.betting_ml_data.FootywireDataReader"
+            "machine_learning.ml_data.betting_ml_data.FootywireDataReader"
         ) as MockDataReader:
             MockDataReader.return_value.get_fixture = Mock(
                 side_effect=self.__fixture_side_effect

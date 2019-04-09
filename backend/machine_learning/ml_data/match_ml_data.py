@@ -5,9 +5,9 @@ import re
 from datetime import datetime
 import pandas as pd
 
-from server.types import DataFrameTransformer, YearPair
-from server.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
-from server.data_processors.feature_functions import (
+from machine_learning.types import DataFrameTransformer, YearPair
+from machine_learning.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
+from machine_learning.data_processors.feature_functions import (
     add_result,
     add_margin,
     add_cum_percent,
@@ -20,16 +20,16 @@ from server.data_processors.feature_functions import (
     add_elo_pred_win,
     add_shifted_team_features,
 )
-from server.data_processors.feature_calculation import (
+from machine_learning.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
     calculate_division,
     calculate_rolling_mean_by_dimension,
 )
-from server.data_readers import FitzroyDataReader, FootywireDataReader
-from server.ml_data import BaseMLData
-from server.data_config import INDEX_COLS, FOOTYWIRE_VENUE_TRANSLATIONS
-from server.utils import DataTransformerMixin
+from machine_learning.data_readers import FitzroyDataReader, FootywireDataReader
+from machine_learning.ml_data import BaseMLData
+from machine_learning.data_config import INDEX_COLS, FOOTYWIRE_VENUE_TRANSLATIONS
+from machine_learning.utils import DataTransformerMixin
 from project.settings.common import MELBOURNE_TIMEZONE
 
 COL_TRANSLATIONS = {

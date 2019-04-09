@@ -15,7 +15,7 @@ from functools import partial, reduce
 import pandas as pd
 import numpy as np
 
-from server.data_config import INDEX_COLS, CITIES, TEAM_CITIES, VENUE_CITIES
+from machine_learning.data_config import INDEX_COLS, CITIES, TEAM_CITIES, VENUE_CITIES
 
 TEAM_LEVEL = 0
 YEAR_LEVEL = 1

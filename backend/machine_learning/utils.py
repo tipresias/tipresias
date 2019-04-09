@@ -1,7 +1,7 @@
 from typing import List
 from functools import reduce
 
-from server.types import DataFrameTransformer
+from machine_learning.types import DataFrameTransformer
 
 
 class DataTransformerMixin:

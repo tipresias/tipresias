@@ -4,7 +4,7 @@ from typing import Tuple
 
 import pandas as pd
 
-from server.types import YearPair
+from machine_learning.types import YearPair
 
 
 class BaseMLData:

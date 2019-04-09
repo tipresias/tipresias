@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 from project.settings.common import BASE_DIR
-from server.types import R
+from machine_learning.types import R
 
 
 class BaseMLEstimator(_BaseComposition, RegressorMixin):

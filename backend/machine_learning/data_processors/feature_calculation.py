@@ -4,8 +4,8 @@ import itertools
 import pandas as pd
 import numpy as np
 
-from server.types import DataFrameTransformer
-from server.data_config import AVG_SEASON_LENGTH
+from machine_learning.types import DataFrameTransformer
+from machine_learning.data_config import AVG_SEASON_LENGTH
 
 DataFrameCalculator = Callable[[pd.DataFrame], pd.Series]
 Calculator = Callable[[Sequence[str]], DataFrameCalculator]

@@ -10,11 +10,11 @@ import numpy as np
 from django import utils
 from django.core.management.base import BaseCommand
 
-from server.data_readers import FootywireDataReader
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
-from server.ml_estimators import BaseMLEstimator
-from server.ml_data import BaseMLData, JoinedMLData
-from server.ml_estimators import BenchmarkEstimator, BaggingEstimator
+from machine_learning.data_readers import FootywireDataReader
+from machine_learning.ml_estimators import BaseMLEstimator
+from machine_learning.ml_data import BaseMLData, JoinedMLData
+from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
 
 FixtureData = TypedDict(
     "FixtureData",

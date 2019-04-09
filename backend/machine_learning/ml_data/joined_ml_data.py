@@ -5,15 +5,15 @@ from functools import reduce
 
 import pandas as pd
 
-from server.data_processors import FeatureBuilder
-from server.data_processors.feature_calculation import (
+from machine_learning.data_processors import FeatureBuilder
+from machine_learning.data_processors.feature_calculation import (
     feature_calculator,
     calculate_division,
     calculate_multiplication,
 )
-from server.types import YearPair, DataFrameTransformer
-from server.utils import DataTransformerMixin
-from server.data_config import CATEGORY_COLS
+from machine_learning.types import YearPair, DataFrameTransformer
+from machine_learning.utils import DataTransformerMixin
+from machine_learning.data_config import CATEGORY_COLS
 from . import BaseMLData
 from . import BettingMLData
 from . import MatchMLData

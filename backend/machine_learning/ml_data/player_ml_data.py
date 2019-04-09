@@ -4,27 +4,27 @@ from typing import List, Callable
 from datetime import date
 import pandas as pd
 
-from server.types import DataFrameTransformer, YearPair
-from server.data_processors import (
+from machine_learning.types import DataFrameTransformer, YearPair
+from machine_learning.data_processors import (
     FeatureBuilder,
     PlayerDataStacker,
     PlayerDataAggregator,
     OppoFeatureBuilder,
 )
-from server.data_processors.feature_functions import (
+from machine_learning.data_processors.feature_functions import (
     add_last_year_brownlow_votes,
     add_rolling_player_stats,
     add_cum_matches_played,
 )
-from server.data_processors.feature_calculation import (
+from machine_learning.data_processors.feature_calculation import (
     feature_calculator,
     calculate_division,
     calculate_addition,
 )
-from server.data_readers import FitzroyDataReader, afl_data_reader
-from server.ml_data import BaseMLData
-from server.data_config import INDEX_COLS
-from server.utils import DataTransformerMixin
+from machine_learning.data_readers import FitzroyDataReader, afl_data_reader
+from machine_learning.ml_data import BaseMLData
+from machine_learning.data_config import INDEX_COLS
+from machine_learning.utils import DataTransformerMixin
 
 MATCH_STATS_COLS = [
     "at_home",

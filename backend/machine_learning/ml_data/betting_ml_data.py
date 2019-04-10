@@ -4,8 +4,12 @@ from typing import List, Callable
 import pandas as pd
 
 from machine_learning.types import DataFrameTransformer, YearPair
-from machine_learning.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
-from machine_learning.data_readers import FootywireDataReader
+from machine_learning.data_processors import (
+    TeamDataStacker,
+    FeatureBuilder,
+    OppoFeatureBuilder,
+)
+from machine_learning.data_import import FootywireDataImporter
 from machine_learning.data_processors.feature_functions import (
     add_result,
     add_cum_percent,
@@ -78,8 +82,8 @@ class BettingMLData(BaseMLData, DataTransformerMixin):
             self.data_readers = data_readers
         else:
             self.data_readers = [
-                FootywireDataReader().get_betting_odds,
-                FootywireDataReader().get_fixture,
+                FootywireDataImporter().get_betting_odds,
+                FootywireDataImporter().get_fixture,
             ]
 
         self._data_transformers = data_transformers

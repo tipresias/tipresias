@@ -2,14 +2,14 @@ import os
 from django.test import TestCase
 import pandas as pd
 
-from machine_learning.data_readers import FootywireDataReader
+from machine_learning.data_import import FootywireDataImporter
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../fixtures"))
 
 
-class TestFootywireDataReader(TestCase):
+class TestFootywireDataImporter(TestCase):
     def setUp(self):
-        self.data_reader = FootywireDataReader(csv_dir=DATA_DIR)
+        self.data_reader = FootywireDataImporter(csv_dir=DATA_DIR)
 
     def test_get_fixture(self):
         with self.subTest("when fetch_data is True"):

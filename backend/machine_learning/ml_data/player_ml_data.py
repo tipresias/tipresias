@@ -21,7 +21,7 @@ from machine_learning.data_processors.feature_calculation import (
     calculate_division,
     calculate_addition,
 )
-from machine_learning.data_readers import FitzroyDataReader, afl_data_reader
+from machine_learning.data_import import FitzroyDataImporter, afl_data_importer
 from machine_learning.ml_data import BaseMLData
 from machine_learning.data_config import INDEX_COLS
 from machine_learning.utils import DataTransformerMixin
@@ -110,11 +110,11 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     OppoFeatureBuilder(match_cols=MATCH_STATS_COLS).transform,
 ]
 
-fitzroy = FitzroyDataReader()
+fitzroy = FitzroyDataImporter()
 DATA_READERS: List[Callable] = [
     fitzroy.get_afltables_stats,
     fitzroy.match_results,
-    afl_data_reader.get_rosters,
+    afl_data_importer.get_rosters,
 ]
 
 

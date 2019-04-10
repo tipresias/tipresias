@@ -11,7 +11,7 @@ from django import utils
 from django.core.management.base import BaseCommand
 
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
-from machine_learning.data_readers import FootywireDataReader
+from machine_learning.data_import import FootywireDataImporter
 from machine_learning.ml_estimators import BaseMLEstimator
 from machine_learning.ml_data import BaseMLData, JoinedMLData
 from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
@@ -45,7 +45,7 @@ class Command(BaseCommand):
     def __init__(
         self,
         *args,
-        data_reader=FootywireDataReader(),
+        data_reader=FootywireDataImporter(),
         estimators: List[EstimatorTuple] = ESTIMATORS,
         **kwargs,
     ) -> None:

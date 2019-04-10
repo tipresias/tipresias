@@ -6,7 +6,11 @@ from datetime import datetime
 import pandas as pd
 
 from machine_learning.types import DataFrameTransformer, YearPair
-from machine_learning.data_processors import TeamDataStacker, FeatureBuilder, OppoFeatureBuilder
+from machine_learning.data_processors import (
+    TeamDataStacker,
+    FeatureBuilder,
+    OppoFeatureBuilder,
+)
 from machine_learning.data_processors.feature_functions import (
     add_result,
     add_margin,
@@ -26,7 +30,7 @@ from machine_learning.data_processors.feature_calculation import (
     calculate_division,
     calculate_rolling_mean_by_dimension,
 )
-from machine_learning.data_readers import FitzroyDataReader, FootywireDataReader
+from machine_learning.data_import import FitzroyDataImporter, FootywireDataImporter
 from machine_learning.ml_data import BaseMLData
 from machine_learning.data_config import INDEX_COLS, FOOTYWIRE_VENUE_TRANSLATIONS
 from machine_learning.utils import DataTransformerMixin
@@ -111,8 +115,8 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     OppoFeatureBuilder(oppo_feature_cols=["cum_percent", "ladder_position"]).transform,
 ]
 DATA_READERS: List[Callable] = [
-    FitzroyDataReader().match_results,
-    FootywireDataReader().get_fixture,
+    FitzroyDataImporter().match_results,
+    FootywireDataImporter().get_fixture,
 ]
 
 

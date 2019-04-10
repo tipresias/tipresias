@@ -14,7 +14,7 @@ from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from machine_learning.data_readers import FootywireDataReader
+from machine_learning.data_import import FootywireDataImporter
 from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
 from machine_learning.ml_data import JoinedMLData, BaseMLData
 
@@ -47,7 +47,7 @@ class Command(BaseCommand):
     """
 
     def __init__(
-        self, *args, data_reader=FootywireDataReader(), fetch_data=True, **kwargs
+        self, *args, data_reader=FootywireDataImporter(), fetch_data=True, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
 

@@ -4,7 +4,7 @@ from unittest.mock import patch
 from django.test import TestCase
 from faker import Faker
 
-from machine_learning.data_config import TEAM_NAMES
+from server.data_config import TEAM_NAMES
 from server.models import Match, Team, TeamMatch, Prediction, MLModel
 from server.management.commands import send_email
 from project.settings.common import MELBOURNE_TIMEZONE

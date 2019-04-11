@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from sklearn.base import BaseEstimator
 
 from server.models import MLModel
-from machine_learning.tests.fixtures import TestEstimator
+from server.tests.fixtures import TestEstimator
 
 
 class TestMLModel(TestCase):

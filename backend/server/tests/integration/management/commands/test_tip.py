@@ -6,11 +6,11 @@ from faker import Faker
 from freezegun import freeze_time
 import pandas as pd
 
+from server.data_readers import FootywireDataReader
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import tip
-from machine_learning.data_readers import FootywireDataReader
-from machine_learning.ml_data import BettingMLData
-from machine_learning.tests.fixtures import TestEstimator
+from server.ml_data import BettingMLData
+from server.tests.fixtures import TestEstimator
 
 FAKE = Faker()
 ROW_COUNT = 5

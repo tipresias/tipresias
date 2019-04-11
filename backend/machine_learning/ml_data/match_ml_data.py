@@ -30,19 +30,13 @@ from machine_learning.data_processors.feature_calculation import (
     calculate_division,
     calculate_rolling_mean_by_dimension,
 )
+from machine_learning.data_transformation.data_cleaning import clean_match_data
 from machine_learning.data_import import FitzroyDataImporter, FootywireDataImporter
 from machine_learning.ml_data import BaseMLData
-from machine_learning.data_config import INDEX_COLS, FOOTYWIRE_VENUE_TRANSLATIONS
+from machine_learning.data_config import INDEX_COLS
 from machine_learning.utils import DataTransformerMixin
 from project.settings.common import MELBOURNE_TIMEZONE
 
-COL_TRANSLATIONS = {
-    "home_points": "home_score",
-    "away_points": "away_score",
-    "margin": "home_margin",
-    "season": "year",
-}
-REGULAR_ROUND: Pattern = re.compile(r"round\s+(\d+)$", flags=re.I)
 
 FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_out_of_state,
@@ -139,77 +133,31 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
         self._data_transformers = data_transformers
         self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.current_year = self.right_now.year
-
-        data_frame = (
-            data_readers[0](fetch_data=fetch_data)
-            .rename(columns=COL_TRANSLATIONS)
-            # fitzRoy returns integers that represent some sort of datetime, and the only
-            # way to parse them is converting them to dates.
-            # NOTE: If the matches parsed only go back to 1990 (give or take, I can't remember)
-            # you can parse the date integers into datetime
-            .assign(date=lambda df: pd.to_datetime(df["date"], unit="D"))
-            .astype({"year": int})
-            .drop(["round", "game"], axis=1)
-        )
-
-        # There were some weird round-robin rounds in the early days, and it's easier to
-        # drop them rather than figure out how to split up the rounds.
-        data_frame = data_frame[
-            ((data_frame["year"] != 1897) | (data_frame["round_number"] != 15))
-            & ((data_frame["year"] != 1924) | (data_frame["round_number"] != 19))
-        ]
-
-        if fetch_data and len(data_readers) > 1:
-            fixture_data_frame = self.__fetch_fixture_data(data_readers[1])
-            fixture_rounds = fixture_data_frame["round"]
-            upcoming_round = fixture_rounds[
-                fixture_data_frame["date"] > self.right_now
-            ].min()
-
-            upcoming_fixture_data_frame = (
-                fixture_data_frame.assign(round_type=self.__round_type_column)
-                .loc[
-                    fixture_data_frame["round"] == upcoming_round,
-                    [
-                        "date",
-                        "venue",
-                        "season",
-                        "round",
-                        "home_team",
-                        "away_team",
-                        "round_type",
-                    ],
-                ]
-                .rename(columns={"round": "round_number", "season": "year"})
-                .assign(venue=lambda df: df["venue"].map(self.__map_footywire_venues))
-            )
-
-            data_frame = (
-                pd.concat([data_frame, upcoming_fixture_data_frame], sort=False)
-                .reset_index(drop=True)
-                .drop_duplicates(
-                    subset=[
-                        "date",
-                        "venue",
-                        "year",
-                        "round_number",
-                        "home_team",
-                        "away_team",
-                    ]
-                )
-                .fillna(0)
-            )
-
-        self._data = (
-            self._compose_transformers(data_frame)  # pylint: disable=E1102
-            .fillna(0)
-            .set_index(index_cols, drop=False)
-            .rename_axis([None] * len(index_cols))
-            .sort_index()
-        )
+        self.data_readers = data_readers
+        self._data = None
+        self.fetch_data = fetch_data
+        self.index_cols = index_cols
 
     @property
     def data(self) -> pd.DataFrame:
+        if self._data is None:
+            past_match_data = self.data_readers[0](fetch_data=self.fetch_data)
+
+            if self.fetch_data and len(self.data_readers) > 1:
+                future_match_data = self.__fetch_fixture_data(self.data_readers[1])
+            else:
+                future_match_data = None
+
+            self._data = (
+                self._compose_transformers(  # pylint: disable=E1102
+                    clean_match_data(past_match_data, future_match_data)
+                )
+                .fillna(0)
+                .set_index(self.index_cols, drop=False)
+                .rename_axis([None] * len(self.index_cols))
+                .sort_index()
+            )
+
         return self._data
 
     @property
@@ -243,18 +191,3 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
                 )
 
         return fixture_data_frame
-
-    @staticmethod
-    def __map_footywire_venues(venue: str) -> str:
-        if venue not in FOOTYWIRE_VENUE_TRANSLATIONS.keys():
-            return venue
-
-        return FOOTYWIRE_VENUE_TRANSLATIONS[venue]
-
-    @staticmethod
-    def __round_type_column(data_frame: pd.DataFrame) -> pd.DataFrame:
-        return data_frame["round_label"].map(
-            lambda label: "Finals"
-            if re.search(REGULAR_ROUND, label) is None
-            else "Regular"
-        )

@@ -1,7 +1,6 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
 from typing import List, Callable
-import pandas as pd
 
 from machine_learning.types import DataFrameTransformer, YearPair
 from machine_learning.data_processors import (
@@ -23,8 +22,9 @@ from machine_learning.data_processors.feature_calculation import (
     feature_calculator,
     calculate_rolling_rate,
 )
+from machine_learning.data_transformation.data_cleaning import clean_betting_data
 from machine_learning.ml_data import BaseMLData
-from machine_learning.data_config import TEAM_TRANSLATIONS, INDEX_COLS
+from machine_learning.data_config import INDEX_COLS
 from machine_learning.utils import DataTransformerMixin
 
 
@@ -86,74 +86,31 @@ class BettingMLData(BaseMLData, DataTransformerMixin):
                 FootywireDataImporter().get_fixture,
             ]
 
+        self.index_cols = index_cols
         self._data_transformers = data_transformers
-
-        data_frame = self.__concated_data_input.rename(
-            columns={"season": "year", "round": "round_number"}
-        ).drop(
-            [
-                "crowd",
-                "home_win_paid",
-                "home_line_paid",
-                "away_win_paid",
-                "away_line_paid",
-            ],
-            axis=1,
-        )
-
-        self._data = (
-            self._compose_transformers(data_frame)  # pylint: disable=E1102
-            .astype({"year": int})
-            .fillna(0)
-            .set_index(index_cols, drop=False)
-            .rename_axis([None] * len(index_cols))
-            .sort_index()
-        )
+        self._data = None
 
     @property
     def data(self):
+        if self._data is None:
+            betting_data, match_data = (
+                data_reader(fetch_data=self.fetch_data)
+                for data_reader in self.data_readers
+            )
+
+            self._data = (
+                self._compose_transformers(  # pylint: disable=E1102
+                    clean_betting_data(betting_data, match_data)
+                )
+                .astype({"year": int})
+                .fillna(0)
+                .set_index(self.index_cols, drop=False)
+                .rename_axis([None] * len(self.index_cols))
+                .sort_index()
+            )
+
         return self._data
 
     @property
     def data_transformers(self):
         return self._data_transformers
-
-    @property
-    def __concated_data_input(self) -> pd.DataFrame:
-        betting_data = (
-            self.data_readers[0](fetch_data=self.fetch_data)
-            .drop(
-                [
-                    "date",
-                    "venue",
-                    "round_label",
-                    "home_score",
-                    "home_margin",
-                    "away_score",
-                    "away_margin",
-                ],
-                axis=1,
-            )
-            .assign(
-                home_team=lambda df: df["home_team"].map(
-                    self.__map_betting_teams_to_match_teams
-                ),
-                away_team=lambda df: df["away_team"].map(
-                    self.__map_betting_teams_to_match_teams
-                ),
-            )
-        )
-        match_data = self.data_readers[1](fetch_data=self.fetch_data).drop(
-            ["date", "venue", "round_label"], axis=1
-        )
-
-        return betting_data.merge(
-            match_data, on=["home_team", "away_team", "round", "season"]
-        )
-
-    @staticmethod
-    def __map_betting_teams_to_match_teams(team_name: str) -> str:
-        if team_name in TEAM_TRANSLATIONS.keys():
-            return TEAM_TRANSLATIONS[team_name]
-
-        return team_name

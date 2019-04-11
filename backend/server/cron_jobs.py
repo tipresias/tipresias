@@ -7,7 +7,7 @@ import pandas as pd
 # TODO: These commands need to be refactored, then the refactored classes/functions
 # used in this cron job, but I want to get something working, so I'm gonna be lazy
 from server.management.commands import tip, send_email
-from machine_learning.data_readers import FootywireDataReader
+from server.data_readers import FootywireDataReader
 from project.settings.common import MELBOURNE_TIMEZONE
 
 # Note that Python starts weeks on Monday (index = 0) and ends them on Sunday

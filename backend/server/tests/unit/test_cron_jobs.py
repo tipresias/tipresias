@@ -6,7 +6,7 @@ from freezegun import freeze_time
 import pandas as pd
 
 from server.cron_jobs import SendTips
-from server.data_readers import FootywireDataReader
+from machine_learning.data_readers import FootywireDataReader
 
 THURSDAY = "2019-3-28"
 FRIDAY = "2019-3-29"

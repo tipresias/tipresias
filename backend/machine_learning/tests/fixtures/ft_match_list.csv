@@ -1,0 +1,406 @@
+date,venue,crowd,round,season,round_label,home_team,away_team,home_score,away_score
+2018-03-22 19:25:00,MCG,90151.0,1.0,2018,Round 1,Richmond,Carlton,121.0,95.0
+2018-03-23 19:50:00,Marvel Stadium,43016.0,1.0,2018,Round 1,Essendon,Adelaide,99.0,87.0
+2018-03-24 15:35:00,Marvel Stadium,23731.0,1.0,2018,Round 1,St Kilda,Brisbane,107.0,82.0
+2018-03-24 16:05:00,Adelaide Oval,38324.0,1.0,2018,Round 1,Port Adelaide,Fremantle,110.0,60.0
+2018-03-24 18:25:00,Cazaly's Stadium,3722.0,1.0,2018,Round 1,Gold Coast,North Melbourne,55.0,39.0
+2018-03-24 19:25:00,MCG,58051.0,1.0,2018,Round 1,Hawthorn,Collingwood,101.0,67.0
+2018-03-25 13:10:00,Canberra Oval,10454.0,1.0,2018,Round 1,GWS,Western Bulldogs,133.0,51.0
+2018-03-25 15:20:00,MCG,54112.0,1.0,2018,Round 1,Melbourne,Geelong,94.0,97.0
+2018-03-25 16:20:00,Optus Stadium,53553.0,1.0,2018,Round 1,West Coast,Sydney,86.0,115.0
+2018-03-29 19:20:00,Adelaide Oval,49743.0,2.0,2018,Round 2,Adelaide,Richmond,118.0,82.0
+2018-03-30 16:20:00,Marvel Stadium,33966.0,2.0,2018,Round 2,North Melbourne,St Kilda,95.0,43.0
+2018-03-31 13:45:00,Marvel Stadium,28025.0,2.0,2018,Round 2,Carlton,Gold Coast,67.0,101.0
+2018-03-31 16:35:00,MCG,30941.0,2.0,2018,Round 2,Collingwood,GWS,79.0,95.0
+2018-03-31 17:10:00,Optus Stadium,49021.0,2.0,2018,Round 2,Fremantle,Essendon,106.0,90.0
+2018-03-31 18:25:00,Gabba,17141.0,2.0,2018,Round 2,Brisbane,Melbourne,74.0,100.0
+2018-04-01 15:20:00,Marvel Stadium,22868.0,2.0,2018,Round 2,Western Bulldogs,West Coast,70.0,121.0
+2018-04-01 16:40:00,SCG,34636.0,2.0,2018,Round 2,Sydney,Port Adelaide,71.0,94.0
+2018-04-02 15:20:00,MCG,73189.0,2.0,2018,Round 2,Geelong,Hawthorn,117.0,118.0
+2018-04-06 19:50:00,MCG,68548.0,3.0,2018,Round 3,Carlton,Collingwood,76.0,100.0
+2018-04-07 13:15:00,Adelaide Oval,36363.0,3.0,2018,Round 3,Port Adelaide,Brisbane,97.0,92.0
+2018-04-07 14:10:00,MCG,35518.0,3.0,2018,Round 3,Melbourne,North Melbourne,123.0,86.0
+2018-04-07 14:35:00,Optus Stadium,33388.0,3.0,2018,Round 3,Gold Coast,Fremantle,68.0,96.0
+2018-04-07 19:25:00,SCG,34711.0,3.0,2018,Round 3,Sydney,GWS,103.0,87.0
+2018-04-07 19:25:00,Marvel Stadium,19324.0,3.0,2018,Round 3,St Kilda,Adelaide,55.0,104.0
+2018-04-08 13:10:00,MCG,70701.0,3.0,2018,Round 3,Richmond,Hawthorn,102.0,89.0
+2018-04-08 14:40:00,Optus Stadium,54535.0,3.0,2018,Round 3,West Coast,Geelong,95.0,80.0
+2018-04-08 15:20:00,Marvel Stadium,40499.0,3.0,2018,Round 3,Western Bulldogs,Essendon,104.0,83.0
+2018-04-13 19:20:00,Adelaide Oval,45495.0,4.0,2018,Round 4,Adelaide,Collingwood,58.0,106.0
+2018-04-14 13:45:00,Canberra Oval,11356.0,4.0,2018,Round 4,GWS,Fremantle,82.0,51.0
+2018-04-14 14:10:00,MCG,32870.0,4.0,2018,Round 4,Richmond,Brisbane,110.0,17.0
+2018-04-14 16:35:00,Marvel Stadium,28058.0,4.0,2018,Round 4,Western Bulldogs,Sydney,79.0,86.0
+2018-04-14 18:10:00,Optus Stadium,51774.0,4.0,2018,Round 4,West Coast,Gold Coast,139.0,59.0
+2018-04-14 19:25:00,Blundstone Arena,14266.0,4.0,2018,Round 4,North Melbourne,Carlton,116.0,30.0
+2018-04-15 13:10:00,Marvel Stadium,30900.0,4.0,2018,Round 4,Essendon,Port Adelaide,106.0,84.0
+2018-04-15 15:20:00,MCG,41973.0,4.0,2018,Round 4,Hawthorn,Melbourne,115.0,48.0
+2018-04-15 16:40:00,GMHBA Stadium,27338.0,4.0,2018,Round 4,Geelong,St Kilda,103.0,56.0
+2018-04-20 19:50:00,SCG,38017.0,5.0,2018,Round 5,Sydney,Adelaide,75.0,85.0
+2018-04-21 13:45:00,Marvel Stadium,14956.0,5.0,2018,Round 5,St Kilda,GWS,73.0,73.0
+2018-04-21 16:35:00,MCG,27900.0,5.0,2018,Round 5,Carlton,West Coast,69.0,79.0
+2018-04-21 18:15:00,Optus Stadium,43056.0,5.0,2018,Round 5,Fremantle,Western Bulldogs,108.0,54.0
+2018-04-21 19:10:00,Adelaide Oval,45372.0,5.0,2018,Round 5,Port Adelaide,Geelong,50.0,84.0
+2018-04-22 15:20:00,Marvel Stadium,27981.0,5.0,2018,Round 5,North Melbourne,Hawthorn,98.0,70.0
+2018-04-22 16:45:00,Gabba,16087.0,5.0,2018,Round 5,Brisbane,Gold Coast,71.0,76.0
+2018-04-24 19:25:00,MCG,77071.0,5.0,2018,Round 5,Melbourne,Richmond,56.0,102.0
+2018-04-25 15:20:00,MCG,91440.0,5.0,2018,Round 5,Collingwood,Essendon,101.0,52.0
+2018-04-27 19:50:00,Marvel Stadium,33915.0,6.0,2018,Round 6,Western Bulldogs,Carlton,80.0,59.0
+2018-04-28 13:45:00,GMHBA Stadium,31036.0,6.0,2018,Round 6,Geelong,Sydney,69.0,86.0
+2018-04-28 14:10:00,Marvel Stadium,17617.0,6.0,2018,Round 6,North Melbourne,Port Adelaide,69.0,102.0
+2018-04-28 16:35:00,Showground Stadium,10046.0,6.0,2018,Round 6,GWS,Brisbane,77.0,43.0
+2018-04-28 19:10:00,Adelaide Oval,44835.0,6.0,2018,Round 6,Adelaide,Gold Coast,110.0,62.0
+2018-04-28 19:25:00,UTAS Stadium,15741.0,6.0,2018,Round 6,Hawthorn,St Kilda,89.0,54.0
+2018-04-29 13:10:00,Marvel Stadium,35964.0,6.0,2018,Round 6,Essendon,Melbourne,72.0,108.0
+2018-04-29 14:40:00,Optus Stadium,56521.0,6.0,2018,Round 6,Fremantle,West Coast,81.0,89.0
+2018-04-29 15:20:00,MCG,72157.0,6.0,2018,Round 6,Collingwood,Richmond,70.0,113.0
+2018-05-04 19:50:00,GMHBA Stadium,25079.0,7.0,2018,Round 7,Geelong,GWS,93.0,32.0
+2018-05-05 13:45:00,Mars Stadium,6833.0,7.0,2018,Round 7,Western Bulldogs,Gold Coast,81.0,72.0
+2018-05-05 14:10:00,MCG,53018.0,7.0,2018,Round 7,Essendon,Hawthorn,67.0,90.0
+2018-05-05 14:35:00,Optus Stadium,50516.0,7.0,2018,Round 7,West Coast,Port Adelaide,102.0,60.0
+2018-05-05 19:10:00,Adelaide Oval,47422.0,7.0,2018,Round 7,Adelaide,Carlton,125.0,70.0
+2018-05-05 19:25:00,SCG,29124.0,7.0,2018,Round 7,Sydney,North Melbourne,66.0,68.0
+2018-05-06 13:10:00,MCG,43240.0,7.0,2018,Round 7,Richmond,Fremantle,110.0,33.0
+2018-05-06 15:20:00,Marvel Stadium,25496.0,7.0,2018,Round 7,St Kilda,Melbourne,67.0,106.0
+2018-05-06 16:40:00,Gabba,21850.0,7.0,2018,Round 7,Brisbane,Collingwood,114.0,121.0
+2018-05-11 19:50:00,MCG,32784.0,8.0,2018,Round 8,Hawthorn,Sydney,71.0,79.0
+2018-05-12 13:45:00,Showground Stadium,9253.0,8.0,2018,Round 8,GWS,West Coast,61.0,86.0
+2018-05-12 14:10:00,MCG,44669.0,8.0,2018,Round 8,Carlton,Essendon,91.0,78.0
+2018-05-12 16:35:00,Gabba,6060.0,8.0,2018,Round 8,Gold Coast,Melbourne,77.0,146.0
+2018-05-12 16:40:00,Adelaide Oval,50967.0,8.0,2018,Round 8,Port Adelaide,Adelaide,95.0,90.0
+2018-05-12 18:10:00,Optus Stadium,41752.0,8.0,2018,Round 8,Fremantle,St Kilda,89.0,59.0
+2018-05-12 19:25:00,Marvel Stadium,20865.0,8.0,2018,Round 8,Western Bulldogs,Brisbane,107.0,93.0
+2018-05-13 13:10:00,Marvel Stadium,29153.0,8.0,2018,Round 8,North Melbourne,Richmond,72.0,82.0
+2018-05-13 15:20:00,MCG,44602.0,8.0,2018,Round 8,Collingwood,Geelong,45.0,66.0
+2018-05-18 19:20:00,Adelaide Oval,39407.0,9.0,2018,Round 9,Adelaide,Western Bulldogs,63.0,26.0
+2018-05-19 13:15:00,Jiangwan Stadium,10689.0,9.0,2018,Round 9,Gold Coast,Port Adelaide,42.0,82.0
+2018-05-19 13:45:00,Blundstone Arena,7194.0,9.0,2018,Round 9,North Melbourne,GWS,112.0,69.0
+2018-05-19 16:35:00,MCG,50228.0,9.0,2018,Round 9,Essendon,Geelong,84.0,50.0
+2018-05-19 19:25:00,Marvel Stadium,33994.0,9.0,2018,Round 9,St Kilda,Collingwood,72.0,100.0
+2018-05-19 19:25:00,SCG,27481.0,9.0,2018,Round 9,Sydney,Fremantle,111.0,52.0
+2018-05-20 13:10:00,MCG,44142.0,9.0,2018,Round 9,Carlton,Melbourne,50.0,159.0
+2018-05-20 14:40:00,Optus Stadium,57616.0,9.0,2018,Round 9,West Coast,Richmond,130.0,83.0
+2018-05-20 15:20:00,Gabba,20628.0,9.0,2018,Round 9,Brisbane,Hawthorn,129.0,73.0
+2018-05-25 19:50:00,Marvel Stadium,37985.0,10.0,2018,Round 10,Collingwood,Western Bulldogs,90.0,55.0
+2018-05-26 13:45:00,MCG,48850.0,10.0,2018,Round 10,Richmond,St Kilda,105.0,77.0
+2018-05-26 16:35:00,Gabba,18702.0,10.0,2018,Round 10,Brisbane,Sydney,49.0,67.0
+2018-05-26 19:25:00,Showground Stadium,10789.0,10.0,2018,Round 10,GWS,Essendon,60.0,95.0
+2018-05-26 19:25:00,GMHBA Stadium,31090.0,10.0,2018,Round 10,Geelong,Carlton,73.0,45.0
+2018-05-27 13:10:00,Marvel Stadium,28077.0,10.0,2018,Round 10,Hawthorn,West Coast,60.0,75.0
+2018-05-27 14:40:00,Optus Stadium,37575.0,10.0,2018,Round 10,Fremantle,North Melbourne,58.0,86.0
+2018-05-27 14:50:00,TIO Traegar Park,6989.0,10.0,2018,Round 10,Melbourne,Adelaide,146.0,55.0
+2018-06-01 19:50:00,SCG,27351.0,11.0,2018,Round 11,Sydney,Carlton,91.0,61.0
+2018-06-02 13:45:00,Marvel Stadium,28485.0,11.0,2018,Round 11,Western Bulldogs,Melbourne,51.0,100.0
+2018-06-02 14:10:00,UTAS Stadium,13007.0,11.0,2018,Round 11,Hawthorn,Port Adelaide,64.0,61.0
+2018-06-02 16:35:00,Metricon Stadium,17490.0,11.0,2018,Round 11,Gold Coast,Geelong,36.0,121.0
+2018-06-02 18:10:00,Optus Stadium,54188.0,11.0,2018,Round 11,West Coast,St Kilda,101.0,88.0
+2018-06-02 19:25:00,MCG,81046.0,11.0,2018,Round 11,Essendon,Richmond,43.0,114.0
+2018-06-03 13:10:00,Marvel Stadium,22133.0,11.0,2018,Round 11,North Melbourne,Brisbane,141.0,87.0
+2018-06-03 15:20:00,MCG,34542.0,11.0,2018,Round 11,Collingwood,Fremantle,138.0,77.0
+2018-06-03 16:10:00,Adelaide Oval,44120.0,11.0,2018,Round 11,Adelaide,GWS,81.0,97.0
+2018-06-08 19:20:00,Adelaide Oval,39936.0,12.0,2018,Round 12,Port Adelaide,Richmond,72.0,58.0
+2018-06-09 13:45:00,GMHBA Stadium,31265.0,12.0,2018,Round 12,Geelong,North Melbourne,96.0,59.0
+2018-06-09 16:35:00,Showground Stadium,7131.0,12.0,2018,Round 12,GWS,Gold Coast,134.0,26.0
+2018-06-09 19:25:00,Marvel Stadium,27569.0,12.0,2018,Round 12,St Kilda,Sydney,55.0,126.0
+2018-06-10 13:10:00,Gabba,20476.0,12.0,2018,Round 12,Brisbane,Essendon,62.0,84.0
+2018-06-10 14:40:00,Optus Stadium,33421.0,12.0,2018,Round 12,Fremantle,Adelaide,71.0,68.0
+2018-06-11 15:20:00,MCG,83518.0,12.0,2018,Round 12,Melbourne,Collingwood,91.0,133.0
+2018-06-14 19:20:00,Adelaide Oval,26137.0,13.0,2018,Round 13,Port Adelaide,Western Bulldogs,132.0,75.0
+2018-06-15 19:50:00,SCG,36402.0,13.0,2018,Round 13,Sydney,West Coast,72.0,57.0
+2018-06-16 13:45:00,Marvel Stadium,21430.0,13.0,2018,Round 13,Carlton,Fremantle,46.0,103.0
+2018-06-16 16:35:00,Metricon Stadium,10181.0,13.0,2018,Round 13,Gold Coast,St Kilda,78.0,80.0
+2018-06-16 19:25:00,MCG,26693.0,13.0,2018,Round 13,Hawthorn,Adelaide,88.0,32.0
+2018-06-17 15:20:00,MCG,46423.0,13.0,2018,Round 13,Geelong,Richmond,65.0,83.0
+2018-06-21 18:10:00,Optus Stadium,51409.0,14.0,2018,Round 14,West Coast,Essendon,52.0,80.0
+2018-06-22 19:20:00,Adelaide Oval,40751.0,14.0,2018,Round 14,Port Adelaide,Melbourne,75.0,65.0
+2018-06-23 13:45:00,UTAS Stadium,9007.0,14.0,2018,Round 14,Hawthorn,Gold Coast,96.0,43.0
+2018-06-23 16:35:00,Gabba,11267.0,14.0,2018,Round 14,Brisbane,GWS,82.0,109.0
+2018-06-23 19:25:00,Marvel Stadium,26301.0,14.0,2018,Round 14,Western Bulldogs,North Melbourne,75.0,77.0
+2018-06-24 15:20:00,MCG,53706.0,14.0,2018,Round 14,Collingwood,Carlton,79.0,59.0
+2018-06-28 19:20:00,Marvel Stadium,43519.0,15.0,2018,Round 15,Richmond,Sydney,93.0,67.0
+2018-06-29 19:50:00,Marvel Stadium,29499.0,15.0,2018,Round 15,Western Bulldogs,Geelong,103.0,101.0
+2018-06-30 13:45:00,MCG,26562.0,15.0,2018,Round 15,Carlton,Port Adelaide,69.0,90.0
+2018-06-30 16:05:00,Adelaide Oval,44771.0,15.0,2018,Round 15,Adelaide,West Coast,88.0,78.0
+2018-06-30 19:25:00,Metricon Stadium,13637.0,15.0,2018,Round 15,Gold Coast,Collingwood,60.0,99.0
+2018-06-30 19:25:00,Showground Stadium,10866.0,15.0,2018,Round 15,GWS,Hawthorn,95.0,84.0
+2018-07-01 13:10:00,MCG,38910.0,15.0,2018,Round 15,Melbourne,St Kilda,117.0,119.0
+2018-07-01 14:40:00,Optus Stadium,41674.0,15.0,2018,Round 15,Fremantle,Brisbane,64.0,119.0
+2018-07-01 15:20:00,Marvel Stadium,45580.0,15.0,2018,Round 15,Essendon,North Melbourne,125.0,108.0
+2018-07-05 19:20:00,SCG,34363.0,16.0,2018,Round 16,Sydney,Geelong,59.0,71.0
+2018-07-06 19:50:00,MCG,54934.0,16.0,2018,Round 16,Richmond,Adelaide,103.0,56.0
+2018-07-07 13:45:00,Gabba,21074.0,16.0,2018,Round 16,Brisbane,Carlton,120.0,55.0
+2018-07-07 16:05:00,Adelaide Oval,36253.0,16.0,2018,Round 16,Port Adelaide,St Kilda,86.0,50.0
+2018-07-07 19:10:00,TIO Stadium,8689.0,16.0,2018,Round 16,Melbourne,Fremantle,102.0,48.0
+2018-07-07 19:25:00,Marvel Stadium,35320.0,16.0,2018,Round 16,Western Bulldogs,Hawthorn,59.0,122.0
+2018-07-08 13:10:00,Marvel Stadium,14389.0,16.0,2018,Round 16,North Melbourne,Gold Coast,95.0,58.0
+2018-07-08 14:40:00,Optus Stadium,52105.0,16.0,2018,Round 16,West Coast,GWS,86.0,75.0
+2018-07-08 15:20:00,MCG,69868.0,16.0,2018,Round 16,Essendon,Collingwood,62.0,78.0
+2018-07-12 19:20:00,Adelaide Oval,46095.0,17.0,2018,Round 17,Adelaide,Geelong,112.0,97.0
+2018-07-13 19:50:00,Marvel Stadium,33780.0,17.0,2018,Round 17,St Kilda,Carlton,116.0,52.0
+2018-07-14 13:45:00,UTAS Stadium,12557.0,17.0,2018,Round 17,Hawthorn,Brisbane,65.0,98.0
+2018-07-14 16:35:00,MCG,30305.0,17.0,2018,Round 17,Melbourne,Western Bulldogs,119.0,69.0
+2018-07-14 19:25:00,Showground Stadium,14456.0,17.0,2018,Round 17,GWS,Richmond,79.0,77.0
+2018-07-14 19:25:00,Metricon Stadium,13061.0,17.0,2018,Round 17,Gold Coast,Essendon,51.0,95.0
+2018-07-15 13:10:00,MCG,53439.0,17.0,2018,Round 17,Collingwood,West Coast,67.0,102.0
+2018-07-15 14:40:00,Optus Stadium,33190.0,17.0,2018,Round 17,Fremantle,Port Adelaide,59.0,50.0
+2018-07-15 15:20:00,Marvel Stadium,25633.0,17.0,2018,Round 17,North Melbourne,Sydney,98.0,104.0
+2018-07-20 19:50:00,Marvel Stadium,36269.0,18.0,2018,Round 18,St Kilda,Richmond,57.0,111.0
+2018-07-21 13:45:00,MCG,50393.0,18.0,2018,Round 18,Collingwood,North Melbourne,130.0,64.0
+2018-07-21 14:10:00,SCG,32565.0,18.0,2018,Round 18,Sydney,Gold Coast,64.0,88.0
+2018-07-21 16:35:00,Marvel Stadium,31564.0,18.0,2018,Round 18,Essendon,Fremantle,99.0,70.0
+2018-07-21 19:25:00,Gabba,20475.0,18.0,2018,Round 18,Brisbane,Adelaide,88.0,93.0
+2018-07-21 19:25:00,GMHBA Stadium,30125.0,18.0,2018,Round 18,Geelong,Melbourne,100.0,98.0
+2018-07-22 13:10:00,Marvel Stadium,30405.0,18.0,2018,Round 18,Carlton,Hawthorn,52.0,124.0
+2018-07-22 13:20:00,Optus Stadium,46854.0,18.0,2018,Round 18,West Coast,Western Bulldogs,100.0,46.0
+2018-07-22 16:10:00,Adelaide Oval,34693.0,18.0,2018,Round 18,Port Adelaide,GWS,58.0,80.0
+2018-07-27 19:50:00,Marvel Stadium,42251.0,19.0,2018,Round 19,Essendon,Sydney,109.0,66.0
+2018-07-28 13:45:00,MCG,88180.0,19.0,2018,Round 19,Richmond,Collingwood,105.0,77.0
+2018-07-28 14:10:00,GMHBA Stadium,28226.0,19.0,2018,Round 19,Geelong,Brisbane,120.0,78.0
+2018-07-28 16:35:00,Showground Stadium,12014.0,19.0,2018,Round 19,GWS,St Kilda,86.0,61.0
+2018-07-28 19:10:00,Adelaide Oval,45880.0,19.0,2018,Round 19,Adelaide,Melbourne,77.0,90.0
+2018-07-28 19:25:00,Metricon Stadium,10776.0,19.0,2018,Round 19,Gold Coast,Carlton,44.0,79.0
+2018-07-29 13:10:00,Blundstone Arena,11176.0,19.0,2018,Round 19,North Melbourne,West Coast,81.0,41.0
+2018-07-29 14:40:00,Optus Stadium,41845.0,19.0,2018,Round 19,Fremantle,Hawthorn,53.0,112.0
+2018-07-29 15:20:00,Mars Stadium,6450.0,19.0,2018,Round 19,Western Bulldogs,Port Adelaide,34.0,78.0
+2018-08-03 19:50:00,MCG,67054.0,20.0,2018,Round 20,Richmond,Geelong,85.0,82.0
+2018-08-04 13:45:00,MCG,68857.0,20.0,2018,Round 20,Hawthorn,Essendon,107.0,103.0
+2018-08-04 14:10:00,Gabba,18395.0,20.0,2018,Round 20,Brisbane,North Melbourne,104.0,107.0
+2018-08-04 16:05:00,Adelaide Oval,50377.0,20.0,2018,Round 20,Adelaide,Port Adelaide,96.0,93.0
+2018-08-04 19:25:00,Marvel Stadium,20748.0,20.0,2018,Round 20,St Kilda,Western Bulldogs,68.0,103.0
+2018-08-04 19:25:00,SCG,39238.0,20.0,2018,Round 20,Sydney,Collingwood,73.0,71.0
+2018-08-05 13:10:00,Marvel Stadium,16697.0,20.0,2018,Round 20,Carlton,GWS,46.0,151.0
+2018-08-05 14:40:00,Optus Stadium,57375.0,20.0,2018,Round 20,West Coast,Fremantle,142.0,84.0
+2018-08-05 15:20:00,MCG,23072.0,20.0,2018,Round 20,Melbourne,Gold Coast,143.0,47.0
+2018-08-10 19:50:00,Marvel Stadium,37483.0,21.0,2018,Round 21,Essendon,St Kilda,122.0,79.0
+2018-08-11 13:45:00,MCG,59529.0,21.0,2018,Round 21,Hawthorn,Geelong,71.0,60.0
+2018-08-11 14:10:00,Metricon Stadium,18102.0,21.0,2018,Round 21,Gold Coast,Richmond,51.0,125.0
+2018-08-11 16:05:00,Adelaide Oval,32534.0,21.0,2018,Round 21,Port Adelaide,West Coast,58.0,62.0
+2018-08-11 19:25:00,Marvel Stadium,33390.0,21.0,2018,Round 21,Collingwood,Brisbane,104.0,73.0
+2018-08-11 19:25:00,Canberra Oval,13249.0,21.0,2018,Round 21,GWS,Adelaide,106.0,92.0
+2018-08-12 13:10:00,Marvel Stadium,27031.0,21.0,2018,Round 21,North Melbourne,Western Bulldogs,85.0,92.0
+2018-08-12 14:40:00,Optus Stadium,40028.0,21.0,2018,Round 21,Fremantle,Carlton,101.0,72.0
+2018-08-12 15:20:00,MCG,51424.0,21.0,2018,Round 21,Melbourne,Sydney,78.0,87.0
+2018-08-17 19:50:00,MCG,76424.0,22.0,2018,Round 22,Richmond,Essendon,81.0,73.0
+2018-08-18 13:45:00,MCG,46286.0,22.0,2018,Round 22,Collingwood,Port Adelaide,115.0,64.0
+2018-08-18 14:10:00,GMHBA Stadium,24507.0,22.0,2018,Round 22,Geelong,Fremantle,158.0,25.0
+2018-08-18 16:35:00,Showground Stadium,21433.0,22.0,2018,Round 22,GWS,Sydney,60.0,80.0
+2018-08-18 19:25:00,Marvel Stadium,24795.0,22.0,2018,Round 22,St Kilda,Hawthorn,76.0,80.0
+2018-08-18 19:25:00,Metricon Stadium,11907.0,22.0,2018,Round 22,Gold Coast,Brisbane,74.0,78.0
+2018-08-19 13:10:00,Marvel Stadium,24143.0,22.0,2018,Round 22,Carlton,Western Bulldogs,49.0,66.0
+2018-08-19 13:20:00,Optus Stadium,55824.0,22.0,2018,Round 22,West Coast,Melbourne,91.0,108.0
+2018-08-19 16:10:00,Adelaide Oval,41444.0,22.0,2018,Round 22,Adelaide,North Melbourne,86.0,77.0
+2018-08-24 19:20:00,Adelaide Oval,39168.0,23.0,2018,Round 23,Port Adelaide,Essendon,89.0,111.0
+2018-08-25 13:45:00,GMHBA Stadium,28004.0,23.0,2018,Round 23,Geelong,Gold Coast,142.0,40.0
+2018-08-25 14:10:00,MCG,56998.0,23.0,2018,Round 23,Richmond,Western Bulldogs,98.0,95.0
+2018-08-25 14:35:00,Optus Stadium,41320.0,23.0,2018,Round 23,Fremantle,Collingwood,67.0,76.0
+2018-08-25 19:25:00,SCG,39660.0,23.0,2018,Round 23,Sydney,Hawthorn,74.0,83.0
+2018-08-25 19:25:00,Marvel Stadium,17000.0,23.0,2018,Round 23,Carlton,Adelaide,61.0,165.0
+2018-08-26 13:10:00,Gabba,16367.0,23.0,2018,Round 23,Brisbane,West Coast,72.0,98.0
+2018-08-26 15:20:00,MCG,37285.0,23.0,2018,Round 23,Melbourne,GWS,102.0,57.0
+2018-08-26 16:40:00,Marvel Stadium,19866.0,23.0,2018,Round 23,St Kilda,North Melbourne,94.0,117.0
+2018-09-06 19:20:00,MCG,91446.0,24.0,2018,Qualifying Final,Richmond,Hawthorn,95.0,64.0
+2018-09-07 19:50:00,MCG,91767.0,24.0,2018,Elimination Final,Melbourne,Geelong,75.0,46.0
+2018-09-08 16:20:00,SCG,40350.0,24.0,2018,Elimination Final,Sydney,GWS,30.0,79.0
+2018-09-08 18:10:00,Optus Stadium,59585.0,24.0,2018,Qualifying Final,West Coast,Collingwood,86.0,70.0
+2018-09-14 19:50:00,MCG,90152.0,25.0,2018,Semi Final,Hawthorn,Melbourne,71.0,104.0
+2018-09-15 19:25:00,MCG,72504.0,25.0,2018,Semi Final,Collingwood,GWS,69.0,59.0
+2018-09-21 19:50:00,MCG,94959.0,26.0,2018,Preliminary Final,Richmond,Collingwood,58.0,97.0
+2018-09-22 13:20:00,Optus Stadium,59608.0,26.0,2018,Preliminary Final,West Coast,Melbourne,121.0,55.0
+2018-09-29 14:30:00,MCG,100022.0,27.0,2018,Grand Final,West Coast,Collingwood,79.0,74.0
+2019-03-21 19:20:00,MCG,0.0,1.0,2019,Round 1,Carlton,Richmond,0.0,0.0
+2019-03-22 19:50:00,MCG,0.0,1.0,2019,Round 1,Collingwood,Geelong,0.0,0.0
+2019-03-23 13:45:00,MCG,0.0,1.0,2019,Round 1,Melbourne,Port Adelaide,0.0,0.0
+2019-03-23 16:05:00,Adelaide Oval,0.0,1.0,2019,Round 1,Adelaide,Hawthorn,0.0,0.0
+2019-03-23 19:20:00,Gabba,0.0,1.0,2019,Round 1,Brisbane,West Coast,0.0,0.0
+2019-03-23 19:25:00,Marvel Stadium,0.0,1.0,2019,Round 1,Western Bulldogs,Sydney,0.0,0.0
+2019-03-24 13:10:00,Marvel Stadium,0.0,1.0,2019,Round 1,St Kilda,Gold Coast,0.0,0.0
+2019-03-24 15:20:00,Showground Stadium,0.0,1.0,2019,Round 1,GWS,Essendon,0.0,0.0
+2019-03-24 15:20:00,Optus Stadium,0.0,1.0,2019,Round 1,Fremantle,North Melbourne,0.0,0.0
+2019-03-28 19:20:00,MCG,0.0,2.0,2019,Round 2,Richmond,Collingwood,0.0,0.0
+2019-03-29 19:50:00,SCG,0.0,2.0,2019,Round 2,Sydney,Adelaide,0.0,0.0
+2019-03-30 16:35:00,Marvel Stadium,0.0,2.0,2019,Round 2,Essendon,St Kilda,0.0,0.0
+2019-03-30 16:40:00,Adelaide Oval,0.0,2.0,2019,Round 2,Port Adelaide,Carlton,0.0,0.0
+2019-03-30 17:10:00,Optus Stadium,0.0,2.0,2019,Round 2,West Coast,GWS,0.0,0.0
+2019-03-30 19:25:00,GMHBA Stadium,0.0,2.0,2019,Round 2,Geelong,Melbourne,0.0,0.0
+2019-03-31 13:10:00,Marvel Stadium,0.0,2.0,2019,Round 2,North Melbourne,Brisbane,0.0,0.0
+2019-03-31 15:20:00,MCG,0.0,2.0,2019,Round 2,Hawthorn,Western Bulldogs,0.0,0.0
+2019-03-31 15:40:00,Metricon Stadium,0.0,2.0,2019,Round 2,Gold Coast,Fremantle,0.0,0.0
+2019-04-04 19:20:00,Adelaide Oval,0.0,3.0,2019,Round 3,Adelaide,Geelong,0.0,0.0
+2019-04-05 19:50:00,MCG,0.0,3.0,2019,Round 3,Melbourne,Essendon,0.0,0.0
+2019-04-06 13:45:00,Marvel Stadium,0.0,3.0,2019,Round 3,Carlton,Sydney,0.0,0.0
+2019-04-06 16:35:00,Showground Stadium,0.0,3.0,2019,Round 3,GWS,Richmond,0.0,0.0
+2019-04-06 18:25:00,Gabba,0.0,3.0,2019,Round 3,Brisbane,Port Adelaide,0.0,0.0
+2019-04-06 19:25:00,MCG,0.0,3.0,2019,Round 3,Collingwood,West Coast,0.0,0.0
+2019-04-07 14:20:00,Marvel Stadium,0.0,3.0,2019,Round 3,Western Bulldogs,Gold Coast,0.0,0.0
+2019-04-07 15:20:00,MCG,0.0,3.0,2019,Round 3,Hawthorn,North Melbourne,0.0,0.0
+2019-04-07 15:20:00,Optus Stadium,0.0,3.0,2019,Round 3,Fremantle,St Kilda,0.0,0.0
+2019-04-11 19:20:00,SCG,0.0,4.0,2019,Round 4,Sydney,Melbourne,0.0,0.0
+2019-04-12 19:50:00,MCG,0.0,4.0,2019,Round 4,Collingwood,Western Bulldogs,0.0,0.0
+2019-04-13 13:45:00,GMHBA Stadium,0.0,4.0,2019,Round 4,Geelong,GWS,0.0,0.0
+2019-04-13 14:10:00,MCG,0.0,4.0,2019,Round 4,Essendon,Brisbane,0.0,0.0
+2019-04-13 16:05:00,Adelaide Oval,0.0,4.0,2019,Round 4,Port Adelaide,Richmond,0.0,0.0
+2019-04-13 18:10:00,Optus Stadium,0.0,4.0,2019,Round 4,West Coast,Fremantle,0.0,0.0
+2019-04-13 19:25:00,Marvel Stadium,0.0,4.0,2019,Round 4,North Melbourne,Adelaide,0.0,0.0
+2019-04-14 14:40:00,Metricon Stadium,0.0,4.0,2019,Round 4,Gold Coast,Carlton,0.0,0.0
+2019-04-14 15:20:00,Marvel Stadium,0.0,4.0,2019,Round 4,St Kilda,Hawthorn,0.0,0.0
+2019-04-18 19:35:00,Gabba,0.0,5.0,2019,Round 5,Brisbane,Collingwood,0.0,0.0
+2019-04-19 16:20:00,Marvel Stadium,0.0,5.0,2019,Round 5,North Melbourne,Essendon,0.0,0.0
+2019-04-19 18:10:00,Optus Stadium,0.0,5.0,2019,Round 5,West Coast,Port Adelaide,0.0,0.0
+2019-04-20 13:45:00,Canberra Oval,0.0,5.0,2019,Round 5,GWS,Fremantle,0.0,0.0
+2019-04-20 16:35:00,MCG,0.0,5.0,2019,Round 5,Melbourne,St Kilda,0.0,0.0
+2019-04-20 19:25:00,Marvel Stadium,0.0,5.0,2019,Round 5,Richmond,Sydney,0.0,0.0
+2019-04-21 13:10:00,Marvel Stadium,0.0,5.0,2019,Round 5,Western Bulldogs,Carlton,0.0,0.0
+2019-04-21 16:10:00,Adelaide Oval,0.0,5.0,2019,Round 5,Adelaide,Gold Coast,0.0,0.0
+2019-04-22 15:20:00,MCG,0.0,5.0,2019,Round 5,Hawthorn,Geelong,0.0,0.0
+2019-04-24 19:35:00,MCG,0.0,6.0,2019,Round 6,Richmond,Melbourne,0.0,0.0
+2019-04-25 15:20:00,MCG,0.0,6.0,2019,Round 6,Essendon,Collingwood,0.0,0.0
+2019-04-26 19:20:00,Adelaide Oval,0.0,6.0,2019,Round 6,Port Adelaide,North Melbourne,0.0,0.0
+2019-04-27 13:45:00,Metricon Stadium,0.0,6.0,2019,Round 6,Gold Coast,Brisbane,0.0,0.0
+2019-04-27 16:35:00,Marvel Stadium,0.0,6.0,2019,Round 6,St Kilda,Adelaide,0.0,0.0
+2019-04-27 18:10:00,Optus Stadium,0.0,6.0,2019,Round 6,Fremantle,Western Bulldogs,0.0,0.0
+2019-04-27 19:25:00,SCG,0.0,6.0,2019,Round 6,Sydney,GWS,0.0,0.0
+2019-04-28 15:20:00,UTAS Stadium,0.0,6.0,2019,Round 6,Hawthorn,Carlton,0.0,0.0
+2019-04-28 16:40:00,GMHBA Stadium,0.0,6.0,2019,Round 6,Geelong,West Coast,0.0,0.0
+2019-05-03 19:50:00,Marvel Stadium,0.0,7.0,2019,Round 7,Collingwood,Port Adelaide,0.0,0.0
+2019-05-04 13:45:00,MCG,0.0,7.0,2019,Round 7,Melbourne,Hawthorn,0.0,0.0
+2019-05-04 13:45:00,Canberra Oval,0.0,7.0,2019,Round 7,GWS,St Kilda,0.0,0.0
+2019-05-04 16:35:00,Gabba,0.0,7.0,2019,Round 7,Brisbane,Sydney,0.0,0.0
+2019-05-04 18:10:00,Optus Stadium,0.0,7.0,2019,Round 7,West Coast,Gold Coast,0.0,0.0
+2019-05-04 19:25:00,Marvel Stadium,0.0,7.0,2019,Round 7,Western Bulldogs,Richmond,0.0,0.0
+2019-05-05 13:10:00,Marvel Stadium,0.0,7.0,2019,Round 7,Carlton,North Melbourne,0.0,0.0
+2019-05-05 15:20:00,MCG,0.0,7.0,2019,Round 7,Geelong,Essendon,0.0,0.0
+2019-05-05 16:10:00,Adelaide Oval,0.0,7.0,2019,Round 7,Adelaide,Fremantle,0.0,0.0
+2019-05-10 19:50:00,SCG,0.0,8.0,2019,Round 8,Sydney,Essendon,0.0,0.0
+2019-05-11 13:45:00,MCG,0.0,8.0,2019,Round 8,Carlton,Collingwood,0.0,0.0
+2019-05-11 13:45:00,Mars Stadium,0.0,8.0,2019,Round 8,Western Bulldogs,Brisbane,0.0,0.0
+2019-05-11 16:35:00,Metricon Stadium,0.0,8.0,2019,Round 8,Gold Coast,Melbourne,0.0,0.0
+2019-05-11 19:10:00,Adelaide Oval,0.0,8.0,2019,Round 8,Port Adelaide,Adelaide,0.0,0.0
+2019-05-11 19:25:00,Marvel Stadium,0.0,8.0,2019,Round 8,St Kilda,West Coast,0.0,0.0
+2019-05-12 13:10:00,Marvel Stadium,0.0,8.0,2019,Round 8,North Melbourne,Geelong,0.0,0.0
+2019-05-12 15:20:00,MCG,0.0,8.0,2019,Round 8,Hawthorn,GWS,0.0,0.0
+2019-05-12 15:20:00,Optus Stadium,0.0,8.0,2019,Round 8,Fremantle,Richmond,0.0,0.0
+2019-05-17 18:10:00,Optus Stadium,0.0,9.0,2019,Round 9,West Coast,Melbourne,0.0,0.0
+2019-05-18 13:45:00,MCG,0.0,9.0,2019,Round 9,Collingwood,St Kilda,0.0,0.0
+2019-05-18 14:10:00,Gabba,0.0,9.0,2019,Round 9,Brisbane,Adelaide,0.0,0.0
+2019-05-18 16:35:00,GMHBA Stadium,0.0,9.0,2019,Round 9,Geelong,Western Bulldogs,0.0,0.0
+2019-05-18 19:25:00,Marvel Stadium,0.0,9.0,2019,Round 9,Essendon,Fremantle,0.0,0.0
+2019-05-18 19:25:00,Blundstone Arena,0.0,9.0,2019,Round 9,North Melbourne,Sydney,0.0,0.0
+2019-05-19 12:40:00,Adelaide Oval,0.0,9.0,2019,Round 9,Port Adelaide,Gold Coast,0.0,0.0
+2019-05-19 15:20:00,MCG,0.0,9.0,2019,Round 9,Richmond,Hawthorn,0.0,0.0
+2019-05-19 16:40:00,Showground Stadium,0.0,9.0,2019,Round 9,GWS,Carlton,0.0,0.0
+2019-05-24 19:50:00,SCG,0.0,10.0,2019,Round 10,Sydney,Collingwood,0.0,0.0
+2019-05-25 13:45:00,UTAS Stadium,0.0,10.0,2019,Round 10,Hawthorn,Port Adelaide,0.0,0.0
+2019-05-25 14:10:00,Marvel Stadium,0.0,10.0,2019,Round 10,Western Bulldogs,North Melbourne,0.0,0.0
+2019-05-25 16:05:00,Adelaide Oval,0.0,10.0,2019,Round 10,Adelaide,West Coast,0.0,0.0
+2019-05-25 19:25:00,Metricon Stadium,0.0,10.0,2019,Round 10,Gold Coast,Geelong,0.0,0.0
+2019-05-25 19:25:00,MCG,0.0,10.0,2019,Round 10,Richmond,Essendon,0.0,0.0
+2019-05-26 13:10:00,MCG,0.0,10.0,2019,Round 10,Melbourne,GWS,0.0,0.0
+2019-05-26 15:20:00,Optus Stadium,0.0,10.0,2019,Round 10,Fremantle,Brisbane,0.0,0.0
+2019-05-26 15:20:00,Marvel Stadium,0.0,10.0,2019,Round 10,St Kilda,Carlton,0.0,0.0
+2019-05-31 19:50:00,Marvel Stadium,0.0,11.0,2019,Round 11,North Melbourne,Richmond,0.0,0.0
+2019-06-01 13:45:00,MCG,0.0,11.0,2019,Round 11,Collingwood,Fremantle,0.0,0.0
+2019-06-01 13:45:00,Showground Stadium,0.0,11.0,2019,Round 11,GWS,Gold Coast,0.0,0.0
+2019-06-01 16:35:00,GMHBA Stadium,0.0,11.0,2019,Round 11,Geelong,Sydney,0.0,0.0
+2019-06-01 19:10:00,TIO Stadium,0.0,11.0,2019,Round 11,Melbourne,Adelaide,0.0,0.0
+2019-06-01 19:25:00,Gabba,0.0,11.0,2019,Round 11,Brisbane,Hawthorn,0.0,0.0
+2019-06-02 12:40:00,Jiangwan Stadium,0.0,11.0,2019,Round 11,St Kilda,Port Adelaide,0.0,0.0
+2019-06-02 15:20:00,Optus Stadium,0.0,11.0,2019,Round 11,West Coast,Western Bulldogs,0.0,0.0
+2019-06-02 15:20:00,MCG,0.0,11.0,2019,Round 11,Essendon,Carlton,0.0,0.0
+2019-06-07 19:50:00,MCG,0.0,12.0,2019,Round 12,Richmond,Geelong,0.0,0.0
+2019-06-08 13:45:00,Marvel Stadium,0.0,12.0,2019,Round 12,Carlton,Brisbane,0.0,0.0
+2019-06-08 16:35:00,Metricon Stadium,0.0,12.0,2019,Round 12,Gold Coast,North Melbourne,0.0,0.0
+2019-06-08 19:10:00,Adelaide Oval,0.0,12.0,2019,Round 12,Adelaide,GWS,0.0,0.0
+2019-06-09 15:20:00,SCG,0.0,12.0,2019,Round 12,Sydney,West Coast,0.0,0.0
+2019-06-10 15:20:00,MCG,0.0,12.0,2019,Round 12,Collingwood,Melbourne,0.0,0.0
+2019-06-13 19:20:00,Adelaide Oval,0.0,13.0,2019,Round 13,Adelaide,Richmond,0.0,0.0
+2019-06-14 19:50:00,Marvel Stadium,0.0,13.0,2019,Round 13,Essendon,Hawthorn,0.0,0.0
+2019-06-15 13:45:00,Riverway Stadium,0.0,13.0,2019,Round 13,Gold Coast,St Kilda,0.0,0.0
+2019-06-15 14:35:00,Optus Stadium,0.0,13.0,2019,Round 13,Fremantle,Port Adelaide,0.0,0.0
+2019-06-15 19:25:00,Marvel Stadium,0.0,13.0,2019,Round 13,Carlton,Western Bulldogs,0.0,0.0
+2019-06-16 15:20:00,Blundstone Arena,0.0,13.0,2019,Round 13,North Melbourne,GWS,0.0,0.0
+2019-06-20 18:10:00,Optus Stadium,0.0,14.0,2019,Round 14,West Coast,Essendon,0.0,0.0
+2019-06-21 19:50:00,SCG,0.0,14.0,2019,Round 14,Sydney,Hawthorn,0.0,0.0
+2019-06-22 13:45:00,MCG,0.0,14.0,2019,Round 14,Melbourne,Fremantle,0.0,0.0
+2019-06-22 16:35:00,Marvel Stadium,0.0,14.0,2019,Round 14,St Kilda,Brisbane,0.0,0.0
+2019-06-22 19:10:00,Adelaide Oval,0.0,14.0,2019,Round 14,Port Adelaide,Geelong,0.0,0.0
+2019-06-23 15:20:00,Marvel Stadium,0.0,14.0,2019,Round 14,Western Bulldogs,Collingwood,0.0,0.0
+2019-06-27 19:20:00,Marvel Stadium,0.0,15.0,2019,Round 15,Essendon,GWS,0.0,0.0
+2019-06-28 19:50:00,GMHBA Stadium,0.0,15.0,2019,Round 15,Geelong,Adelaide,0.0,0.0
+2019-06-29 13:45:00,MCG,0.0,15.0,2019,Round 15,Hawthorn,West Coast,0.0,0.0
+2019-06-29 16:35:00,SCG,0.0,15.0,2019,Round 15,Sydney,Gold Coast,0.0,0.0
+2019-06-29 19:10:00,Adelaide Oval,0.0,15.0,2019,Round 15,Port Adelaide,Western Bulldogs,0.0,0.0
+2019-06-29 19:25:00,Marvel Stadium,0.0,15.0,2019,Round 15,Collingwood,North Melbourne,0.0,0.0
+2019-06-30 13:10:00,Marvel Stadium,0.0,15.0,2019,Round 15,St Kilda,Richmond,0.0,0.0
+2019-06-30 15:20:00,Optus Stadium,0.0,15.0,2019,Round 15,Fremantle,Carlton,0.0,0.0
+2019-06-30 15:20:00,Gabba,0.0,15.0,2019,Round 15,Brisbane,Melbourne,0.0,0.0
+2019-07-05 19:50:00,MCG,0.0,16.0,2019,Round 16,Hawthorn,Collingwood,0.0,0.0
+2019-07-06 13:45:00,MCG,0.0,16.0,2019,Round 16,Essendon,Sydney,0.0,0.0
+2019-07-06 14:10:00,Metricon Stadium,0.0,16.0,2019,Round 16,Gold Coast,Richmond,0.0,0.0
+2019-07-06 16:05:00,Adelaide Oval,0.0,16.0,2019,Round 16,Adelaide,Port Adelaide,0.0,0.0
+2019-07-06 18:10:00,Optus Stadium,0.0,16.0,2019,Round 16,Fremantle,West Coast,0.0,0.0
+2019-07-06 19:25:00,Marvel Stadium,0.0,16.0,2019,Round 16,Western Bulldogs,Geelong,0.0,0.0
+2019-07-07 13:10:00,MCG,0.0,16.0,2019,Round 16,Carlton,Melbourne,0.0,0.0
+2019-07-07 15:20:00,Blundstone Arena,0.0,16.0,2019,Round 16,North Melbourne,St Kilda,0.0,0.0
+2019-07-07 16:40:00,Showground Stadium,0.0,16.0,2019,Round 16,GWS,Brisbane,0.0,0.0
+2019-07-12 18:10:00,Optus Stadium,0.0,17.0,2019,Round 17,West Coast,Collingwood,0.0,0.0
+2019-07-13 13:45:00,SCG,0.0,17.0,2019,Round 17,Sydney,Carlton,0.0,0.0
+2019-07-13 14:10:00,UTAS Stadium,0.0,17.0,2019,Round 17,Hawthorn,Fremantle,0.0,0.0
+2019-07-13 16:35:00,Marvel Stadium,0.0,17.0,2019,Round 17,Essendon,North Melbourne,0.0,0.0
+2019-07-13 19:25:00,Metricon Stadium,0.0,17.0,2019,Round 17,Gold Coast,Adelaide,0.0,0.0
+2019-07-13 19:25:00,GMHBA Stadium,0.0,17.0,2019,Round 17,Geelong,St Kilda,0.0,0.0
+2019-07-14 13:10:00,MCG,0.0,17.0,2019,Round 17,Richmond,GWS,0.0,0.0
+2019-07-14 15:20:00,Marvel Stadium,0.0,17.0,2019,Round 17,Western Bulldogs,Melbourne,0.0,0.0
+2019-07-14 16:10:00,Adelaide Oval,0.0,17.0,2019,Round 17,Port Adelaide,Brisbane,0.0,0.0
+2019-07-19 19:20:00,Adelaide Oval,0.0,18.0,2019,Round 18,Adelaide,Essendon,0.0,0.0
+2019-07-20 13:45:00,MCG,0.0,18.0,2019,Round 18,Richmond,Port Adelaide,0.0,0.0
+2019-07-20 14:10:00,Marvel Stadium,0.0,18.0,2019,Round 18,Carlton,Gold Coast,0.0,0.0
+2019-07-20 16:35:00,Showground Stadium,0.0,18.0,2019,Round 18,GWS,Collingwood,0.0,0.0
+2019-07-20 18:10:00,Optus Stadium,0.0,18.0,2019,Round 18,Fremantle,Sydney,0.0,0.0
+2019-07-20 19:25:00,Gabba,0.0,18.0,2019,Round 18,Brisbane,North Melbourne,0.0,0.0
+2019-07-21 13:10:00,MCG,0.0,18.0,2019,Round 18,Geelong,Hawthorn,0.0,0.0
+2019-07-21 14:50:00,TIO Traegar Park,0.0,18.0,2019,Round 18,Melbourne,West Coast,0.0,0.0
+2019-07-21 16:40:00,Marvel Stadium,0.0,18.0,2019,Round 18,St Kilda,Western Bulldogs,0.0,0.0
+2019-07-26 19:50:00,MCG,0.0,19.0,2019,Round 19,Collingwood,Richmond,0.0,0.0
+2019-07-27 13:45:00,UTAS Stadium,0.0,19.0,2019,Round 19,Hawthorn,Brisbane,0.0,0.0
+2019-07-27 14:10:00,MCG,0.0,19.0,2019,Round 19,Carlton,Adelaide,0.0,0.0
+2019-07-27 14:35:00,Optus Stadium,0.0,19.0,2019,Round 19,West Coast,North Melbourne,0.0,0.0
+2019-07-27 19:10:00,Adelaide Oval,0.0,19.0,2019,Round 19,Port Adelaide,GWS,0.0,0.0
+2019-07-27 19:25:00,Marvel Stadium,0.0,19.0,2019,Round 19,St Kilda,Melbourne,0.0,0.0
+2019-07-28 13:10:00,Marvel Stadium,0.0,19.0,2019,Round 19,Western Bulldogs,Fremantle,0.0,0.0
+2019-07-28 15:20:00,SCG,0.0,19.0,2019,Round 19,Sydney,Geelong,0.0,0.0
+2019-07-28 16:40:00,Metricon Stadium,0.0,19.0,2019,Round 19,Gold Coast,Essendon,0.0,0.0
+2019-08-02 19:50:00,Marvel Stadium,0.0,20.0,2019,Round 20,North Melbourne,Hawthorn,0.0,0.0
+2019-08-03 13:45:00,Marvel Stadium,0.0,20.0,2019,Round 20,Essendon,Port Adelaide,0.0,0.0
+2019-08-03 14:10:00,Showground Stadium,0.0,20.0,2019,Round 20,GWS,Sydney,0.0,0.0
+2019-08-03 14:35:00,Optus Stadium,0.0,20.0,2019,Round 20,Fremantle,Geelong,0.0,0.0
+2019-08-03 19:10:00,Adelaide Oval,0.0,20.0,2019,Round 20,Adelaide,St Kilda,0.0,0.0
+2019-08-03 19:25:00,MCG,0.0,20.0,2019,Round 20,Melbourne,Richmond,0.0,0.0
+2019-08-04 13:10:00,MCG,0.0,20.0,2019,Round 20,Collingwood,Gold Coast,0.0,0.0
+2019-08-04 15:20:00,Marvel Stadium,0.0,20.0,2019,Round 20,Carlton,West Coast,0.0,0.0
+2019-08-04 16:40:00,Gabba,0.0,20.0,2019,Round 20,Brisbane,Western Bulldogs,0.0,0.0
+2019-08-09 19:50:00,Canberra Oval,0.0,21.0,2019,Round 21,GWS,Hawthorn,0.0,0.0
+2019-08-10 13:40:00,Adelaide Oval,0.0,21.0,2019,Round 21,Port Adelaide,Sydney,0.0,0.0
+2019-08-10 13:45:00,MCG,0.0,21.0,2019,Round 21,Melbourne,Collingwood,0.0,0.0
+2019-08-10 16:35:00,Gabba,0.0,21.0,2019,Round 21,Brisbane,Gold Coast,0.0,0.0
+2019-08-10 19:25:00,GMHBA Stadium,0.0,21.0,2019,Round 21,Geelong,North Melbourne,0.0,0.0
+2019-08-10 19:25:00,Marvel Stadium,0.0,21.0,2019,Round 21,Essendon,Western Bulldogs,0.0,0.0
+2019-08-11 13:10:00,Marvel Stadium,0.0,21.0,2019,Round 21,St Kilda,Fremantle,0.0,0.0
+2019-08-11 14:40:00,Optus Stadium,0.0,21.0,2019,Round 21,West Coast,Adelaide,0.0,0.0
+2019-08-11 15:20:00,MCG,0.0,21.0,2019,Round 21,Richmond,Carlton,0.0,0.0
+2019-08-16 19:50:00,MCG,0.0,22.0,2019,Round 22,Melbourne,Sydney,0.0,0.0
+2019-08-17 13:45:00,MCG,0.0,22.0,2019,Round 22,Carlton,St Kilda,0.0,0.0
+2019-08-17 14:10:00,Gabba,0.0,22.0,2019,Round 22,Brisbane,Geelong,0.0,0.0
+2019-08-17 16:05:00,Adelaide Oval,0.0,22.0,2019,Round 22,Adelaide,Collingwood,0.0,0.0
+2019-08-17 18:10:00,Optus Stadium,0.0,22.0,2019,Round 22,Fremantle,Essendon,0.0,0.0
+2019-08-17 19:25:00,Marvel Stadium,0.0,22.0,2019,Round 22,North Melbourne,Port Adelaide,0.0,0.0
+2019-08-18 13:10:00,MCG,0.0,22.0,2019,Round 22,Richmond,West Coast,0.0,0.0
+2019-08-18 15:20:00,Showground Stadium,0.0,22.0,2019,Round 22,GWS,Western Bulldogs,0.0,0.0
+2019-08-18 16:40:00,Marvel Stadium,0.0,22.0,2019,Round 22,Hawthorn,Gold Coast,0.0,0.0
+2019-08-24 00:00:00,Blundstone Arena,0.0,23.0,2019,Round 23,North Melbourne,Melbourne,0.0,0.0
+2019-08-24 00:00:00,MCG,0.0,23.0,2019,Round 23,Richmond,Brisbane,0.0,0.0
+2019-08-24 00:00:00,Metricon Stadium,0.0,23.0,2019,Round 23,Gold Coast,GWS,0.0,0.0
+2019-08-24 00:00:00,Adelaide Oval,0.0,23.0,2019,Round 23,Port Adelaide,Fremantle,0.0,0.0
+2019-08-24 00:00:00,Optus Stadium,0.0,23.0,2019,Round 23,West Coast,Hawthorn,0.0,0.0
+2019-08-25 00:00:00,SCG,0.0,23.0,2019,Round 23,Sydney,St Kilda,0.0,0.0
+2019-08-25 00:00:00,GMHBA Stadium,0.0,23.0,2019,Round 23,Geelong,Carlton,0.0,0.0
+2019-08-25 00:00:00,MCG,0.0,23.0,2019,Round 23,Collingwood,Essendon,0.0,0.0
+2019-08-25 00:00:00,Mars Stadium,0.0,23.0,2019,Round 23,Western Bulldogs,Adelaide,0.0,0.0

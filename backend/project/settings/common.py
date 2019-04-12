@@ -110,7 +110,7 @@ MELBOURNE_TIMEZONE = timezone(timedelta(hours=HOURS_FROM_UTC_TO_MELBOURNE))
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Australia/Melbourne"
 
 USE_I18N = True
 

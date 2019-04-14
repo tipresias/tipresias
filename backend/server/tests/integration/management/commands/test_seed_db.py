@@ -47,8 +47,9 @@ class TestSeedDb(TestCase):
             )
 
             self.seed_command = seed_db.Command(
-                estimators=[(TestEstimator(), BettingMLData)],
+                estimators=[TestEstimator()],
                 data_reader=MockDataReader(),
+                data=BettingMLData(),
             )
 
     def test_handle(self):

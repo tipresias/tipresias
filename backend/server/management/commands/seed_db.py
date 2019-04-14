@@ -2,8 +2,7 @@
 
 import itertools
 from functools import partial
-from pydoc import locate
-from typing import Tuple, List, Optional, Type
+from typing import Tuple, List, Optional
 from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
@@ -28,12 +27,11 @@ FixtureData = TypedDict(
         "venue": str,
     },
 )
-EstimatorTuple = Tuple[BaseMLEstimator, Type[BaseMLData]]
 
 YEAR_RANGE = "2014-2019"
-ESTIMATORS: List[EstimatorTuple] = [
-    (BenchmarkEstimator(name="benchmark_estimator"), JoinedMLData),
-    (BaggingEstimator(name="tipresias"), JoinedMLData),
+ESTIMATORS: List[BaseMLEstimator] = [
+    BenchmarkEstimator(name="benchmark_estimator"),
+    BaggingEstimator(name="tipresias"),
 ]
 NO_SCORE = 0
 JAN = 1
@@ -46,13 +44,15 @@ class Command(BaseCommand):
         self,
         *args,
         data_reader=FootywireDataImporter(),
-        estimators: List[EstimatorTuple] = ESTIMATORS,
+        estimators: List[BaseMLEstimator] = ESTIMATORS,
+        data=JoinedMLData(fetch_data=True),
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
         self.data_reader = data_reader
         self.estimators = estimators
+        self.data = data
 
     def handle(  # pylint: disable=W0221
         self, *_args, year_range: str = YEAR_RANGE, verbose: int = 1, **_kwargs
@@ -110,10 +110,7 @@ class Command(BaseCommand):
             print("Teams seeded!")
 
     def __create_ml_models(self) -> List[MLModel]:
-        ml_models = [
-            self.__build_ml_model(estimator, data_class)
-            for estimator, data_class in self.estimators
-        ]
+        ml_models = [self.__build_ml_model(estimator) for estimator in self.estimators]
 
         if not any(ml_models):
             raise ValueError("Something went wrong and no ML models were saved.")
@@ -200,29 +197,11 @@ class Command(BaseCommand):
             print(f"\nMaking predictions with {ml_model_record.name}...")
 
         estimator = ml_model_record.load_estimator()
-        data_class = locate(ml_model_record.data_class_path)
-
-        if (
-            data_class is None
-            or not isinstance(data_class, type)
-            or not issubclass(data_class, BaseMLData)
-        ):
-            raise ValueError(
-                f"Data class found at {ml_model_record.data_class_path} is not an "
-                "instance of BaseMLData. Check associated model "
-                f"{ml_model_record.name}."
-            )
-
-        # I know we've already checked if it's None, but mypy kept complaining until
-        # I added this check for some reason.
-        if data_class is not None:
-            data = data_class(fetch_data=True)
 
         make_year_predictions = partial(
             self.__make_year_predictions,
             ml_model_record,
             estimator,
-            data,
             round_number=round_number,
         )
 
@@ -239,7 +218,6 @@ class Command(BaseCommand):
         self,
         ml_model_record: MLModel,
         estimator: BaseMLEstimator,
-        data: BaseMLData,
         year: int,
         round_number: Optional[int] = None,
     ) -> List[Prediction]:
@@ -256,10 +234,10 @@ class Command(BaseCommand):
 
             return []
 
-        data.train_years = (None, year - 1)
-        data.test_years = (year, year)
+        self.data.train_years = (None, year - 1)
+        self.data.test_years = (year, year)
         data_row_slice = (slice(None), year, slice(round_number, round_number))
-        prediction_data = self.__predict(estimator, data, data_row_slice)
+        prediction_data = self.__predict(estimator, self.data, data_row_slice)
 
         if prediction_data is None:
             return []
@@ -300,13 +278,9 @@ class Command(BaseCommand):
         return data.data.loc[data_row_slice, :].assign(predicted_margin=y_pred)
 
     @staticmethod
-    def __build_ml_model(
-        estimator: BaseMLEstimator, data_class: Type[BaseMLData]
-    ) -> MLModel:
+    def __build_ml_model(estimator: BaseMLEstimator) -> MLModel:
         ml_model_record = MLModel(
-            name=estimator.name,
-            data_class_path=data_class.class_path(),
-            filepath=estimator.pickle_filepath(),
+            name=estimator.name, filepath=estimator.pickle_filepath()
         )
         ml_model_record.full_clean()
 

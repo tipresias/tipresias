@@ -1,6 +1,6 @@
 """Module for data cleaning functions"""
 
-from typing import Optional, Pattern
+from typing import Optional, Pattern, Callable
 from datetime import datetime, date
 import re
 import pandas as pd
@@ -13,18 +13,17 @@ MATCH_COL_TRANSLATIONS = {
     "away_points": "away_score",
     "margin": "home_margin",
     "season": "year",
+    "game": "match_id",
 }
 PLAYER_COL_TRANSLATIONS = {
     "time_on_ground__": "time_on_ground",
     "id": "player_id",
-    "game": "match_id",
+    "round": "round_number",
+    "season": "year",
 }
 REGULAR_ROUND: Pattern = re.compile(r"round\s+(\d+)$", flags=re.I)
 
-DROPPABLE_COLS = [
-    "first_name",
-    "surname",
-    "round",
+UNUSED_PLAYER_COLS = [
     "local_start_time",
     "attendance",
     "hq1g",
@@ -50,9 +49,37 @@ DROPPABLE_COLS = [
     "umpire_4",
     "substitute",
     "group_id",
-    "date",
-    "venue",
 ]
+
+PLAYER_FILLNA = {
+    "first_name": "",
+    "surname": "",
+    "player_id": 0,
+    "playing_for": "",
+    "kicks": 0,
+    "marks": 0,
+    "handballs": 0,
+    "goals": 0,
+    "behinds": 0,
+    "hit_outs": 0,
+    "tackles": 0,
+    "rebounds": 0,
+    "inside_50s": 0,
+    "clearances": 0,
+    "clangers": 0,
+    "frees_for": 0,
+    "frees_against": 0,
+    "brownlow_votes": 0,
+    "contested_possessions": 0,
+    "uncontested_possessions": 0,
+    "contested_marks": 0,
+    "marks_inside_50": 0,
+    "one_percenters": 0,
+    "bounces": 0,
+    "goal_assists": 0,
+    "time_on_ground": 0,
+    "player_name": "",
+}
 
 
 def _map_betting_teams_to_match_teams(team_name: str) -> str:
@@ -142,33 +169,14 @@ def _match_data_from_next_round(future_match_data):
     )
 
 
-def clean_match_data(
-    past_match_data: pd.DataFrame, future_match_data: Optional[pd.DataFrame] = None
+def _append_fixture_to_match_data(
+    match_data: pd.DataFrame, fixture_data: pd.DataFrame
 ) -> pd.DataFrame:
-    match_data = (
-        past_match_data.rename(columns=MATCH_COL_TRANSLATIONS)
-        # fitzRoy returns integers that represent some sort of datetime, and the only
-        # way to parse them is converting them to dates.
-        # NOTE: If the matches parsed only go back to 1990 (give or take, I can't remember)
-        # you can parse the date integers into datetime
-        .assign(date=lambda df: pd.to_datetime(df["date"], unit="D"))
-        .astype({"year": int})
-        .drop(["round", "game"], axis=1)
-        # There were some weird round-robin rounds in the early days, and it's easier to
-        # drop them rather than figure out how to split up the rounds.
-        .query(
-            "((year != 1897) | (round_number != 15)) & "
-            "((year != 1924) | (round_number != 19))"
-        )
-    )
-
-    if future_match_data is None:
+    if fixture_data is None:
         return match_data
 
     return (
-        pd.concat(
-            [match_data, _match_data_from_next_round(future_match_data)], sort=False
-        )
+        pd.concat([match_data, _match_data_from_next_round(fixture_data)], sort=False)
         .reset_index(drop=True)
         .drop_duplicates(
             subset=["date", "venue", "year", "round_number", "home_team", "away_team"]
@@ -177,16 +185,67 @@ def clean_match_data(
     )
 
 
+# fitzRoy returns integers that represent some sort of datetime, and the only
+# way to parse them is converting them to dates.
+# NOTE: If the matches parsed only go back to 1990 (give or take, I can't remember)
+# you can parse the date integers into datetime
+def _parse_fitzroy_dates(data_frame: pd.DataFrame) -> pd.Series:
+    return pd.to_datetime(data_frame["date"], unit="D")
+
+
+# ID values are converted to floats automatically, making for awkward strings later.
+# We want them as strings, because sometimes we have to use player names as replacement
+# IDs, and we concatenate multiple ID values to create a unique index.
+def _convert_id_to_string(id_label: str) -> Callable:
+    return lambda df: df[id_label].astype(int).astype(str)
+
+
+def _filter_out_dodgy_data(duplicate_subset=["year", "round_number"]) -> Callable:
+    return lambda df: (
+        df.sort_values("date", ascending=True)
+        # Some early matches (1800s) have fully-duplicated rows.
+        # Also, drawn finals get replayed, which screws up my indexing and a bunch of other
+        # data munging, so getting match_ids for the repeat matches, and filtering
+        # them out of the data frame
+        .drop_duplicates(subset=duplicate_subset, keep="last")
+        # There were some weird round-robin rounds in the early days, and it's easier to
+        # drop them rather than figure out how to split up the rounds.
+        .query(
+            "(year != 1897 | round_number != 15) "
+            "& (year != 1924 | round_number != 19)"
+        )
+    )
+
+
+def clean_match_data(
+    past_match_data: pd.DataFrame, fixture_data: Optional[pd.DataFrame] = None
+) -> pd.DataFrame:
+    match_data = (
+        past_match_data.rename(columns=MATCH_COL_TRANSLATIONS)
+        .assign(date=_parse_fitzroy_dates)
+        .astype({"year": int, "round_number": int})
+        .pipe(_filter_out_dodgy_data())
+        .assign(match_id=_convert_id_to_string("match_id"))
+        .drop(["round"], axis=1)
+    )
+
+    return _append_fixture_to_match_data(match_data, fixture_data)
+
+
 def _player_id_col(data_frame: pd.DataFrame) -> pd.DataFrame:
+    # Need to add year to ID, because there are some
+    # player_id/match_id combos, decades apart, that by chance overlap
     return (
-        data_frame["player_id"].astype(str)
+        data_frame["year"].astype(str)
+        + "."
         + data_frame["match_id"].astype(str)
-        + data_frame["year"].astype(str)
+        + "."
+        + data_frame["player_id"].astype(str)
     )
 
 
 def _clean_roster_data(
-    roster_data: pd.DataFrame, player_data_frame: pd.DataFrame
+    player_data_frame: pd.DataFrame, roster_data: pd.DataFrame
 ) -> pd.DataFrame:
     if not roster_data.any().any():
         return roster_data.assign(player_id=[])
@@ -216,61 +275,147 @@ def _clean_roster_data(
     return roster_data_frame.assign(id=_player_id_col).set_index("id")
 
 
+def _append_rosters_to_player_data(
+    player_data: pd.DataFrame, roster_data: pd.DataFrame
+) -> pd.DataFrame:
+    if roster_data is None:
+        return player_data
+
+    cleaned_roster_data_frame = _clean_roster_data(player_data, roster_data)
+
+    return pd.concat([player_data, cleaned_roster_data_frame], sort=False).fillna(0)
+
+
 def clean_player_data(
     player_data: pd.DataFrame,
     match_data: pd.DataFrame,
     roster_data: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
-    data_frame = (
-        player_data
-        # Some player data venues have trailing spaces
-        .assign(venue=lambda x: x["venue"].str.strip())
+    cleaned_player_data = (
+        player_data.rename(columns=PLAYER_COL_TRANSLATIONS)
+        .astype({"year": int})
+        .assign(
+            # Some player data venues have trailing spaces
+            venue=lambda x: x["venue"].str.strip(),
+            player_name=lambda x: x["first_name"] + " " + x["surname"],
+            player_id=_convert_id_to_string("player_id"),
+            date=_parse_fitzroy_dates,
+        )
+        .drop(UNUSED_PLAYER_COLS + ["first_name", "surname", "round_number"], axis=1)
         # Player data match IDs are wrong for recent years.
         # The easiest way to add correct ones is to graft on the IDs
-        # from match_results. Also, match_results round_numbers are more useful.
+        # from match_results. Also, match_results round_numbers integers rather than
+        # a mix of ints and strings.
         .merge(
-            match_data[["date", "venue", "round_number", "game"]],
+            clean_match_data(match_data)[["date", "venue", "round_number", "match_id"]],
             on=["date", "venue"],
             how="left",
         )
+        .pipe(_filter_out_dodgy_data(["year", "round_number", "player_id"]))
+        .drop("venue", axis=1)
         # As of 11-10-2018, match_results is still missing finals data from 2018.
         # Joining on date/venue leaves two duplicates played at M.C.G.
         # on 29-4-1986 & 9-8-1986, but that's an acceptable loss of data
         # and easier than munging team names
         .dropna()
-        .rename(columns={**MATCH_COL_TRANSLATIONS, **PLAYER_COL_TRANSLATIONS})
-        .astype({"year": int, "match_id": str, "player_id": str})
-        .assign(
-            player_name=lambda x: x["first_name"] + " " + x["surname"],
-            # Need to add year to ID, because there are some
-            # player_id/match_id combos, decades apart, that by chance overlap
-            id=_player_id_col,
-        )
-        .drop(DROPPABLE_COLS, axis=1)
-        # Some early matches (1800s) have fully-duplicated rows
-        .drop_duplicates()
+        # Need to add year to ID, because there are some
+        # player_id/match_id combos, decades apart, that by chance overlap
+        .assign(id=_player_id_col)
         .set_index("id")
         .sort_index()
     )
 
-    # Drawn finals get replayed, which screws up my indexing and a bunch of other
-    # data munging, so getting match_ids for the repeat matches, and filtering
-    # them out of the data frame
-    duplicate_match_ids = data_frame[
-        data_frame.duplicated(subset=["year", "round_number", "player_id"], keep="last")
-    ]["match_id"]
+    return _append_rosters_to_player_data(cleaned_player_data, roster_data)
 
-    # There were some weird round-robin rounds in the early days, and it's easier to
-    # drop them rather than figure out how to split up the rounds.
-    data_frame = data_frame[
-        ((data_frame["year"] != 1897) | (data_frame["round_number"] != 15))
-        & ((data_frame["year"] != 1924) | (data_frame["round_number"] != 19))
-        & (~data_frame["match_id"].isin(duplicate_match_ids))
-    ]
 
-    if roster_data is None:
-        return data_frame
+def _clean_betting_data_for_join(betting_data: pd.DataFrame) -> pd.DataFrame:
+    return (
+        betting_data.drop(
+            [
+                "date",
+                "venue",
+                "round_label",
+                "home_score",
+                "home_margin",
+                "away_score",
+                "away_margin",
+                "home_win_paid",
+                "home_line_paid",
+                "away_win_paid",
+                "away_line_paid",
+            ],
+            axis=1,
+        )
+        .assign(
+            home_team=lambda df: df["home_team"].map(_map_betting_teams_to_match_teams),
+            away_team=lambda df: df["away_team"].map(_map_betting_teams_to_match_teams),
+        )
+        .rename(columns={"season": "year", "round": "round_number"})
+    )
 
-    roster_data_frame = _clean_roster_data(roster_data, data_frame)
 
-    return pd.concat([data_frame, roster_data_frame], sort=False).fillna(0)
+def _merge_player_match_data(
+    player_data: pd.DataFrame, match_data: pd.DataFrame
+) -> pd.DataFrame:
+    return (
+        player_data.drop(
+            [
+                "year",
+                "round_number",
+                "home_team",
+                "away_team",
+                "home_score",
+                "away_score",
+            ],
+            axis=1,
+        )
+        # Some player data venues have trailing spaces
+        .assign(venue=lambda x: x["venue"].str.strip()).merge(
+            match_data, on=["date", "venue"], how="outer"
+        )
+    )
+
+
+def clean_joined_data(
+    player_data: pd.DataFrame,
+    match_data: pd.DataFrame,
+    betting_data: pd.DataFrame,
+    fixture_data: Optional[pd.DataFrame] = None,
+    roster_data: Optional[pd.DataFrame] = None,
+):
+    cleaned_player_match_data = (
+        clean_player_data(player_data, match_data, roster_data=roster_data)
+        .drop(
+            [
+                "year",
+                "round_number",
+                "home_team",
+                "away_team",
+                "home_score",
+                "away_score",
+                "date",
+            ],
+            axis=1,
+        )
+        .reset_index(drop=False)
+        .merge(
+            clean_match_data(match_data, fixture_data=fixture_data),
+            on="match_id",
+            how="outer",
+        )
+        .fillna(PLAYER_FILLNA)
+        # As of 11-10-2018, match_results is still missing finals data from 2018.
+        # Joining on date/venue leaves two duplicates played at M.C.G.
+        # on 29-4-1986 & 9-8-1986, but that's an acceptable loss of data
+        # and easier than munging team names, because AFLTables has a lot of incorrect
+        # home/away teams, which require a lot of manual cleaning
+        .dropna()
+        .set_index("id")
+        .sort_index()
+    )
+
+    return cleaned_player_match_data.merge(
+        _clean_betting_data_for_join(betting_data),
+        on=["year", "round_number", "home_team", "away_team"],
+        how="left",
+    ).fillna(0)

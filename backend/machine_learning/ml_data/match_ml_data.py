@@ -1,11 +1,10 @@
 """Module with wrapper class for XGBoost model and its associated data class"""
 
-from typing import List, Callable, Any, Pattern
-import re
+from typing import List, Callable
 from datetime import datetime
 import pandas as pd
 
-from machine_learning.types import DataFrameTransformer, YearPair
+from machine_learning.types import DataFrameTransformer, YearPair, DataReadersParam
 from machine_learning.data_processors import (
     TeamDataStacker,
     FeatureBuilder,
@@ -108,10 +107,10 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     ).transform,
     OppoFeatureBuilder(oppo_feature_cols=["cum_percent", "ladder_position"]).transform,
 ]
-DATA_READERS: List[Callable] = [
-    FitzroyDataImporter().match_results,
-    FootywireDataImporter().get_fixture,
-]
+DATA_READERS: DataReadersParam = {
+    "match": (FitzroyDataImporter().match_results, {}),
+    "fixture": (FootywireDataImporter().get_fixture, {}),
+}
 
 
 class MatchMLData(BaseMLData, DataTransformerMixin):
@@ -119,7 +118,7 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
 
     def __init__(
         self,
-        data_readers: List[Callable] = DATA_READERS,
+        data_readers: DataReadersParam = DATA_READERS,
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
@@ -141,16 +140,20 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
     @property
     def data(self) -> pd.DataFrame:
         if self._data is None:
-            past_match_data = self.data_readers[0](fetch_data=self.fetch_data)
+            match_data_reader, match_data_kwargs = self.data_readers["match"]
+            match_data = match_data_reader(
+                **{**match_data_kwargs, **{"fetch_data": self.fetch_data}}
+            )
 
-            if self.fetch_data and len(self.data_readers) > 1:
-                future_match_data = self.__fetch_fixture_data(self.data_readers[1])
+            if self.fetch_data and "fixture" in self.data_readers.keys():
+                fixture_data_reader, _ = self.data_readers["fixture"]
+                fixture_data = self.__fetch_fixture_data(fixture_data_reader)
             else:
-                future_match_data = None
+                fixture_data = None
 
             self._data = (
                 self._compose_transformers(  # pylint: disable=E1102
-                    clean_match_data(past_match_data, future_match_data)
+                    clean_match_data(match_data, fixture_data)
                 )
                 .fillna(0)
                 .set_index(self.index_cols, drop=False)
@@ -164,7 +167,7 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
     def data_transformers(self):
         return self._data_transformers
 
-    def __fetch_fixture_data(self, data_reader: Any) -> pd.DataFrame:
+    def __fetch_fixture_data(self, data_reader: Callable) -> pd.DataFrame:
         fixture_data_frame = data_reader(
             year_range=(self.current_year, self.current_year + 1),
             fetch_data=self.fetch_data,

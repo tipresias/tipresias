@@ -27,6 +27,13 @@ class BaseMLData:
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data"""
 
+        if len(self.data.index.names) != 3:
+            raise ValueError(
+                "The index of the data frame must have 3 levels. The expected indexes "
+                "are ['team', 'year', 'round_number'], but the index names are: "
+                f"{self.data.index.names}"
+            )
+
         data_train = self.data.loc[
             (slice(None), slice(*self.train_years), slice(None)), :
         ]
@@ -38,6 +45,13 @@ class BaseMLData:
 
     def test_data(self, test_round=None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce test data"""
+
+        if len(self.data.index.names) != 3:
+            raise ValueError(
+                "The index of the data frame must have 3 levels. The expected indexes "
+                "are ['team', 'year', 'round_number'], but the index names are: "
+                f"{self.data.index.names}"
+            )
 
         data_test = self.data.loc[
             (slice(None), slice(*self.test_years), slice(test_round, test_round)), :

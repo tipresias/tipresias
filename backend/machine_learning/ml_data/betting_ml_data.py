@@ -1,8 +1,8 @@
 """Module with wrapper class for Lasso model and its associated data class"""
 
-from typing import List, Callable
+from typing import List
 
-from machine_learning.types import DataFrameTransformer, YearPair
+from machine_learning.types import DataFrameTransformer, YearPair, DataReadersParam
 from machine_learning.data_processors import (
     TeamDataStacker,
     FeatureBuilder,
@@ -67,7 +67,7 @@ class BettingMLData(BaseMLData, DataTransformerMixin):
 
     def __init__(
         self,
-        data_readers: List[Callable] = [],
+        data_readers: DataReadersParam = None,
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
@@ -78,13 +78,13 @@ class BettingMLData(BaseMLData, DataTransformerMixin):
             train_years=train_years, test_years=test_years, fetch_data=fetch_data
         )
 
-        if any(data_readers):
-            self.data_readers = data_readers
+        if data_readers is None:
+            self.data_readers: DataReadersParam = {
+                "betting": (FootywireDataImporter().get_betting_odds, {}),
+                "fixture": (FootywireDataImporter().get_fixture, {}),
+            }
         else:
-            self.data_readers = [
-                FootywireDataImporter().get_betting_odds,
-                FootywireDataImporter().get_fixture,
-            ]
+            self.data_readers = data_readers
 
         self.index_cols = index_cols
         self._data_transformers = data_transformers
@@ -93,14 +93,18 @@ class BettingMLData(BaseMLData, DataTransformerMixin):
     @property
     def data(self):
         if self._data is None:
-            betting_data, match_data = (
-                data_reader(fetch_data=self.fetch_data)
-                for data_reader in self.data_readers
+            betting_data_reader, betting_data_kwargs = self.data_readers["betting"]
+            betting_data = betting_data_reader(
+                **{**betting_data_kwargs, **{"fetch_data": self.fetch_data}}
+            )
+            fixture_data_reader, fixture_data_kwargs = self.data_readers["fixture"]
+            fixture_data = fixture_data_reader(
+                **{**fixture_data_kwargs, **{"fetch_data": self.fetch_data}}
             )
 
             self._data = (
                 self._compose_transformers(  # pylint: disable=E1102
-                    clean_betting_data(betting_data, match_data)
+                    clean_betting_data(betting_data, fixture_data)
                 )
                 .astype({"year": int})
                 .fillna(0)

@@ -1,10 +1,10 @@
 """Model class trained on player data and its associated data class"""
 
-from typing import List, Callable, Optional
+from typing import List, Optional
 from datetime import date
 import pandas as pd
 
-from machine_learning.types import DataFrameTransformer, YearPair
+from machine_learning.types import DataFrameTransformer, YearPair, DataReadersParam
 from machine_learning.data_processors import (
     FeatureBuilder,
     PlayerDataStacker,
@@ -74,11 +74,14 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
 ]
 
 fitzroy = FitzroyDataImporter()
-DATA_READERS: List[Callable] = [
-    fitzroy.get_afltables_stats,
-    fitzroy.match_results,
-    afl_data_importer.get_rosters,
-]
+DATA_READERS: DataReadersParam = {
+    "player": (
+        fitzroy.get_afltables_stats,
+        {"start_date": "1965-01-01", "end_date": str(date.today())},
+    ),
+    "match": (fitzroy.match_results, {}),
+    "roster": (afl_data_importer.get_rosters, {}),
+}
 
 
 class PlayerMLData(BaseMLData, DataTransformerMixin):
@@ -86,15 +89,10 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
 
     def __init__(
         self,
-        data_readers: List[Callable] = DATA_READERS,
+        data_readers: DataReadersParam = DATA_READERS,
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
-        # Defaulting to start_date as the 1965 season, because earlier seasons don't
-        # have much in the way of player stats, just goals and behinds, which we
-        # already have at the team level.
-        start_date="1965-01-01",
-        end_date=str(date.today()),
         index_cols: List[str] = INDEX_COLS,
         fetch_data: bool = False,
     ) -> None:
@@ -107,16 +105,17 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
         self._data = None
         self.fetch_data = fetch_data
         self.index_cols = index_cols
-        self.start_date = start_date
-        self.end_date = end_date
 
     @property
     def data(self):
         if self._data is None:
-            player_data = self.data_readers[0](
-                start_date=self.start_date, end_date=self.end_date
+            player_data_reader, player_data_kwargs = self.data_readers["player"]
+            player_data = player_data_reader(**player_data_kwargs)
+
+            match_data_reader, match_data_kwargs = self.data_readers["match"]
+            match_data = match_data_reader(
+                **{**match_data_kwargs, **{"fetch_data": self.fetch_data}}
             )
-            match_data = self.data_readers[1](fetch_data=self.fetch_data)
             roster_data = self.__roster_data(match_data)
 
             self._data = (
@@ -136,10 +135,16 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
         return self._data_transformers
 
     def __roster_data(self, match_data: pd.DataFrame) -> Optional[pd.DataFrame]:
-        if self.fetch_data and len(self.data_readers) > 2:
+        if self.fetch_data and "roster" in self.data_readers.keys():
             current_year = date.today().year
             round_number = self.__upcoming_round_number(match_data, current_year)
-            return self.data_readers[2](round_number=round_number, year=current_year)
+            roster_data_reader, roster_data_kwargs = self.data_readers["roster"]
+            return roster_data_reader(
+                **{
+                    **roster_data_kwargs,
+                    **{"round_number": round_number, "year": current_year},
+                }
+            )
 
         return None
 

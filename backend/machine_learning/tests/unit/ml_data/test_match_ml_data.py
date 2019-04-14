@@ -31,11 +31,20 @@ fixture_mock = Mock(return_value=fixture_mock_df)
 
 class TestMatchMLData(TestCase):
     def setUp(self):
-        self.data = MatchMLData(data_readers=[match_results_mock, fixture_mock])
+        self.data = MatchMLData(
+            data_readers={
+                "match": (match_results_mock, {}),
+                "fixture": (fixture_mock, {}),
+            }
+        )
 
     def test_fetch_data(self):
         fetched_data = MatchMLData(
-            data_readers=[match_results_mock, fixture_mock], fetch_data=True
+            data_readers={
+                "match": (match_results_mock, {}),
+                "fixture": (fixture_mock, {}),
+            },
+            fetch_data=True,
         )
         current_year = date.today().year
 

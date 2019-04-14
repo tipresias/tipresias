@@ -2,7 +2,6 @@
 
 import os
 from functools import partial, reduce
-from pydoc import locate
 from datetime import datetime
 from typing import List, Optional
 from mypy_extensions import TypedDict

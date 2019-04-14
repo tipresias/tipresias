@@ -2,7 +2,6 @@ import os
 from unittest import TestCase
 from unittest.mock import Mock
 import pandas as pd
-import numpy as np
 from faker import Faker
 
 from machine_learning.ml_data import JoinedMLData
@@ -86,4 +85,3 @@ class TestJoinedMLData(TestCase):
         return data_frame.assign(
             score=data_frame["home_score"], oppo_score=data_frame["away_score"]
         )
-

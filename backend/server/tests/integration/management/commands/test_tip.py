@@ -86,7 +86,9 @@ class TestTip(TestCase):
         ).save()
 
         # Not fetching data, because it takes forever
-        self.tip_command = tip.Command(data_reader=footywire, fetch_data=False)
+        self.tip_command = tip.Command(
+            data_reader=footywire, fetch_data=False, data=BettingMLData()
+        )
 
     def test_handle(self):
         with self.subTest("with no existing match records in DB"):

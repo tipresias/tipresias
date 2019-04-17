@@ -99,6 +99,10 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
                 .pipe(self.__sort_data_frame_columns)
                 .dropna()
                 .sort_index()
+                # TODO: This is only a temporary renaming to keep column names
+                # consistent with saved models in order to avoid having to retrain them
+                .rename(columns=lambda col: col.replace("team_goals", "goals"))
+                .rename(columns=lambda col: col.replace("team_behinds", "behinds"))
             )
 
         return self._data

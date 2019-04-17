@@ -1,11 +1,15 @@
 """Module for data cleaning functions"""
 
-from typing import Optional, Pattern, Callable
+from typing import Optional, Pattern, Callable, List
 from datetime import datetime, date
 import re
 import pandas as pd
 
-from machine_learning.data_config import TEAM_TRANSLATIONS, FOOTYWIRE_VENUE_TRANSLATIONS
+from machine_learning.data_config import (
+    TEAM_TRANSLATIONS,
+    FOOTYWIRE_VENUE_TRANSLATIONS,
+    INDEX_COLS,
+)
 from project.settings.common import MELBOURNE_TIMEZONE
 
 MATCH_COL_TRANSLATIONS = {
@@ -93,37 +97,9 @@ def _map_betting_teams_to_match_teams(team_name: str) -> str:
     return team_name
 
 
-def _concatenate_betting_and_match_data(
-    betting_data: pd.DataFrame, match_data: pd.DataFrame
-) -> pd.DataFrame:
-    betting_data = betting_data.drop(
-        [
-            "date",
-            "venue",
-            "round_label",
-            "home_score",
-            "home_margin",
-            "away_score",
-            "away_margin",
-        ],
-        axis=1,
-    ).assign(
-        home_team=lambda df: df["home_team"].map(_map_betting_teams_to_match_teams),
-        away_team=lambda df: df["away_team"].map(_map_betting_teams_to_match_teams),
-    )
-    match_data = match_data.drop(["date", "venue", "round_label"], axis=1)
-
-    return betting_data.merge(
-        match_data, on=["home_team", "away_team", "round", "season"]
-    )
-
-
-def clean_betting_data(
-    betting_data: pd.DataFrame, match_data: pd.DataFrame
-) -> pd.DataFrame:
+def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
     return (
-        _concatenate_betting_and_match_data(betting_data, match_data)
-        .rename(columns={"season": "year", "round": "round_number"})
+        betting_data.rename(columns={"season": "year", "round": "round_number"})
         .drop(
             [
                 "crowd",
@@ -131,8 +107,19 @@ def clean_betting_data(
                 "home_line_paid",
                 "away_win_paid",
                 "away_line_paid",
+                "date",
+                "venue",
+                "round_label",
+                "home_score",
+                "home_margin",
+                "away_score",
+                "away_margin",
             ],
             axis=1,
+        )
+        .assign(
+            home_team=lambda df: df["home_team"].map(_map_betting_teams_to_match_teams),
+            away_team=lambda df: df["away_team"].map(_map_betting_teams_to_match_teams),
         )
     )
 
@@ -382,46 +369,23 @@ def _merge_player_match_data(
     )
 
 
-def clean_joined_data(
-    player_data: pd.DataFrame,
-    match_data: pd.DataFrame,
-    betting_data: pd.DataFrame,
-    fixture_data: Optional[pd.DataFrame] = None,
-    roster_data: Optional[pd.DataFrame] = None,
-):
-    cleaned_player_match_data = (
-        clean_player_data(player_data, match_data, roster_data=roster_data)
-        .drop(
-            [
-                "year",
-                "round_number",
-                "home_team",
-                "away_team",
-                "home_score",
-                "away_score",
-                "date",
-            ],
-            axis=1,
-        )
-        .reset_index(drop=False)
-        .merge(
-            clean_match_data(match_data, fixture_data=fixture_data),
-            on="match_id",
-            how="outer",
-        )
-        .fillna(PLAYER_FILLNA)
-        # As of 11-10-2018, match_results is still missing finals data from 2018.
-        # Joining on date/venue leaves two duplicates played at M.C.G.
-        # on 29-4-1986 & 9-8-1986, but that's an acceptable loss of data
-        # and easier than munging team names, because AFLTables has a lot of incorrect
-        # home/away teams, which require a lot of manual cleaning
-        .dropna()
-        .set_index("id")
-        .sort_index()
+def clean_joined_data(data: List[pd.DataFrame]):
+    data_frames_without_index_cols = [
+        data_frame.drop(INDEX_COLS, axis=1) for data_frame in data
+    ]
+    data_stats_cols = pd.concat(
+        [data_frame.columns for data_frame in data_frames_without_index_cols]
     )
 
-    return cleaned_player_match_data.merge(
-        _clean_betting_data_for_join(betting_data),
-        on=["year", "round_number", "home_team", "away_team"],
-        how="left",
-    ).fillna(0)
+    if data_stats_cols.duplicated().any():
+        raise ValueError(
+            "Some of the data frames have columns other than index columns in common, "
+            "which has the potential to cause unexpected behaviour. All columns given "
+            f"are:\n{data_stats_cols}"
+        )
+
+    return (
+        pd.concat(data_frames_without_index_cols, axis=1)
+        .reset_index(drop=False)
+        .set_index(INDEX_COLS, drop=False)
+    )

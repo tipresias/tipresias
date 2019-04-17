@@ -77,6 +77,9 @@ fitzroy = FitzroyDataImporter()
 DATA_READERS: DataReadersParam = {
     "player": (
         fitzroy.get_afltables_stats,
+        # Defaulting to start_date as the 1965 season, because earlier seasons don't
+        # have much in the way of player stats, just goals and behinds, which we
+        # already have at the team level.
         {"start_date": "1965-01-01", "end_date": str(date.today())},
     ),
     "match": (fitzroy.match_results, {}),

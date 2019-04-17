@@ -14,6 +14,10 @@ MATCH_COL_TRANSLATIONS = {
     "margin": "home_margin",
     "season": "year",
     "game": "match_id",
+    "home_goals": "home_team_goals",
+    "away_goals": "away_team_goals",
+    "home_behinds": "home_team_behinds",
+    "away_behinds": "away_team_behinds",
 }
 PLAYER_COL_TRANSLATIONS = {
     "time_on_ground__": "time_on_ground",
@@ -222,7 +226,9 @@ def clean_match_data(
 ) -> pd.DataFrame:
     match_data = (
         past_match_data.rename(columns=MATCH_COL_TRANSLATIONS)
-        .assign(date=_parse_fitzroy_dates)
+        .assign(
+            date=_parse_fitzroy_dates, away_margin=lambda df: df["home_margin"] * -1
+        )
         .astype({"year": int, "round_number": int})
         .pipe(_filter_out_dodgy_data())
         .assign(match_id=_convert_id_to_string("match_id"))

@@ -1,4 +1,5 @@
 from typing import List, Dict, Union, Tuple
+from functools import partial
 import pandas as pd
 import numpy as np
 
@@ -28,10 +29,8 @@ STATS_COLS = [
     "rolling_prev_match_time_on_ground",
     "last_year_brownlow_votes",
 ]
-MATCH_STATS_COLS = ["at_home", "score", "oppo_score"]
-REQUIRED_COLS = (
-    ["oppo_team", "player_id", "player_name"] + STATS_COLS + MATCH_STATS_COLS
-)
+
+REQUIRED_COLS = ["oppo_team", "player_id", "player_name"] + STATS_COLS
 
 
 class PlayerDataAggregator:
@@ -66,17 +65,27 @@ class PlayerDataAggregator:
                 f"{missing_cols}"
             )
 
-        # 'oppo_team' isn't an index column, but including it in the groupby
-        # doesn't change the grouping and makes it easier to keep for the final
-        # data frame.
+        match_stats_cols = [
+            col
+            for col in data_frame.select_dtypes("number")
+            # Excluding player stats columns & index columns, which are included in the
+            # groupby index and readded to the dataframe later
+            if col not in STATS_COLS + self.index_cols
+        ]
+
         agg_data_frame = (
             data_frame.drop(["player_id", "player_name"], axis=1)
-            .groupby(self.index_cols + ["oppo_team"])
-            .aggregate(self.__aggregations())
+            # Adding some non-index columns in the groupby, because it doesn't change
+            # the grouping and makes it easier to keep for the final data frame.
+            .groupby(self.index_cols + ["oppo_team"]).aggregate(
+                self.__aggregations(match_stats_cols)
+            )
         )
 
+        agg_column_name = partial(self.__agg_column_name, match_stats_cols)
+
         agg_data_frame.columns = [
-            self.__agg_column_name(column_pair)
+            agg_column_name(column_pair)
             for column_pair in agg_data_frame.columns.values
         ]
 
@@ -87,31 +96,30 @@ class PlayerDataAggregator:
         # played some sort of round-robin tournament for finals, but I'm
         # not too worried about the loss of that data.
         return (
-            agg_data_frame.dropna(axis=1)
+            agg_data_frame.dropna()
             .reset_index()
             .drop_duplicates(subset=self.index_cols, keep="last")
-            .astype(
-                {
-                    match_col: int
-                    for match_col in MATCH_STATS_COLS + ["year", "round_number"]
-                }
-            )
+            .astype({match_col: int for match_col in match_stats_cols})
             .set_index(self.index_cols, drop=False)
             .rename_axis([None] * len(self.index_cols))
             .sort_index()
         )
 
-    def __aggregations(self) -> Dict[str, Union[str, List[str]]]:
+    def __aggregations(
+        self, match_stats_cols: List[str]
+    ) -> Dict[str, Union[str, List[str]]]:
         player_aggs = {col: self.aggregations for col in STATS_COLS}
         # Since match stats are the same across player rows, taking the mean
         # is the easiest way to aggregate them
-        match_aggs = {col: "mean" for col in MATCH_STATS_COLS}
+        match_aggs = {col: "mean" for col in match_stats_cols}
 
         return {**player_aggs, **match_aggs}
 
     @staticmethod
-    def __agg_column_name(column_pair: Tuple[str, str]) -> str:
+    def __agg_column_name(
+        match_stats_cols: List[str], column_pair: Tuple[str, str]
+    ) -> str:
         column_label, _ = column_pair
         return (
-            column_label if column_label in MATCH_STATS_COLS else "_".join(column_pair)
+            column_label if column_label in match_stats_cols else "_".join(column_pair)
         )

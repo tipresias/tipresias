@@ -90,14 +90,15 @@ class BaseMLData:
     @staticmethod
     def __X(data_frame: pd.DataFrame) -> pd.DataFrame:
         labels = [
-            "(?:oppo_)*score",
-            "(?:oppo_)*behinds",
-            "(?:oppo_)*goals",
-            "(?:oppo_)*margin",
-            "(?:oppo_)*result",
+            "(?:oppo_)?score",
+            "(?:oppo_)?team_behinds",
+            "(?:oppo_)?team_goals",
+            "(?:oppo_)?margin",
+            "(?:oppo_)?result",
         ]
         label_cols = data_frame.filter(regex=f"^{'$|^'.join(labels)}$").columns
         features = data_frame.drop(label_cols, axis=1)
+
         numeric_features = features.select_dtypes("number").astype(float)
         categorical_features = features.select_dtypes(exclude=["number", "datetime"])
 

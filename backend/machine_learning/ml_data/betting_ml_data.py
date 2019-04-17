@@ -3,7 +3,11 @@
 from typing import List
 
 from machine_learning.types import DataFrameTransformer, YearPair, DataReadersParam
-from machine_learning.data_processors import TeamDataStacker, FeatureBuilder
+from machine_learning.data_processors import (
+    TeamDataStacker,
+    FeatureBuilder,
+    OppoFeatureBuilder,
+)
 from machine_learning.data_import import FootywireDataImporter
 from machine_learning.data_processors.feature_functions import add_betting_pred_win
 from machine_learning.data_processors.feature_calculation import (
@@ -25,6 +29,9 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     data_cleaning.clean_betting_data,
     TeamDataStacker().transform,
     FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform,
+    OppoFeatureBuilder(
+        oppo_feature_cols=["betting_pred_win", "rolling_betting_pred_win_rate"]
+    ).transform,
 ]
 
 

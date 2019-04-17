@@ -558,7 +558,7 @@ def _shift_features(columns: List[str], shift: bool, data_frame: pd.DataFrame):
 
     if any((shift_col not in data_frame.columns for shift_col in columns_to_shift)):
         raise ValueError(
-            f"To calculate betting predicted win, all shift columns ({columns_to_shift}) "
+            f"To calculate shifted_team_features, all shift columns ({columns_to_shift}) "
             "must be in data frame, but the columns given were "
             f"{data_frame.columns}"
         )

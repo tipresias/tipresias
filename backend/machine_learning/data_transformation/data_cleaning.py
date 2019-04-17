@@ -5,11 +5,7 @@ from datetime import datetime, date
 import re
 import pandas as pd
 
-from machine_learning.data_config import (
-    TEAM_TRANSLATIONS,
-    FOOTYWIRE_VENUE_TRANSLATIONS,
-    INDEX_COLS,
-)
+from machine_learning.data_config import TEAM_TRANSLATIONS, FOOTYWIRE_VENUE_TRANSLATIONS
 from project.settings.common import MELBOURNE_TIMEZONE
 
 MATCH_COL_TRANSLATIONS = {
@@ -89,6 +85,8 @@ PLAYER_FILLNA = {
     "player_name": "",
 }
 
+LABEL_COLS = ["score", "oppo_score"]
+
 
 def _map_betting_teams_to_match_teams(team_name: str) -> str:
     if team_name in TEAM_TRANSLATIONS.keys():
@@ -102,7 +100,6 @@ def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
         betting_data.rename(columns={"season": "year", "round": "round_number"})
         .drop(
             [
-                "crowd",
                 "home_win_paid",
                 "home_line_paid",
                 "away_win_paid",
@@ -110,9 +107,7 @@ def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
                 "date",
                 "venue",
                 "round_label",
-                "home_score",
                 "home_margin",
-                "away_score",
                 "away_margin",
             ],
             axis=1,
@@ -191,7 +186,7 @@ def _convert_id_to_string(id_label: str) -> Callable:
     return lambda df: df[id_label].astype(int).astype(str)
 
 
-def _filter_out_dodgy_data(duplicate_subset=["year", "round_number"]) -> Callable:
+def _filter_out_dodgy_data(duplicate_subset=None) -> Callable:
     return lambda df: (
         df.sort_values("date", ascending=True)
         # Some early matches (1800s) have fully-duplicated rows.
@@ -217,7 +212,18 @@ def clean_match_data(
             date=_parse_fitzroy_dates, away_margin=lambda df: df["home_margin"] * -1
         )
         .astype({"year": int, "round_number": int})
-        .pipe(_filter_out_dodgy_data())
+        .pipe(
+            _filter_out_dodgy_data(
+                duplicate_subset=[
+                    "date",
+                    "venue",
+                    "year",
+                    "round_number",
+                    "home_team",
+                    "away_team",
+                ]
+            )
+        )
         .assign(match_id=_convert_id_to_string("match_id"))
         .drop(["round"], axis=1)
     )
@@ -321,71 +327,8 @@ def clean_player_data(
     return _append_rosters_to_player_data(cleaned_player_data, roster_data)
 
 
-def _clean_betting_data_for_join(betting_data: pd.DataFrame) -> pd.DataFrame:
-    return (
-        betting_data.drop(
-            [
-                "date",
-                "venue",
-                "round_label",
-                "home_score",
-                "home_margin",
-                "away_score",
-                "away_margin",
-                "home_win_paid",
-                "home_line_paid",
-                "away_win_paid",
-                "away_line_paid",
-            ],
-            axis=1,
-        )
-        .assign(
-            home_team=lambda df: df["home_team"].map(_map_betting_teams_to_match_teams),
-            away_team=lambda df: df["away_team"].map(_map_betting_teams_to_match_teams),
-        )
-        .rename(columns={"season": "year", "round": "round_number"})
-    )
+def clean_joined_data(data_frames: List[pd.DataFrame]):
+    joined_data_frame = pd.concat(data_frames, axis=1)
+    duplicate_columns = joined_data_frame.columns.duplicated()
 
-
-def _merge_player_match_data(
-    player_data: pd.DataFrame, match_data: pd.DataFrame
-) -> pd.DataFrame:
-    return (
-        player_data.drop(
-            [
-                "year",
-                "round_number",
-                "home_team",
-                "away_team",
-                "home_score",
-                "away_score",
-            ],
-            axis=1,
-        )
-        # Some player data venues have trailing spaces
-        .assign(venue=lambda x: x["venue"].str.strip()).merge(
-            match_data, on=["date", "venue"], how="outer"
-        )
-    )
-
-
-def clean_joined_data(data: List[pd.DataFrame]):
-    data_frames_without_index_cols = [
-        data_frame.drop(INDEX_COLS, axis=1) for data_frame in data
-    ]
-    data_stats_cols = pd.concat(
-        [data_frame.columns for data_frame in data_frames_without_index_cols]
-    )
-
-    if data_stats_cols.duplicated().any():
-        raise ValueError(
-            "Some of the data frames have columns other than index columns in common, "
-            "which has the potential to cause unexpected behaviour. All columns given "
-            f"are:\n{data_stats_cols}"
-        )
-
-    return (
-        pd.concat(data_frames_without_index_cols, axis=1)
-        .reset_index(drop=False)
-        .set_index(INDEX_COLS, drop=False)
-    )
+    return joined_data_frame.loc[:, ~duplicate_columns]

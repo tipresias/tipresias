@@ -1,6 +1,6 @@
 """Module for machine learning data class that joins various data sources together"""
 
-from typing import List, Optional
+from typing import List, Dict
 import pandas as pd
 
 from machine_learning.data_processors import FeatureBuilder
@@ -10,12 +10,7 @@ from machine_learning.data_processors.feature_calculation import (
     calculate_multiplication,
     calculate_rolling_rate,
 )
-from machine_learning.types import (
-    YearPair,
-    DataFrameTransformer,
-    DataReadersParam,
-    CalculatorPair,
-)
+from machine_learning.types import YearPair, DataFrameTransformer, CalculatorPair
 from machine_learning.utils import DataTransformerMixin
 from machine_learning.data_config import CATEGORY_COLS
 from machine_learning.data_transformation import data_cleaning
@@ -59,13 +54,13 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
     ).transform,
 ]
 
-DATA_READERS: DataReadersParam = {
+DATA_READERS: Dict[str, BaseMLData] = {
     # Defaulting to start_date as the 1965 season, because earlier seasons don't
     # have much in the way of player stats, just goals and behinds, which we
     # already have at the team level.
-    "player": (PlayerMLData, {}),
-    "match": (MatchMLData, {}),
-    "betting": (BettingMLData, {}),
+    "player": PlayerMLData(),
+    "match": MatchMLData(),
+    "betting": BettingMLData(),
 }
 
 
@@ -74,7 +69,7 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
 
     def __init__(
         self,
-        data_readers: DataReadersParam = DATA_READERS,
+        data_readers: Dict[str, BaseMLData] = DATA_READERS,
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         category_cols: List[str] = CATEGORY_COLS,
@@ -85,7 +80,7 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
             train_years=train_years, test_years=test_years, fetch_data=fetch_data
         )
 
-        self._data_transformers = data_transformers + [self.__sort_data_frame_columns]
+        self._data_transformers = data_transformers
         self.data_readers = data_readers
         self._data = None
         self.category_cols = category_cols
@@ -93,22 +88,15 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
     @property
     def data(self) -> pd.DataFrame:
         if self._data is None:
-            player_data_reader, player_data_kwargs = self.data_readers["player"]
-            match_data_reader, match_data_kwargs = self.data_readers["match"]
-            betting_data_reader, betting_data_kwargs = self.data_readers["betting"]
-
-            player_data = player_data_reader(**player_data_kwargs).data
-            match_data = match_data_reader(
-                **{**match_data_kwargs, **{"fetch_data": self.fetch_data}}
-            ).data
-            betting_data = betting_data_reader(
-                **{**betting_data_kwargs, **{"fetch_data": self.fetch_data}}
-            ).data
+            player_data = self.data_readers["player"].data
+            match_data = self.data_readers["match"].data
+            betting_data = self.data_readers["betting"].data
 
             self._data = (
                 self._compose_transformers(  # pylint: disable=E1102
                     [player_data, match_data, betting_data]
                 )
+                .pipe(self.__sort_data_frame_columns)
                 .dropna()
                 .sort_index()
             )
@@ -118,22 +106,6 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
     @property
     def data_transformers(self):
         return self._data_transformers
-
-    @property
-    def __fixture_data(self) -> Optional[pd.DataFrame]:
-        if self.fetch_data and "fixture" in self.data_readers.keys():
-            fixture_data_reader, fixture_data_kwargs = self.data_readers["fixture"]
-            return fixture_data_reader(**fixture_data_kwargs)
-
-        return None
-
-    @property
-    def __roster_data(self) -> Optional[pd.DataFrame]:
-        if self.fetch_data and "roster" in self.data_readers.keys():
-            roster_data_reader, roster_data_kwargs = self.data_readers["roster"]
-            return roster_data_reader(**roster_data_kwargs)
-
-        return None
 
     def __sort_data_frame_columns(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         numeric_data_frame = data_frame.select_dtypes(include="number").fillna(0)

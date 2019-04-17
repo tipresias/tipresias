@@ -43,7 +43,14 @@ FEATURE_FUNCS: List[DataFrameTransformer] = [
     add_result,
     add_margin,
     add_shifted_team_features(
-        shift_columns=["score", "oppo_score", "result", "margin", "goals", "behinds"]
+        shift_columns=[
+            "score",
+            "oppo_score",
+            "result",
+            "margin",
+            "team_goals",
+            "team_behinds",
+        ]
     ),
     add_cum_win_points,
     add_win_streak,
@@ -75,10 +82,10 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
             "round_number",
             "score",
             "oppo_score",
-            "goals",
-            "oppo_goals",
-            "behinds",
-            "oppo_behinds",
+            "team_goals",
+            "oppo_team_goals",
+            "team_behinds",
+            "oppo_team_behinds",
             "result",
             "oppo_result",
             "margin",

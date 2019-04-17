@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import Ridge, Lasso
 from sklearn.pipeline import make_pipeline
+from sklearn.externals import joblib
 from faker import Faker
 
 from machine_learning.ml_estimators import BaggingEstimator
@@ -30,10 +31,14 @@ class TestBaggingEstimator(TestCase):
         pipeline = make_pipeline(
             AveragingRegressor([("ridge", Ridge()), ("lasso", Lasso())])
         )
-        self.model = BaggingEstimator(pipeline=pipeline)
+        self.model = BaggingEstimator(pipeline=pipeline, name="tipresias")
 
     def test_predict(self):
         self.model.fit(self.X, self.y)
         predictions = self.model.predict(self.X)
 
         self.assertIsInstance(predictions, np.ndarray)
+
+    def test_pickle_file_compatibility(self):
+        loaded_model = joblib.load(self.model.pickle_filepath())
+        self.assertIsInstance(loaded_model, BaggingEstimator)

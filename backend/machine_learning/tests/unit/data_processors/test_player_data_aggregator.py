@@ -4,10 +4,7 @@ import pandas as pd
 import numpy as np
 
 from machine_learning.data_processors import PlayerDataAggregator
-from machine_learning.data_processors.player_data_aggregator import (
-    REQUIRED_COLS,
-    STATS_COLS,
-)
+from machine_learning.data_processors.player_data_aggregator import REQUIRED_COLS, STATS_COLS
 
 FAKE = Faker()
 N_ROWS = 10
@@ -31,7 +28,7 @@ class TestPlayerDataAggregator(TestCase):
                     "score": np.random.randint(50, 150, N_ROWS),
                     "oppo_score": np.random.randint(50, 150, N_ROWS),
                     "at_home": ([1] * 5) + ([0] * 5),
-                    "player_id": [str(n) for n in range(N_ROWS)],
+                    "player_id": [n for n in range(N_ROWS)],
                     "player_name": [FAKE.name() for _ in range(N_ROWS)],
                 },
                 **{
@@ -55,13 +52,13 @@ class TestPlayerDataAggregator(TestCase):
 
             # Match data should remain unchanged (requires a little extra manipulation,
             # because I can't be bothred to make the score data realistic)
-            for idx, value in enumerate(
-                valid_data_frame.groupby("team")["score"].mean().astype(int)
+            for idx, value in (
+                enumerate(valid_data_frame.groupby("team")["score"].mean().astype(int))
             ):
                 self.assertEqual(value, transformed_df["score"].iloc[idx])
 
-            for idx, value in enumerate(
-                valid_data_frame.groupby("team")["oppo_score"].mean().astype(int)
+            for idx, value in (
+                enumerate(valid_data_frame.groupby("team")["oppo_score"].mean().astype(int))
             ):
                 self.assertEqual(value, transformed_df["oppo_score"].iloc[idx])
 

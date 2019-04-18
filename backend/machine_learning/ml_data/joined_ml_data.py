@@ -1,6 +1,8 @@
 """Module for machine learning data class that joins various data sources together"""
 
-from typing import List, Dict
+from typing import Type, List, Dict, Any, Tuple
+from functools import reduce
+
 import pandas as pd
 
 from machine_learning.data_processors import FeatureBuilder
@@ -8,60 +10,31 @@ from machine_learning.data_processors.feature_calculation import (
     feature_calculator,
     calculate_division,
     calculate_multiplication,
-    calculate_rolling_rate,
 )
-from machine_learning.types import YearPair, DataFrameTransformer, CalculatorPair
+from machine_learning.types import YearPair, DataFrameTransformer
 from machine_learning.utils import DataTransformerMixin
 from machine_learning.data_config import CATEGORY_COLS
-from machine_learning.data_transformation import data_cleaning
-from machine_learning.ml_data import PlayerMLData, MatchMLData, BettingMLData
 from . import BaseMLData
+from . import BettingMLData
+from . import MatchMLData
+from . import PlayerMLData
 
-MATCH_STATS_COLS = [
-    "team",
-    "year",
-    "round_number",
-    "score",
-    "oppo_score",
-    "goals",
-    "oppo_goals",
-    "behinds",
-    "oppo_behinds",
-    "result",
-    "oppo_result",
-    "margin",
-    "oppo_margin",
-    "out_of_state",
-    "at_home",
-    "oppo_team",
-    "venue",
-    "round_type",
-    "date",
-]
 
-FEATURE_CALCS: List[CalculatorPair] = [
-    (calculate_division, [("elo_rating", "win_odds")]),
-    (calculate_rolling_rate, [("prev_match_result",), ("betting_pred_win",)]),
-    (calculate_multiplication, [("win_odds", "ladder_position")]),
-]
-
-FEATURE_FUNCS: List[DataFrameTransformer] = [feature_calculator(FEATURE_CALCS)]
+START_DATE = "1965-01-01"
 
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
-    data_cleaning.clean_joined_data,
     FeatureBuilder(
-        feature_funcs=FEATURE_FUNCS, index_cols=["team", "year", "round_number"]
-    ).transform,
+        feature_funcs=[
+            feature_calculator(
+                [
+                    (calculate_division, [("elo_rating", "win_odds")]),
+                    (calculate_multiplication, [("win_odds", "ladder_position")]),
+                ]
+            )
+        ]
+    ).transform
 ]
-
-DATA_READERS: Dict[str, BaseMLData] = {
-    # Defaulting to start_date as the 1965 season, because earlier seasons don't
-    # have much in the way of player stats, just goals and behinds, which we
-    # already have at the team level.
-    "player": PlayerMLData(),
-    "match": MatchMLData(),
-    "betting": BettingMLData(),
-}
+DATA_READERS: List[Type[BaseMLData]] = [BettingMLData, PlayerMLData, MatchMLData]
 
 
 class JoinedMLData(BaseMLData, DataTransformerMixin):
@@ -69,54 +42,78 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
 
     def __init__(
         self,
-        data_readers: Dict[str, BaseMLData] = DATA_READERS,
+        data_readers: List[Type[BaseMLData]] = DATA_READERS,
+        data_reader_kwargs: List[Dict[str, Any]] = [{}, {}, {}],
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         category_cols: List[str] = CATEGORY_COLS,
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         fetch_data: bool = False,
     ) -> None:
+        if len(data_readers) != len(data_reader_kwargs):
+            raise ValueError(
+                "There must be exactly one kwarg object per data reader object."
+            )
+
         super().__init__(
             train_years=train_years, test_years=test_years, fetch_data=fetch_data
         )
 
         self._data_transformers = data_transformers
-        self.data_readers = data_readers
-        self._data = None
-        self.category_cols = category_cols
+
+        data_frame = reduce(
+            self.__concat_data_frames, zip(data_readers, data_reader_kwargs), None
+        )
+        numeric_data_frame = data_frame.select_dtypes(include="number").fillna(0)
+
+        if category_cols is None:
+            category_data_frame = data_frame.drop(numeric_data_frame.columns, axis=1)
+        else:
+            category_data_frame = data_frame[category_cols]
+
+        sorted_data_frame = pd.concat([category_data_frame, numeric_data_frame], axis=1)
+
+        self._data = (
+            self._compose_transformers(sorted_data_frame)  # pylint: disable=E1102
+            .dropna()
+            .sort_index()
+        )
+
+        # For some reason the 'date' column in MatchMLData gets converted from 'datetime64'
+        # to 'object' as part of the concatenation process.
+        if "date" in self._data.columns:
+            self._data.loc[:, "date"] = self._data["date"].pipe(pd.to_datetime)
 
     @property
     def data(self) -> pd.DataFrame:
-        if self._data is None:
-            player_data = self.data_readers["player"].data
-            match_data = self.data_readers["match"].data
-            betting_data = self.data_readers["betting"].data
-
-            self._data = (
-                self._compose_transformers(  # pylint: disable=E1102
-                    [player_data, match_data, betting_data]
-                )
-                .pipe(self.__sort_data_frame_columns)
-                .dropna()
-                .sort_index()
-                # TODO: This is only a temporary renaming to keep column names
-                # consistent with saved models in order to avoid having to retrain them
-                .rename(columns=lambda col: col.replace("team_goals", "goals"))
-                .rename(columns=lambda col: col.replace("team_behinds", "behinds"))
-            )
-
         return self._data
 
     @property
     def data_transformers(self):
         return self._data_transformers
 
-    def __sort_data_frame_columns(self, data_frame: pd.DataFrame) -> pd.DataFrame:
-        numeric_data_frame = data_frame.select_dtypes(include="number").fillna(0)
+    def __concat_data_frames(
+        self,
+        concated_data_frame: pd.DataFrame,
+        data: Tuple[Type[BaseMLData], Dict[str, Any]],
+    ) -> pd.DataFrame:
+        data_reader, data_kwargs = data
+        data_reader_kwargs = {**data_kwargs, **{"fetch_data": self.fetch_data}}
+        data_frame = data_reader(**data_reader_kwargs).data
 
-        if self.category_cols is None:
-            category_data_frame = data_frame.drop(numeric_data_frame.columns, axis=1)
-        else:
-            category_data_frame = data_frame[self.category_cols]
+        if concated_data_frame is None:
+            return data_frame
 
-        return pd.concat([category_data_frame, numeric_data_frame], axis=1)
+        agg_cols = set(concated_data_frame.columns)
+        df_cols = set(data_frame.columns)
+        drop_cols = agg_cols.intersection(df_cols)
+
+        # Have to drop shared columns, and this seems a reasonable way of doing it
+        # without hard-coding values.
+        # TODO: Make this a little more robust by doing some fillna with shared columns,
+        # because this currently relies on ordering data from smallest to largest
+        # and knowing that larger datasets contain all shared data contained in
+        # smaller data sets plus more.
+        return pd.concat(
+            [concated_data_frame.drop(list(drop_cols), axis=1), data_frame], axis=1
+        )

@@ -6,7 +6,6 @@ from sklearn.linear_model import Ridge
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import make_pipeline
-from sklearn.externals import joblib
 from faker import Faker
 
 from project.settings.common import BASE_DIR
@@ -45,14 +44,10 @@ class TestBenchmarkEstimator(TestCase):
             ),
             Ridge(),
         )
-        self.model = BenchmarkEstimator(pipeline=pipeline, name="benchmark_estimator")
+        self.model = BenchmarkEstimator(pipeline=pipeline)
 
     def test_predict(self):
         self.model.fit(self.X, self.y)
         predictions = self.model.predict(self.X)
 
         self.assertIsInstance(predictions, np.ndarray)
-
-    def test_pickle_file_compatibility(self):
-        loaded_model = joblib.load(self.model.pickle_filepath())
-        self.assertIsInstance(loaded_model, BenchmarkEstimator)

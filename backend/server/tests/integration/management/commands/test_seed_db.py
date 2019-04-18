@@ -37,7 +37,7 @@ class TestSeedDb(TestCase):
         self.betting_data_frame = self.__generate_betting_data_frame(range(*data_years))
 
         with patch(
-            "machine_learning.ml_data.betting_ml_data.FootywireDataImporter"
+            "machine_learning.ml_data.betting_ml_data.FootywireDataReader"
         ) as MockDataReader:
             MockDataReader.return_value.get_fixture = Mock(
                 side_effect=self.__fixture_side_effect
@@ -47,14 +47,13 @@ class TestSeedDb(TestCase):
             )
 
             self.seed_command = seed_db.Command(
-                estimators=[TestEstimator()],
+                estimators=[(TestEstimator(), BettingMLData)],
                 data_reader=MockDataReader(),
-                data=BettingMLData(),
             )
 
     def test_handle(self):
         with patch(
-            "machine_learning.ml_data.betting_ml_data.FootywireDataImporter"
+            "machine_learning.ml_data.betting_ml_data.FootywireDataReader"
         ) as MockDataReader:
             MockDataReader.return_value.get_fixture = Mock(
                 side_effect=self.__fixture_side_effect

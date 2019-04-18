@@ -27,13 +27,6 @@ class BaseMLData:
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data"""
 
-        if len(self.data.index.names) != 3:
-            raise ValueError(
-                "The index of the data frame must have 3 levels. The expected indexes "
-                "are ['team', 'year', 'round_number'], but the index names are: "
-                f"{self.data.index.names}"
-            )
-
         data_train = self.data.loc[
             (slice(None), slice(*self.train_years), slice(None)), :
         ]
@@ -45,13 +38,6 @@ class BaseMLData:
 
     def test_data(self, test_round=None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce test data"""
-
-        if len(self.data.index.names) != 3:
-            raise ValueError(
-                "The index of the data frame must have 3 levels. The expected indexes "
-                "are ['team', 'year', 'round_number'], but the index names are: "
-                f"{self.data.index.names}"
-            )
 
         data_test = self.data.loc[
             (slice(None), slice(*self.test_years), slice(test_round, test_round)), :
@@ -90,15 +76,14 @@ class BaseMLData:
     @staticmethod
     def __X(data_frame: pd.DataFrame) -> pd.DataFrame:
         labels = [
-            "(?:oppo_)?score",
-            "(?:oppo_)?(?:team)?_behinds",
-            "(?:oppo_)?(?:team)?_goals",
-            "(?:oppo_)?margin",
-            "(?:oppo_)?result",
+            "(?:oppo_)*score",
+            "(?:oppo_)*behinds",
+            "(?:oppo_)*goals",
+            "(?:oppo_)*margin",
+            "(?:oppo_)*result",
         ]
         label_cols = data_frame.filter(regex=f"^{'$|^'.join(labels)}$").columns
         features = data_frame.drop(label_cols, axis=1)
-
         numeric_features = features.select_dtypes("number").astype(float)
         categorical_features = features.select_dtypes(exclude=["number", "datetime"])
 

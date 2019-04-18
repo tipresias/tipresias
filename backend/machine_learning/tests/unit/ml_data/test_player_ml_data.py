@@ -21,10 +21,7 @@ match_results_mock = Mock(return_value=match_results_df)
 class TestPlayerMLData(TestCase):
     def setUp(self):
         self.data = PlayerMLData(
-            data_readers={
-                "player": (get_afltables_stats_mock, {}),
-                "match": (match_results_mock, {}),
-            }
+            data_readers=[get_afltables_stats_mock, match_results_mock]
         )
 
     def test_train_data(self):

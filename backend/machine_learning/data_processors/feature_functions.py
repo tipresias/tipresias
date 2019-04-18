@@ -356,6 +356,7 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
     """Replace players' invidual match stats with rolling averages of those stats"""
 
     STATS_COLS = [
+        "player_id",
         "kicks",
         "marks",
         "handballs",
@@ -380,21 +381,21 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
     ]
 
     rolling_stats_cols = {
-        stats_col: f"rolling_prev_match_{stats_col}" for stats_col in STATS_COLS
+        stats_col: f"rolling_prev_match_{stats_col}"
+        for stats_col in STATS_COLS
+        if stats_col != "player_id"
     }
 
-    if any(
-        [req_col not in data_frame.columns for req_col in STATS_COLS + ["player_id"]]
-    ):
+    if any([req_col not in data_frame.columns for req_col in STATS_COLS]):
         raise ValueError(
             "To calculate rolling player stats, the stats columns "
-            f"{STATS_COLS} and 'player_id' must be in the data frame, but the columns "
+            f"{STATS_COLS} must be in the data frame, but the columns"
             f"given were {list(data_frame.columns)}"
         )
 
     player_data_frame = data_frame.sort_values(["player_id", "year", "round_number"])
     player_groups = (
-        player_data_frame[STATS_COLS + ["player_id"]]
+        player_data_frame[STATS_COLS]
         .groupby("player_id", group_keys=False)
         .shift()
         .assign(player_id=player_data_frame["player_id"])
@@ -405,15 +406,12 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
     rolling_stats = player_groups.rolling(window=23).mean()
     expanding_stats = player_groups.expanding(1).mean()
 
-    player_stats = rolling_stats.fillna(expanding_stats).sort_index()
+    player_stats = (
+        rolling_stats.fillna(expanding_stats).sort_index()
+    )
 
-    return (
-        player_data_frame.assign(**player_stats.to_dict("series")).rename(
-            columns=rolling_stats_cols
-        )
-        # Data types get inferred when assigning dictionary columns, which converts
-        # 'player_id' to float
-        .astype({"player_id": str})
+    return player_data_frame.assign(**player_stats.to_dict("series")).rename(
+        columns=rolling_stats_cols
     )
 
 
@@ -461,7 +459,9 @@ def _calculate_elo_rating(prev_match: pd.Series, cum_elo_ratings: pd.Series, yea
                 "index values."
             )
 
-        prev_oppo_elo_rating = cum_elo_ratings.loc[prev_year, prev_round, prev_match["oppo_team"]]
+        prev_oppo_elo_rating = cum_elo_ratings.loc[
+            prev_year, prev_round, prev_match["oppo_team"]
+        ]
         prev_margin = prev_match["score"] - prev_match["oppo_score"]
         prev_at_home = bool(prev_match["at_home"])
 
@@ -558,7 +558,7 @@ def _shift_features(columns: List[str], shift: bool, data_frame: pd.DataFrame):
 
     if any((shift_col not in data_frame.columns for shift_col in columns_to_shift)):
         raise ValueError(
-            f"To calculate shifted_team_features, all shift columns ({columns_to_shift}) "
+            f"To calculate betting predicted win, all shift columns ({columns_to_shift}) "
             "must be in data frame, but the columns given were "
             f"{data_frame.columns}"
         )

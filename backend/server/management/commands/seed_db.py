@@ -2,7 +2,8 @@
 
 import itertools
 from functools import partial
-from typing import Tuple, List, Optional
+from pydoc import locate
+from typing import Tuple, List, Optional, Type
 from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
@@ -10,7 +11,7 @@ from django import utils
 from django.core.management.base import BaseCommand
 
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
-from machine_learning.data_import import FootywireDataImporter
+from machine_learning.data_readers import FootywireDataReader
 from machine_learning.ml_estimators import BaseMLEstimator
 from machine_learning.ml_data import BaseMLData, JoinedMLData
 from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
@@ -27,11 +28,12 @@ FixtureData = TypedDict(
         "venue": str,
     },
 )
+EstimatorTuple = Tuple[BaseMLEstimator, Type[BaseMLData]]
 
 YEAR_RANGE = "2014-2019"
-ESTIMATORS: List[BaseMLEstimator] = [
-    BenchmarkEstimator(name="benchmark_estimator"),
-    BaggingEstimator(name="tipresias"),
+ESTIMATORS: List[EstimatorTuple] = [
+    (BenchmarkEstimator(name="benchmark_estimator"), JoinedMLData),
+    (BaggingEstimator(name="tipresias"), JoinedMLData),
 ]
 NO_SCORE = 0
 JAN = 1
@@ -43,16 +45,14 @@ class Command(BaseCommand):
     def __init__(
         self,
         *args,
-        data_reader=FootywireDataImporter(),
-        estimators: List[BaseMLEstimator] = ESTIMATORS,
-        data=JoinedMLData(fetch_data=True),
+        data_reader=FootywireDataReader(),
+        estimators: List[EstimatorTuple] = ESTIMATORS,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
         self.data_reader = data_reader
         self.estimators = estimators
-        self.data = data
 
     def handle(  # pylint: disable=W0221
         self, *_args, year_range: str = YEAR_RANGE, verbose: int = 1, **_kwargs
@@ -110,7 +110,10 @@ class Command(BaseCommand):
             print("Teams seeded!")
 
     def __create_ml_models(self) -> List[MLModel]:
-        ml_models = [self.__build_ml_model(estimator) for estimator in self.estimators]
+        ml_models = [
+            self.__build_ml_model(estimator, data_class)
+            for estimator, data_class in self.estimators
+        ]
 
         if not any(ml_models):
             raise ValueError("Something went wrong and no ML models were saved.")
@@ -197,11 +200,29 @@ class Command(BaseCommand):
             print(f"\nMaking predictions with {ml_model_record.name}...")
 
         estimator = ml_model_record.load_estimator()
+        data_class = locate(ml_model_record.data_class_path)
+
+        if (
+            data_class is None
+            or not isinstance(data_class, type)
+            or not issubclass(data_class, BaseMLData)
+        ):
+            raise ValueError(
+                f"Data class found at {ml_model_record.data_class_path} is not an "
+                "instance of BaseMLData. Check associated model "
+                f"{ml_model_record.name}."
+            )
+
+        # I know we've already checked if it's None, but mypy kept complaining until
+        # I added this check for some reason.
+        if data_class is not None:
+            data = data_class(fetch_data=True)
 
         make_year_predictions = partial(
             self.__make_year_predictions,
             ml_model_record,
             estimator,
+            data,
             round_number=round_number,
         )
 
@@ -218,6 +239,7 @@ class Command(BaseCommand):
         self,
         ml_model_record: MLModel,
         estimator: BaseMLEstimator,
+        data: BaseMLData,
         year: int,
         round_number: Optional[int] = None,
     ) -> List[Prediction]:
@@ -234,10 +256,10 @@ class Command(BaseCommand):
 
             return []
 
-        self.data.train_years = (None, year - 1)
-        self.data.test_years = (year, year)
+        data.train_years = (None, year - 1)
+        data.test_years = (year, year)
         data_row_slice = (slice(None), year, slice(round_number, round_number))
-        prediction_data = self.__predict(estimator, self.data, data_row_slice)
+        prediction_data = self.__predict(estimator, data, data_row_slice)
 
         if prediction_data is None:
             return []
@@ -278,9 +300,13 @@ class Command(BaseCommand):
         return data.data.loc[data_row_slice, :].assign(predicted_margin=y_pred)
 
     @staticmethod
-    def __build_ml_model(estimator: BaseMLEstimator) -> MLModel:
+    def __build_ml_model(
+        estimator: BaseMLEstimator, data_class: Type[BaseMLData]
+    ) -> MLModel:
         ml_model_record = MLModel(
-            name=estimator.name, filepath=estimator.pickle_filepath()
+            name=estimator.name,
+            data_class_path=data_class.class_path(),
+            filepath=estimator.pickle_filepath(),
         )
         ml_model_record.full_clean()
 

@@ -55,19 +55,9 @@ class OppoFeatureBuilder:
             .sort_index()
         )
 
-        concated_data_frame = pd.concat(
+        return pd.concat(
             [transform_data_frame, self.__oppo_features(transform_data_frame)], axis=1
         )
-
-        are_duplicate_columns = concated_data_frame.columns.duplicated()
-        if are_duplicate_columns.any():
-            raise ValueError(
-                "The data frame with 'oppo' features added has duplicate columns."
-                "The offending columns are: "
-                f"{concated_data_frame.columns[are_duplicate_columns]}"
-            )
-
-        return concated_data_frame
 
     def __cols_to_convert(self, data_frame: pd.DataFrame) -> List[str]:
         if any(self.oppo_feature_cols):

@@ -13,7 +13,7 @@ TEAM_TRANSLATIONS = {
 }
 
 
-class FitzroyDataReader:
+class FitzroyDataImporter:
     """Get data from the fitzRoy R package and return it as a pandas DataFrame."""
 
     def __init__(self):

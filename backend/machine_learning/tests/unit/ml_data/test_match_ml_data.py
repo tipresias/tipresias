@@ -31,11 +31,20 @@ fixture_mock = Mock(return_value=fixture_mock_df)
 
 class TestMatchMLData(TestCase):
     def setUp(self):
-        self.data = MatchMLData(data_readers=[match_results_mock, fixture_mock])
+        self.data = MatchMLData(
+            data_readers={
+                "match": (match_results_mock, {}),
+                "fixture": (fixture_mock, {}),
+            }
+        )
 
     def test_fetch_data(self):
         fetched_data = MatchMLData(
-            data_readers=[match_results_mock, fixture_mock], fetch_data=True
+            data_readers={
+                "match": (match_results_mock, {}),
+                "fixture": (fixture_mock, {}),
+            },
+            fetch_data=True,
         )
         current_year = date.today().year
 
@@ -48,10 +57,10 @@ class TestMatchMLData(TestCase):
         self.assertIsInstance(y_train, pd.Series)
         self.assertNotIn("score", X_train.columns)
         self.assertNotIn("oppo_score", X_train.columns)
-        self.assertNotIn("goals", X_train.columns)
-        self.assertNotIn("oppo_goals", X_train.columns)
-        self.assertNotIn("behinds", X_train.columns)
-        self.assertNotIn("oppo_behinds", X_train.columns)
+        self.assertNotIn("team_goals", X_train.columns)
+        self.assertNotIn("oppo_team_goals", X_train.columns)
+        self.assertNotIn("team_behinds", X_train.columns)
+        self.assertNotIn("oppo_team_behinds", X_train.columns)
         self.assertNotIn("margin", X_train.columns)
         self.assertNotIn("result", X_train.columns)
 
@@ -67,10 +76,10 @@ class TestMatchMLData(TestCase):
         self.assertIsInstance(y_test, pd.Series)
         self.assertNotIn("score", X_test.columns)
         self.assertNotIn("oppo_score", X_test.columns)
-        self.assertNotIn("goals", X_test.columns)
-        self.assertNotIn("oppo_goals", X_test.columns)
-        self.assertNotIn("behinds", X_test.columns)
-        self.assertNotIn("oppo_behinds", X_test.columns)
+        self.assertNotIn("team_goals", X_test.columns)
+        self.assertNotIn("oppo_team_goals", X_test.columns)
+        self.assertNotIn("team_behinds", X_test.columns)
+        self.assertNotIn("oppo_team_behinds", X_test.columns)
         self.assertNotIn("result", X_test.columns)
 
         # Applying StandardScaler to integer columns raises a warning

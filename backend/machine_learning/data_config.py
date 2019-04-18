@@ -80,6 +80,7 @@ FOOTYWIRE_VENUE_TRANSLATIONS = {
     "TIO Stadium": "Marrara Oval",
     "Westpac Stadium": "Wellington",
     "Marvel Stadium": "Docklands",
+    "Canberra Oval": "Manuka Oval",
 }
 
 CITIES = {
@@ -146,6 +147,7 @@ VENUE_CITIES = {
     "Docklands": "Melbourne",
     "York Park": "Launceston",
     "Manuka Oval": "Canberra",
+    "Canberra Oval": "Canberra",
     "Sydney Showground": "Sydney",
     "Adelaide Oval": "Adelaide",
     "Bellerive Oval": "Hobart",

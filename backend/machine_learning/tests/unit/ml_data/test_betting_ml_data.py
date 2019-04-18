@@ -1,6 +1,5 @@
 from unittest import TestCase
 import pandas as pd
-import numpy as np
 from faker import Faker
 
 from machine_learning.ml_data import BettingMLData

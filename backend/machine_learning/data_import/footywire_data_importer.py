@@ -1,4 +1,4 @@
-"""Module for FootywireDataReader, which scrapes footywire.com.au for betting & match data"""
+"""Module for FootywireDataImporter, which scrapes footywire.com.au for betting & match data"""
 
 from typing import Optional, Tuple, List, Pattern
 import warnings
@@ -64,7 +64,7 @@ FINALS_WEEK_ONE: Pattern = re.compile(r"Finals\s+Week\s+One", flags=re.I)
 warnings.simplefilter("ignore", SystemTimeWarning)
 
 
-class FootywireDataReader:
+class FootywireDataImporter:
     """Get data from footywire.com.au by scraping page or reading saved CSV"""
 
     def __init__(

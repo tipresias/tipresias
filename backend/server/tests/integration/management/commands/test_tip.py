@@ -8,7 +8,7 @@ import pandas as pd
 
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import tip
-from machine_learning.data_readers import FootywireDataReader
+from machine_learning.data_import import FootywireDataImporter
 from machine_learning.ml_data import BettingMLData
 from machine_learning.tests.fixtures import TestEstimator
 
@@ -52,7 +52,7 @@ class TestTip(TestCase):
                 "season": year,
                 "round": 1,
                 "round_label": "Round 1",
-                "crows": 1234,
+                "crowd": 1234,
                 "home_team": team_names.pop(),
                 "away_team": team_names.pop(),
                 "home_score": 50,
@@ -62,7 +62,7 @@ class TestTip(TestCase):
             for idx in range(ROW_COUNT)
         ]
 
-        footywire = FootywireDataReader()
+        footywire = FootywireDataImporter()
         footywire.get_fixture = Mock(return_value=pd.DataFrame(self.fixture_data))
 
         # Mock bulk_create to make assertions on calls
@@ -86,7 +86,9 @@ class TestTip(TestCase):
         ).save()
 
         # Not fetching data, because it takes forever
-        self.tip_command = tip.Command(data_reader=footywire, fetch_data=False)
+        self.tip_command = tip.Command(
+            data_reader=footywire, fetch_data=False, data=BettingMLData()
+        )
 
     def test_handle(self):
         with self.subTest("with no existing match records in DB"):

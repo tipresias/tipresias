@@ -80,6 +80,7 @@ FOOTYWIRE_VENUE_TRANSLATIONS = {
     "TIO Stadium": "Marrara Oval",
     "Westpac Stadium": "Wellington",
     "Marvel Stadium": "Docklands",
+    "Canberra Oval": "Manuka Oval",
 }
 
 CITIES = {
@@ -194,6 +195,7 @@ VENUE_CITIES = {
     "TIO Stadium": "Darwin",
     "Westpac Stadium": "Wellington",
     "Marvel Stadium": "Melbourne",
+    "Canberra Oval": "Canberra",
 }
 
 TEAM_NAMES = sorted(["Fitzroy", "University"] + list(set(TEAM_TRANSLATIONS.values())))

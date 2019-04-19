@@ -31,10 +31,6 @@ FixtureData = TypedDict(
 )
 
 NO_SCORE = 0
-ML_MODELS = [
-    (BenchmarkEstimator(name="all_data"), JoinedMLData),
-    (BaggingEstimator(name="avg_predictions"), JoinedMLData),
-]
 
 
 class Command(BaseCommand):

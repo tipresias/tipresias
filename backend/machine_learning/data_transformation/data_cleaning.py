@@ -312,6 +312,8 @@ def clean_player_data(
         )
         .pipe(_filter_out_dodgy_data(["year", "round_number", "player_id"]))
         .drop("venue", axis=1)
+        # brownlow_votes aren't known until the end of the season
+        .fillna({"brownlow_votes": 0})
         # As of 11-10-2018, match_results is still missing finals data from 2018.
         # Joining on date/venue leaves two duplicates played at M.C.G.
         # on 29-4-1986 & 9-8-1986, but that's an acceptable loss of data

@@ -88,8 +88,11 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
     @property
     def data(self) -> pd.DataFrame:
         if self._data is None:
+            self.data_readers["player"].fetch_data = self.fetch_data
             player_data = self.data_readers["player"].data
+            self.data_readers["match"].fetch_data = self.fetch_data
             match_data = self.data_readers["match"].data
+            self.data_readers["betting"].fetch_data = self.fetch_data
             betting_data = self.data_readers["betting"].data
 
             self._data = (

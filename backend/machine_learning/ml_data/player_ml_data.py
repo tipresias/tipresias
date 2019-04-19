@@ -153,7 +153,7 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
 
     @staticmethod
     def __upcoming_round_number(match_data: pd.DataFrame, current_year: int) -> int:
-        if match_data["year"].max() == current_year:
-            return match_data.query("year == @current_year")["round_number"].max() + 1
+        if match_data["season"].max() == current_year:
+            return match_data.query("season == @current_year")["round_number"].max() + 1
 
         return 1

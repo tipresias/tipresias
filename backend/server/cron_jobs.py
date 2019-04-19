@@ -7,7 +7,7 @@ import pandas as pd
 # TODO: These commands need to be refactored, then the refactored classes/functions
 # used in this cron job, but I want to get something working, so I'm gonna be lazy
 from server.management.commands import tip, send_email
-from machine_learning.data_readers import FootywireDataReader
+from machine_learning.data_import import FootywireDataImporter
 from project.settings.common import MELBOURNE_TIMEZONE
 
 # Note that Python starts weeks on Monday (index = 0) and ends them on Sunday
@@ -26,7 +26,7 @@ class SendTips(CronJobBase):
     schedule = Schedule(run_at_times=RUN_AT_TIMES)
     code = "tipresias.send_tips"
 
-    def __init__(self, data_reader=FootywireDataReader()):
+    def __init__(self, data_reader=FootywireDataImporter()):
         super().__init__()
 
         # TODO: Need to set server timezone to Melbourne time for this to work as

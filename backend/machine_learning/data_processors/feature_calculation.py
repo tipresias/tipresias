@@ -1,15 +1,16 @@
-from typing import Tuple, List, Callable, Sequence, Dict
+from typing import List, Sequence, Dict
 from functools import partial, reduce
 import itertools
 import pandas as pd
 import numpy as np
 
-from machine_learning.types import DataFrameTransformer
+from machine_learning.types import (
+    DataFrameTransformer,
+    CalculatorPair,
+    Calculator,
+    DataFrameCalculator,
+)
 from machine_learning.data_config import AVG_SEASON_LENGTH
-
-DataFrameCalculator = Callable[[pd.DataFrame], pd.Series]
-Calculator = Callable[[Sequence[str]], DataFrameCalculator]
-CalculatorPair = Tuple[Calculator, List[Sequence[str]]]
 
 TEAM_LEVEL = 0
 # Varies by season and number of teams, but teams play each other about 1.5 times per season,

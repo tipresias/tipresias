@@ -2,7 +2,6 @@
 
 import os
 from functools import partial, reduce
-from pydoc import locate
 from datetime import datetime
 from typing import List, Optional
 from mypy_extensions import TypedDict
@@ -14,9 +13,8 @@ from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from machine_learning.data_readers import FootywireDataReader
-from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
-from machine_learning.ml_data import JoinedMLData, BaseMLData
+from machine_learning.data_import import FootywireDataImporter
+from machine_learning.ml_data import JoinedMLData
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -32,10 +30,6 @@ FixtureData = TypedDict(
 )
 
 NO_SCORE = 0
-ML_MODELS = [
-    (BenchmarkEstimator(name="all_data"), JoinedMLData),
-    (BaggingEstimator(name="avg_predictions"), JoinedMLData),
-]
 
 
 class Command(BaseCommand):
@@ -47,15 +41,21 @@ class Command(BaseCommand):
     """
 
     def __init__(
-        self, *args, data_reader=FootywireDataReader(), fetch_data=True, **kwargs
+        self,
+        *args,
+        data_reader=FootywireDataImporter(),
+        fetch_data=True,
+        data=JoinedMLData(fetch_data=True),
+        **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
         self.data_reader = data_reader
-        self.fetch_data = fetch_data
         # Fixture data uses UTC
         self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.current_year = self.right_now.year
+        self.fetch_data = fetch_data
+        self.data = data
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
         """Run 'tip' command"""
@@ -242,29 +242,12 @@ class Command(BaseCommand):
             print(f"\tMaking predictions with {ml_model_record.name}")
 
         loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model_record.filepath))
-        data_class = locate(ml_model_record.data_class_path)
-
-        if (
-            data_class is None
-            or not isinstance(data_class, type)
-            or not issubclass(data_class, BaseMLData)
-        ):
-            raise ValueError(
-                f"Data class found at {ml_model_record.data_class_path} is not an "
-                "instance of BaseMLData. Check associated model "
-                f"{ml_model_record.name}."
-            )
-
-        # I know we've already checked if it's None, but mypy kept complaining until
-        # I added this check for some reason.
-        if data_class is not None:
-            data = data_class(test_years=(year, year), fetch_data=self.fetch_data)
-
-        X_test, _ = data.test_data(test_round=round_number)
+        self.data.test_years = (year, year)
+        X_test, _ = self.data.test_data(test_round=round_number)
         y_pred = loaded_model.predict(X_test)
 
         data_row_slice = (slice(None), year, slice(round_number, round_number))
-        prediction_data = data.data.loc[data_row_slice, :].assign(
+        prediction_data = self.data.data.loc[data_row_slice, :].assign(
             predicted_margin=y_pred
         )
 

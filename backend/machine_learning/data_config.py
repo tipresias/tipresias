@@ -147,7 +147,6 @@ VENUE_CITIES = {
     "Docklands": "Melbourne",
     "York Park": "Launceston",
     "Manuka Oval": "Canberra",
-    "Canberra Oval": "Canberra",
     "Sydney Showground": "Sydney",
     "Adelaide Oval": "Adelaide",
     "Bellerive Oval": "Hobart",
@@ -196,6 +195,7 @@ VENUE_CITIES = {
     "TIO Stadium": "Darwin",
     "Westpac Stadium": "Wellington",
     "Marvel Stadium": "Melbourne",
+    "Canberra Oval": "Canberra",
 }
 
 TEAM_NAMES = sorted(["Fitzroy", "University"] + list(set(TEAM_TRANSLATIONS.values())))

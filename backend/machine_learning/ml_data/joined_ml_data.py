@@ -8,7 +8,6 @@ from machine_learning.data_processors.feature_calculation import (
     feature_calculator,
     calculate_division,
     calculate_multiplication,
-    calculate_rolling_rate,
 )
 from machine_learning.types import YearPair, DataFrameTransformer, CalculatorPair
 from machine_learning.utils import DataTransformerMixin
@@ -41,7 +40,6 @@ MATCH_STATS_COLS = [
 
 FEATURE_CALCS: List[CalculatorPair] = [
     (calculate_division, [("elo_rating", "win_odds")]),
-    (calculate_rolling_rate, [("prev_match_result",), ("betting_pred_win",)]),
     (calculate_multiplication, [("win_odds", "ladder_position")]),
 ]
 

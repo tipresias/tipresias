@@ -86,8 +86,11 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
             "oppo_team_goals",
             "team_behinds",
             "oppo_team_behinds",
-            "result",
-            "oppo_result",
+            # TODO: I have to omit these columns, because I accidentally left them in
+            # when building betting features, and I need the columns to be the same
+            # in order not to retrain my saved models.
+            # "result",
+            # "oppo_result",
             "margin",
             "oppo_margin",
             "out_of_state",

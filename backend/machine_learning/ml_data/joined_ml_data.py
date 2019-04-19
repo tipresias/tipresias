@@ -12,7 +12,7 @@ from machine_learning.data_processors.feature_calculation import (
 )
 from machine_learning.types import YearPair, DataFrameTransformer, CalculatorPair
 from machine_learning.utils import DataTransformerMixin
-from machine_learning.data_config import CATEGORY_COLS
+from machine_learning.data_config import CATEGORY_COLS, ORIGINAL_COLUMNS
 from machine_learning.data_transformation import data_cleaning
 from machine_learning.ml_data import PlayerMLData, MatchMLData, BettingMLData
 from . import BaseMLData
@@ -106,6 +106,11 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
                 # consistent with saved models in order to avoid having to retrain them
                 .rename(columns=lambda col: col.replace("team_goals", "goals"))
                 .rename(columns=lambda col: col.replace("team_behinds", "behinds"))
+                # TODO: The data refactor reordered the columns, which completely
+                # messed up predictions. I don't want to retrain the models, so I'll
+                # just use the original column list to make sure they're in the same
+                # order as before, and figure out a better solution later
+                .loc[:, ORIGINAL_COLUMNS]
             )
 
         return self._data

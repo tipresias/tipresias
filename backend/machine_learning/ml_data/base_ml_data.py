@@ -91,8 +91,8 @@ class BaseMLData:
     def __X(data_frame: pd.DataFrame) -> pd.DataFrame:
         labels = [
             "(?:oppo_)?score",
-            "(?:oppo_)?(?:team)?_behinds",
-            "(?:oppo_)?(?:team)?_goals",
+            "(?:oppo_)?(?:team_)?behinds",
+            "(?:oppo_)?(?:team_)?goals",
             "(?:oppo_)?margin",
             "(?:oppo_)?result",
         ]

@@ -14,7 +14,6 @@ from sklearn.externals import joblib
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from machine_learning.data_import import FootywireDataImporter
-from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
 from machine_learning.ml_data import JoinedMLData
 
 FixtureData = TypedDict(

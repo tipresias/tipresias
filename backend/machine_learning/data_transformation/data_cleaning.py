@@ -214,14 +214,7 @@ def clean_match_data(
         .astype({"year": int, "round_number": int})
         .pipe(
             _filter_out_dodgy_data(
-                duplicate_subset=[
-                    "date",
-                    "venue",
-                    "year",
-                    "round_number",
-                    "home_team",
-                    "away_team",
-                ]
+                duplicate_subset=["year", "round_number", "home_team", "away_team"]
             )
         )
         .assign(match_id=_convert_id_to_string("match_id"))
@@ -310,7 +303,11 @@ def clean_player_data(
             on=["date", "venue"],
             how="left",
         )
-        .pipe(_filter_out_dodgy_data(["year", "round_number", "player_id"]))
+        .pipe(
+            _filter_out_dodgy_data(
+                duplicate_subset=["year", "round_number", "player_id"]
+            )
+        )
         .drop("venue", axis=1)
         # brownlow_votes aren't known until the end of the season
         .fillna({"brownlow_votes": 0})

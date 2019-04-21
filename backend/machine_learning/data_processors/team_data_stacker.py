@@ -44,13 +44,15 @@ class TeamDataStacker:
 
         return (
             pd.concat(team_dfs, join="inner")
+            .sort_values("date", ascending=True)
             # Various finals matches have been draws and replayed,
             # and sometimes home/away is switched requiring us to drop duplicates
             # at the end.
             # This eliminates some matches from Round 15 in 1897, because they
             # played some sort of round-robin tournament for finals, but I'm
             # not too worried about the loss of that data.
-            .drop_duplicates(subset=self.index_cols, keep="last").sort_index()
+            .drop_duplicates(subset=self.index_cols, keep="last")
+            .sort_index()
         )
 
     def __team_df(self, data_frame: pd.DataFrame, team_type: str) -> pd.DataFrame:
@@ -70,9 +72,6 @@ class TeamDataStacker:
             .assign(at_home=at_home_col)
             .set_index(self.index_cols, drop=False)
             .rename_axis([None] * len(self.index_cols))
-            # Gotta drop duplicates, because St Kilda & Carlton tied a Grand Final
-            # in 2010 and had to replay it, so let's just pretend that never happened
-            .drop_duplicates(subset=self.index_cols, keep="last")
         )
 
     @staticmethod

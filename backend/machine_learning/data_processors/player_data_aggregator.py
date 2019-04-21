@@ -98,6 +98,7 @@ class PlayerDataAggregator:
         return (
             agg_data_frame.dropna()
             .reset_index()
+            .sort_values("date")
             .drop_duplicates(subset=self.index_cols, keep="last")
             .astype({match_col: int for match_col in match_stats_cols})
             .set_index(self.index_cols, drop=False)

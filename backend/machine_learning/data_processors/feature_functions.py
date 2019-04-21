@@ -9,7 +9,7 @@ Returns:
     pandas.DataFrame
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Sequence, Set, Union
 import math
 from functools import partial, reduce
 
@@ -48,15 +48,29 @@ S = 250
 SEASON_CARRYOVER = 0.575
 
 
+def _validate_required_columns(
+    required_columns: Union[Set[str], Sequence[str]],
+    data_frame_columns: pd.Index,
+    column_name: str,
+):
+    required_column_set = set(required_columns)
+    data_frame_column_set = set(data_frame_columns)
+    column_intersection = data_frame_column_set.intersection(required_column_set)
+
+    if column_intersection != required_column_set:
+        raise ValueError(
+            f"To calculate {column_name}, all required columns must be in the "
+            "data frame.\n"
+            f"Required columns: {required_column_set}\n"
+            f"Provided columns: {data_frame_column_set}"
+        )
+
+
 def add_result(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's match result (win, draw, loss) as float"""
 
-    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
-        raise ValueError(
-            "To calculate match result, 'score' and 'oppo_score' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"score", "oppo_score"}
+    _validate_required_columns(required_cols, data_frame.columns, "result")
 
     wins = (data_frame["score"] > data_frame["oppo_score"]).astype(int)
     draws = (data_frame["score"] == data_frame["oppo_score"]).astype(int) * 0.5
@@ -67,12 +81,8 @@ def add_result(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_margin(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's margin from the match"""
 
-    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
-        raise ValueError(
-            "To calculate margin, 'score' and 'oppo_score' "
-            "must be in the data frame, but the columns given "
-            f"were {data_frame.columns}"
-        )
+    required_cols = {"score", "oppo_score"}
+    _validate_required_columns(required_cols, data_frame.columns, "margin")
 
     return data_frame.assign(margin=data_frame["score"] - data_frame["oppo_score"])
 
@@ -80,15 +90,8 @@ def add_margin(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative percent (cumulative score / cumulative opponents' score)"""
 
-    if (
-        "prev_match_score" not in data_frame.columns
-        or "prev_match_oppo_score" not in data_frame.columns
-    ):
-        raise ValueError(
-            "To calculate cum percent, 'prev_match_score' and "
-            "'prev_match_oppo_score' must be in the data frame, "
-            f"but the columns given were {data_frame.columns}"
-        )
+    required_cols = {"prev_match_score", "prev_match_oppo_score"}
+    _validate_required_columns(required_cols, data_frame.columns, "cum_percent")
 
     cum_score = (
         data_frame["prev_match_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
@@ -105,12 +108,8 @@ def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_cum_win_points(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative win points (based on cumulative result)"""
 
-    if "prev_match_result" not in data_frame.columns:
-        raise ValueError(
-            "To calculate cumulative win points, 'prev_match_result' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"prev_match_result"}
+    _validate_required_columns(required_cols, data_frame.columns, "cum_win_points")
 
     cum_win_points_col = (
         (data_frame["prev_match_result"] * WIN_POINTS)
@@ -124,14 +123,8 @@ def add_cum_win_points(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_betting_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add whether a team is predicted to win per the betting odds"""
 
-    odds_cols = ["win_odds", "oppo_win_odds", "line_odds", "oppo_line_odds"]
-
-    if any((odds_col not in data_frame.columns for odds_col in odds_cols)):
-        raise ValueError(
-            f"To calculate betting predicted win, all odds columns ({odds_cols})"
-            "must be in data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"win_odds", "oppo_win_odds", "line_odds", "oppo_line_odds"}
+    _validate_required_columns(required_cols, data_frame.columns, "betting_red_win")
 
     is_favoured = (
         (data_frame["win_odds"] < data_frame["oppo_win_odds"])
@@ -151,15 +144,8 @@ def add_betting_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_elo_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add whether a team is predicted to win per elo ratings"""
 
-    if (
-        "elo_rating" not in data_frame.columns
-        or "oppo_elo_rating" not in data_frame.columns
-    ):
-        raise ValueError(
-            f"To calculate ELO predicted win, 'elo_rating' and 'oppo_elo_rating "
-            "must be in data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"elo_rating", "oppo_elo_rating"}
+    _validate_required_columns(required_cols, data_frame.columns, "elo_pred_win")
 
     is_favoured = (data_frame["elo_rating"] > data_frame["oppo_elo_rating"]).astype(int)
     are_even = (data_frame["elo_rating"] == data_frame["oppo_elo_rating"]).astype(int)
@@ -174,13 +160,7 @@ def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's current ladder position (based on cumulative win points and percent)"""
 
     required_cols = INDEX_COLS + ["cum_win_points", "cum_percent"]
-
-    if any((req_col not in data_frame.columns for req_col in required_cols)):
-        raise ValueError(
-            f"To calculate ladder position, all required columns ({required_cols})"
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    _validate_required_columns(required_cols, data_frame.columns, "ladder_position")
 
     # Pivot to get round-by-round match points and cumulative percent
     ladder_pivot_table = data_frame[
@@ -222,12 +202,8 @@ def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's running win/loss streak through the end of the current match"""
 
-    if "prev_match_result" not in data_frame.columns:
-        raise ValueError(
-            "To calculate win streak, 'prev_match_result' "
-            "must be in data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"prev_match_result"}
+    _validate_required_columns(required_cols, data_frame.columns, "win_streak")
 
     win_groups = data_frame["prev_match_result"].groupby(
         level=TEAM_LEVEL, group_keys=False
@@ -269,12 +245,8 @@ def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_out_of_state(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add whether a team is playing out of their home state."""
 
-    if any([req_col not in data_frame.columns for req_col in ["venue", "team"]]):
-        raise ValueError(
-            "To calculate out of state matches, 'venue' and 'team' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"venue", "team"}
+    _validate_required_columns(required_cols, data_frame.columns, "out_of_state")
 
     venue_state = data_frame["venue"].map(lambda x: CITIES[VENUE_CITIES[x]]["state"])
     team_state = data_frame["team"].map(lambda x: CITIES[TEAM_CITIES[x]]["state"])
@@ -283,8 +255,6 @@ def add_out_of_state(data_frame: pd.DataFrame) -> pd.DataFrame:
 
 
 # Got the formula from https://www.movable-type.co.uk/scripts/latlong.html
-
-
 def _haversine_formula(
     lat_long1: Tuple[float, float], lat_long2: Tuple[float, float]
 ) -> float:
@@ -309,12 +279,8 @@ def _haversine_formula(
 def add_travel_distance(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add distance between each team's home city and the venue city for the match"""
 
-    if any([req_col not in data_frame.columns for req_col in ["venue", "team"]]):
-        raise ValueError(
-            "To calculate travel distance, 'venue' and 'team' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"venue", "team"}
+    _validate_required_columns(required_cols, data_frame.columns, "travel_distance")
 
     venue_lat_long = data_frame["venue"].map(
         lambda x: (CITIES[VENUE_CITIES[x]]["lat"], CITIES[VENUE_CITIES[x]]["long"])
@@ -334,14 +300,10 @@ def add_travel_distance(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_last_year_brownlow_votes(data_frame: pd.DataFrame):
     """Add column for a player's total brownlow votes from the previous season"""
 
-    REQUIRED_COLS = ["player_id", "year", "brownlow_votes"]
-
-    if any([req_col not in data_frame.columns for req_col in REQUIRED_COLS]):
-        raise ValueError(
-            f"To calculate yearly brownlow votes, the columns {REQUIRED_COLS} "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"player_id", "year", "brownlow_votes"}
+    _validate_required_columns(
+        required_cols, data_frame.columns, "last_year_brownlow_votes"
+    )
 
     brownlow_last_year = (
         data_frame[["player_id", "year", "brownlow_votes"]]
@@ -387,18 +349,10 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
         "time_on_ground",
     ]
 
-    rolling_stats_cols = {
-        stats_col: f"rolling_prev_match_{stats_col}" for stats_col in STATS_COLS
-    }
-
-    if any(
-        [req_col not in data_frame.columns for req_col in STATS_COLS + ["player_id"]]
-    ):
-        raise ValueError(
-            "To calculate rolling player stats, the stats columns "
-            f"{STATS_COLS} and 'player_id' must be in the data frame, but the columns "
-            f"given were {list(data_frame.columns)}"
-        )
+    required_cols = STATS_COLS + ["player_id"]
+    _validate_required_columns(
+        required_cols, data_frame.columns, "rolling_player_stats"
+    )
 
     player_data_frame = data_frame.sort_values(["player_id", "year", "round_number"])
     player_groups = (
@@ -414,6 +368,9 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
     expanding_stats = player_groups.expanding(1).mean()
 
     player_stats = rolling_stats.fillna(expanding_stats).sort_index()
+    rolling_stats_cols = {
+        stats_col: f"rolling_prev_match_{stats_col}" for stats_col in STATS_COLS
+    }
 
     return (
         player_data_frame.assign(**player_stats.to_dict("series")).rename(
@@ -428,12 +385,8 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
 def add_cum_matches_played(data_frame: pd.DataFrame):
     """Add cumulative number of matches each player has played"""
 
-    if "player_id" not in data_frame.columns:
-        raise ValueError(
-            "To calculate cum_matches_played, 'player_id' must be "
-            "in the data frame, but the columns given were "
-            f"{list(data_frame.columns)}"
-        )
+    required_cols = {"player_id"}
+    _validate_required_columns(required_cols, data_frame.columns, "cum_matches_played")
 
     return data_frame.assign(
         cum_matches_played=data_frame.groupby("player_id").cumcount()
@@ -549,12 +502,9 @@ def _shift_features(columns: List[str], shift: bool, data_frame: pd.DataFrame):
     else:
         columns_to_shift = [col for col in data_frame.columns if col not in columns]
 
-    if any((shift_col not in data_frame.columns for shift_col in columns_to_shift)):
-        raise ValueError(
-            f"To calculate shifted_team_features, all shift columns ({columns_to_shift}) "
-            "must be in data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    _validate_required_columns(
+        columns_to_shift, data_frame.columns, "time-shifted columns"
+    )
 
     shifted_col_names = {col: f"prev_match_{col}" for col in columns_to_shift}
 

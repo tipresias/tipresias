@@ -9,13 +9,25 @@ Returns:
     pandas.DataFrame
 """
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import math
 from functools import partial, reduce
+
+from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
 
 from machine_learning.data_config import INDEX_COLS, CITIES, TEAM_CITIES, VENUE_CITIES
+
+EloDictionary = TypedDict(
+    "EloDictionary",
+    {
+        "home_away_elo_ratings": List[Tuple[float, float]],
+        "current_team_elo_ratings": np.ndarray,
+        "year": int,
+    },
+)
 
 TEAM_LEVEL = 0
 YEAR_LEVEL = 1
@@ -31,13 +43,9 @@ BASE_RATING = 1000
 K = 35.6
 X = 0.49
 M = 130
-# Home Ground Advantage
-HGA = 9
+HOME_GROUND_ADVANTAGE = 9
 S = 250
-CARRYOVER = 0.575
-
-
-EloIndexType = Tuple[int, int, str]
+SEASON_CARRYOVER = 0.575
 
 
 def add_result(data_frame: pd.DataFrame) -> pd.DataFrame:
@@ -436,118 +444,103 @@ def add_cum_matches_played(data_frame: pd.DataFrame):
 # http://www.matterofstats.com/mafl-stats-journal/2013/10/13/building-your-own-team-rating-system.html
 def _elo_formula(
     prev_elo_rating: float, prev_oppo_elo_rating: float, margin: int, at_home: bool
-):
-    hga = HGA if at_home else HGA * -1
+) -> float:
+    home_ground_advantage = (
+        HOME_GROUND_ADVANTAGE if at_home else HOME_GROUND_ADVANTAGE * -1
+    )
     expected_outcome = 1 / (
-        1 + 10 ** ((prev_oppo_elo_rating - prev_elo_rating - hga) / S)
+        1 + 10 ** ((prev_oppo_elo_rating - prev_elo_rating - home_ground_advantage) / S)
     )
     actual_outcome = X + 0.5 - X ** (1 + (margin / M))
 
     return prev_elo_rating + (K * (actual_outcome - expected_outcome))
 
 
-def _calculate_elo_rating(prev_match: pd.Series, cum_elo_ratings: pd.Series, year: int):
-    if cum_elo_ratings is None or prev_match is None:
-        return BASE_RATING
-    else:
-        prev_year, prev_round, _ = prev_match.name
-
-        prev_elo_rating = cum_elo_ratings.loc[prev_match.name]
-
-        if isinstance(prev_elo_rating, pd.Series):
-            raise TypeError(
-                f"ELO series returned a subsection of itself at index {prev_match.name} "
-                "when a single value is expected. Check the data frame for duplicate "
-                "index values."
-            )
-
-        prev_oppo_elo_rating = cum_elo_ratings.loc[prev_year, prev_round, prev_match["oppo_team"]]
-        prev_margin = prev_match["score"] - prev_match["oppo_score"]
-        prev_at_home = bool(prev_match["at_home"])
-
-        elo_rating = _elo_formula(
-            prev_elo_rating, prev_oppo_elo_rating, prev_margin, prev_at_home
-        )
-
-    if prev_match["year"] != year:
-        return (elo_rating * CARRYOVER) + (BASE_RATING * (1 - CARRYOVER))
-
-    return elo_rating
-
-
-def _get_previous_match(
-    data_frame: pd.DataFrame, year: int, round_number: int, team: str
-):
-    prev_team_matches = data_frame.loc[
-        (data_frame["team"] == team)
-        & (data_frame["year"] == year)
-        & (data_frame["round_number"] < round_number),
-        :,
-    ]
-
-    # If we can't find any previous matches this season, filter by last season
-    if not prev_team_matches.any().any():
-        prev_team_matches = data_frame.loc[
-            (data_frame["team"] == team) & (data_frame["year"] == year - 1), :
-        ]
-
-    if not prev_team_matches.any().any():
-        return None
-
-    return prev_team_matches.iloc[-1, :]
-
-
-# Assumes df sorted by year & round_number, with ascending=True in order to find teams'
-# previous matches
+# Assumes df sorted by year & round_number with ascending=True in order to calculate
+# correct ELO ratings
 def _calculate_match_elo_rating(
-    root_data_frame: pd.DataFrame,
-    cum_elo_ratings: Optional[pd.Series],
-    items: Tuple[EloIndexType, pd.Series],
-):
-    data_frame = root_data_frame.copy()
-    index, _ = items
-    year, round_number, team = index
+    elo_ratings: EloDictionary,
+    # match_row = [year, home_team, away_team, home_margin]
+    match_row: np.ndarray,
+) -> EloDictionary:
+    match_year = match_row[0]
 
-    prev_match = _get_previous_match(data_frame, year, round_number, team)
-    elo_rating = _calculate_elo_rating(prev_match, cum_elo_ratings, year)
+    # It's typical for ELO models to do a small adjustment toward the baseline between
+    # seasons
+    if match_year != elo_ratings["year"]:
+        prematch_team_elo_ratings = (
+            elo_ratings["current_team_elo_ratings"] * SEASON_CARRYOVER
+        ) + BASE_RATING * (1 - SEASON_CARRYOVER)
+    else:
+        prematch_team_elo_ratings = elo_ratings["current_team_elo_ratings"].copy()
 
-    elo_data = [elo_rating]
-    elo_index = pd.MultiIndex.from_tuples([(year, round_number, team)])
-    elo_ratings = pd.Series(data=elo_data, index=elo_index)
+    home_team = int(match_row[1])
+    away_team = int(match_row[2])
+    home_margin = match_row[3]
 
-    if cum_elo_ratings is None:
-        return elo_ratings.copy()
+    prematch_home_elo_rating = prematch_team_elo_ratings[home_team]
+    prematch_away_elo_rating = prematch_team_elo_ratings[away_team]
 
-    return cum_elo_ratings.append(elo_ratings)
-
-
-def add_elo_rating(data_frame: pd.DataFrame):
-    """Add ELO rating of team prior to matches"""
-
-    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
-        raise ValueError(
-            "To calculate ELO ratings, 'score' and 'oppo_score' must be "
-            "in the data frame, but the columns given were "
-            f"{list(data_frame.columns)}"
-        )
-
-    elo_data_frame = data_frame.reorder_levels(
-        [YEAR_LEVEL, ROUND_LEVEL, TEAM_LEVEL]
-    ).sort_index(ascending=True)
-
-    elo_column = (
-        reduce(
-            partial(_calculate_match_elo_rating, elo_data_frame),
-            elo_data_frame.iterrows(),
-            None,
-        )
-        .reorder_levels(
-            [REORDERED_TEAM_LEVEL, REORDERED_YEAR_LEVEL, REORDERED_ROUND_LEVEL]
-        )
-        .sort_index()
+    home_elo_rating = _elo_formula(
+        prematch_home_elo_rating, prematch_away_elo_rating, home_margin, True
+    )
+    away_elo_rating = _elo_formula(
+        prematch_away_elo_rating, prematch_home_elo_rating, home_margin * -1, False
     )
 
-    return data_frame.assign(elo_rating=elo_column)
+    postmatch_team_elo_ratings = prematch_team_elo_ratings.copy()
+    postmatch_team_elo_ratings[home_team] = home_elo_rating
+    postmatch_team_elo_ratings[away_team] = away_elo_rating
+
+    return {
+        "home_away_elo_ratings": elo_ratings["home_away_elo_ratings"]
+        + [(prematch_home_elo_rating, prematch_away_elo_rating)],
+        "current_team_elo_ratings": postmatch_team_elo_ratings,
+        "year": match_year,
+    }
+
+
+def add_elo_rating(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add ELO rating of team prior to matches"""
+
+    required_cols = {
+        "home_score",
+        "away_score",
+        "home_team",
+        "away_team",
+        "year",
+        "date",
+    }
+    _validate_required_columns(required_cols, data_frame.columns, "elo_rating")
+
+    le = LabelEncoder()
+    le.fit(data_frame["home_team"])
+    time_sorted_data_frame = data_frame.sort_values("date")
+
+    elo_matrix = (
+        time_sorted_data_frame.eval("home_team = @le.transform(home_team)")
+        .eval("away_team = @le.transform(away_team)")
+        .eval("home_margin = home_score - away_score")
+        .loc[:, ["year", "home_team", "away_team", "home_margin"]]
+    ).values
+    current_team_elo_ratings = np.full(len(set(data_frame["home_team"])), BASE_RATING)
+    starting_elo_dictionary: EloDictionary = {
+        "home_away_elo_ratings": [],
+        "current_team_elo_ratings": current_team_elo_ratings,
+        "year": 0,
+    }
+
+    elo_columns = reduce(
+        _calculate_match_elo_rating, elo_matrix, starting_elo_dictionary
+    )["home_away_elo_ratings"]
+
+    elo_data_frame = pd.DataFrame(
+        elo_columns,
+        columns=["home_elo_rating", "away_elo_rating"],
+        index=time_sorted_data_frame.index,
+    ).sort_index()
+
+    return pd.concat([data_frame, elo_data_frame], axis=1)
 
 
 def _shift_features(columns: List[str], shift: bool, data_frame: pd.DataFrame):

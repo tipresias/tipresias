@@ -5,8 +5,6 @@ from machine_learning.types import DataFrameTransformer
 from machine_learning.data_config import INDEX_COLS
 from machine_learning.utils import DataTransformerMixin
 
-REQUIRED_COLS: List[str] = INDEX_COLS + ["oppo_team"]
-
 
 class FeatureBuilder(DataTransformerMixin):
     """Add features to data frames.

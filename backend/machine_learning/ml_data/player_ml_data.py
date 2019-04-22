@@ -35,6 +35,7 @@ MATCH_STATS_COLS = [
     "oppo_team",
     "year",
     "round_number",
+    "date",
 ]
 
 FEATURE_FUNCS: List[DataFrameTransformer] = [

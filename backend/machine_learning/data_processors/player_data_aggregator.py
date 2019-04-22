@@ -30,7 +30,7 @@ STATS_COLS = [
     "last_year_brownlow_votes",
 ]
 
-REQUIRED_COLS = ["oppo_team", "player_id", "player_name"] + STATS_COLS
+REQUIRED_COLS = ["oppo_team", "player_id", "player_name", "date"] + STATS_COLS
 
 
 class PlayerDataAggregator:
@@ -77,7 +77,7 @@ class PlayerDataAggregator:
             data_frame.drop(["player_id", "player_name"], axis=1)
             # Adding some non-index columns in the groupby, because it doesn't change
             # the grouping and makes it easier to keep for the final data frame.
-            .groupby(self.index_cols + ["oppo_team"]).aggregate(
+            .groupby(self.index_cols + ["oppo_team", "date"]).aggregate(
                 self.__aggregations(match_stats_cols)
             )
         )

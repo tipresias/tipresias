@@ -104,7 +104,6 @@ def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
                 "home_line_paid",
                 "away_win_paid",
                 "away_line_paid",
-                "date",
                 "venue",
                 "round_label",
                 "home_margin",
@@ -115,6 +114,7 @@ def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
         .assign(
             home_team=lambda df: df["home_team"].map(_map_betting_teams_to_match_teams),
             away_team=lambda df: df["away_team"].map(_map_betting_teams_to_match_teams),
+            date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE),
         )
     )
 
@@ -176,7 +176,9 @@ def _append_fixture_to_match_data(
 # NOTE: If the matches parsed only go back to 1990 (give or take, I can't remember)
 # you can parse the date integers into datetime
 def _parse_fitzroy_dates(data_frame: pd.DataFrame) -> pd.Series:
-    return pd.to_datetime(data_frame["date"], unit="D")
+    return pd.to_datetime(data_frame["date"], unit="D").dt.tz_localize(
+        MELBOURNE_TIMEZONE
+    )
 
 
 # ID values are converted to floats automatically, making for awkward strings later.
@@ -256,8 +258,11 @@ def _clean_roster_data(
         # entry into the AFL. If two players with the same name are playing in the
         # league at the same time, that will likely result in errors
         .drop_duplicates(subset=["player_name"], keep="first")
-        .assign(year=year)
+        .assign(
+            year=year, date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE)
+        )
     )
+
     # If a player is new to the league, he won't have a player_id per AFL Tables data,
     # so we make one up just using his name
     roster_data_frame["player_id"].fillna(

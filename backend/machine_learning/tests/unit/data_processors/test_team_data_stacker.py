@@ -1,4 +1,5 @@
 from unittest import TestCase
+from datetime import datetime
 from faker import Faker
 import pandas as pd
 import numpy as np
@@ -16,6 +17,7 @@ class TestTeamDataStacker(TestCase):
         # DataFrame w/ minimum valid columns
         valid_data_frame = pd.DataFrame(
             {
+                "date": [datetime(2000, 4, 15, 7)] * 10,
                 "home_team": [FAKE.company() for _ in range(10)],
                 "away_team": [FAKE.company() for _ in range(10)],
                 "year": [FAKE.year() for _ in range(10)],
@@ -27,6 +29,7 @@ class TestTeamDataStacker(TestCase):
 
         invalid_data_frame = pd.DataFrame(
             {
+                "date": [datetime(2000, 4, 15, 7)] * 10,
                 "home_team": [FAKE.company() for _ in range(10)],
                 "away_team": [FAKE.company() for _ in range(10)],
                 "round_number": [np.random.randint(1, 24) for _ in range(10)],

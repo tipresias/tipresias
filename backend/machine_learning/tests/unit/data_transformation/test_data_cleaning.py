@@ -1,5 +1,6 @@
 import os
 from unittest import TestCase
+from datetime import datetime
 import pandas as pd
 from faker import Faker
 
@@ -18,7 +19,9 @@ FAKE = Faker()
 
 class TestDataCleaning(TestCase):
     def test_clean_betting_data(self):
-        betting_data = pd.read_csv(os.path.join(DATA_DIR, "afl_betting.csv"))
+        betting_data = pd.read_csv(
+            os.path.join(DATA_DIR, "afl_betting.csv"), parse_dates=["date"]
+        )
 
         clean_data = clean_betting_data(betting_data)
 
@@ -59,6 +62,7 @@ class TestDataCleaning(TestCase):
         with self.subTest("with roster data for upcoming matches"):
             roster_data = pd.DataFrame(
                 {
+                    "date": [datetime(2019, 3, 20, 7)] * N_PLAYERS,
                     "round_number": [1] * N_PLAYERS,
                     "year": [2019] * N_PLAYERS,
                     "match_id": list(range(N_PLAYERS)),

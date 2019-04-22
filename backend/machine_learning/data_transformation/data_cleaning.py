@@ -304,7 +304,9 @@ def clean_player_data(
         # from match_results. Also, match_results round_numbers integers rather than
         # a mix of ints and strings.
         .merge(
-            clean_match_data(match_data)[["date", "venue", "round_number", "match_id"]],
+            match_data.pipe(clean_match_data).loc[
+                :, ["date", "venue", "round_number", "match_id"]
+            ],
             on=["date", "venue"],
             how="left",
         )

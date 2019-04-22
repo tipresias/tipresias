@@ -27,13 +27,18 @@ class FeatureBuilder(DataTransformerMixin):
     def transform(self, data_frame: pd.DataFrame) -> pd.DataFrame:
         """Add new features to the given data frame."""
 
-        required_cols = REQUIRED_COLS + self.index_cols
+        required_column_set = set(self.index_cols)
+        data_frame_column_set = set(data_frame.columns)
 
-        if any((req_col not in data_frame.columns for req_col in required_cols)):
+        if (
+            required_column_set.intersection(data_frame_column_set)
+            != required_column_set
+        ):
             raise ValueError(
-                "To calculate opposition column, all required columns "
-                f"({required_cols}) must be in data frame, "
-                f"but the columns given were {data_frame.columns}"
+                "To calculate new features, all required columns must be in the "
+                "data frame.\n"
+                f"Required columns: {required_column_set}"
+                f"Columns given: {data_frame_column_set}"
             )
 
         return self._compose_transformers(  # pylint: disable=E1102

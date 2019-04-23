@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 
 from machine_learning.data_processors import FeatureBuilder
-from machine_learning.data_processors.feature_builder import REQUIRED_COLS
 
 FAKE = Faker()
 
@@ -48,7 +47,7 @@ class TestFeatureBuilder(TestCase):
             self.assertIn("new_col", transformed_df.columns)
             self.assertIn("newer_col", transformed_df.columns)
 
-        for required_col in REQUIRED_COLS:
+        for required_col in self.builder.index_cols:
             with self.subTest(data_frame=valid_data_frame.drop(required_col, axis=1)):
                 data_frame = valid_data_frame.drop(required_col, axis=1)
 

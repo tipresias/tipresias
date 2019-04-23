@@ -54,7 +54,6 @@ FEATURE_FUNCS: List[DataFrameTransformer] = [
     ),
     add_cum_win_points,
     add_win_streak,
-    add_elo_rating,
     feature_calculator(
         [
             (calculate_rolling_rate, [("prev_match_result",)]),
@@ -73,6 +72,11 @@ FEATURE_FUNCS: List[DataFrameTransformer] = [
     ),
 ]
 DATA_TRANSFORMERS: List[DataFrameTransformer] = [
+    # add_elo_rating depends on DF still being organized per-match
+    # with home_team/away_team columns
+    FeatureBuilder(
+        index_cols=["home_team", "year", "round_number"], feature_funcs=[add_elo_rating]
+    ).transform,
     TeamDataStacker(index_cols=INDEX_COLS).transform,
     FeatureBuilder(feature_funcs=FEATURE_FUNCS).transform,
     OppoFeatureBuilder(
@@ -93,6 +97,8 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
             # "oppo_result",
             "margin",
             "oppo_margin",
+            "elo_rating",
+            "oppo_elo_rating",
             "out_of_state",
             "at_home",
             "oppo_team",

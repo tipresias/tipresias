@@ -1,4 +1,5 @@
 from unittest import TestCase
+from datetime import datetime
 from faker import Faker
 import pandas as pd
 import numpy as np
@@ -20,8 +21,10 @@ from machine_learning.data_processors.feature_functions import (
     add_elo_pred_win,
     add_shifted_team_features,
 )
+from project.settings.common import MELBOURNE_TIMEZONE
 
 FAKE = Faker()
+N_ROWS = 10
 
 
 def assert_column_added(
@@ -75,18 +78,20 @@ def make_column_assertions(
 
 class TestFeatureFunctions(TestCase):
     def setUp(self):
-        teams = [FAKE.company() for _ in range(10)]
+        teams = [FAKE.company() for _ in range(N_ROWS)]
         oppo_teams = list(reversed(teams))
 
         self.data_frame = (
             pd.DataFrame(
                 {
+                    "date": [datetime(2015, 4, 10, 13, tzinfo=MELBOURNE_TIMEZONE)]
+                    * N_ROWS,
                     "team": teams,
                     "oppo_team": oppo_teams,
-                    "year": [2015 for _ in range(10)],
-                    "round_number": [3 for _ in range(5)] + [4 for _ in range(5)],
-                    "score": np.random.randint(50, 150, 10),
-                    "oppo_score": np.random.randint(50, 150, 10),
+                    "year": [2015] * N_ROWS,
+                    "round_number": ([3] * int(N_ROWS / 2)) + ([4] * int(N_ROWS / 2)),
+                    "score": np.random.randint(50, 150, N_ROWS),
+                    "oppo_score": np.random.randint(50, 150, N_ROWS),
                 }
             )
             .set_index(["team", "year", "round_number"], drop=False)
@@ -362,14 +367,29 @@ class TestFeatureFunctions(TestCase):
 
     def test_add_elo_rating(self):
         feature_function = add_elo_rating
-        valid_data_frame = self.data_frame
+        valid_data_frame = self.data_frame.rename(
+            columns={
+                "team": "home_team",
+                "oppo_team": "away_team",
+                "score": "home_score",
+                "oppo_score": "away_score",
+            }
+        )
 
         make_column_assertions(
             self,
-            column_names=["elo_rating"],
-            req_cols=("score", "oppo_score"),
+            column_names=["home_elo_rating", "away_elo_rating"],
+            req_cols=(
+                "home_score",
+                "away_score",
+                "home_team",
+                "away_team",
+                "year",
+                "date",
+            ),
             valid_data_frame=valid_data_frame,
             feature_function=feature_function,
+            col_diff=2,
         )
 
     def test_add_shifted_team_features(self):

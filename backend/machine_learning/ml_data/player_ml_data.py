@@ -35,6 +35,7 @@ MATCH_STATS_COLS = [
     "oppo_team",
     "year",
     "round_number",
+    "date",
 ]
 
 FEATURE_FUNCS: List[DataFrameTransformer] = [
@@ -143,10 +144,7 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
             round_number = self.__upcoming_round_number(match_data, current_year)
             roster_data_reader, roster_data_kwargs = self.data_readers["roster"]
             return roster_data_reader(
-                **{
-                    **roster_data_kwargs,
-                    **{"round_number": round_number, "year": current_year},
-                }
+                round_number, **{**roster_data_kwargs, **{"year": current_year}}
             )
 
         return None

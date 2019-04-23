@@ -9,13 +9,25 @@ Returns:
     pandas.DataFrame
 """
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Sequence, Set, Union
 import math
 from functools import partial, reduce
+
+from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
 
 from machine_learning.data_config import INDEX_COLS, CITIES, TEAM_CITIES, VENUE_CITIES
+
+EloDictionary = TypedDict(
+    "EloDictionary",
+    {
+        "home_away_elo_ratings": List[Tuple[float, float]],
+        "current_team_elo_ratings": np.ndarray,
+        "year": int,
+    },
+)
 
 TEAM_LEVEL = 0
 YEAR_LEVEL = 1
@@ -31,24 +43,34 @@ BASE_RATING = 1000
 K = 35.6
 X = 0.49
 M = 130
-# Home Ground Advantage
-HGA = 9
+HOME_GROUND_ADVANTAGE = 9
 S = 250
-CARRYOVER = 0.575
+SEASON_CARRYOVER = 0.575
 
 
-EloIndexType = Tuple[int, int, str]
+def _validate_required_columns(
+    required_columns: Union[Set[str], Sequence[str]],
+    data_frame_columns: pd.Index,
+    column_name: str,
+):
+    required_column_set = set(required_columns)
+    data_frame_column_set = set(data_frame_columns)
+    column_intersection = data_frame_column_set.intersection(required_column_set)
+
+    if column_intersection != required_column_set:
+        raise ValueError(
+            f"To calculate {column_name}, all required columns must be in the "
+            "data frame.\n"
+            f"Required columns: {required_column_set}\n"
+            f"Provided columns: {data_frame_column_set}"
+        )
 
 
 def add_result(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's match result (win, draw, loss) as float"""
 
-    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
-        raise ValueError(
-            "To calculate match result, 'score' and 'oppo_score' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"score", "oppo_score"}
+    _validate_required_columns(required_cols, data_frame.columns, "result")
 
     wins = (data_frame["score"] > data_frame["oppo_score"]).astype(int)
     draws = (data_frame["score"] == data_frame["oppo_score"]).astype(int) * 0.5
@@ -59,12 +81,8 @@ def add_result(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_margin(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's margin from the match"""
 
-    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
-        raise ValueError(
-            "To calculate margin, 'score' and 'oppo_score' "
-            "must be in the data frame, but the columns given "
-            f"were {data_frame.columns}"
-        )
+    required_cols = {"score", "oppo_score"}
+    _validate_required_columns(required_cols, data_frame.columns, "margin")
 
     return data_frame.assign(margin=data_frame["score"] - data_frame["oppo_score"])
 
@@ -72,15 +90,8 @@ def add_margin(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative percent (cumulative score / cumulative opponents' score)"""
 
-    if (
-        "prev_match_score" not in data_frame.columns
-        or "prev_match_oppo_score" not in data_frame.columns
-    ):
-        raise ValueError(
-            "To calculate cum percent, 'prev_match_score' and "
-            "'prev_match_oppo_score' must be in the data frame, "
-            f"but the columns given were {data_frame.columns}"
-        )
+    required_cols = {"prev_match_score", "prev_match_oppo_score"}
+    _validate_required_columns(required_cols, data_frame.columns, "cum_percent")
 
     cum_score = (
         data_frame["prev_match_score"].groupby(level=[TEAM_LEVEL, YEAR_LEVEL]).cumsum()
@@ -97,12 +108,8 @@ def add_cum_percent(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_cum_win_points(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's cumulative win points (based on cumulative result)"""
 
-    if "prev_match_result" not in data_frame.columns:
-        raise ValueError(
-            "To calculate cumulative win points, 'prev_match_result' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"prev_match_result"}
+    _validate_required_columns(required_cols, data_frame.columns, "cum_win_points")
 
     cum_win_points_col = (
         (data_frame["prev_match_result"] * WIN_POINTS)
@@ -116,14 +123,8 @@ def add_cum_win_points(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_betting_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add whether a team is predicted to win per the betting odds"""
 
-    odds_cols = ["win_odds", "oppo_win_odds", "line_odds", "oppo_line_odds"]
-
-    if any((odds_col not in data_frame.columns for odds_col in odds_cols)):
-        raise ValueError(
-            f"To calculate betting predicted win, all odds columns ({odds_cols})"
-            "must be in data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"win_odds", "oppo_win_odds", "line_odds", "oppo_line_odds"}
+    _validate_required_columns(required_cols, data_frame.columns, "betting_red_win")
 
     is_favoured = (
         (data_frame["win_odds"] < data_frame["oppo_win_odds"])
@@ -143,15 +144,8 @@ def add_betting_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_elo_pred_win(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add whether a team is predicted to win per elo ratings"""
 
-    if (
-        "elo_rating" not in data_frame.columns
-        or "oppo_elo_rating" not in data_frame.columns
-    ):
-        raise ValueError(
-            f"To calculate ELO predicted win, 'elo_rating' and 'oppo_elo_rating "
-            "must be in data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"elo_rating", "oppo_elo_rating"}
+    _validate_required_columns(required_cols, data_frame.columns, "elo_pred_win")
 
     is_favoured = (data_frame["elo_rating"] > data_frame["oppo_elo_rating"]).astype(int)
     are_even = (data_frame["elo_rating"] == data_frame["oppo_elo_rating"]).astype(int)
@@ -166,13 +160,7 @@ def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's current ladder position (based on cumulative win points and percent)"""
 
     required_cols = INDEX_COLS + ["cum_win_points", "cum_percent"]
-
-    if any((req_col not in data_frame.columns for req_col in required_cols)):
-        raise ValueError(
-            f"To calculate ladder position, all required columns ({required_cols})"
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    _validate_required_columns(required_cols, data_frame.columns, "ladder_position")
 
     # Pivot to get round-by-round match points and cumulative percent
     ladder_pivot_table = data_frame[
@@ -214,12 +202,8 @@ def add_ladder_position(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add a team's running win/loss streak through the end of the current match"""
 
-    if "prev_match_result" not in data_frame.columns:
-        raise ValueError(
-            "To calculate win streak, 'prev_match_result' "
-            "must be in data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"prev_match_result"}
+    _validate_required_columns(required_cols, data_frame.columns, "win_streak")
 
     win_groups = data_frame["prev_match_result"].groupby(
         level=TEAM_LEVEL, group_keys=False
@@ -261,12 +245,8 @@ def add_win_streak(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_out_of_state(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add whether a team is playing out of their home state."""
 
-    if any([req_col not in data_frame.columns for req_col in ["venue", "team"]]):
-        raise ValueError(
-            "To calculate out of state matches, 'venue' and 'team' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"venue", "team"}
+    _validate_required_columns(required_cols, data_frame.columns, "out_of_state")
 
     venue_state = data_frame["venue"].map(lambda x: CITIES[VENUE_CITIES[x]]["state"])
     team_state = data_frame["team"].map(lambda x: CITIES[TEAM_CITIES[x]]["state"])
@@ -275,8 +255,6 @@ def add_out_of_state(data_frame: pd.DataFrame) -> pd.DataFrame:
 
 
 # Got the formula from https://www.movable-type.co.uk/scripts/latlong.html
-
-
 def _haversine_formula(
     lat_long1: Tuple[float, float], lat_long2: Tuple[float, float]
 ) -> float:
@@ -301,12 +279,8 @@ def _haversine_formula(
 def add_travel_distance(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Add distance between each team's home city and the venue city for the match"""
 
-    if any([req_col not in data_frame.columns for req_col in ["venue", "team"]]):
-        raise ValueError(
-            "To calculate travel distance, 'venue' and 'team' "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"venue", "team"}
+    _validate_required_columns(required_cols, data_frame.columns, "travel_distance")
 
     venue_lat_long = data_frame["venue"].map(
         lambda x: (CITIES[VENUE_CITIES[x]]["lat"], CITIES[VENUE_CITIES[x]]["long"])
@@ -326,14 +300,10 @@ def add_travel_distance(data_frame: pd.DataFrame) -> pd.DataFrame:
 def add_last_year_brownlow_votes(data_frame: pd.DataFrame):
     """Add column for a player's total brownlow votes from the previous season"""
 
-    REQUIRED_COLS = ["player_id", "year", "brownlow_votes"]
-
-    if any([req_col not in data_frame.columns for req_col in REQUIRED_COLS]):
-        raise ValueError(
-            f"To calculate yearly brownlow votes, the columns {REQUIRED_COLS} "
-            "must be in the data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    required_cols = {"player_id", "year", "brownlow_votes"}
+    _validate_required_columns(
+        required_cols, data_frame.columns, "last_year_brownlow_votes"
+    )
 
     brownlow_last_year = (
         data_frame[["player_id", "year", "brownlow_votes"]]
@@ -379,18 +349,10 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
         "time_on_ground",
     ]
 
-    rolling_stats_cols = {
-        stats_col: f"rolling_prev_match_{stats_col}" for stats_col in STATS_COLS
-    }
-
-    if any(
-        [req_col not in data_frame.columns for req_col in STATS_COLS + ["player_id"]]
-    ):
-        raise ValueError(
-            "To calculate rolling player stats, the stats columns "
-            f"{STATS_COLS} and 'player_id' must be in the data frame, but the columns "
-            f"given were {list(data_frame.columns)}"
-        )
+    required_cols = STATS_COLS + ["player_id"]
+    _validate_required_columns(
+        required_cols, data_frame.columns, "rolling_player_stats"
+    )
 
     player_data_frame = data_frame.sort_values(["player_id", "year", "round_number"])
     player_groups = (
@@ -406,6 +368,9 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
     expanding_stats = player_groups.expanding(1).mean()
 
     player_stats = rolling_stats.fillna(expanding_stats).sort_index()
+    rolling_stats_cols = {
+        stats_col: f"rolling_prev_match_{stats_col}" for stats_col in STATS_COLS
+    }
 
     return (
         player_data_frame.assign(**player_stats.to_dict("series")).rename(
@@ -420,12 +385,8 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
 def add_cum_matches_played(data_frame: pd.DataFrame):
     """Add cumulative number of matches each player has played"""
 
-    if "player_id" not in data_frame.columns:
-        raise ValueError(
-            "To calculate cum_matches_played, 'player_id' must be "
-            "in the data frame, but the columns given were "
-            f"{list(data_frame.columns)}"
-        )
+    required_cols = {"player_id"}
+    _validate_required_columns(required_cols, data_frame.columns, "cum_matches_played")
 
     return data_frame.assign(
         cum_matches_played=data_frame.groupby("player_id").cumcount()
@@ -436,118 +397,103 @@ def add_cum_matches_played(data_frame: pd.DataFrame):
 # http://www.matterofstats.com/mafl-stats-journal/2013/10/13/building-your-own-team-rating-system.html
 def _elo_formula(
     prev_elo_rating: float, prev_oppo_elo_rating: float, margin: int, at_home: bool
-):
-    hga = HGA if at_home else HGA * -1
+) -> float:
+    home_ground_advantage = (
+        HOME_GROUND_ADVANTAGE if at_home else HOME_GROUND_ADVANTAGE * -1
+    )
     expected_outcome = 1 / (
-        1 + 10 ** ((prev_oppo_elo_rating - prev_elo_rating - hga) / S)
+        1 + 10 ** ((prev_oppo_elo_rating - prev_elo_rating - home_ground_advantage) / S)
     )
     actual_outcome = X + 0.5 - X ** (1 + (margin / M))
 
     return prev_elo_rating + (K * (actual_outcome - expected_outcome))
 
 
-def _calculate_elo_rating(prev_match: pd.Series, cum_elo_ratings: pd.Series, year: int):
-    if cum_elo_ratings is None or prev_match is None:
-        return BASE_RATING
-    else:
-        prev_year, prev_round, _ = prev_match.name
-
-        prev_elo_rating = cum_elo_ratings.loc[prev_match.name]
-
-        if isinstance(prev_elo_rating, pd.Series):
-            raise TypeError(
-                f"ELO series returned a subsection of itself at index {prev_match.name} "
-                "when a single value is expected. Check the data frame for duplicate "
-                "index values."
-            )
-
-        prev_oppo_elo_rating = cum_elo_ratings.loc[prev_year, prev_round, prev_match["oppo_team"]]
-        prev_margin = prev_match["score"] - prev_match["oppo_score"]
-        prev_at_home = bool(prev_match["at_home"])
-
-        elo_rating = _elo_formula(
-            prev_elo_rating, prev_oppo_elo_rating, prev_margin, prev_at_home
-        )
-
-    if prev_match["year"] != year:
-        return (elo_rating * CARRYOVER) + (BASE_RATING * (1 - CARRYOVER))
-
-    return elo_rating
-
-
-def _get_previous_match(
-    data_frame: pd.DataFrame, year: int, round_number: int, team: str
-):
-    prev_team_matches = data_frame.loc[
-        (data_frame["team"] == team)
-        & (data_frame["year"] == year)
-        & (data_frame["round_number"] < round_number),
-        :,
-    ]
-
-    # If we can't find any previous matches this season, filter by last season
-    if not prev_team_matches.any().any():
-        prev_team_matches = data_frame.loc[
-            (data_frame["team"] == team) & (data_frame["year"] == year - 1), :
-        ]
-
-    if not prev_team_matches.any().any():
-        return None
-
-    return prev_team_matches.iloc[-1, :]
-
-
-# Assumes df sorted by year & round_number, with ascending=True in order to find teams'
-# previous matches
+# Assumes df sorted by year & round_number with ascending=True in order to calculate
+# correct ELO ratings
 def _calculate_match_elo_rating(
-    root_data_frame: pd.DataFrame,
-    cum_elo_ratings: Optional[pd.Series],
-    items: Tuple[EloIndexType, pd.Series],
-):
-    data_frame = root_data_frame.copy()
-    index, _ = items
-    year, round_number, team = index
+    elo_ratings: EloDictionary,
+    # match_row = [year, home_team, away_team, home_margin]
+    match_row: np.ndarray,
+) -> EloDictionary:
+    match_year = match_row[0]
 
-    prev_match = _get_previous_match(data_frame, year, round_number, team)
-    elo_rating = _calculate_elo_rating(prev_match, cum_elo_ratings, year)
+    # It's typical for ELO models to do a small adjustment toward the baseline between
+    # seasons
+    if match_year != elo_ratings["year"]:
+        prematch_team_elo_ratings = (
+            elo_ratings["current_team_elo_ratings"] * SEASON_CARRYOVER
+        ) + BASE_RATING * (1 - SEASON_CARRYOVER)
+    else:
+        prematch_team_elo_ratings = elo_ratings["current_team_elo_ratings"].copy()
 
-    elo_data = [elo_rating]
-    elo_index = pd.MultiIndex.from_tuples([(year, round_number, team)])
-    elo_ratings = pd.Series(data=elo_data, index=elo_index)
+    home_team = int(match_row[1])
+    away_team = int(match_row[2])
+    home_margin = match_row[3]
 
-    if cum_elo_ratings is None:
-        return elo_ratings.copy()
+    prematch_home_elo_rating = prematch_team_elo_ratings[home_team]
+    prematch_away_elo_rating = prematch_team_elo_ratings[away_team]
 
-    return cum_elo_ratings.append(elo_ratings)
-
-
-def add_elo_rating(data_frame: pd.DataFrame):
-    """Add ELO rating of team prior to matches"""
-
-    if "score" not in data_frame.columns or "oppo_score" not in data_frame.columns:
-        raise ValueError(
-            "To calculate ELO ratings, 'score' and 'oppo_score' must be "
-            "in the data frame, but the columns given were "
-            f"{list(data_frame.columns)}"
-        )
-
-    elo_data_frame = data_frame.reorder_levels(
-        [YEAR_LEVEL, ROUND_LEVEL, TEAM_LEVEL]
-    ).sort_index(ascending=True)
-
-    elo_column = (
-        reduce(
-            partial(_calculate_match_elo_rating, elo_data_frame),
-            elo_data_frame.iterrows(),
-            None,
-        )
-        .reorder_levels(
-            [REORDERED_TEAM_LEVEL, REORDERED_YEAR_LEVEL, REORDERED_ROUND_LEVEL]
-        )
-        .sort_index()
+    home_elo_rating = _elo_formula(
+        prematch_home_elo_rating, prematch_away_elo_rating, home_margin, True
+    )
+    away_elo_rating = _elo_formula(
+        prematch_away_elo_rating, prematch_home_elo_rating, home_margin * -1, False
     )
 
-    return data_frame.assign(elo_rating=elo_column)
+    postmatch_team_elo_ratings = prematch_team_elo_ratings.copy()
+    postmatch_team_elo_ratings[home_team] = home_elo_rating
+    postmatch_team_elo_ratings[away_team] = away_elo_rating
+
+    return {
+        "home_away_elo_ratings": elo_ratings["home_away_elo_ratings"]
+        + [(prematch_home_elo_rating, prematch_away_elo_rating)],
+        "current_team_elo_ratings": postmatch_team_elo_ratings,
+        "year": match_year,
+    }
+
+
+def add_elo_rating(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Add ELO rating of team prior to matches"""
+
+    required_cols = {
+        "home_score",
+        "away_score",
+        "home_team",
+        "away_team",
+        "year",
+        "date",
+    }
+    _validate_required_columns(required_cols, data_frame.columns, "elo_rating")
+
+    le = LabelEncoder()
+    le.fit(data_frame["home_team"])
+    time_sorted_data_frame = data_frame.sort_values("date")
+
+    elo_matrix = (
+        time_sorted_data_frame.eval("home_team = @le.transform(home_team)")
+        .eval("away_team = @le.transform(away_team)")
+        .eval("home_margin = home_score - away_score")
+        .loc[:, ["year", "home_team", "away_team", "home_margin"]]
+    ).values
+    current_team_elo_ratings = np.full(len(set(data_frame["home_team"])), BASE_RATING)
+    starting_elo_dictionary: EloDictionary = {
+        "home_away_elo_ratings": [],
+        "current_team_elo_ratings": current_team_elo_ratings,
+        "year": 0,
+    }
+
+    elo_columns = reduce(
+        _calculate_match_elo_rating, elo_matrix, starting_elo_dictionary
+    )["home_away_elo_ratings"]
+
+    elo_data_frame = pd.DataFrame(
+        elo_columns,
+        columns=["home_elo_rating", "away_elo_rating"],
+        index=time_sorted_data_frame.index,
+    ).sort_index()
+
+    return pd.concat([data_frame, elo_data_frame], axis=1)
 
 
 def _shift_features(columns: List[str], shift: bool, data_frame: pd.DataFrame):
@@ -556,12 +502,9 @@ def _shift_features(columns: List[str], shift: bool, data_frame: pd.DataFrame):
     else:
         columns_to_shift = [col for col in data_frame.columns if col not in columns]
 
-    if any((shift_col not in data_frame.columns for shift_col in columns_to_shift)):
-        raise ValueError(
-            f"To calculate shifted_team_features, all shift columns ({columns_to_shift}) "
-            "must be in data frame, but the columns given were "
-            f"{data_frame.columns}"
-        )
+    _validate_required_columns(
+        columns_to_shift, data_frame.columns, "time-shifted columns"
+    )
 
     shifted_col_names = {col: f"prev_match_{col}" for col in columns_to_shift}
 

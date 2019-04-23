@@ -244,6 +244,13 @@ class Command(BaseCommand):
         loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model_record.filepath))
         self.data.test_years = (year, year)
         X_test, _ = self.data.test_data(test_round=round_number)
+
+        if not X_test.any().any():
+            raise ValueError(
+                "X_test doesn't have any rows, likely due to some data for the "
+                "upcoming round not being available yet."
+            )
+
         y_pred = loaded_model.predict(X_test)
 
         data_row_slice = (slice(None), year, slice(round_number, round_number))

@@ -1,8 +1,9 @@
 """Module for scraping data from afl.com.au"""
 
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 import itertools
-from datetime import date
+import re
+from datetime import date, datetime
 import warnings
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup, element
@@ -12,6 +13,10 @@ import pandas as pd
 from machine_learning.data_config import TEAM_TRANSLATIONS
 
 AFL_DOMAIN = "https://www.afl.com.au"
+# afl.com.au always lists the home team first, which is standard convention across
+# data sources
+HOME_TEAM_IDX = 0
+AWAY_TEAM_IDX = 1
 
 
 def _translate_team_name(team_name: str):
@@ -21,75 +26,87 @@ def _translate_team_name(team_name: str):
     return team_name
 
 
-def _parse_player_data(player_element: element) -> str:
-    return list(player_element.stripped_strings)[-1]
+def _parse_team_data(team_element: element) -> Tuple[str, List[Dict[str, str]]]:
+    team_player_labels = itertools.islice(team_element.stripped_strings, None, None, 2)
+
+    team_name = next(team_player_labels)
+
+    return (
+        team_name,
+        [
+            {"playing_for": team_name, "player_name": player_name}
+            for player_name in team_player_labels
+        ],
+    )
 
 
-def _parse_team_data(
-    game_element: element, team_element: element
+def _parse_game_datetime(game_element: element) -> datetime:
+    game_time = list(game_element.stripped_strings)[-1]
+    game_time_with_blanks_removed = re.sub(r"^[^\d]+", "", game_time)
+    game_datetime_string = re.sub(r"(pm|am)[^,]+", "\\1", game_time_with_blanks_removed)
+
+    return datetime.strptime(game_datetime_string, "%I:%M%p, %B %d, %Y")
+
+
+def _parse_game_data(
+    game_index: int, game_element: element, roster_element: element
 ) -> List[Dict[str, str]]:
-    team_name = next(team_element.stripped_strings)
-    team_number = "1" if "team1" in team_element["class"] else "2"
+    game_datetime = _parse_game_datetime(game_element)
+    team_elements = roster_element.select("ul")
 
-    player_selector = f"#fieldInouts .posGroup .team{team_number} .player"
-
-    return [
-        {"playing_for": team_name, "player_name": _parse_player_data(player_element)}
-        for player_element in game_element.select(player_selector)
+    team_player_data = [
+        _parse_team_data(team_element) for team_element in team_elements
     ]
+    team_names, player_lists = zip(*team_player_data)
 
-
-def _parse_game_data(game_index: int, game_element: element) -> List[Dict[str, str]]:
-    team_elements = game_element.select(".lineup-detail .team-logo")
-    team_names = [team_element.stripped_strings for team_element in team_elements]
     game_data = {
-        "home_team": next(team_names[0]),
-        "away_team": next(team_names[1]),
+        "date": game_datetime,
         "match_id": str(game_index),
+        "home_team": team_names[HOME_TEAM_IDX],
+        "away_team": team_names[AWAY_TEAM_IDX],
     }
-
-    player_data_lists = [
-        _parse_team_data(game_element, team_element) for team_element in team_elements
-    ]
 
     return [
         {**game_data, **player_data}
-        for player_data in itertools.chain.from_iterable(player_data_lists)
+        for player_data in itertools.chain.from_iterable(player_lists)
     ]
 
 
-def _fetch_rosters(round_number: Optional[int]) -> List[Dict[str, str]]:
+def _fetch_rosters(round_number: int) -> List[Dict[str, str]]:
     round_param = {} if round_number is None else {"round": round_number}
     response = requests.get(urljoin(AFL_DOMAIN, "news/teams"), params=round_param)
     soup = BeautifulSoup(response.text, "html5lib")
-    game_elements = soup.select(".game")
+    game_elements = soup.select("#tteamlist .lineup-detail .game-time")
+    roster_elements = soup.select("#tteamlist .list-inouts")
 
-    if not any(game_elements):
+    if not any(game_elements) or not any(roster_elements):
         warnings.warn(
-            "Could not find any game data. This is likely due to round number "
-            f"{round_number} not having any data yet. Returning an empty list."
+            "Could not find any game  or roster data. This is likely due to round "
+            f"number {round_number} not having any data yet. Returning an empty list."
         )
         return []
 
     round_data = [
-        _parse_game_data(game_index, game_element)
-        for game_index, game_element in enumerate(game_elements)
+        _parse_game_data(game_index, game_element, roster_element)
+        for game_index, (game_element, roster_element) in enumerate(
+            zip(game_elements, roster_elements)
+        )
     ]
 
     return list(itertools.chain.from_iterable(round_data))
 
 
 def get_rosters(
-    round_number: Optional[int] = None, year: Optional[int] = None
+    round_number: int, year: Optional[int] = date.today().year
 ) -> pd.DataFrame:
     """Fetches roster data for the upcoming round from afl.com.au"""
 
-    year = date.today().year if year is None else year
     roster_data = _fetch_rosters(round_number)
 
     if not any(roster_data):
         return pd.DataFrame(
             columns=[
+                "date",
                 "round_number",
                 "year",
                 "match_id",

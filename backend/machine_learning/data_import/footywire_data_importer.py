@@ -8,7 +8,6 @@ from datetime import date
 from urllib.parse import urljoin
 from functools import partial
 from urllib3.exceptions import SystemTimeWarning
-import dateutil
 import requests
 from bs4 import BeautifulSoup, element
 import numpy as np
@@ -109,8 +108,8 @@ class FootywireDataImporter:
         """
 
         if fetch_data:
-            return self.__clean_betting_data_frame(
-                self.__fetch_data(BETTING_PATH, year_range)
+            return self.__fetch_data(BETTING_PATH, year_range).pipe(
+                self.__clean_betting_data_frame
             )
 
         return self.__read_data_csv(self.betting_filename, year_range)
@@ -265,13 +264,8 @@ class FootywireDataImporter:
                 .rename(columns={0: "home_score", 1: "away_score"})
                 # For unplayed matches we convert scores to numeric, filling the resulting
                 # NaNs with 0
-                .assign(
-                    home_score=lambda df: pd.to_numeric(
-                        df["home_score"], errors="coerce"
-                    ),
-                    away_score=lambda df: pd.to_numeric(
-                        df["away_score"], errors="coerce"
-                    ),
+                .pipe(
+                    self.__convert_string_cols_to_numeric(["home_score", "away_score"])
                 )
                 .fillna(0)
             )
@@ -293,8 +287,8 @@ class FootywireDataImporter:
                 # for consistency with fitzRoy column labels.
                 round_label=lambda df: df["round"],
                 round=self.__round_number,
-                crowd=lambda df: pd.to_numeric(df["crowd"], errors="coerce").fillna(0),
             )
+            .pipe(self.__convert_string_cols_to_numeric(["crowd"]))
             .astype({"season": int})
         )
 
@@ -314,9 +308,11 @@ class FootywireDataImporter:
                 round_label=lambda df: df["round"],
                 round=self.__round_number,
             )
-            # Matches from betting data page don't have times, but the parser spuriously
-            # assigns one, so we're converting back to basic dates
-            .assign(date=lambda df: df["date"].dt.date)
+            .pipe(
+                self.__convert_string_cols_to_numeric(
+                    ["score", "margin", "win_paid", "line_paid"]
+                )
+            )
         )
 
         merged_df = (
@@ -334,9 +330,12 @@ class FootywireDataImporter:
                     "home_line_odds": float,
                     "away_win_odds": float,
                     "away_line_odds": float,
+                    "home_score": float,
+                    "away_score": float,
                 }
             )
         )
+
         sorted_cols = BETTING_MATCH_COLS + [
             col for col in merged_df.columns if col not in BETTING_MATCH_COLS
         ]
@@ -362,6 +361,17 @@ class FootywireDataImporter:
         return yearly_round_col.map(
             partial(self.__parse_round_label, max_regular_round)
         )
+
+    @staticmethod
+    def __convert_string_cols_to_numeric(cols_to_convert: List[str]) -> pd.DataFrame:
+        converted_column_assignments = {
+            col_name: lambda df, col=col_name: pd.to_numeric(
+                df[col], errors="coerce"
+            ).fillna(0)
+            for col_name in cols_to_convert
+        }
+
+        return lambda df: df.assign(**converted_column_assignments)
 
     @staticmethod
     def __betting_row(max_len: int, tr: element.Tag) -> List[Optional[str]]:
@@ -410,13 +420,9 @@ class FootywireDataImporter:
 
     @staticmethod
     def __parse_dates(data_frame: pd.DataFrame) -> pd.Series:
-        # Need to add season to yearless date; otherwise, the date parser thinks they're
-        # all in the current year.
-        # MyPy doesn't recognize that dateutil has a 'parser' attribute
-        return (
+        # Betting dates aren't displayed with years on the page, so we have to add them
+        return pd.to_datetime(
             data_frame["date"] + " " + data_frame["season"].astype(int).astype(str)
-        ).map(
-            dateutil.parser.parse  # type: ignore
         )
 
     @staticmethod

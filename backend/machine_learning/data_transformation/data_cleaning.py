@@ -104,7 +104,6 @@ def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
                 "home_line_paid",
                 "away_win_paid",
                 "away_line_paid",
-                "date",
                 "venue",
                 "round_label",
                 "home_margin",
@@ -115,6 +114,7 @@ def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
         .assign(
             home_team=lambda df: df["home_team"].map(_map_betting_teams_to_match_teams),
             away_team=lambda df: df["away_team"].map(_map_betting_teams_to_match_teams),
+            date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE),
         )
     )
 
@@ -176,7 +176,9 @@ def _append_fixture_to_match_data(
 # NOTE: If the matches parsed only go back to 1990 (give or take, I can't remember)
 # you can parse the date integers into datetime
 def _parse_fitzroy_dates(data_frame: pd.DataFrame) -> pd.Series:
-    return pd.to_datetime(data_frame["date"], unit="D")
+    return pd.to_datetime(data_frame["date"], unit="D").dt.tz_localize(
+        MELBOURNE_TIMEZONE
+    )
 
 
 # ID values are converted to floats automatically, making for awkward strings later.
@@ -214,14 +216,7 @@ def clean_match_data(
         .astype({"year": int, "round_number": int})
         .pipe(
             _filter_out_dodgy_data(
-                duplicate_subset=[
-                    "date",
-                    "venue",
-                    "year",
-                    "round_number",
-                    "home_team",
-                    "away_team",
-                ]
+                duplicate_subset=["year", "round_number", "home_team", "away_team"]
             )
         )
         .assign(match_id=_convert_id_to_string("match_id"))
@@ -263,8 +258,11 @@ def _clean_roster_data(
         # entry into the AFL. If two players with the same name are playing in the
         # league at the same time, that will likely result in errors
         .drop_duplicates(subset=["player_name"], keep="first")
-        .assign(year=year)
+        .assign(
+            year=year, date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE)
+        )
     )
+
     # If a player is new to the league, he won't have a player_id per AFL Tables data,
     # so we make one up just using his name
     roster_data_frame["player_id"].fillna(
@@ -306,11 +304,17 @@ def clean_player_data(
         # from match_results. Also, match_results round_numbers integers rather than
         # a mix of ints and strings.
         .merge(
-            clean_match_data(match_data)[["date", "venue", "round_number", "match_id"]],
+            match_data.pipe(clean_match_data).loc[
+                :, ["date", "venue", "round_number", "match_id"]
+            ],
             on=["date", "venue"],
             how="left",
         )
-        .pipe(_filter_out_dodgy_data(["year", "round_number", "player_id"]))
+        .pipe(
+            _filter_out_dodgy_data(
+                duplicate_subset=["year", "round_number", "player_id"]
+            )
+        )
         .drop("venue", axis=1)
         # brownlow_votes aren't known until the end of the season
         .fillna({"brownlow_votes": 0})
@@ -330,7 +334,12 @@ def clean_player_data(
 
 
 def clean_joined_data(data_frames: List[pd.DataFrame]):
-    joined_data_frame = pd.concat(data_frames, axis=1)
-    duplicate_columns = joined_data_frame.columns.duplicated()
+    # We need to sort by length (going from longest to shortest), then keeping first
+    # duplicated column to make sure we don't lose earlier values of shared columns
+    # (e.g. dropping match data's 'date' column in favor of the betting data 'date'
+    # column results in lots of NaT values, because betting data only goes back to 2010)
+    sorted_data_frames = sorted(data_frames, key=len, reverse=True)
+    joined_data_frame = pd.concat(sorted_data_frames, axis=1)
+    duplicate_columns = joined_data_frame.columns.duplicated(keep="first")
 
     return joined_data_frame.loc[:, ~duplicate_columns]

@@ -39,10 +39,11 @@ class PlayerDataStacker:
         return pd.concat(team_dfs, sort=True).drop(["match_id", "playing_for"], axis=1)
 
     def __team_df(self, data_frame: pd.DataFrame, team_type: str) -> pd.DataFrame:
-        return self.__sort_columns(
+        return (
             data_frame[data_frame["playing_for"] == data_frame[f"{team_type}_team"]]
             .rename(columns=self.__replace_col_names(team_type))
             .assign(at_home=1 if team_type == "home" else 0)
+            .pipe(self.__sort_columns)
         )
 
     @staticmethod

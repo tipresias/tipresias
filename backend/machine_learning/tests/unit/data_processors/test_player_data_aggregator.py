@@ -1,4 +1,5 @@
 from unittest import TestCase
+from datetime import datetime
 from faker import Faker
 import pandas as pd
 import numpy as np
@@ -8,6 +9,7 @@ from machine_learning.data_processors.player_data_aggregator import (
     REQUIRED_COLS,
     STATS_COLS,
 )
+from project.settings.common import MELBOURNE_TIMEZONE
 
 FAKE = Faker()
 N_ROWS = 10
@@ -24,6 +26,8 @@ class TestPlayerDataAggregator(TestCase):
         self.data_frame = pd.DataFrame(
             {
                 **{
+                    "date": [datetime(2014, 6, 15, 13, tzinfo=MELBOURNE_TIMEZONE)]
+                    * N_ROWS,
                     "team": sorted(teams * int(N_ROWS / 2)),
                     "oppo_team": list(reversed(sorted(teams * int(N_ROWS / 2)))),
                     "year": [2014] * N_ROWS,

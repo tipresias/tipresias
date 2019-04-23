@@ -11,7 +11,6 @@ import requests
 import pandas as pd
 
 from machine_learning.data_config import TEAM_TRANSLATIONS
-from project.settings.common import MELBOURNE_TIMEZONE
 
 AFL_DOMAIN = "https://www.afl.com.au"
 # afl.com.au always lists the home team first, which is standard convention across
@@ -73,7 +72,7 @@ def _parse_game_data(
     ]
 
 
-def _fetch_rosters(round_number: Optional[int]) -> List[Dict[str, str]]:
+def _fetch_rosters(round_number: int) -> List[Dict[str, str]]:
     round_param = {} if round_number is None else {"round": round_number}
     response = requests.get(urljoin(AFL_DOMAIN, "news/teams"), params=round_param)
     soup = BeautifulSoup(response.text, "html5lib")

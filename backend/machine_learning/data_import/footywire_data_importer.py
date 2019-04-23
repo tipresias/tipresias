@@ -8,7 +8,6 @@ from datetime import date
 from urllib.parse import urljoin
 from functools import partial
 from urllib3.exceptions import SystemTimeWarning
-import dateutil
 import requests
 from bs4 import BeautifulSoup, element
 import numpy as np
@@ -366,8 +365,10 @@ class FootywireDataImporter:
     @staticmethod
     def __convert_string_cols_to_numeric(cols_to_convert: List[str]) -> pd.DataFrame:
         converted_column_assignments = {
-            col: lambda df: pd.to_numeric(df[col], errors="coerce").fillna(0)
-            for col in cols_to_convert
+            col_name: lambda df, col=col_name: pd.to_numeric(
+                df[col], errors="coerce"
+            ).fillna(0)
+            for col_name in cols_to_convert
         }
 
         return lambda df: df.assign(**converted_column_assignments)

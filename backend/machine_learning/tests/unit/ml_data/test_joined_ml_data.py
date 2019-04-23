@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from unittest import TestCase
 from unittest.mock import Mock
 import pandas as pd
@@ -6,6 +7,7 @@ from faker import Faker
 
 from machine_learning.ml_data import JoinedMLData
 from machine_learning.data_transformation import data_cleaning
+from project.settings.common import MELBOURNE_TIMEZONE
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../fixtures"))
 FAKE = Faker()
@@ -21,6 +23,7 @@ class TestJoinedMLData(TestCase):
         base_data = pd.DataFrame(
             [
                 {
+                    "date": datetime(2016, 3, 20, 14, tzinfo=MELBOURNE_TIMEZONE),
                     "team": teams[n % (N_TEAMS - 1)],
                     "oppo_team": teams[-(n % (N_TEAMS - 1))],
                     "year": 2016,

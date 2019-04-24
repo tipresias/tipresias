@@ -1,0 +1,10 @@
+Package: app
+Imports:
+    BH,
+    plumber,
+    progress,
+    tidyverse,
+    plogr,
+    fitzRoy
+Remotes:
+    git@github.com:jimmyday12/fitzRoy.git

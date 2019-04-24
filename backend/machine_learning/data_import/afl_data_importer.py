@@ -41,7 +41,7 @@ def _parse_team_data(team_element: element) -> Tuple[str, List[Dict[str, str]]]:
 
 
 def _parse_game_datetime(game_element: element) -> datetime:
-    game_time = list(game_element.stripped_strings)[-1]
+    game_time = list(game_element.select(".game-time")[0].stripped_strings)[-1]
     game_time_with_blanks_removed = re.sub(r"^[^\d]+", "", game_time)
     game_datetime_string = re.sub(r"(pm|am)[^,]+", "\\1", game_time_with_blanks_removed)
 
@@ -53,6 +53,11 @@ def _parse_game_data(
 ) -> List[Dict[str, str]]:
     game_datetime = _parse_game_datetime(game_element)
     team_elements = roster_element.select("ul")
+
+    # If the rosters for the given game haven't been announced yet, there will be no
+    # <ul> element with roster info
+    if not any(team_elements):
+        return []
 
     team_player_data = [
         _parse_team_data(team_element) for team_element in team_elements
@@ -76,7 +81,7 @@ def _fetch_rosters(round_number: int) -> List[Dict[str, str]]:
     round_param = {} if round_number is None else {"round": round_number}
     response = requests.get(urljoin(AFL_DOMAIN, "news/teams"), params=round_param)
     soup = BeautifulSoup(response.text, "html5lib")
-    game_elements = soup.select("#tteamlist .lineup-detail .game-time")
+    game_elements = soup.select("#tteamlist .lineup-detail")
     roster_elements = soup.select("#tteamlist .list-inouts")
 
     if not any(game_elements) or not any(roster_elements):

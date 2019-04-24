@@ -1,6 +1,8 @@
-#' Echo the parameter that was sent in
-#' @param msg The message to echo back.
-#' @get /echo
-function(msg=""){
-  list(msg = paste0("The message is: '", msg, "'"))
+#' Return match results data
+#' @param fetch_data Whether to fetch fresh data from afltables.com
+#' @get /matches
+function(fetch_data=FALSE) {
+  if(fetch_data) fitzRoy::get_match_results() else fitzRoy::match_results %>%
+    rename_all(funs(str_to_lower(.) %>% str_replace_all(., '\\.', '_'))) %>%
+    jsonlite::toJSON()
 }

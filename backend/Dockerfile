@@ -4,15 +4,8 @@
 # their own
 FROM python:3.6@sha256:00110125bd9c23f200cfd2cfa82e68b8ab2006e1358f7a048e005794aa51568f
 
-# Install R to use rpy2 for access to R packages
-RUN apt-get update && apt-get -y install r-base
-
 # Adding backend directory to make absolute filepaths consistent in dev & prod
 WORKDIR /app/backend
-
-# Install R dependencies
-COPY requirements.r /app/backend
-RUN Rscript requirements.r
 
 # Install Python dependencies
 COPY requirements.txt /app/backend

@@ -1,13 +1,10 @@
 import json
-from typing import Optional, Dict, Any, List
-from datetime import datetime, date
-import warnings
+from typing import Dict, Any, List
+from datetime import datetime
 from urllib.parse import urljoin
 
 import pandas as pd
 import requests
-from rpy2.robjects import pandas2ri, vectors, r
-from rpy2.rinterface import embedded
 
 from project.settings.common import MELBOURNE_TIMEZONE
 
@@ -23,16 +20,6 @@ AFL_DATA_SERVICE = "http://afl_data:8001"
 
 class FitzroyDataImporter:
     """Get data from the fitzRoy R package and return it as a pandas DataFrame."""
-
-    def __init__(self):
-        self.current_year = date.today().year
-
-    def get_fixture(self, season: Optional[int] = None) -> pd.DataFrame:
-        """Get AFL fixture for given year"""
-
-        requested_season = season or self.current_year
-
-        return self.__data(f"get_fixture(season = {requested_season})")
 
     def match_results(self, fetch_data: bool = False) -> pd.DataFrame:
         """Get match results data.
@@ -107,12 +94,6 @@ class FitzroyDataImporter:
 
         return []
 
-    def __data(self, method_string: str):
-        return self.__r_to_pandas(r(f"fitzRoy::{method_string}")).assign(
-            home_team=self.__translate_team_column("home_team"),
-            away_team=self.__translate_team_column("away_team"),
-        )
-
     @staticmethod
     def __parse_dates(data_frame: pd.DataFrame) -> pd.DataFrame:
         return data_frame.assign(
@@ -123,12 +104,6 @@ class FitzroyDataImporter:
 
     def __translate_team_column(self, col_name):
         return lambda data_frame: data_frame[col_name].map(self.__translate_team_name)
-
-    @staticmethod
-    def __r_to_pandas(r_data_frame: vectors.DataFrame) -> pd.DataFrame:
-        return pandas2ri.rpy2py_dataframe(r_data_frame).rename(
-            columns=lambda x: x.lower().replace(".", "_")
-        )
 
     @staticmethod
     def __translate_team_name(team_name):

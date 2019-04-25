@@ -2,7 +2,9 @@
 #' @param fetch_data Whether to fetch fresh data from afltables.com
 #' @get /matches
 function(fetch_data = FALSE) {
-  if(fetch_data) fitzRoy::get_match_results() else fitzRoy::match_results %>%
+  data <- if(fetch_data) fitzRoy::get_match_results() else fitzRoy::match_results
+
+  data %>%
     rename_all(funs(str_to_lower(.) %>% str_replace_all(., '\\.', '_'))) %>%
     jsonlite::toJSON()
 }
@@ -13,12 +15,14 @@ function(fetch_data = FALSE) {
 #' @get /players
 #' AFL Tables data starts in 1897
 function(start_date = '1897-01-01', end_date = Sys.Date()) {
-  tryCatch(
+  data <- tryCatch(
     {
       fitzRoy::get_afltables_stats(start_date = start_date, end_date = end_date)
     },
     error = handle_players_route_error(start_date, end_date)
-  ) %>%
+  )
+
+  data %>%
     rename_all(funs(str_to_lower(.) %>% str_replace_all(., '\\.', '_'))) %>%
     jsonlite::toJSON()
 }

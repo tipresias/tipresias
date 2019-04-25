@@ -4,7 +4,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from project.settings.common import BASE_DIR
+from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 
 from machine_learning.ml_data import MatchMLData
 
@@ -12,12 +12,12 @@ FAKE = Faker()
 
 match_results_df = pd.read_csv(
     f"{BASE_DIR}/machine_learning/tests/fixtures/fitzroy_match_results.csv"
-)
+).assign(date=lambda df: pd.to_datetime(df["date"]).dt.tz_localize(MELBOURNE_TIMEZONE))
 match_results_mock = Mock(return_value=match_results_df)
 
 fixture_df = pd.read_csv(
     f"{BASE_DIR}/machine_learning/tests/fixtures/ft_match_list.csv"
-)
+).assign(date=lambda df: pd.to_datetime(df["date"]).dt.tz_localize(MELBOURNE_TIMEZONE))
 fixture_mock_df = (
     fixture_df.sort_values("date", ascending=False)
     .iloc[:10, :]

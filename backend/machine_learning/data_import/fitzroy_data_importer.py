@@ -1,6 +1,6 @@
 import json
 from typing import Dict, Any, List
-from datetime import datetime
+from datetime import date
 from urllib.parse import urljoin
 
 import pandas as pd

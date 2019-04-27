@@ -21,6 +21,13 @@ services:
       - webnet
     restart: unless-stopped
     command: python3 ./backend/manage.py runserver 0.0.0.0:8000
+  afl_data:
+    image: cfranklin11/tipresias_afl_data:latest
+    stdin_open: true
+    tty: true
+    networks:
+      - webnet
+    command: Rscript R/app.R
   db:
     image: postgres
     environment:

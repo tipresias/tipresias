@@ -4,20 +4,13 @@
 # their own
 FROM python:3.6@sha256:00110125bd9c23f200cfd2cfa82e68b8ab2006e1358f7a048e005794aa51568f
 
-# Install R to use rpy2 for access to R packages
-RUN apt-get update && apt-get -y install r-base
-
 # Install curl, node, & yarn
-RUN apt-get -y install curl
-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash \
-  && apt-get install nodejs
-RUN curl -o- -L https://yarnpkg.com/install.sh | bash
+RUN apt-get -y install curl \
+  && curl -sL https://deb.nodesource.com/setup_8.x | bash \
+  && apt-get install nodejs \
+  && curl -o- -L https://yarnpkg.com/install.sh | bash
 
 WORKDIR /app/backend
-
-# Install R dependencies
-COPY ./backend/requirements.r /app/backend/
-RUN Rscript requirements.r
 
 # Install Python dependencies
 COPY ./backend/requirements.txt /app/backend/
@@ -41,8 +34,7 @@ RUN $HOME/.yarn/bin/yarn build
 # for whitenoise middleware
 WORKDIR /app/frontend/build
 
-RUN mkdir root
-RUN mv *.ico *.js *.json root
+RUN mkdir root && mv *.ico *.js *.json root
 
 WORKDIR /app/backend
 

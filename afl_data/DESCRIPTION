@@ -1,0 +1,18 @@
+Package: afldata
+Version: 1.0
+Date: 2019-04-27
+Title: AFL Data API for Tipresias
+Author: Craig Franklin
+Maintainer: Craig Franklin
+Description: Basic API webserver to fetch AFL data from the fitzRoy package
+    and return it in a JSON response.
+License: MIT
+Imports:
+    BH,
+    plumber,
+    progress,
+    tidyverse,
+    plogr,
+    fitzRoy
+Remotes:
+    git@github.com:jimmyday12/fitzRoy.git

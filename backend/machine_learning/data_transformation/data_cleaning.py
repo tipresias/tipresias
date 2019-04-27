@@ -171,16 +171,6 @@ def _append_fixture_to_match_data(
     )
 
 
-# fitzRoy returns integers that represent some sort of datetime, and the only
-# way to parse them is converting them to dates.
-# NOTE: If the matches parsed only go back to 1990 (give or take, I can't remember)
-# you can parse the date integers into datetime
-def _parse_fitzroy_dates(data_frame: pd.DataFrame) -> pd.Series:
-    return pd.to_datetime(data_frame["date"], unit="D").dt.tz_localize(
-        MELBOURNE_TIMEZONE
-    )
-
-
 # ID values are converted to floats automatically, making for awkward strings later.
 # We want them as strings, because sometimes we have to use player names as replacement
 # IDs, and we concatenate multiple ID values to create a unique index.
@@ -210,9 +200,6 @@ def clean_match_data(
 ) -> pd.DataFrame:
     match_data = (
         past_match_data.rename(columns=MATCH_COL_TRANSLATIONS)
-        .assign(
-            date=_parse_fitzroy_dates, away_margin=lambda df: df["home_margin"] * -1
-        )
         .astype({"year": int, "round_number": int})
         .pipe(
             _filter_out_dodgy_data(
@@ -296,7 +283,6 @@ def clean_player_data(
             venue=lambda x: x["venue"].str.strip(),
             player_name=lambda x: x["first_name"] + " " + x["surname"],
             player_id=_convert_id_to_string("player_id"),
-            date=_parse_fitzroy_dates,
         )
         .drop(UNUSED_PLAYER_COLS + ["first_name", "surname", "round_number"], axis=1)
         # Player data match IDs are wrong for recent years.

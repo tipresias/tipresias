@@ -23,10 +23,12 @@ script:
   - docker run cfranklin11/tipresias_client:master yarn run eslint src
   - docker run cfranklin11/tipresias_client:master yarn run flow
   - docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit
+  - docker build --cache-from cfranklin11/tipresias_afl_data:latest -t cfranklin11/tipresias_afl_data:latest ./afl_data
 after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_server:master
   - docker push cfranklin11/tipresias_client:master
+  - docker push cfranklin11/tipresias_afl_data:latest
 deploy:
   provider: script
   script: bash ./deploy.sh

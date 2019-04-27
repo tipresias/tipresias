@@ -2,17 +2,11 @@
 numpy
 pandas<0.24,>=0.23.0 # Required version for featuretools
 scikit-learn==0.20.1
-tensorflow==1.11.0
 scipy
 xgboost==0.80
 jupyter
 ipykernel<5.0.0 # Necessary for a Jupyter bug (as of 30-9-18): https://github.com/jupyter/notebook/issues/4050
-rpy2>=3.0
-tzlocal
 dask[complete]
-mlxtend
-category_encoders
-featuretools==0.6.0
 
 # Data vis packages
 seaborn
@@ -22,7 +16,6 @@ matplotlib
 requests
 bs4
 html5lib
-aiohttp
 
 # App packages
 django

@@ -11,12 +11,22 @@ services:
     tty: true
     depends_on:
       - db
+      - afl_data
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
       - GRAPHIQL=True
     command: python3 manage.py runserver 0.0.0.0:8000
+  afl_data:
+    build: ./afl_data
+    volumes:
+      - ./afl_data:/app/afl_data
+    ports:
+      - "8001:8001"
+    stdin_open: true
+    tty: true
+    command: Rscript R/app.R
   frontend:
     build: ./frontend
     volumes:

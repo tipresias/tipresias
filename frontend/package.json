@@ -6,9 +6,6 @@
     "apollo-boost": "^0.3.1",
     "axios": "^0.18.0",
     "d3": "^5.7.0",
-    "enzyme": "^3.7.0",
-    "enzyme-adapter-react-16": "^1.6.0",
-    "eslint-plugin-import": "^2.14.0",
     "flow-typed": "^2.5.1",
     "graphql": "^14.2.1",
     "graphql-tag": "^2.10.1",
@@ -16,7 +13,7 @@
     "react": "^16.5.2",
     "react-apollo": "^2.5.4",
     "react-dom": "^16.5.2",
-    "react-scripts": "2.1.8"
+    "react-scripts": "3.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -28,8 +25,12 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-flow": "^6.23.0",
+    "enzyme": "^3.7.0",
+    "enzyme-adapter-react-16": "^1.6.0",
     "eslint-config-airbnb": "^17.1.0",
+    "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-flowtype": "^3.2.0",
+    "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-jsx-a11y": "^6.1.1",
     "eslint-plugin-react": "^7.11.1",
     "flow-bin": "^0.85.0"

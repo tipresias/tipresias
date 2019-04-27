@@ -9,8 +9,8 @@ function(fetch_data = FALSE) {
   }
 
   data %>%
-    rename_all(funs(str_to_lower(.) %>%
-    str_replace_all(., "\\.", "_"))) %>% jsonlite::toJSON()
+    rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
+    jsonlite::toJSON()
 }
 
 #' Return player data
@@ -26,9 +26,11 @@ function(start_date = "1897-01-01", end_date = Sys.Date()) {
   )
 
   data %>%
-    rename_all(funs(str_to_lower %>% str_replace_all(., "\\.", "_"))) %>%
+    rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
     jsonlite::toJSON()
 }
+
+# Private functions
 
 handle_players_route_error <- function(start_date, end_date) {
   end_date_year <- end_date %>% substring(0, 4) %>% as.integer()

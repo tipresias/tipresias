@@ -83,6 +83,9 @@ class FitzroyDataImporter:
     ) -> List[Dict[str, Any]]:
         data = requests.get(urljoin(AFL_DATA_SERVICE, path), params=params).json()
 
+        if isinstance(data, dict) and "error" in data.keys():
+            raise RuntimeError(data["error"])
+
         if len(data) == 1:
             # For some reason, when returning match data with fetch_data=False,
             # plumber returns JSON as a big string inside a list, so we have to parse

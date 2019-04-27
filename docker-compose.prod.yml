@@ -27,7 +27,7 @@ services:
     tty: true
     networks:
       - webnet
-    command: Rscript app.R
+    command: Rscript R/app.R
   db:
     image: postgres
     environment:

@@ -1,22 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ApolloClient from "apollo-boost";
-import gql from "graphql-tag";
+import { ApolloProvider } from "react-apollo";
 import App from './containers/App';
 import registerServiceWorker from './registerServiceWorker';
 
-const client = new ApolloClient()
+const client = new ApolloClient();
 
-client.query({
-  query: gql`{
-      predictions(year: 2016) { id }
-    }`
-}).then(result => {
-    console.log('result >>>> ',result)
-  }).catch((error) => {
-    console.log(error);
+const withApollo = (Component) => {
+  return (
+    <ApolloProvider client={client}>
+      <Component />
+    </ApolloProvider>
+  )
+}
+const AppWithApollo = withApollo(App);
 
-  });
-
-ReactDOM.render(<App />, document.getElementById('root'));
+ReactDOM.render(AppWithApollo, document.getElementById('root'));
 registerServiceWorker();

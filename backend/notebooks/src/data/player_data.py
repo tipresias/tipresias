@@ -1,7 +1,6 @@
 import pandas as pd
-from rpy2.robjects import r
-
-from notebooks.src.data.fitzroy_data import fitzroy, r_to_pandas
+from notebooks.src.data.fitzroy_data import fitzroy
+from machine_learning.data_import import FitzroyDataImporter
 
 STATS_COLS = [
     "player_id",
@@ -58,11 +57,10 @@ def player_data(
 ):
     # Player data matches have weird round labelling system (lots of strings for finals matches),
     # so using round numbers from match_results
-    match_df = r_to_pandas(r("fitzRoy::match_results"))
+    match_df = FitzroyDataImporter().match_results()
     player_df = (
-        r_to_pandas(
-            fitzroy().get_afltables_stats(start_date=start_date, end_date=end_date)
-        )
+        fitzroy()
+        .get_afltables_stats(start_date=start_date, end_date=end_date)
         # Some player data venues have trailing spaces
         .assign(venue=lambda x: x["venue"].str.strip())
         # Player data match IDs are wrong for recent years.

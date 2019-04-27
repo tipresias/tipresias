@@ -1,21 +1,24 @@
 import sys
 import math
-from rpy2.robjects import packages, pandas2ri
 
 from project.settings.common import BASE_DIR
 
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-from server.data_processors import TeamDataStacker, FeatureBuilder
-from server.data_processors.feature_functions import (
-    add_last_week_result,
-    add_last_week_score,
+from machine_learning.data_import import FitzroyDataImporter
+from machine_learning.data_processors import TeamDataStacker, FeatureBuilder
+from machine_learning.data_processors.feature_functions import (
+    add_shifted_team_features,
+    add_result,
     add_cum_percent,
     add_cum_win_points,
-    add_rolling_win_rate,
     add_ladder_position,
     add_win_streak,
+)
+from machine_learning.data_processors.feature_calculation import (
+    feature_calculator,
+    calculate_rolling_rate,
 )
 
 COL_TRANSLATIONS = {
@@ -124,17 +127,7 @@ VENUE_CITIES = {
 
 
 def fitzroy():
-    # Recommendation from the documentation due to some weirdness around how
-    # R packages use these labels internally
-    translations = {
-        "package.dependencies": "package_dot_dependencies",
-        "package_dependencies": "package_uscore_dependencies",
-    }
-    return packages.importr("fitzRoy", robject_translations=translations)
-
-
-def r_to_pandas(df):
-    return pandas2ri.ri2py(df).rename(columns=lambda x: x.lower().replace(".", "_"))
+    FitzroyDataImporter()
 
 
 def add_last_week_goals(data_frame):
@@ -196,8 +189,9 @@ def add_travel_distance(data_frame):
 
 def fr_match_data():
     data_frame = (
-        r_to_pandas(fitzroy().get_match_results()).rename(columns=COL_TRANSLATIONS)
-        #   .assign(date=lambda x: pd.to_datetime(x['date'], unit='D'))
+        fitzroy()
+        .get_match_results()
+        .rename(columns=COL_TRANSLATIONS)
         .drop(["round", "game", "date"], axis=1)
     )
 
@@ -209,17 +203,17 @@ def fr_match_data():
     stacked_df = TeamDataStacker(index_cols=INDEX_COLS).transform(data_frame)
 
     FEATURE_FUNCS = [
+        add_result,
+        add_shifted_team_features(
+            shift_columns=["result", "score", "goals", "behinds"]
+        ),
         add_out_of_state,
         add_travel_distance,
-        add_last_week_goals,
-        add_last_week_behinds,
-        add_last_week_result,
-        add_last_week_score,
         add_cum_percent,
         add_cum_win_points,
-        add_rolling_win_rate,
         add_ladder_position,
         add_win_streak,
+        feature_calculator([(calculate_rolling_rate, [("prev_match_result",)])]),
     ]
 
     return (

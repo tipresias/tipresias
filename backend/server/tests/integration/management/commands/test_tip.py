@@ -71,19 +71,18 @@ class TestTip(TestCase):
             side_effect=self.__pred_bulk_create(pred_bulk_create)
         )
 
-        # Save records in DB
+        MLModelFactory()
+
+        # Can't use TeamFactory, because team names need to match fixture data
+<<<<<<< HEAD
         for match_data in self.fixture_data:
             Team(name=match_data["home_team"]).save()
             Team(name=match_data["away_team"]).save()
-
-        test_estimator = TestEstimator()
-
-        MLModel(
-            name=test_estimator.name,
-            description="Test estimator model",
-            filepath=test_estimator.pickle_filepath(),
-            data_class_path=BettingMLData.class_path(),
-        ).save()
+=======
+        for match_data in fixture_data.to_dict("records"):
+            TeamFactory(name=match_data["home_team"])
+            TeamFactory(name=match_data["away_team"])
+>>>>>>> c2aff0c9... fixup! fixup! Add model factories
 
         # Not fetching data, because it takes forever
         self.tip_command = tip.Command(

@@ -1,0 +1,1 @@
+export { getPredictionsQuery } from './getPredictions';

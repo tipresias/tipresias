@@ -1,47 +1,44 @@
 // @flow
 import React, { Component } from 'react';
+import { Query } from 'react-apollo';
+import { getPredictionsQuery } from '../../graphql';
 import type { Game } from '../../types';
-import fetchPredictions from '../../services/fetchPredictions';
-import filterDataByYear from '../../utils/filterGameByYear';
+// import fetchPredictions from '../../services/fetchPredictions';
+// import filterDataByYear from '../../utils/filterGameByYear';
 import logo from './tipresias-logo.svg';
 import './App.css';
-import BarChartContainer from '../BarChartContainer';
-import Select from '../../components/Select';
-import Predictions from '../../components/Predictions';
+// import BarChartContainer from '../BarChartContainer';
+// import Select from '../../components/Select';
+import BarChartSecondary from '../../components/BarChartSecondary';
 
 type State = {
-  isLoading: boolean,
-  year: number,
-  allGames: Array<Game>,
-  gamesByYear: Array<Game>
+  year: number
 }
 
-type Props = {}
+type Props = {
+}
 
 class App extends Component<Props, State> {
   state = {
-    isLoading: true,
-    year: 2011,
-    allGames: [],
-    gamesByYear: [],
+    year: 2014
   };
 
   // componentDidMount() {
-  //   fetchPredictions('/predictions').then((data) => {
-  //     this.setState({ allGames: data }, () => {
-  //       const { allGames, year } = this.state;
-  //       this.setGamesByYear(allGames, year);
-  //     });
-  //   }).catch((err) => {
-  //     console.log(err);
+  // fetchPredictions('/predictions').then((data) => {
+  //   this.setState({ allGames: data }, () => {
+  //     const { allGames, year } = this.state;
+  //     // this.setGamesByYear(allGames, year);
   //   });
+  // }).catch((err) => {
+  //   console.log(err);
+  // });
   // }
 
   // componentDidUpdate(prevProps: Props, prevState: State) {
-  //   const { allGames, year } = this.state;
-  //   if (year !== prevState.year) {
-  //     this.setGamesByYear(allGames, year);
-  //   }
+  // const { allGames, year } = this.state;
+  // if (year !== prevState.year) {
+  //   this.setGamesByYear(allGames, year);
+  // }
   // }
 
   // onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
@@ -56,38 +53,46 @@ class App extends Component<Props, State> {
   //   });
   // }
 
-  // render() {
-  //   const {
-  //     isLoading,
-  //     gamesByYear,
-  //     year,
-  //   } = this.state;
-
-  //   let contentComponent;
-  //   if (isLoading) {
-  //     contentComponent = <div>Loading content!...</div>;
-  //   } else {
-  //     contentComponent = <BarChartContainer year={year} gamesByYear={gamesByYear} />;
-  //   }
-  //   return (
-  //     <div className="App">
-  //       <header className="App-header">
-  //         <img src={logo} className="App-logo" alt="logo" />
-  //         <Select
-  //           value={year}
-  //           onChange={this.onChangeYear}
-  //           options={[2011, 2012, 2013, 2014]}
-  //         />
-  //       </header>
-  //       <div className="App-content">
-  //         {contentComponent}
-  //       </div>
-  //     </div>
-  //   );
-  // }
   render() {
-    return (<Predictions />)
+    const {
+      year
+    } = this.state;
+    console.log(year);
+
+    // let contentComponent;
+    // if (isLoading) {
+    //   contentComponent = <div>Loading content!...</div>;
+    // } else {
+    //   contentComponent = <BarChartContainer year={year} gamesByYear={games} />;
+    // }
+    const queryChildren = ({ loading, error, data }) => {
+      if (loading) return <div>loading...</div>
+      if (error) return <div>error...</div>
+      return <BarChartSecondary games={data} />
+    }
+
+    return (
+      // <div className="App">
+      //   <header className="App-header">
+      //     <img src={logo} className="App-logo" alt="logo" />
+      //     <Select
+      //       value={year}
+      //       onChange={this.onChangeYear}
+      //       options={[2011, 2012, 2013, 2014]}
+      //     />
+      //   </header>
+      //   <div className="App-content">
+      //     {contentComponent}
+      //   </div>
+      // </div>
+      <Query query={getPredictionsQuery} variables={{ year }}>
+        {
+          queryChildren
+        }
+      </Query>
+    );
   }
+
 }
 
 export default App;

@@ -1,5 +1,5 @@
 // @flow
-import React, { Component } from 'react';
+import React, { Fragment, Component } from 'react';
 import { Query } from 'react-apollo';
 import { getPredictionsQuery } from '../../graphql';
 import type { Game } from '../../types';
@@ -8,7 +8,7 @@ import type { Game } from '../../types';
 import logo from './tipresias-logo.svg';
 import './App.css';
 // import BarChartContainer from '../BarChartContainer';
-// import Select from '../../components/Select';
+import Select from '../../components/Select';
 import BarChartSecondary from '../../components/BarChartSecondary';
 
 type State = {
@@ -41,9 +41,9 @@ class App extends Component<Props, State> {
   // }
   // }
 
-  // onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
-  //   this.setState({ year: parseInt(event.currentTarget.value, 10) });
-  // }
+  onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
+    this.setState({ year: parseInt(event.currentTarget.value, 10) });
+  }
 
   // setGamesByYear(allGames: Array<Game>, year: number) {
   //   const gamesByYear = filterDataByYear(allGames, year);
@@ -57,7 +57,7 @@ class App extends Component<Props, State> {
     const {
       year
     } = this.state;
-    console.log(year);
+
 
     // let contentComponent;
     // if (isLoading) {
@@ -72,24 +72,19 @@ class App extends Component<Props, State> {
     }
 
     return (
-      // <div className="App">
-      //   <header className="App-header">
-      //     <img src={logo} className="App-logo" alt="logo" />
-      //     <Select
-      //       value={year}
-      //       onChange={this.onChangeYear}
-      //       options={[2011, 2012, 2013, 2014]}
-      //     />
-      //   </header>
-      //   <div className="App-content">
-      //     {contentComponent}
-      //   </div>
-      // </div>
-      <Query query={getPredictionsQuery} variables={{ year }}>
-        {
-          queryChildren
-        }
-      </Query>
+      <div className="App">
+        <header className="App-header">
+          <img src={logo} className="App-logo" alt="logo" />
+          <Select
+            value={year}
+            onChange={this.onChangeYear}
+            options={[2011, 2012, 2013, 2014, 2015, 2016, 2017]}
+          />
+        </header>
+        <Query query={getPredictionsQuery} variables={{ year }}>
+          {queryChildren}
+        </Query>
+      </div>
     );
   }
 

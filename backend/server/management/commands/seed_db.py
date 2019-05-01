@@ -175,7 +175,7 @@ class Command(BaseCommand):
 
         # Loading the data here, because it makes for a weird set of messages to do it
         # in the middle of loading models & making predictions
-        self.data.data
+        self.data.data  # pylint: disable=W0104
 
         make_model_predictions = partial(
             self.__make_model_predictions, year_range, round_number=round_number

@@ -24,6 +24,8 @@ FixtureData = TypedDict(
         "round": int,
         "home_team": str,
         "away_team": str,
+        "home_score": int,
+        "away_score": int,
         "venue": str,
     },
 )
@@ -171,6 +173,10 @@ class Command(BaseCommand):
                     "\tCould not find any ML models in DB to make predictions."
                 )
 
+        # Loading the data here, because it makes for a weird set of messages to do it
+        # in the middle of loading models & making predictions
+        self.data.data  # pylint: disable=W0104
+
         make_model_predictions = partial(
             self.__make_model_predictions, year_range, round_number=round_number
         )
@@ -299,10 +305,10 @@ class Command(BaseCommand):
         away_team = Team.objects.get(name=match_data["away_team"])
 
         home_team_match = TeamMatch(
-            team=home_team, match=match, at_home=True, score=NO_SCORE
+            team=home_team, match=match, at_home=True, score=match_data["home_score"]
         )
         away_team_match = TeamMatch(
-            team=away_team, match=match, at_home=False, score=NO_SCORE
+            team=away_team, match=match, at_home=False, score=match_data["away_score"]
         )
 
         home_team_match.clean_fields()

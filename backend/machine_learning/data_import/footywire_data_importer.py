@@ -88,6 +88,8 @@ class FootywireDataImporter:
         """
 
         if fetch_data:
+            print(f"Fetching fixture data in the year range of {year_range}...")
+
             return self.__clean_fixture_data_frame(
                 self.__fetch_data(FIXTURE_PATH, year_range)
             )
@@ -108,6 +110,8 @@ class FootywireDataImporter:
         """
 
         if fetch_data:
+            print(f"Fetching betting data in the year range of {year_range}...")
+
             return self.__fetch_data(BETTING_PATH, year_range).pipe(
                 self.__clean_betting_data_frame
             )
@@ -161,6 +165,8 @@ class FootywireDataImporter:
 
         data = list(itertools.chain.from_iterable(yearly_data))
         columns = FIXTURE_COLS if url_path == FIXTURE_PATH else BETTING_COLS
+
+        print("Data received!")
 
         return pd.DataFrame(data, columns=columns)
 

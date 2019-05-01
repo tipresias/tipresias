@@ -173,6 +173,10 @@ class Command(BaseCommand):
                     "\tCould not find any ML models in DB to make predictions."
                 )
 
+        # Loading the data here, because it makes for a weird set of messages to do it
+        # in the middle of loading models & making predictions
+        self.data.data
+
         make_model_predictions = partial(
             self.__make_model_predictions, year_range, round_number=round_number
         )

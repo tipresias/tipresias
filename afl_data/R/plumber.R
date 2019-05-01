@@ -9,6 +9,7 @@ function(fetch_data = FALSE) {
   }
 
   data %>%
+    filter(., Season >= this_year - MIN_SEASONS_FOR_PREDICTION_DATA) %>%
     rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
     jsonlite::toJSON()
 }
@@ -17,8 +18,10 @@ function(fetch_data = FALSE) {
 #' @param start_date Minimum match date for fetched data
 #' @param end_date Maximum match date for fetched data
 #' @get /players
-#' AFL Tables data starts in 1897
-function(start_date = "1897-01-01", end_date = Sys.Date()) {
+#' AFL Tables data starts in 1897, but making default 2 years ago,
+#' because that's all we need for predictions, and it keeps RAM usage
+#' to a minimum
+function(start_date = "2017-01-01", end_date = Sys.Date()) {
   data <- tryCatch({
       fitzRoy::get_afltables_stats(start_date = start_date, end_date = end_date)
     },
@@ -26,6 +29,7 @@ function(start_date = "1897-01-01", end_date = Sys.Date()) {
   )
 
   data %>%
+    filter(., Season >= this_year - MIN_SEASONS_FOR_PREDICTION_DATA) %>%
     rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
     jsonlite::toJSON()
 }
@@ -62,3 +66,5 @@ retry_with_last_year_end_date <- function(start_date, end_date) {
 }
 
 this_year <- Sys.Date() %>% substring(0, 4) %>% as.integer()
+
+MIN_SEASONS_FOR_PREDICTION_DATA = 2

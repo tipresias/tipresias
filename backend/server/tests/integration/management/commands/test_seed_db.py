@@ -76,6 +76,7 @@ class TestSeedDb(TestCase):
         self.assertEqual(
             Prediction.objects.count(), ROW_COUNT * len(range(*self.years))
         )
+        self.assertEqual(TeamMatch.objects.filter(score=0).count(), 0)
 
     def test_handle_errors(self):
         with self.subTest(

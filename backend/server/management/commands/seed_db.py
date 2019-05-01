@@ -24,6 +24,8 @@ FixtureData = TypedDict(
         "round": int,
         "home_team": str,
         "away_team": str,
+        "home_score": int,
+        "away_score": int,
         "venue": str,
     },
 )
@@ -299,10 +301,10 @@ class Command(BaseCommand):
         away_team = Team.objects.get(name=match_data["away_team"])
 
         home_team_match = TeamMatch(
-            team=home_team, match=match, at_home=True, score=NO_SCORE
+            team=home_team, match=match, at_home=True, score=match_data["home_score"]
         )
         away_team_match = TeamMatch(
-            team=away_team, match=match, at_home=False, score=NO_SCORE
+            team=away_team, match=match, at_home=False, score=match_data["away_score"]
         )
 
         home_team_match.clean_fields()

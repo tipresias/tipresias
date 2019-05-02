@@ -14,23 +14,18 @@ from project.settings.common import MELBOURNE_TIMEZONE
 # (index = 6)
 SATURDAY = 5
 MELBOURNE_TIMEZONE_NAME = "Australia/Melbourne"
+MINS_PER_12_HOURS = 60 * 12
 
 
 class SendTips(CronJobBase):
     """Cron job for running the 'tip' and 'send_email' management commands"""
 
-    # Running at noon to get reasonably up-to-date betting/roster data while giving me
-    # plenty of time to submit my tips.
-    RUN_AT_TIMES = ["12:00"]
-
-    schedule = Schedule(run_at_times=RUN_AT_TIMES)
+    schedule = Schedule(run_every_mins=MINS_PER_12_HOURS)
     code = "tipresias.send_tips"
 
     def __init__(self, data_reader=FootywireDataImporter()):
         super().__init__()
 
-        # TODO: Need to set server timezone to Melbourne time for this to work as
-        # intended
         self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.data_reader = data_reader
 

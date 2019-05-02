@@ -11,7 +11,8 @@ Imports:
     BH,
     plumber,
     progress,
-    tidyverse,
+    dplyr,
+    stringr,
     plogr,
     fitzRoy
 Remotes:

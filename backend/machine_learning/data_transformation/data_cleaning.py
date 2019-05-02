@@ -51,8 +51,6 @@ UNUSED_PLAYER_COLS = [
     "umpire_2",
     "umpire_3",
     "umpire_4",
-    "substitute",
-    "group_id",
 ]
 
 PLAYER_FILLNA = {

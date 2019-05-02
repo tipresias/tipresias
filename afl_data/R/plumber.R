@@ -4,7 +4,7 @@ this_year <- Sys.Date() %>% substring(0, 4) %>% as.integer()
 #' Return match results data
 #' @param fetch_data Whether to fetch fresh data from afltables.com
 #' @get /matches
-function(fetch_data = FALSE) {
+function(fetch_data = FALSE, full_season_count = MIN_SEASONS_FOR_PREDICTION_DATA) {
   data <- if (fetch_data) {
     fitzRoy::get_match_results()
   } else {
@@ -12,7 +12,7 @@ function(fetch_data = FALSE) {
   }
 
   data %>%
-    filter(., Season >= this_year - MIN_SEASONS_FOR_PREDICTION_DATA) %>%
+    filter(., Season >= this_year - full_season_count) %>%
     rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
     jsonlite::toJSON()
 }
@@ -24,7 +24,11 @@ function(fetch_data = FALSE) {
 #' AFL Tables data starts in 1897, but making default 2 years ago,
 #' because that's all we need for predictions, and it keeps RAM usage
 #' to a minimum
-function(start_date = "2017-01-01", end_date = Sys.Date()) {
+function(
+  start_date = "2017-01-01",
+  end_date = Sys.Date(),
+  full_season_count = MIN_SEASONS_FOR_PREDICTION_DATA
+) {
   handle_players_route_error <- function(start_date, end_date) {
     end_date_year <- end_date %>% substring(0, 4) %>% as.integer()
 
@@ -61,7 +65,7 @@ function(start_date = "2017-01-01", end_date = Sys.Date()) {
   )
 
   data %>%
-    filter(., Season >= this_year - MIN_SEASONS_FOR_PREDICTION_DATA) %>%
+    filter(., Season >= this_year - full_season_count) %>%
     rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
     jsonlite::toJSON()
 }

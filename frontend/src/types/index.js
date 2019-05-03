@@ -4,18 +4,27 @@ export type NumericScale = (a: number) => number
 export type StringScale = (a: string) => string
 
 export type Game = {
-  away_team: string,
-  draw: number,
-  home_margin: number,
-  home_team: string,
-  home_win: number,
-  model: string,
-  predicted_home_margin: number,
-  predicted_home_win: number,
-  round_number: number,
-  tip_point: number,
-  year: number
+  id: string,
+  isCorrect: boolean,
+  match: Object,
+  mlModel: Object,
+  predictedMargin: number,
+  predictedWinner: Object
 }
+
+// export type Game = {
+//   away_team: string,
+//   draw: number,
+//   home_margin: number,
+//   home_team: string,
+//   home_win: number,
+//   model: string,
+//   predicted_home_margin: number,
+//   predicted_home_win: number,
+//   round_number: number,
+//   tip_point: number,
+//   year: number
+// }
 
 export type CumulTipPointPerModel = {
   cumulativeTotalPoints: number,

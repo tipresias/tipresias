@@ -1,1 +1,1 @@
-export { getPredictionsQuery } from './getPredictions';
+export { GET_PREDICTIONS_QUERY } from './getPredictions';

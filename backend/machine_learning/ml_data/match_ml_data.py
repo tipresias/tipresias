@@ -1,7 +1,7 @@
 """Module with wrapper class for XGBoost model and its associated data class"""
 
 from typing import List, Callable
-from datetime import datetime
+from datetime import datetime, date
 import pandas as pd
 
 from machine_learning.types import DataFrameTransformer, YearPair, DataReadersParam
@@ -140,9 +140,15 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
         test_years: YearPair = (2016, 2016),
         index_cols: List[str] = INDEX_COLS,
         fetch_data: bool = False,
+        start_date: str = "1897-01-01",
+        end_date: str = str(date.today()),
     ) -> None:
         super().__init__(
-            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+            train_years=train_years,
+            test_years=test_years,
+            fetch_data=fetch_data,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         self._data_transformers = data_transformers
@@ -158,7 +164,14 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
         if self._data is None:
             match_data_reader, match_data_kwargs = self.data_readers["match"]
             match_data = match_data_reader(
-                **{**match_data_kwargs, **{"fetch_data": self.fetch_data}}
+                **{
+                    **match_data_kwargs,
+                    **{
+                        "fetch_data": self.fetch_data,
+                        "start_date": self.start_date,
+                        "end_date": self.end_date,
+                    },
+                }
             )
 
             if self.fetch_data and "fixture" in self.data_readers.keys():

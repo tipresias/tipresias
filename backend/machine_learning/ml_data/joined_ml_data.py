@@ -1,6 +1,7 @@
 """Module for machine learning data class that joins various data sources together"""
 
 from typing import List, Dict
+from datetime import date
 import pandas as pd
 
 from machine_learning.data_processors import FeatureBuilder
@@ -73,9 +74,15 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
         category_cols: List[str] = CATEGORY_COLS,
         data_transformers: List[DataFrameTransformer] = DATA_TRANSFORMERS,
         fetch_data: bool = False,
+        start_date: str = "1897-01-01",
+        end_date: str = str(date.today()),
     ) -> None:
         super().__init__(
-            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+            train_years=train_years,
+            test_years=test_years,
+            fetch_data=fetch_data,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         self._data_transformers = data_transformers
@@ -87,9 +94,15 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
     def data(self) -> pd.DataFrame:
         if self._data is None:
             self.data_readers["player"].fetch_data = self.fetch_data
+            self.data_readers["player"].start_date = self.start_date
+            self.data_readers["player"].end_date = self.end_date
             player_data = self.data_readers["player"].data
+
             self.data_readers["match"].fetch_data = self.fetch_data
+            self.data_readers["match"].start_date = self.start_date
+            self.data_readers["match"].end_date = self.end_date
             match_data = self.data_readers["match"].data
+
             self.data_readers["betting"].fetch_data = self.fetch_data
             # Betting data dates are correct, but the times are arbitrarily set by the
             # parser, so better to leave the date definition to a different data source

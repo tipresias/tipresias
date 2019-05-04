@@ -2,7 +2,7 @@
 
 import os
 from functools import partial, reduce
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, Optional
 from mypy_extensions import TypedDict
 from django.core.management.base import BaseCommand
@@ -30,6 +30,13 @@ FixtureData = TypedDict(
 )
 
 NO_SCORE = 0
+# We calculate rolling sums/means for some features that can span over 5 seasons
+# of data, so we're setting it to 10 to be on the safe side.
+N_SEASONS_FOR_PREDICTION = 10
+# We want to limit the amount of data loaded as much as possible,
+# because we only need the full data set for model training and data analysis,
+# and we want to limit memory usage and speed up data processing for tipping
+PREDICTION_DATA_START_DATE = f"{date.today().year - N_SEASONS_FOR_PREDICTION}-01-01"
 
 
 class Command(BaseCommand):
@@ -45,13 +52,12 @@ class Command(BaseCommand):
         *args,
         data_reader=FootywireDataImporter(),
         fetch_data=True,
-        data=JoinedMLData(fetch_data=True),
+        data=JoinedMLData(fetch_data=True, start_date=PREDICTION_DATA_START_DATE),
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
         self.data_reader = data_reader
-        # Fixture data uses UTC
         self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.current_year = self.right_now.year
         self.fetch_data = fetch_data

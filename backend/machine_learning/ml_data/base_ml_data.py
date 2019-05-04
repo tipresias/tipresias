@@ -1,6 +1,7 @@
 """Module for base class for machine learning data class"""
 
 from typing import Tuple
+from datetime import date
 
 import pandas as pd
 
@@ -19,10 +20,14 @@ class BaseMLData:
         train_years: YearPair = (None, 2015),
         test_years: YearPair = (2016, 2016),
         fetch_data: bool = False,
+        start_date: str = "1897-01-01",
+        end_date: str = str(date.today()),
     ) -> None:
         self._train_years = train_years
         self._test_years = test_years
         self.fetch_data = fetch_data
+        self.start_date = start_date
+        self.end_date = end_date
 
     def train_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Filter data by year to produce training data"""

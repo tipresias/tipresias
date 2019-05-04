@@ -21,7 +21,12 @@ AFL_DATA_SERVICE = "http://afl_data:8001"
 class FitzroyDataImporter:
     """Get data from the fitzRoy R package and return it as a pandas DataFrame."""
 
-    def match_results(self, fetch_data: bool = False) -> pd.DataFrame:
+    def match_results(
+        self,
+        fetch_data: bool = False,
+        start_date: str = "1897-01-01",
+        end_date: str = str(date.today()),
+    ) -> pd.DataFrame:
         """Get match results data.
 
         Args:
@@ -32,9 +37,16 @@ class FitzroyDataImporter:
             pandas.DataFrame
         """
 
-        print("Fetching match data...")
+        print(f"Fetching match data from between {start_date} and {end_date}...")
 
-        data = self.__fetch_afl_data("matches", params={"fetch_data": fetch_data})
+        data = self.__fetch_afl_data(
+            "matches",
+            params={
+                "fetch_data": fetch_data,
+                "start_date": start_date,
+                "end_date": end_date,
+            },
+        )
 
         print("Match data received!")
 

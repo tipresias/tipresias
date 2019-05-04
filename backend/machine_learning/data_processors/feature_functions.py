@@ -18,7 +18,13 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 
-from machine_learning.data_config import INDEX_COLS, CITIES, TEAM_CITIES, VENUE_CITIES
+from machine_learning.data_config import (
+    INDEX_COLS,
+    CITIES,
+    TEAM_CITIES,
+    VENUE_CITIES,
+    AVG_SEASON_LENGTH,
+)
 
 EloDictionary = TypedDict(
     "EloDictionary",
@@ -364,7 +370,7 @@ def add_rolling_player_stats(data_frame: pd.DataFrame):
         .groupby("player_id", group_keys=False)
     )
 
-    rolling_stats = player_groups.rolling(window=23).mean()
+    rolling_stats = player_groups.rolling(window=AVG_SEASON_LENGTH).mean()
     expanding_stats = player_groups.expanding(1).mean()
 
     player_stats = rolling_stats.fillna(expanding_stats).sort_index()

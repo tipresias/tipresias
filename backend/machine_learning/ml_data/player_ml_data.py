@@ -99,9 +99,15 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
         test_years: YearPair = (2016, 2016),
         index_cols: List[str] = INDEX_COLS,
         fetch_data: bool = False,
+        start_date: str = "1897-01-01",
+        end_date: str = str(date.today()),
     ) -> None:
         super().__init__(
-            train_years=train_years, test_years=test_years, fetch_data=fetch_data
+            train_years=train_years,
+            test_years=test_years,
+            fetch_data=fetch_data,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         self._data_transformers = data_transformers
@@ -114,11 +120,23 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
     def data(self):
         if self._data is None:
             player_data_reader, player_data_kwargs = self.data_readers["player"]
-            player_data = player_data_reader(**player_data_kwargs)
+            player_data = player_data_reader(
+                **{
+                    **player_data_kwargs,
+                    **{"start_date": self.start_date, "end_date": self.end_date},
+                }
+            )
 
             match_data_reader, match_data_kwargs = self.data_readers["match"]
             match_data = match_data_reader(
-                **{**match_data_kwargs, **{"fetch_data": self.fetch_data}}
+                **{
+                    **match_data_kwargs,
+                    **{
+                        "fetch_data": self.fetch_data,
+                        "start_date": self.start_date,
+                        "end_date": self.end_date,
+                    },
+                }
             )
             roster_data = self.__roster_data(match_data)
 

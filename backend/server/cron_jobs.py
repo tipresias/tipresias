@@ -38,9 +38,24 @@ class SendTips(CronJobBase):
         # Thursday games, we have to tip on Thursday before rosters are announced for
         # the rest of the matches (they usually get announced on Thursday around
         # 6:30 pm). So, we'll want to update tips for the rest of the round on Friday.
-        if self.__is_match_today(fixture_dates) and is_before_saturday:
-            tip.Command().handle()
-            send_email.Command().handle()
+        if not self.__is_match_today(fixture_dates):
+            print(
+                f"{str(self.right_now)} There is no match today, so it's unlikely "
+                "that all necessary data is available for making predictions"
+            )
+            return None
+
+        if not is_before_saturday:
+            print(
+                f"{str(self.right_now)} It is after Friday, so the latest tips "
+                "should include all necessary data and don't need to be updated"
+            )
+            return None
+
+        tip.Command(verbose=0).handle()
+        send_email.Command(verbose=0).handle()
+        print(f"{self.right_now} Updated tips and sent email")
+        return None
 
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
         fixture_data_frame = self.data_reader.get_fixture(
@@ -50,10 +65,11 @@ class SendTips(CronJobBase):
         latest_match_datetime = fixture_data_frame["date"].max()
 
         if self.right_now > latest_match_datetime:
-            print(
-                f"No unplayed matches found in {year}. We will try to fetch "
-                f"fixture for {year + 1}.\n"
-            )
+            if self.verbose == 1:
+                print(
+                    f"{self.right_now} No unplayed matches found in {year}. "
+                    f"We will try to fetch fixture for {year + 1}.\n"
+                )
 
             fixture_data_frame = self.data_reader.get_fixture(
                 year_range=(year, year + 1), fetch_data=True

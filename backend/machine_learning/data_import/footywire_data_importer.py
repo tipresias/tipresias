@@ -71,10 +71,12 @@ class FootywireDataImporter:
         csv_dir: str = DATA_DIR,
         fixture_filename: str = "ft_match_list",
         betting_filename: str = "afl_betting",
+        verbose=1,
     ) -> None:
         self.csv_dir = csv_dir
         self.fixture_filename = fixture_filename
         self.betting_filename = betting_filename
+        self.verbose = verbose
 
     def get_fixture(
         self, year_range: Optional[Tuple[int, int]] = None, fetch_data: bool = False
@@ -88,7 +90,8 @@ class FootywireDataImporter:
         """
 
         if fetch_data:
-            print(f"Fetching fixture data in the year range of {year_range}...")
+            if self.verbose == 1:
+                print(f"Fetching fixture data in the year range of {year_range}...")
 
             return self.__clean_fixture_data_frame(
                 self.__fetch_data(FIXTURE_PATH, year_range)
@@ -110,7 +113,8 @@ class FootywireDataImporter:
         """
 
         if fetch_data:
-            print(f"Fetching betting data in the year range of {year_range}...")
+            if self.verbose == 1:
+                print(f"Fetching betting data in the year range of {year_range}...")
 
             return self.__fetch_data(BETTING_PATH, year_range).pipe(
                 self.__clean_betting_data_frame
@@ -166,7 +170,8 @@ class FootywireDataImporter:
         data = list(itertools.chain.from_iterable(yearly_data))
         columns = FIXTURE_COLS if url_path == FIXTURE_PATH else BETTING_COLS
 
-        print("Data received!")
+        if self.verbose == 1:
+            print("Data received!")
 
         return pd.DataFrame(data, columns=columns)
 

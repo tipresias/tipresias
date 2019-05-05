@@ -67,6 +67,7 @@ class Command(BaseCommand):
         """Run 'tip' command"""
 
         self.verbose = verbose  # pylint: disable=W0201
+        self.data_reader.verbose = verbose
 
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
 

@@ -20,7 +20,7 @@ const groupModelsByRound = (data: Array<Game>): any => {
     acc[roundNumber][name].roundArray.push(currentItem);
 
     const roundPointTotal = acc[roundNumber][name].roundArray.reduce(
-      (acc2, item) => { return acc2 + item.isCorrect }, 0
+      (acc2, item) => acc2 + item.isCorrect, 0,
     );
 
     // total_points key

@@ -1,6 +1,6 @@
-import { gql } from "apollo-boost";
+import { gql } from 'apollo-boost';
 
-export const GET_PREDICTIONS_QUERY = gql`
+const GET_PREDICTIONS_QUERY = gql`
   query Predictions($year: Int){
     predictions(year: $year) {
       id
@@ -26,3 +26,4 @@ export const GET_PREDICTIONS_QUERY = gql`
     }
   }
 `;
+export default GET_PREDICTIONS_QUERY;

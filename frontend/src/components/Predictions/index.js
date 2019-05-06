@@ -1,6 +1,6 @@
 import React from 'react';
 import { Query } from 'react-apollo';
-import { gql } from "apollo-boost";
+import { gql } from 'apollo-boost';
 
 const Predictions = () => (
   <Query
@@ -20,9 +20,12 @@ const Predictions = () => (
         if (loading) return <p>Loading...</p>;
         if (error) return <p>Error :(</p>;
 
-        return data.predictions.map((item) => (
+        return data.predictions.map(item => (
           <div key={item.id}>
-            <p>venue: {item.match.venue}</p>
+            <p>
+venue:
+              {item.match.venue}
+            </p>
           </div>
         ));
       }

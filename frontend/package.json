@@ -13,7 +13,9 @@
     "react": "^16.5.2",
     "react-apollo": "^2.5.4",
     "react-dom": "^16.5.2",
-    "react-scripts": "3.0.0"
+    "react-scripts": "3.0.0",
+    "enzyme": "^3.7.0",
+    "enzyme-adapter-react-16": "^1.6.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -29,8 +31,6 @@
     "@babel/preset-flow": "^7.0.0",
     "@babel/preset-react": "^7.0.0",
     "babel-cli": "^6.26.0",
-    "enzyme": "^3.7.0",
-    "enzyme-adapter-react-16": "^1.6.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-flowtype": "^3.2.0",

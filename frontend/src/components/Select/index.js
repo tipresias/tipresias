@@ -14,18 +14,19 @@ const Select = ({
   onChange,
   options,
 }: Props): Node => (
-    <select
-      value={value}
-      name={name}
-      onChange={onChange}
-    >
-      {
-        options.map(option => (
-          <option key={option} value={option}>
-            {option}
-          </option>))
-      }
-    </select>
-  );
+  <select
+    value={value}
+    name={name}
+    onChange={onChange}
+  >
+    {
+      options.map(option => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))
+    }
+  </select>
+);
 
 export default Select;

@@ -57,7 +57,7 @@ class App extends Component<Props, State> {
     return (
       <div className="App" style={{ backgroundColor: '#f3f3f3' }}>
         <header className="App-header">
-          <Image alt="Tipresias" width={120} />
+          <Image url={require('../../assets/logo.svg')} alt="Tipresias" width={120} />
           <Select
             name="year"
             value={year}

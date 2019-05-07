@@ -4,7 +4,7 @@ import { shallow, mount } from 'enzyme';
 import MockComponent from '../../../test-support/MockComponent';
 import App from '../index';
 import Select from '../../../components/Select';
-import { GET_PREDICTIONS_QUERY } from '../../../graphql';
+import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 
 jest.mock('../../BarChartContainer', () => MockComponent);
 jest.mock('../../../components/ErrorBar', () => MockComponent);

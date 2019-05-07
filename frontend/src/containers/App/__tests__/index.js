@@ -2,9 +2,9 @@ import React from 'react';
 import { MockedProvider } from 'react-apollo/test-utils';
 import { shallow, mount } from 'enzyme';
 import MockComponent from '../../../test-support/MockComponent';
+import GET_PREDICTIONS_QUERY from '../../../graphql/getPredictions';
 import App from '../index';
 import Select from '../../../components/Select';
-import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 
 jest.mock('../../BarChartContainer', () => MockComponent);
 jest.mock('../../../components/ErrorBar', () => MockComponent);

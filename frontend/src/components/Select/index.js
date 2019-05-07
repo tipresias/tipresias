@@ -4,24 +4,27 @@ import type { Node } from 'react';
 
 type Props = {
   value: number,
-  onChange: (event: SyntheticEvent<HTMLSelectElement>)=> void,
+  name: string,
+  onChange: (event: SyntheticEvent<HTMLSelectElement>) => void,
   options: Array<number>
 }
 const Select = ({
   value,
+  name,
   onChange,
   options,
 }: Props): Node => (
   <select
     value={value}
-    name="year"
+    name={name}
     onChange={onChange}
   >
     {
       options.map(option => (
         <option key={option} value={option}>
           {option}
-        </option>))
+        </option>
+      ))
     }
   </select>
 );

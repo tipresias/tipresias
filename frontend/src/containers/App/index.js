@@ -1,86 +1,73 @@
 // @flow
 import React, { Component } from 'react';
-import type { Game } from '../../types';
-import fetchPredictions from '../../services/fetchPredictions';
-import filterDataByYear from '../../utils/filterGameByYear';
-import logo from './tipresias-logo.svg';
-import './App.css';
+import { Query } from 'react-apollo';
+import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
+// import type { Game } from '../../types';
 import BarChartContainer from '../BarChartContainer';
 import Select from '../../components/Select';
+import Image from '../../components/Image';
+import ErrorBar from '../../components/ErrorBar';
+import LoadingBar from '../../components/LoadingBar';
+import EmptyChart from '../../components/EmptyChart';
 
 type State = {
-  isLoading: boolean,
-  year: number,
-  allGames: Array<Game>,
-  gamesByYear: Array<Game>
+  year: number
 }
 
 type Props = {}
 
 class App extends Component<Props, State> {
   state = {
-    isLoading: true,
-    year: 2011,
-    allGames: [],
-    gamesByYear: [],
+    year: 2014,
   };
 
-  componentDidMount() {
-    fetchPredictions('/predictions').then((data) => {
-      this.setState({ allGames: data }, () => {
-        const { allGames, year } = this.state;
-        this.setGamesByYear(allGames, year);
-      });
-    }).catch((err) => {
-      console.log(err);
-    });
-  }
-
-  componentDidUpdate(prevProps: Props, prevState: State) {
-    const { allGames, year } = this.state;
-    if (year !== prevState.year) {
-      this.setGamesByYear(allGames, year);
-    }
-  }
+  OPTIONS = [2011, 2014, 2015, 2016, 2017];
 
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
   }
 
-  setGamesByYear(allGames: Array<Game>, year: number) {
-    const gamesByYear = filterDataByYear(allGames, year);
-    this.setState({
-      gamesByYear,
-      isLoading: false,
-    });
+  onSomethingElse = (event: SyntheticEvent<HTMLSelectElement>): void => {
+    this.setState({ year: parseInt(event.currentTarget.value, 10) });
   }
 
   render() {
     const {
-      isLoading,
-      gamesByYear,
       year,
     } = this.state;
 
-    let contentComponent;
-    if (isLoading) {
-      contentComponent = <div>Loading content!...</div>;
-    } else {
-      contentComponent = <BarChartContainer year={year} gamesByYear={gamesByYear} />;
-    }
+    const queryChildren = ({ loading, error, data }) => {
+      const nonNullData = (data || {});
+      const dataWithAllPredictions = { predictions: [], ...nonNullData };
+      const { predictions } = dataWithAllPredictions;
+
+      // if loading prop is true, render loading component
+      if (loading) return <LoadingBar text="Loading predictions..." />;
+
+      // if error prop is true, render error component
+      if (error) return <ErrorBar text={error.message} />;
+
+      // if predictions is empty
+      if (predictions.length === 0) return <EmptyChart text="No data found" />;
+
+      // if predictions prop is passed, renders barChartContainer component
+      return <BarChartContainer games={predictions} />;
+    };
+
     return (
-      <div className="App">
+      <div className="App" style={{ backgroundColor: '#f3f3f3' }}>
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
+          <Image alt="Tipresias" width={120} />
           <Select
+            name="year"
             value={year}
             onChange={this.onChangeYear}
-            options={[2011, 2012, 2013, 2014]}
+            options={this.OPTIONS}
           />
         </header>
-        <div className="App-content">
-          {contentComponent}
-        </div>
+        <Query query={GET_PREDICTIONS_QUERY} variables={{ year }} onCompleted={() => console.log('data fetched!')}>
+          {queryChildren}
+        </Query>
       </div>
     );
   }

@@ -12,14 +12,15 @@ const BarChart = ({ bars }: Props): Node => (
     // eslint-disable-next-line react/no-array-index-key
     <g transform="translate(20, 0)" key={index}>
       {
-        item.map(i => (<rect
-          key={i.key}
-          x={i.x}
-          y={i.y}
-          width={i.width}
-          height={i.height}
-          fill={i.fill}
-        />
+        item.map(i => (
+          <rect
+            key={i.key}
+            x={i.x}
+            y={i.y}
+            width={i.width}
+            height={i.height}
+            fill={i.fill}
+          />
         ))
       }
     </g>

@@ -14,7 +14,7 @@ import BarChart from '../../components/BarChart';
 import Axis from '../../components/Axis';
 
 type Props = {
-  gamesByYear: Array<Game>
+  games: Array<Game>
 }
 
 type State = {
@@ -37,19 +37,19 @@ class BarChartContainer extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    const { gamesByYear } = this.props;
-    this.setBars(gamesByYear);
+    const { games } = this.props;
+    this.setBars(games);
   }
 
-  componentDidUpdate(prevProps: { gamesByYear: Array<Game> }) {
-    const { gamesByYear } = this.props;
-    if (gamesByYear !== prevProps.gamesByYear) {
-      this.setBars(gamesByYear);
+  componentDidUpdate(prevProps: { games: Array<Game> }) {
+    const { games } = this.props;
+    if (games !== prevProps.games) {
+      this.setBars(games);
     }
   }
 
-  setBars(gamesByYear: Array<Game>) {
-    const modelsByRound = groupModelsByRound(gamesByYear);
+  setBars(games: Array<Game>) {
+    const modelsByRound = groupModelsByRound(games);
     const cumulativeModels = createCumulativeModels(modelsByRound);
     const xScale = createRoundScale(cumulativeModels, WIDTH);
     const yScale = createTipPointScale(cumulativeModels, HEIGHT);

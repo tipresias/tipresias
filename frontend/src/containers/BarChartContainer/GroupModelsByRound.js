@@ -6,22 +6,29 @@ import type {
 const groupModelsByRound = (data: Array<Game>): any => {
   const modelsByRound = data.reduce((acc, currentItem) => {
     // eslint-disable-next-line camelcase
-    const { model, round_number } = currentItem;
-    acc[round_number] = acc[round_number] || {};
-    acc[round_number][model] = acc[round_number][model] || {};
-    acc[round_number][model].round = acc[round_number][model].round || 0;
-    acc[round_number][model].data = acc[round_number][model].data || [];
-    acc[round_number][model].total_points = acc[round_number][model].total_points || [];
-    acc[round_number][model].round = currentItem.round_number;
+    const { mlModel: { name } } = currentItem;
+    const { match: { roundNumber } } = currentItem;
 
-    acc[round_number][model].data.push(currentItem);
+    // round number key
+    acc[roundNumber] = acc[roundNumber] || {};
 
-    const roundArray = acc[round_number][model].data;
-    const roundPointTotal = roundArray.reduce((acc2, value) => acc2 + value.tip_point, 0);
-    acc[round_number][model].total_points = roundPointTotal;
+    // model key
+    acc[roundNumber][name] = acc[roundNumber][name] || {};
+
+    // roundArray key
+    acc[roundNumber][name].roundArray = acc[roundNumber][name].roundArray || [];
+    acc[roundNumber][name].roundArray.push(currentItem);
+
+    const roundPointTotal = acc[roundNumber][name].roundArray.reduce(
+      (acc2, item) => acc2 + item.isCorrect, 0,
+    );
+
+    // total_points key
+    acc[roundNumber][name].total_points = roundPointTotal || 0;
 
     return acc;
   }, {});
+
   return modelsByRound;
 };
 

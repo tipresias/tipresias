@@ -20,7 +20,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test:eslint": "yarn run eslint src/** --ext .jsx --ext .js",
+    "test:eslint": "yarn run eslint 'src/**/*.js' --ext .jsx --ext .js",
     "test:flow": "yarn flow",
     "test:unit": "react-scripts test --env=jsdom"
   },

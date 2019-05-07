@@ -3,12 +3,14 @@ import React, { Component } from 'react';
 import { Query } from 'react-apollo';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
+import images from '../../images';
 import BarChartContainer from '../BarChartContainer';
 import Select from '../../components/Select';
-import Image from '../../components/Image';
 import ErrorBar from '../../components/ErrorBar';
 import LoadingBar from '../../components/LoadingBar';
 import EmptyChart from '../../components/EmptyChart';
+
+const tipresiasLogo = images.logo;
 
 type State = {
   year: number
@@ -57,7 +59,7 @@ class App extends Component<Props, State> {
     return (
       <div className="App" style={{ backgroundColor: '#f3f3f3' }}>
         <header className="App-header">
-          <Image alt="Tipresias" width={120} />
+          <img src={tipresiasLogo} className="App-logo" alt="Tipresias" width="120" />
           <Select
             name="year"
             value={year}
@@ -65,7 +67,7 @@ class App extends Component<Props, State> {
             options={this.OPTIONS}
           />
         </header>
-        <Query query={GET_PREDICTIONS_QUERY} variables={{ year }} onCompleted={() => console.log('data fetched!')}>
+        <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
           {queryChildren}
         </Query>
       </div>

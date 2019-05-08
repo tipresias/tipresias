@@ -4,6 +4,16 @@
       "plugins": [
         "@babel/plugin-transform-runtime"
       ]
+    },
+    "development": {
+      "plugins": [
+        [
+          "babel-plugin-styled-components",
+          {
+            "displayName": true
+          }
+        ]
+      ]
     }
   },
   "presets": [
@@ -19,15 +29,7 @@
     "@babel/preset-flow"
   ],
   "plugins": [
-    [
-      "@babel/plugin-proposal-class-properties"
-    ],
-    [
-      "babel-plugin-styled-components",
-      {
-        "displayName": true
-      }
-    ]
+    "@babel/plugin-proposal-class-properties"
   ],
   "ignore": [
     "node_modules"

@@ -81,7 +81,7 @@ describe('App container', () => {
   });
 
   it('always renders a div', () => {
-    const divs = app().find('div');
+    const divs = app().find('AppContainerStyled');
     expect(divs.length).toBeGreaterThan(0);
   });
 

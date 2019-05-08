@@ -24,10 +24,14 @@ const AppContainerStyled = styled.div`
   text-align: center;
   background-color: #f3f3f3;
 `
+AppContainerStyled.displayName = 'AppContainerStyled';
+
 const LogoStyled = styled.img`
   height: auto;
   width: 15%
 `
+LogoStyled.displayName = 'LogoStyled';
+
 const HeaderStyled = styled.header`
   background-color: white;
   padding: 18px;
@@ -35,6 +39,7 @@ const HeaderStyled = styled.header`
   align-items: center;
   justify-content: space-between;
 `
+HeaderStyled.displayName = 'HeaderStyled';
 
 class App extends Component<Props, State> {
   state = {

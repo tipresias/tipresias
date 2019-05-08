@@ -1,9 +1,9 @@
 // @flow
 import React, { Component } from 'react';
+import styled from 'styled-components';
 import { Query } from 'react-apollo';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
-import styled from 'styled-components';
 import images from '../../images';
 import BarChartContainer from '../BarChartContainer';
 import Select from '../../components/Select';
@@ -23,13 +23,13 @@ const AppContainerStyled = styled.div`
   font-family: sans-serif;
   text-align: center;
   background-color: #f3f3f3;
-`
+`;
 AppContainerStyled.displayName = 'AppContainerStyled';
 
 const LogoStyled = styled.img`
   height: auto;
   width: 15%
-`
+`;
 LogoStyled.displayName = 'LogoStyled';
 
 const HeaderStyled = styled.header`
@@ -38,7 +38,7 @@ const HeaderStyled = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-`
+`;
 HeaderStyled.displayName = 'HeaderStyled';
 
 class App extends Component<Props, State> {

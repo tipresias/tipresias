@@ -63,16 +63,12 @@ class App extends Component<Props, State> {
       const dataWithAllPredictions = { predictions: [], ...nonNullData };
       const { predictions } = dataWithAllPredictions;
 
-      // if loading prop is true, render loading component
       if (loading) return <LoadingBar text="Loading predictions..." />;
 
-      // if error prop is true, render error component
       if (error) return <ErrorBar text={error.message} />;
 
-      // if predictions is empty
       if (predictions.length === 0) return <EmptyChart text="No data found" />;
 
-      // if predictions prop is passed, renders barChartContainer component
       return <BarChartContainer games={predictions} />;
     };
 

@@ -4,6 +4,16 @@
       "plugins": [
         "@babel/plugin-transform-runtime"
       ]
+    },
+    "development": {
+      "plugins": [
+        [
+          "babel-plugin-styled-components",
+          {
+            "displayName": true
+          }
+        ]
+      ]
     }
   },
   "presets": [

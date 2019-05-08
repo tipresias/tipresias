@@ -1,5 +1,6 @@
 // @flow
 import React, { Component } from 'react';
+import styled from 'styled-components';
 import { Query } from 'react-apollo';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
@@ -17,6 +18,25 @@ type State = {
 }
 
 type Props = {}
+
+const AppContainerStyled = styled.div`
+  font-family: sans-serif;
+  text-align: center;
+  background-color: #f3f3f3;
+`;
+
+const LogoStyled = styled.img`
+  height: auto;
+  width: 15%
+`;
+
+const HeaderStyled = styled.header`
+  background-color: white;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
 
 class App extends Component<Props, State> {
   state = {
@@ -57,20 +77,20 @@ class App extends Component<Props, State> {
     };
 
     return (
-      <div className="App" style={{ backgroundColor: '#f3f3f3' }}>
-        <header className="App-header">
-          <img src={tipresiasLogo} className="App-logo" alt="Tipresias" width="120" />
+      <AppContainerStyled>
+        <HeaderStyled>
+          <LogoStyled src={tipresiasLogo} className="App-logo" alt="Tipresias" width="120" />
           <Select
             name="year"
             value={year}
             onChange={this.onChangeYear}
             options={this.OPTIONS}
           />
-        </header>
+        </HeaderStyled>
         <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
           {queryChildren}
         </Query>
-      </div>
+      </AppContainerStyled>
     );
   }
 }

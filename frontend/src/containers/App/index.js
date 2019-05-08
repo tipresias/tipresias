@@ -22,7 +22,7 @@ type Props = {}
 const AppContainerStyled = styled.div`
   font-family: sans-serif;
   text-align: center;
-  backgroundColor: #f3f3f3;
+  background-color: #f3f3f3;
 `
 const LogoStyled = styled.img`
   height: auto;

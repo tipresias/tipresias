@@ -13,21 +13,9 @@ from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
+from server.types import FixtureData
 from machine_learning.data_import import FootywireDataImporter
 from machine_learning.ml_data import JoinedMLData
-
-FixtureData = TypedDict(
-    "FixtureData",
-    {
-        "date": pd.Timestamp,
-        "season": int,
-        "season_game": int,
-        "round": int,
-        "home_team": str,
-        "away_team": str,
-        "venue": str,
-    },
-)
 
 NO_SCORE = 0
 # We calculate rolling sums/means for some features that can span over 5 seasons

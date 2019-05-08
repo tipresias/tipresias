@@ -2,39 +2,16 @@ import copy
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 from django.test import TestCase
-from faker import Faker
 from freezegun import freeze_time
-import pandas as pd
 
-from server.models import Match, TeamMatch, Team, MLModel, Prediction
+from server.models import Match, TeamMatch, Team, Prediction
 from server.management.commands import tip
+from server.tests.fixtures.data_factories import fake_footywire_fixture_data
+from server.tests.fixtures.factories import MLModelFactory
 from machine_learning.data_import import FootywireDataImporter
 from machine_learning.ml_data import BettingMLData
-from machine_learning.tests.fixtures import TestEstimator
 
-FAKE = Faker()
 ROW_COUNT = 5
-# Need real team names to match those in imported model data
-TEAM_NAMES = [
-    "Richmond",
-    "Carlton",
-    "Melbourne",
-    "GWS",
-    "Gold Coast",
-    "Essendon",
-    "Sydney",
-    "Collingwood",
-    "North Melbourne",
-    "Adelaide",
-    "Western Bulldogs",
-    "Fremantle",
-    "Port Adelaide",
-    "St Kilda",
-    "West Coast",
-    "Brisbane",
-    "Hawthorn",
-    "Geelong",
-]
 
 # Freezing time to make sure there is viable data, which is easier
 # than mocking viable data
@@ -43,27 +20,12 @@ class TestTip(TestCase):
     def setUp(self):
         tomorrow = datetime.now() + timedelta(days=1)
         year = tomorrow.year
-        team_names = TEAM_NAMES[:]
 
         # Mock footywire fixture data
-        self.fixture_data = [
-            {
-                "date": tomorrow,
-                "season": year,
-                "round": 1,
-                "round_label": "Round 1",
-                "crowd": 1234,
-                "home_team": team_names.pop(),
-                "away_team": team_names.pop(),
-                "home_score": 50,
-                "away_score": 100,
-                "venue": FAKE.city(),
-            }
-            for idx in range(ROW_COUNT)
-        ]
+        fixture_data = fake_footywire_fixture_data(ROW_COUNT, (year, year + 1))
 
         footywire = FootywireDataImporter()
-        footywire.get_fixture = Mock(return_value=pd.DataFrame(self.fixture_data))
+        footywire.get_fixture = Mock(return_value=fixture_data)
 
         # Mock bulk_create to make assertions on calls
         pred_bulk_create = copy.copy(Prediction.objects.bulk_create)
@@ -74,15 +36,9 @@ class TestTip(TestCase):
         MLModelFactory()
 
         # Can't use TeamFactory, because team names need to match fixture data
-<<<<<<< HEAD
-        for match_data in self.fixture_data:
-            Team(name=match_data["home_team"]).save()
-            Team(name=match_data["away_team"]).save()
-=======
         for match_data in fixture_data.to_dict("records"):
             TeamFactory(name=match_data["home_team"])
             TeamFactory(name=match_data["away_team"])
->>>>>>> c2aff0c9... fixup! fixup! Add model factories
 
         # Not fetching data, because it takes forever
         self.tip_command = tip.Command(

@@ -36,3 +36,4 @@ faker
 mypy>=0.70
 freezegun
 factory_boy
+faker

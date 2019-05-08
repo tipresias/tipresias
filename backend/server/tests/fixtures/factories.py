@@ -5,8 +5,8 @@ import numpy as np
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
 from server.types import FixtureData
 from machine_learning.data_config import TEAM_NAMES, VENUE_CITIES
-from project.settings.common import MELBOURNE_TIMEZONE
 from machine_learning.tests.fixtures import TestEstimator
+from project.settings.common import MELBOURNE_TIMEZONE
 
 VENUES = list(VENUE_CITIES.keys())
 

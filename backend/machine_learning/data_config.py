@@ -198,7 +198,8 @@ VENUE_CITIES = {
     "Canberra Oval": "Canberra",
 }
 
-TEAM_NAMES = sorted(["Fitzroy", "University"] + list(set(TEAM_TRANSLATIONS.values())))
+DEFUNCT_TEAM_NAMES = ["Fitzroy", "University"]
+TEAM_NAMES = sorted(DEFUNCT_TEAM_NAMES + list(set(TEAM_TRANSLATIONS.values())))
 ROUND_TYPES = ["Finals", "Regular"]
 VENUES = list(set(VENUE_CITIES.keys()))
 INDEX_COLS = ["team", "year", "round_number"]

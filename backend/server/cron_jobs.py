@@ -23,9 +23,10 @@ class SendTips(CronJobBase):
     schedule = Schedule(run_every_mins=MINS_PER_12_HOURS)
     code = "tipresias.send_tips"
 
-    def __init__(self, data_reader=FootywireDataImporter()):
+    def __init__(self, verbose=1, data_reader=FootywireDataImporter()):
         super().__init__()
 
+        self.verbose = verbose
         self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.data_reader = data_reader
 
@@ -39,17 +40,19 @@ class SendTips(CronJobBase):
         # the rest of the matches (they usually get announced on Thursday around
         # 6:30 pm). So, we'll want to update tips for the rest of the round on Friday.
         if not self.__is_match_today(fixture_dates):
-            print(
-                f"{str(self.right_now)} There is no match today, so it's unlikely "
-                "that all necessary data is available for making predictions"
-            )
+            if self.verbose == 1:
+                print(
+                    f"{str(self.right_now)} There is no match today, so it's unlikely "
+                    "that all necessary data is available for making predictions"
+                )
             return None
 
         if not is_before_saturday:
-            print(
-                f"{str(self.right_now)} It is after Friday, so the latest tips "
-                "should include all necessary data and don't need to be updated"
-            )
+            if self.verbose == 1:
+                print(
+                    f"{str(self.right_now)} It is after Friday, so the latest tips "
+                    "should include all necessary data and don't need to be updated"
+                )
             return None
 
         tip.Command(verbose=0).handle()

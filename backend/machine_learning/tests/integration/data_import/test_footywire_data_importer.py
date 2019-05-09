@@ -8,14 +8,14 @@ from machine_learning.data_import import FootywireDataImporter
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../fixtures"))
 
 
+@skip(
+    "As of 5-5-2019, these tests pass on local but hang in CI, so skipping until I "
+    "feel like figuring out what the hell is going on"
+)
 class TestFootywireDataImporter(TestCase):
     def setUp(self):
         self.data_reader = FootywireDataImporter(csv_dir=DATA_DIR)
 
-    @skip(
-        "As of 5-5-2019, this passes on local but hangs in CI, so skipping until I "
-        "feel like figuring out what the hell is going on"
-    )
     def test_get_fixture(self):
         with self.subTest("when fetch_data is True"):
             data_frame = self.data_reader.get_fixture(

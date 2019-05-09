@@ -76,7 +76,7 @@ class TestSendTips(TestCase):
                 # because the datetime is set in __init__
                 with freeze_time(FRIDAY, tz_offset=MELBOURNE_TIMEZONE_OFFSET):
                     with self.subTest("on Friday with a match"):
-                        SendTips(data_reader=self.data_reader).do()
+                        SendTips(verbose=0, data_reader=self.data_reader).do()
 
                         MockTipCommand().handle.assert_called()
                         MockSendCommand().handle.assert_called()
@@ -86,14 +86,14 @@ class TestSendTips(TestCase):
 
                 with freeze_time(THURSDAY, tz_offset=MELBOURNE_TIMEZONE_OFFSET):
                     with self.subTest("on Thursday without a match"):
-                        SendTips(data_reader=self.data_reader).do()
+                        SendTips(verbose=0, data_reader=self.data_reader).do()
 
                         MockTipCommand().handle.assert_not_called()
                         MockSendCommand().handle.assert_not_called()
 
                 with freeze_time(SATURDAY, tz_offset=MELBOURNE_TIMEZONE_OFFSET):
                     with self.subTest("on Saturday with a match"):
-                        SendTips(data_reader=self.data_reader).do()
+                        SendTips(verbose=0, data_reader=self.data_reader).do()
 
                         MockTipCommand().handle.assert_not_called()
                         MockSendCommand().handle.assert_not_called()

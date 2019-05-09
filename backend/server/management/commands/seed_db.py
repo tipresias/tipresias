@@ -60,6 +60,7 @@ class Command(BaseCommand):
         self, *_args, year_range: str = YEAR_RANGE, verbose: int = 1, **_kwargs
     ) -> None:  # pylint: disable=W0613
         self.verbose = verbose  # pylint: disable=W0201
+        self.data_reader.verbose = verbose
 
         if self.verbose == 1:
             print("\nSeeding DB...\n")

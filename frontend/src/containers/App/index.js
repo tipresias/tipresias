@@ -76,16 +76,48 @@ class App extends Component<Props, State> {
       <AppContainerStyled>
         <HeaderStyled>
           <LogoStyled src={tipresiasLogo} alt="Tipresias" width="120" />
-          <Select
-            name="year"
-            value={year}
-            onChange={this.onChangeYear}
-            options={this.OPTIONS}
-          />
         </HeaderStyled>
-        <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
-          {queryChildren}
-        </Query>
+
+        <div className="predictions-widget" style={{ border: '1px solid blue' }}>
+          <h3>Tipresias's predictions for round x</h3>
+          <ul>
+            <li>item 1</li>
+            <li>item 2</li>
+            <li>item 3</li>
+            <li>item 4</li>
+          </ul>
+        </div>
+
+        <div className="performance-widget" style={{ border: '1px solid yellow' }}>
+          <h3>Model performace round x</h3>
+          <ul>
+            <li>Total points: 123</li>
+            <li>Total margin: 123</li>
+            <li>MAE: 30</li>
+            <li>Bits: 20</li>
+          </ul>
+        </div>
+
+        <div className="chart-widget" style={{ border: '1px solid red' }}>
+          <h3>Cumulative points per round:</h3>
+          <div>
+            Show Models:
+            <input type="checkbox" id="tipresias" name="model" value="tipresias" />
+            <label htmlFor="tipresias">tipresias</label>
+
+            <input type="checkbox" id="another" name="model" value="another" />
+            <label htmlFor="another">another</label>
+            <Select
+              name="year"
+              value={year}
+              onChange={this.onChangeYear}
+              options={this.OPTIONS}
+            />
+          </div>
+          <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
+            {queryChildren}
+          </Query>
+        </div>
       </AppContainerStyled>
     );
   }

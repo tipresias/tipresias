@@ -75,7 +75,7 @@ class App extends Component<Props, State> {
     return (
       <AppContainerStyled>
         <HeaderStyled>
-          <LogoStyled src={tipresiasLogo} className="App-logo" alt="Tipresias" width="120" />
+          <LogoStyled src={tipresiasLogo} alt="Tipresias" width="120" />
           <Select
             name="year"
             value={year}

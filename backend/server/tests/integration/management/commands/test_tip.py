@@ -4,10 +4,10 @@ from unittest.mock import Mock
 from django.test import TestCase
 from freezegun import freeze_time
 
-from server.models import Match, TeamMatch, Team, Prediction
+from server.models import Match, TeamMatch, Prediction
 from server.management.commands import tip
 from server.tests.fixtures.data_factories import fake_footywire_fixture_data
-from server.tests.fixtures.factories import MLModelFactory
+from server.tests.fixtures.factories import MLModelFactory, TeamFactory
 from machine_learning.data_import import FootywireDataImporter
 from machine_learning.ml_data import BettingMLData
 

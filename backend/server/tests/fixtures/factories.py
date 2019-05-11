@@ -3,7 +3,6 @@ from factory.django import DjangoModelFactory
 import numpy as np
 
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
-from server.types import FixtureData
 from machine_learning.data_config import TEAM_NAMES, VENUE_CITIES
 from machine_learning.tests.fixtures import TestEstimator
 from project.settings.common import MELBOURNE_TIMEZONE

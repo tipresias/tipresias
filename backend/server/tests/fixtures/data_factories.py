@@ -68,7 +68,7 @@ def _fixture_by_round(row_count: int, year: int) -> List[FixtureData]:
 
 def _fixture_by_year(
     row_count: int, year_range: Tuple[int, int]
-) -> List[List[Dict[str, Any]]]:
+) -> List[List[FixtureData]]:
     return [_fixture_by_round(row_count, year) for year in range(*year_range)]
 
 

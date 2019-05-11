@@ -3,10 +3,11 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from faker import Faker
+import numpy as np
 
-from machine_learning.data_config import TEAM_NAMES
-from server.models import Match, Team, TeamMatch, Prediction, MLModel
 from server.management.commands import send_email
+from server.tests.fixtures.data_factories import fake_footywire_fixture_data
+from server.tests.fixtures.factories import MLModelFactory, FullMatchFactory
 from project.settings.common import MELBOURNE_TIMEZONE
 
 FAKE = Faker()
@@ -17,62 +18,34 @@ class TestSendEmail(TestCase):
     def setUp(self):
         today = datetime.now(tz=MELBOURNE_TIMEZONE)
         year = today.year
-        team_names = TEAM_NAMES[:]
 
-        self.fixture_data = [
-            {
-                "date": today,
-                "season": year,
-                "round": 1,
-                "round_label": "Round 1",
-                "crowd": 1234,
-                "home_team": team_names.pop(),
-                "away_team": team_names.pop(),
-                "home_score": 50,
-                "away_score": 100,
-                "venue": FAKE.city(),
-            }
-            for idx in range(ROW_COUNT)
-        ]
+        self.fixture_data = fake_footywire_fixture_data(ROW_COUNT, (year, year + 1))
 
         # Save records in DB
-        ml_model = MLModel(name="tipresias")
-        ml_model.save()
+        ml_model = MLModelFactory(name="tipresias")
 
-        for match_data in self.fixture_data:
-            match = Match(
-                start_date_time=match_data["date"],
-                round_number=match_data["round"],
-                venue=match_data["venue"],
+        for match_data in self.fixture_data.to_dict("records"):
+            match_date = (
+                match_data["date"].to_pydatetime().replace(tzinfo=MELBOURNE_TIMEZONE)
             )
-            match.save()
-
-            home_team = Team(name=match_data["home_team"])
-            home_team.save()
-            away_team = Team(name=match_data["away_team"])
-            away_team.save()
-
-            home_team_match = TeamMatch(
-                team=home_team,
-                match=match,
-                at_home=True,
-                score=match_data["home_score"],
-            )
-            home_team_match.save()
-            away_team_match = TeamMatch(
-                team=away_team,
-                match=match,
-                at_home=False,
-                score=match_data["away_score"],
-            )
-            away_team_match.save()
-
-            Prediction(
-                ml_model=ml_model,
-                match=match,
-                predicted_winner=home_team,
-                predicted_margin=50,
-            ).save()
+            match_attrs = {
+                "start_date_time": match_date,
+                "round_number": match_data["round"],
+                "venue": match_data["venue"],
+            }
+            prediction_attrs = {
+                "prediction__ml_model": ml_model,
+                "prediction__predicted_winner__name": np.random.choice(
+                    [match_data["home_team"], match_data["away_team"]]
+                ),
+            }
+            team_match_attrs = {
+                "home_team_match__team__name": match_data["home_team"],
+                "away_team_match__team__name": match_data["away_team"],
+                "home_team_match__score": match_data["home_score"],
+                "away_team_match__score": match_data["away_score"],
+            }
+            FullMatchFactory(**match_attrs, **prediction_attrs, **team_match_attrs)
 
         self.send_email_command = send_email.Command()
 

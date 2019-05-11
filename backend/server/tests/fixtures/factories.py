@@ -56,3 +56,19 @@ class PredictionFactory(DjangoModelFactory):
     ml_model = factory.SubFactory(MLModelFactory)
     predicted_winner = factory.SubFactory(TeamFactory)
     predicted_margin = np.random.randint(0, 50)
+
+
+class FullMatchFactory(MatchFactory):
+    prediction = factory.RelatedFactory(PredictionFactory, "match")
+    home_team_match = factory.RelatedFactory(
+        TeamMatchFactory,
+        "match",
+        at_home=True,
+        match=factory.LazyAttribute(lambda obj: obj),
+    )
+    away_team_match = factory.RelatedFactory(
+        TeamMatchFactory,
+        "match",
+        at_home=False,
+        match=factory.LazyAttribute(lambda obj: obj),
+    )

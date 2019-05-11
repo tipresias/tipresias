@@ -55,9 +55,12 @@ class SendTips(CronJobBase):
                 )
             return None
 
-        tip.Command(verbose=0).handle()
-        send_email.Command(verbose=0).handle()
-        print(f"{self.right_now} Updated tips and sent email")
+        tip.Command(verbose=self.verbose).handle()
+        send_email.Command(verbose=self.verbose).handle()
+
+        if self.verbose == 1:
+            print(f"{self.right_now} Updated tips and sent email")
+
         return None
 
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:

@@ -1,13 +1,21 @@
+from datetime import date, datetime
+
 import factory
 from factory.django import DjangoModelFactory
 import numpy as np
+from faker import Faker
 
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
-from machine_learning.data_config import TEAM_NAMES, VENUE_CITIES
+from machine_learning.data_config import TEAM_NAMES, VENUES
 from machine_learning.tests.fixtures import TestEstimator
 from project.settings.common import MELBOURNE_TIMEZONE
 
-VENUES = list(VENUE_CITIES.keys())
+FAKE = Faker()
+THIS_YEAR = date.today().year
+JAN = 1
+FIRST = 1
+DEC = 12
+THIRTY_FIRST = 31
 
 
 class TeamFactory(DjangoModelFactory):
@@ -22,7 +30,16 @@ class MatchFactory(DjangoModelFactory):
     class Meta:
         model = Match
 
-    start_date_time = factory.Faker("date_this_year", tzinfo=MELBOURNE_TIMEZONE)
+    class Params:
+        year = THIS_YEAR
+
+    start_date_time = factory.LazyAttribute(
+        lambda obj: FAKE.date_time_between_dates(
+            datetime_start=datetime(obj.year, JAN, FIRST),
+            datetime_end=datetime(obj.year, DEC, THIRTY_FIRST),
+            tzinfo=MELBOURNE_TIMEZONE,
+        )
+    )
     round_number = np.random.randint(1, 24)
     venue = VENUES[np.random.randint(0, len(VENUES) - 1)]
 
@@ -59,15 +76,5 @@ class PredictionFactory(DjangoModelFactory):
 
 class FullMatchFactory(MatchFactory):
     prediction = factory.RelatedFactory(PredictionFactory, "match")
-    home_team_match = factory.RelatedFactory(
-        TeamMatchFactory,
-        "match",
-        at_home=True,
-        match=factory.LazyAttribute(lambda obj: obj),
-    )
-    away_team_match = factory.RelatedFactory(
-        TeamMatchFactory,
-        "match",
-        at_home=False,
-        match=factory.LazyAttribute(lambda obj: obj),
-    )
+    home_team_match = factory.RelatedFactory(TeamMatchFactory, "match", at_home=True)
+    away_team_match = factory.RelatedFactory(TeamMatchFactory, "match", at_home=False)

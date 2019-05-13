@@ -1,18 +1,23 @@
 from collections import Counter
 from unittest import TestCase
 from faker import Faker
-import pandas as pd
 import numpy as np
 
 from machine_learning.data_processors import OppoFeatureBuilder
 from machine_learning.data_processors.oppo_feature_builder import REQUIRED_COLS
+from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
 
 FAKE = Faker()
+N_ROWS_PER_YEAR = 10
+YEAR_RANGE = (2015, 2016)
+# Need to multiply by two, because we add team & oppo_team row per match
+N_ROWS = N_ROWS_PER_YEAR * len(range(*YEAR_RANGE)) * 2
 
 
 class TestOppoFeatureBuilder(TestCase):
     def setUp(self):
         self.match_cols = [
+            "date",
             "team",
             "oppo_team",
             "score",
@@ -22,24 +27,9 @@ class TestOppoFeatureBuilder(TestCase):
         ]
         self.oppo_feature_cols = ["kicks", "marks"]
         self.builder = OppoFeatureBuilder
-
-        teams = [FAKE.company() for _ in range(10)]
-        oppo_teams = list(reversed(teams))
-        self.data_frame = (
-            pd.DataFrame(
-                {
-                    "team": teams,
-                    "oppo_team": oppo_teams,
-                    "year": [2015 for _ in range(10)],
-                    "round_number": [3 for _ in range(10)],
-                    "score": np.random.randint(50, 150, 10),
-                    "oppo_score": np.random.randint(50, 150, 10),
-                    "kicks": np.random.randint(50, 100, 10),
-                    "marks": np.random.randint(50, 100, 10),
-                }
-            )
-            .set_index(["year", "round_number", "team"], drop=False)
-            .rename_axis([None, None, None])
+        self.data_frame = fake_cleaned_match_data(N_ROWS_PER_YEAR, YEAR_RANGE).assign(
+            kicks=np.random.randint(50, 100, N_ROWS),
+            marks=np.random.randint(50, 100, N_ROWS),
         )
 
     def test_transform(self):

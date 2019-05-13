@@ -31,4 +31,3 @@ CleanedMatchData = TypedDict(
         "oppo_score": int,
     },
 )
-

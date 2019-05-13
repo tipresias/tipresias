@@ -1,12 +1,15 @@
 from unittest import TestCase
-from datetime import datetime
 from faker import Faker
 import pandas as pd
-import numpy as np
 
 from machine_learning.data_processors import TeamDataStacker
+from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
 
 FAKE = Faker()
+N_ROWS_PER_YEAR = 10
+YEAR_RANGE = (2000, 2001)
+# Need to multiply by two, because we add team & oppo_team row per match
+N_ROWS = N_ROWS_PER_YEAR * len(range(*YEAR_RANGE)) * 2
 
 
 class TestTeamDataStacker(TestCase):
@@ -15,28 +18,18 @@ class TestTeamDataStacker(TestCase):
 
     def test_transform(self):
         # DataFrame w/ minimum valid columns
-        valid_data_frame = pd.DataFrame(
-            {
-                "date": [datetime(2000, 4, 15, 7)] * 10,
-                "home_team": [FAKE.company() for _ in range(10)],
-                "away_team": [FAKE.company() for _ in range(10)],
-                "year": [FAKE.year() for _ in range(10)],
-                "round_number": [np.random.randint(1, 24) for _ in range(10)],
-                "home_score": [np.random.randint(50, 150) for _ in range(10)],
-                "away_score": [np.random.randint(50, 150) for _ in range(10)],
+        valid_data_frame = fake_cleaned_match_data(
+            N_ROWS, YEAR_RANGE, oppo_rows=False
+        ).rename(
+            columns={
+                "team": "home_team",
+                "oppo_team": "away_team",
+                "score": "home_score",
+                "oppo_score": "away_score",
             }
         )
 
-        invalid_data_frame = pd.DataFrame(
-            {
-                "date": [datetime(2000, 4, 15, 7)] * 10,
-                "home_team": [FAKE.company() for _ in range(10)],
-                "away_team": [FAKE.company() for _ in range(10)],
-                "round_number": [np.random.randint(1, 24) for _ in range(10)],
-                "home_score": [np.random.randint(50, 150) for _ in range(10)],
-                "away_score": [np.random.randint(50, 150) for _ in range(10)],
-            }
-        )
+        invalid_data_frame = valid_data_frame.drop("year", axis=1)
 
         with self.subTest(data_frame=valid_data_frame):
             transformed_df = self.transformer.transform(valid_data_frame)

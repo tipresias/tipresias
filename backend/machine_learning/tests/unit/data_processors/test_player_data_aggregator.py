@@ -1,5 +1,4 @@
 from unittest import TestCase
-from datetime import datetime
 from faker import Faker
 import pandas as pd
 import numpy as np
@@ -9,10 +8,14 @@ from machine_learning.data_processors.player_data_aggregator import (
     REQUIRED_COLS,
     STATS_COLS,
 )
-from project.settings.common import MELBOURNE_TIMEZONE
+from machine_learning.tests.fixtures.data_factories import fake_cleaned_player_data
 
 FAKE = Faker()
-N_ROWS = 10
+N_MATCHES_PER_YEAR = 10
+YEAR_RANGE = (2014, 2015)
+N_PLAYERS_PER_TEAM = 10
+# Need to multiply by two, because we add team & oppo_team row per match
+N_ROWS = N_MATCHES_PER_YEAR * len(range(*YEAR_RANGE)) * N_PLAYERS_PER_TEAM * 2
 
 
 class TestPlayerDataAggregator(TestCase):
@@ -22,27 +25,16 @@ class TestPlayerDataAggregator(TestCase):
             index_cols=self.index_cols, aggregations=["sum", "std"]
         )
 
-        teams = [FAKE.company(), FAKE.company()]
-        self.data_frame = pd.DataFrame(
-            {
-                **{
-                    "date": [datetime(2014, 6, 15, 13, tzinfo=MELBOURNE_TIMEZONE)]
-                    * N_ROWS,
-                    "team": sorted(teams * int(N_ROWS / 2)),
-                    "oppo_team": list(reversed(sorted(teams * int(N_ROWS / 2)))),
-                    "year": [2014] * N_ROWS,
-                    "round_number": [12] * N_ROWS,
-                    "score": np.random.randint(50, 150, N_ROWS),
-                    "oppo_score": np.random.randint(50, 150, N_ROWS),
-                    "at_home": ([1] * 5) + ([0] * 5),
-                    "player_id": [str(n) for n in range(N_ROWS)],
-                    "player_name": [FAKE.name() for _ in range(N_ROWS)],
-                },
-                **{
-                    stats_col: np.random.randint(0, 20, N_ROWS)
-                    for stats_col in STATS_COLS
-                },
-            }
+        stats_col_assignments = {
+            stats_col: np.random.randint(0, 20, N_ROWS) for stats_col in STATS_COLS
+        }
+        self.data_frame = (
+            fake_cleaned_player_data(
+                N_MATCHES_PER_YEAR, YEAR_RANGE, N_PLAYERS_PER_TEAM
+            ).assign(**stats_col_assignments)
+            # Drop 'playing_for', because it gets dropped by PlayerDataStacker,
+            # which comes before PlayerDataAggregator in the pipeline
+            .drop("playing_for", axis=1)
         )
 
     def test_transform(self):
@@ -60,12 +52,16 @@ class TestPlayerDataAggregator(TestCase):
             # Match data should remain unchanged (requires a little extra manipulation,
             # because I can't be bothred to make the score data realistic)
             for idx, value in enumerate(
-                valid_data_frame.groupby("team")["score"].mean().astype(int)
+                valid_data_frame.groupby(["team", "year", "round_number"])["score"]
+                .mean()
+                .astype(int)
             ):
                 self.assertEqual(value, transformed_df["score"].iloc[idx])
 
             for idx, value in enumerate(
-                valid_data_frame.groupby("team")["oppo_score"].mean().astype(int)
+                valid_data_frame.groupby(["team", "year", "round_number"])["oppo_score"]
+                .mean()
+                .astype(int)
             ):
                 self.assertEqual(value, transformed_df["oppo_score"].iloc[idx])
 

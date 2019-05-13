@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 from datetime import datetime
 import itertools
 from faker import Faker
@@ -42,11 +42,11 @@ def _min_max_datetimes_by_year(year: int) -> Dict[str, datetime]:
     }
 
 
-def _match_data(year: int, team_names: Tuple[str, str]) -> CleanedMatchData:
+def _match_data(year: int, team_names: Tuple[str, str], idx: int) -> CleanedMatchData:
     return {
         "date": FAKE.date_time_between_dates(**_min_max_datetimes_by_year(year)),
         "year": year,
-        "round_number": 1,
+        "round_number": round(idx / (len(CONTEMPORARY_TEAM_NAMES) / 2)) + 1,
         "team": team_names[0],
         "oppo_team": team_names[1],
         "score": np.random.randint(50, 150),
@@ -54,29 +54,88 @@ def _match_data(year: int, team_names: Tuple[str, str]) -> CleanedMatchData:
     }
 
 
-def _matches_by_round(round_count: int, year: int) -> List[CleanedMatchData]:
+def _matches_by_round(match_count_per_year: int, year: int) -> List[CleanedMatchData]:
     team_names = CyclicalTeamNames()
 
     return [
-        _match_data(year, (team_names.next(), team_names.next()))
-        for idx in range(round_count)
+        _match_data(year, (team_names.next(), team_names.next()), idx)
+        for idx in range(match_count_per_year)
     ]
 
 
 def _matches_by_year(
-    round_count: int, year_range: Tuple[int, int]
+    match_count_per_year: int, year_range: Tuple[int, int]
 ) -> List[List[CleanedMatchData]]:
-    return [_matches_by_round(round_count, year) for year in range(*year_range)]
+    return [
+        _matches_by_round(match_count_per_year, year) for year in range(*year_range)
+    ]
+
+
+def _oppo_match_data(team_match: CleanedMatchData) -> CleanedMatchData:
+    return {
+        # mypy isn't smart enough to to interpret **{}-style dict composition
+        **team_match,  # type: ignore
+        **{
+            "team": team_match["oppo_team"],
+            "oppo_team": team_match["team"],
+            "score": team_match["oppo_score"],
+            "oppo_score": team_match["score"],
+        },
+    }
+
+
+def _add_oppo_rows(match_data: List[CleanedMatchData]):
+    data = [[match, _oppo_match_data(match)] for match in match_data]
+
+    return list(itertools.chain.from_iterable(data))
 
 
 def fake_cleaned_match_data(
-    round_count: int, year_range: Tuple[int, int]
+    match_count_per_year: int, year_range: Tuple[int, int], oppo_rows: bool = True
 ) -> pd.DataFrame:
-    data = _matches_by_year(round_count, year_range)
+    data = _matches_by_year(match_count_per_year, year_range)
     reduced_data = list(itertools.chain.from_iterable(data))
 
-    return (
-        pd.DataFrame(list(reduced_data))
-        .set_index(INDEX_COLS, drop=False)
-        .rename_axis([None] * len(INDEX_COLS))
+    if oppo_rows:
+        data_frame = pd.DataFrame(_add_oppo_rows(reduced_data))
+    else:
+        data_frame = pd.DataFrame(reduced_data)
+
+    return data_frame.set_index(INDEX_COLS, drop=False).rename_axis(
+        [None] * len(INDEX_COLS)
     )
+
+
+def _players_by_match(
+    match_data: CleanedMatchData, n_players: int, idx: int
+) -> List[Dict[str, Any]]:
+    # Assumes that both team and oppo_team rows are present and that they alternate
+    # in order to evenly split players between the two
+    playing_for = match_data["team"] if idx % 2 == 0 else match_data["oppo_team"]
+
+    return [
+        {
+            **match_data,
+            **{
+                "player_id": FAKE.ssn(),
+                "player_name": FAKE.name(),
+                "playing_for": playing_for,
+            },
+        }
+        for _ in range(n_players)
+    ]
+
+
+def fake_cleaned_player_data(
+    match_count_per_year: int, year_range: Tuple[int, int], n_players_per_team: int
+) -> pd.DataFrame:
+    match_data = _matches_by_year(match_count_per_year, year_range)
+    reduced_match_data = list(itertools.chain.from_iterable(match_data))
+
+    player_data = [
+        _players_by_match(match_data, n_players_per_team, idx)
+        for idx, match_data in enumerate(_add_oppo_rows(reduced_match_data))
+    ]
+    reduced_player_data = list(itertools.chain.from_iterable(player_data))
+
+    return pd.DataFrame(reduced_player_data)

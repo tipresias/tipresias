@@ -38,6 +38,52 @@ const HeaderStyled = styled.header`
   justify-content: space-between;
 `;
 
+const Widget = styled.div`
+  background-color: #fff;
+  border: 1px solid rgba(0,0,0,.125);
+  border-radius: .25rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, .05);
+  padding: 1.25rem;
+`;
+
+const WidgetHeading = styled.h3`
+  font-style: bold;
+  font-size: 18px;
+  color: #373A3C;
+  letter-spacing: 0;
+  text-align: left;
+`;
+
+const List = styled.div`
+  display: flex;
+  flex-direction:column;
+`;
+
+const ListItem = styled.div`
+  display: flex;
+  background: #FFFFFF;
+  border: 1px solid #DDDDDD;
+  border-radius: 4px;
+`;
+
+const Stat = styled.div`
+  display: flex;
+  align-items: center;
+
+  .key {
+    font-size: 16px;
+    color: #373A3C;
+  }
+  .value {
+    font-size: 26px;
+    color: #373A3C;
+  }
+`;
+
+const WidgetFooter = styled.div`
+  padding: 1rem 0.5rem;
+`;
+
 class App extends Component<Props, State> {
   state = {
     year: 2014,
@@ -77,31 +123,59 @@ class App extends Component<Props, State> {
         <HeaderStyled>
           <LogoStyled src={tipresiasLogo} alt="Tipresias" width="120" />
         </HeaderStyled>
+        <Widget>
+          <WidgetHeading>Tipresias's predictions for round x</WidgetHeading>
+          <List>
+            <ListItem>
+              <Stat>
+                <div className="key">Team Name 1</div>
+                <div className="value">77</div>
+              </Stat>
+              <Stat>
+                <div className="key">Team Name 2</div>
+                <div className="value">90</div>
+              </Stat>
+            </ListItem>
+          </List>
 
-        <div className="predictions-widget" style={{ border: '1px solid blue' }}>
-          <h3>Tipresias's predictions for round x</h3>
-          <ul>
-            <li>item 1</li>
-            <li>item 2</li>
-            <li>item 3</li>
-            <li>item 4</li>
-          </ul>
-        </div>
+        </Widget>
 
-        <div className="performance-widget" style={{ border: '1px solid yellow' }}>
-          <h3>Model performace round x</h3>
-          <ul>
-            <li>Total points: 123</li>
-            <li>Total margin: 123</li>
-            <li>MAE: 30</li>
-            <li>Bits: 20</li>
-          </ul>
-        </div>
+        <Widget>
+          <WidgetHeading>Model performace round x</WidgetHeading>
+          <List>
+            <ListItem>
+              <Stat>
+                <div className="key">Total Points</div>
+                <div className="value">90</div>
+              </Stat>
+            </ListItem>
+            <ListItem>
+              <Stat>
+                <div className="key">Total Margin</div>
+                <div className="value">77</div>
+              </Stat>
+            </ListItem>
+            <ListItem>
+              <Stat>
+                <div className="key">MAE</div>
+                <div className="value">77</div>
+              </Stat>
+            </ListItem>
+            <ListItem>
+              <Stat>
+                <div className="key">Bits</div>
+                <div className="value">49</div>
+              </Stat>
+            </ListItem>
+          </List>
+        </Widget>
 
-        <div className="chart-widget" style={{ border: '1px solid red' }}>
-          <h3>Cumulative points per round:</h3>
-          <div>
-            Show Models:
+        <Widget>
+          <WidgetHeading>Cumulative points per round:</WidgetHeading>
+          <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
+            {queryChildren}
+          </Query>
+          <WidgetFooter>
             <input type="checkbox" id="tipresias" name="model" value="tipresias" />
             <label htmlFor="tipresias">tipresias</label>
 
@@ -113,11 +187,8 @@ class App extends Component<Props, State> {
               onChange={this.onChangeYear}
               options={this.OPTIONS}
             />
-          </div>
-          <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
-            {queryChildren}
-          </Query>
-        </div>
+          </WidgetFooter>
+        </Widget>
       </AppContainerStyled>
     );
   }

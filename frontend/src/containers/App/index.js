@@ -19,10 +19,26 @@ type State = {
 
 type Props = {}
 
+// grid 3 cols and 3 rows
 const AppContainerStyled = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 40% 40% 1fr;
+  grid-template-rows: 100px 40% 20% 100px;
+  grid-gap: 5px;
   font-family: sans-serif;
-  text-align: center;
-  background-color: #f3f3f3;
+`;
+
+const HeaderStyled = styled.header`
+  grid-column: 2 / -2;
+  background-color: white;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .header-link {
+    font-size: 16px;
+    color: rgba(0,0,0,0.30);
+  }
 `;
 
 const LogoStyled = styled.img`
@@ -30,15 +46,8 @@ const LogoStyled = styled.img`
   width: 15%
 `;
 
-const HeaderStyled = styled.header`
-  background-color: white;
-  padding: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
 const Widget = styled.div`
+  grid-column: ${props => props.gridColumn};
   background-color: #fff;
   border: 1px solid rgba(0,0,0,.125);
   border-radius: .25rem;
@@ -84,6 +93,13 @@ const WidgetFooter = styled.div`
   padding: 1rem 0.5rem;
 `;
 
+const FooterStyled = styled.footer`
+  grid-column: 1 / -1;
+  background: #F0F3F7;
+  border: 1px solid #D7D7D7;
+  `
+
+
 class App extends Component<Props, State> {
   state = {
     year: 2014,
@@ -122,8 +138,31 @@ class App extends Component<Props, State> {
       <AppContainerStyled>
         <HeaderStyled>
           <LogoStyled src={tipresiasLogo} alt="Tipresias" width="120" />
+          <a className="header-link" href="#">About</a>
         </HeaderStyled>
-        <Widget>
+
+
+        <Widget gridColumn="2 / -2">
+          <WidgetHeading>Cumulative points per round:</WidgetHeading>
+          <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
+            {queryChildren}
+          </Query>
+          <WidgetFooter>
+            <input type="checkbox" id="tipresias" name="model" value="tipresias" />
+            <label htmlFor="tipresias">tipresias</label>
+
+            <input type="checkbox" id="another" name="model" value="another" />
+            <label htmlFor="another">another</label>
+            <Select
+              name="year"
+              value={year}
+              onChange={this.onChangeYear}
+              options={this.OPTIONS}
+            />
+          </WidgetFooter>
+        </Widget>
+
+        <Widget gridColumn="2 / 3">
           <WidgetHeading>Tipresias's predictions for round x</WidgetHeading>
           <List>
             <ListItem>
@@ -137,10 +176,9 @@ class App extends Component<Props, State> {
               </Stat>
             </ListItem>
           </List>
-
         </Widget>
 
-        <Widget>
+        <Widget gridColumn="3 / 4">
           <WidgetHeading>Model performace round x</WidgetHeading>
           <List>
             <ListItem>
@@ -170,25 +208,10 @@ class App extends Component<Props, State> {
           </List>
         </Widget>
 
-        <Widget>
-          <WidgetHeading>Cumulative points per round:</WidgetHeading>
-          <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
-            {queryChildren}
-          </Query>
-          <WidgetFooter>
-            <input type="checkbox" id="tipresias" name="model" value="tipresias" />
-            <label htmlFor="tipresias">tipresias</label>
 
-            <input type="checkbox" id="another" name="model" value="another" />
-            <label htmlFor="another">another</label>
-            <Select
-              name="year"
-              value={year}
-              onChange={this.onChangeYear}
-              options={this.OPTIONS}
-            />
-          </WidgetFooter>
-        </Widget>
+        <FooterStyled>
+          tipresias 2019
+        </FooterStyled>
       </AppContainerStyled>
     );
   }

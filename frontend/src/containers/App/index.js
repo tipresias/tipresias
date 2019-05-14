@@ -23,27 +23,34 @@ type Props = {}
 const AppContainerStyled = styled.div`
   display: grid;
   grid-template-columns: 1fr 40% 40% 1fr;
-  grid-template-rows: 100px 40% 20% 100px;
-  grid-gap: 5px;
+  grid-template-rows: 80px auto auto 100px;
+  grid-gap: 40px;
   font-family: sans-serif;
 `;
 
 const HeaderStyled = styled.header`
   grid-column: 2 / -2;
-  background-color: white;
-  padding: 18px;
-  display: flex;
+  display:flex;
+  position relative;
   align-items: center;
   justify-content: center;
-  .header-link {
-    font-size: 16px;
-    color: rgba(0,0,0,0.30);
-  }
+  background-color: white;
+  border-bottom: 1px solid rgba(0,0,0,.125);
 `;
 
 const LogoStyled = styled.img`
   height: auto;
-  width: 15%
+  width: 150px;
+`;
+
+const HeaderLinksStyled = styled.div`
+position: absolute;
+right: 0;
+  a {
+    font-size: 16px;
+    color: rgba(0,0,0,0.30);
+    padding: 0.5rem;
+  }
 `;
 
 const Widget = styled.div`
@@ -138,7 +145,9 @@ class App extends Component<Props, State> {
       <AppContainerStyled>
         <HeaderStyled>
           <LogoStyled src={tipresiasLogo} alt="Tipresias" width="120" />
-          <a className="header-link" href="#">About</a>
+          <HeaderLinksStyled>
+            <a href="#">About</a>
+          </HeaderLinksStyled>
         </HeaderStyled>
 
 

@@ -22,20 +22,27 @@ type Props = {}
 // grid 3 cols and 3 rows
 const AppContainerStyled = styled.div`
   display: grid;
-  grid-template-columns: 1fr 18% 18% 18% 18% 1fr;
-  grid-template-rows: 80px auto auto 100px;
-  grid-gap: 20px;
+  grid-template-columns: 1fr;
+  grid-gap: 5px;
   font-family: sans-serif;
+  // desktop
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 18% 18% 18% 18% 1fr;
+    grid-template-rows: 80px auto auto 100px;
+  }
 `;
 
 const HeaderStyled = styled.header`
-  grid-column: 2 / -2;
+  grid-column: 1 / -1;
   display:flex;
   position relative;
   align-items: center;
   justify-content: center;
   background-color: white;
   border-bottom: 1px solid rgba(0,0,0,.125);
+  @media (min-width: 768px) {
+    grid-column: 2 / -2;
+  }
 `;
 
 const LogoStyled = styled.img`
@@ -54,12 +61,15 @@ right: 0;
 `;
 
 const Widget = styled.div`
-  grid-column: ${props => props.gridColumn};
+  grid-column: 1/ -1;
   background-color: #fff;
   border: 1px solid rgba(0,0,0,.125);
   border-radius: .25rem;
   box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, .05);
   padding: 1.25rem;
+  @media (min-width: 768px) {
+    grid-column: ${props => props.gridColumn};
+  }
 `;
 
 const WidgetHeading = styled.h3`

@@ -25,10 +25,10 @@ const AppContainerStyled = styled.div`
   grid-template-columns: 1fr;
   grid-gap: 5px;
   font-family: sans-serif;
-  // desktop
   @media (min-width: 768px) {
     grid-template-columns: 1fr 18% 18% 18% 18% 1fr;
     grid-template-rows: 80px auto auto 100px;
+    grid-gap: 20px;
   }
 `;
 
@@ -176,7 +176,6 @@ class App extends Component<Props, State> {
           </HeaderLinksStyled>
         </HeaderStyled>
 
-
         <Widget gridColumn="2 / -2">
           <WidgetHeading>Cumulative points per round:</WidgetHeading>
           <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
@@ -262,7 +261,6 @@ class App extends Component<Props, State> {
             </ListItem>
           </List>
         </Widget>
-
 
         <FooterStyled>
           <p>Tipresias 2019 - Created in Melbourne by <a href="https://github.com/tipresias">Team Tipresias</a></p>

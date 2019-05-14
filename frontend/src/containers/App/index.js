@@ -22,9 +22,9 @@ type Props = {}
 // grid 3 cols and 3 rows
 const AppContainerStyled = styled.div`
   display: grid;
-  grid-template-columns: 1fr 40% 40% 1fr;
+  grid-template-columns: 1fr 18% 18% 18% 18% 1fr;
   grid-template-rows: 80px auto auto 100px;
-  grid-gap: 10px;
+  grid-gap: 20px;
   font-family: sans-serif;
 `;
 
@@ -114,9 +114,14 @@ const WidgetFooter = styled.div`
 const FooterStyled = styled.footer`
   grid-column: 1 / -1;
   background: #F0F3F7;
-  border: 1px solid #D7D7D7;
-  `
-
+  border-top: 1px solid #D7D7D7;
+  text-align: center;
+  font-size: 1rem;
+  color: #373A3C;
+  a {
+    color: #373A3C;
+  }
+`;
 
 class App extends Component<Props, State> {
   state = {
@@ -182,7 +187,7 @@ class App extends Component<Props, State> {
           </WidgetFooter>
         </Widget>
 
-        <Widget gridColumn="2 / 3">
+        <Widget gridColumn="2 / 4">
           <WidgetHeading>Tipresias's predictions for round x</WidgetHeading>
           <List>
             <ListItem>
@@ -218,7 +223,7 @@ class App extends Component<Props, State> {
           </List>
         </Widget>
 
-        <Widget gridColumn="3 / 4">
+        <Widget gridColumn="4 / -2">
           <WidgetHeading>Model performace round x</WidgetHeading>
           <List>
             <ListItem>
@@ -250,7 +255,10 @@ class App extends Component<Props, State> {
 
 
         <FooterStyled>
-          tipresias 2019
+          <p>Tipresias 2019 - Created in Melbourne by <a href="https://github.com/tipresias">Team Tipresias</a></p>
+          <p>
+            <a href="#top">back to top</a>
+          </p>
         </FooterStyled>
       </AppContainerStyled>
     );

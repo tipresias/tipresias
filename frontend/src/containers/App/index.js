@@ -24,7 +24,7 @@ const AppContainerStyled = styled.div`
   display: grid;
   grid-template-columns: 1fr 40% 40% 1fr;
   grid-template-rows: 80px auto auto 100px;
-  grid-gap: 40px;
+  grid-gap: 10px;
   font-family: sans-serif;
 `;
 
@@ -47,7 +47,7 @@ const HeaderLinksStyled = styled.div`
 position: absolute;
 right: 0;
   a {
-    font-size: 16px;
+    font-size: 1rem;
     color: rgba(0,0,0,0.30);
     padding: 0.5rem;
   }
@@ -64,7 +64,7 @@ const Widget = styled.div`
 
 const WidgetHeading = styled.h3`
   font-style: bold;
-  font-size: 18px;
+  font-size: 0.8rem;
   color: #373A3C;
   letter-spacing: 0;
   text-align: left;
@@ -77,21 +77,32 @@ const List = styled.div`
 
 const ListItem = styled.div`
   display: flex;
-  background: #FFFFFF;
+  justify-content: center;
+  align-items: center;
   border: 1px solid #DDDDDD;
   border-radius: 4px;
 `;
 
 const Stat = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
-
+  flex: 1;
+  padding: 0.5rem;
+  &::after {
+    content: "|";
+    float: right;
+    color: rgba(0,0,0,.125);
+  }
+  &:last-child::after {
+    display:none;
+  }
   .key {
-    font-size: 16px;
+    font-size: 1rem;
     color: #373A3C;
   }
   .value {
-    font-size: 26px;
+    font-size: 1.625rem;
     color: #373A3C;
   }
 `;
@@ -174,6 +185,26 @@ class App extends Component<Props, State> {
         <Widget gridColumn="2 / 3">
           <WidgetHeading>Tipresias's predictions for round x</WidgetHeading>
           <List>
+            <ListItem>
+              <Stat>
+                <div className="key">Team Name 1</div>
+                <div className="value">77</div>
+              </Stat>
+              <Stat>
+                <div className="key">Team Name 2</div>
+                <div className="value">90</div>
+              </Stat>
+            </ListItem>
+            <ListItem>
+              <Stat>
+                <div className="key">Team Name 1</div>
+                <div className="value">77</div>
+              </Stat>
+              <Stat>
+                <div className="key">Team Name 2</div>
+                <div className="value">90</div>
+              </Stat>
+            </ListItem>
             <ListItem>
               <Stat>
                 <div className="key">Team Name 1</div>

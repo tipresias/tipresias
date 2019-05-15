@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import styled from 'styled-components';
 import { Query } from 'react-apollo';
+import { BarChart } from 'recharts';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
 import images from '../../images';
@@ -19,7 +20,6 @@ type State = {
 
 type Props = {}
 
-// grid 3 cols and 3 rows
 const AppContainerStyled = styled.div`
   display: grid;
   grid-template-columns: 1fr;
@@ -172,7 +172,7 @@ class App extends Component<Props, State> {
         <HeaderStyled>
           <LogoStyled src={tipresiasLogo} alt="Tipresias" width="120" />
           <HeaderLinksStyled>
-            <a href="#">About</a>
+            <a href="https://github.com/tipresias">About</a>
           </HeaderLinksStyled>
         </HeaderStyled>
 

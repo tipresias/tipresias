@@ -1,30 +1,34 @@
 from unittest import TestCase
 from faker import Faker
 import pandas as pd
-import numpy as np
 
 from machine_learning.data_processors import PlayerDataStacker
 from machine_learning.data_processors.player_data_stacker import REQUIRED_COLS
+from machine_learning.tests.fixtures.data_factories import fake_cleaned_player_data
 
 FAKE = Faker()
+N_MATCHES_PER_YEAR = 10
+YEAR_RANGE = (2015, 2017)
+N_PLAYERS_PER_TEAM = 10
+# Need to multiply by two, because we add team & oppo_team row per match
+N_ROWS = N_MATCHES_PER_YEAR * len(range(*YEAR_RANGE)) * 2 * N_PLAYERS_PER_TEAM
 
 
 class TestPlayerDataStacker(TestCase):
     def setUp(self):
         self.transformer = PlayerDataStacker()
 
-        home_teams = [FAKE.company() for _ in range(10)]
-        away_teams = [FAKE.company() for _ in range(10)]
-        self.data_frame = pd.DataFrame(
-            {
-                "home_team": home_teams,
-                "away_team": away_teams,
-                "playing_for": home_teams[:5] + away_teams[5:],
-                "year": [FAKE.year() for _ in range(10)],
-                "match_id": np.random.randint(100, 200, 10),
-                "home_score": np.random.randint(50, 150, 10),
-                "away_score": np.random.randint(50, 150, 10),
-            }
+        self.data_frame = (
+            fake_cleaned_player_data(N_MATCHES_PER_YEAR, YEAR_RANGE, N_PLAYERS_PER_TEAM)
+            .assign(match_id=lambda df: df["date"])
+            .rename(
+                columns={
+                    "team": "home_team",
+                    "oppo_team": "away_team",
+                    "score": "home_score",
+                    "oppo_score": "away_score",
+                }
+            )
         )
 
     def test_transform(self):

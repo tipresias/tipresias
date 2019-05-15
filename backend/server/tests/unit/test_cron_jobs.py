@@ -1,68 +1,43 @@
 from unittest.mock import Mock, patch
-from datetime import date, datetime
+from datetime import datetime
 
 from django.test import TestCase
 from freezegun import freeze_time
-import pandas as pd
 
 from server.cron_jobs import SendTips
+from server.tests.fixtures.data_factories import fake_footywire_fixture_data
 from machine_learning.data_import import FootywireDataImporter
 
 THURSDAY = "2019-3-28"
 FRIDAY = "2019-3-29"
 SATURDAY = "2019-3-30"
+SUNDAY = "2019-3-31"
 SEVEN_PM = 19
 MELBOURNE_TIMEZONE_OFFSET = 11
+ROW_COUNT = 3
 
 
 class TestSendTips(TestCase):
     def setUp(self):
         friday_args = [int(date_str) for date_str in FRIDAY.split("-")]
-        friday = date(*friday_args)
+        friday = datetime(*friday_args, SEVEN_PM)
+
+        saturday_args = [int(date_str) for date_str in SATURDAY.split("-")]
+        saturday = datetime(*saturday_args, SEVEN_PM)
+
+        sunday_args = [int(date_str) for date_str in SUNDAY.split("-")]
+        sunday = datetime(*sunday_args, SEVEN_PM)
+
+        days = [friday, saturday, sunday]
+
         year = friday.year
-        fixture_data_frame = pd.DataFrame(
-            [
-                {
-                    "date": datetime(year, friday.month, friday.day, SEVEN_PM),
-                    "home_team": "Richmond",
-                    "away_team": "Carlton",
-                    "home_score": 0,
-                    "away_score": 0,
-                    "venue": "MCG",
-                    "crowd": 0,
-                    "round_label": "Round 1",
-                    "round": 1,
-                    "season": year,
-                },
-                {
-                    "date": datetime(year, friday.month, friday.day + 1, SEVEN_PM),
-                    "home_team": "Melbourne",
-                    "away_team": "Sydney",
-                    "home_score": 0,
-                    "away_score": 0,
-                    "venue": "MCG",
-                    "crowd": 0,
-                    "round_label": "Round 1",
-                    "round": 1,
-                    "season": year,
-                },
-                {
-                    "date": datetime(year, friday.month, friday.day + 2, SEVEN_PM),
-                    "home_team": "Collingwood",
-                    "away_team": "Brisbane",
-                    "home_score": 0,
-                    "away_score": 0,
-                    "venue": "MCG",
-                    "crowd": 0,
-                    "round_label": "Round 1",
-                    "round": 1,
-                    "season": year,
-                },
-            ]
-        )
+        fixture_data = fake_footywire_fixture_data(ROW_COUNT, (year, year + 1))
+
+        for idx, day in enumerate(days):
+            fixture_data.loc[idx, "date"] = day
 
         self.data_reader = FootywireDataImporter()
-        self.data_reader.get_fixture = Mock(return_value=fixture_data_frame)
+        self.data_reader.get_fixture = Mock(return_value=fixture_data)
 
     def test_do(self):
         with patch("server.management.commands.tip.Command") as MockTipCommand:

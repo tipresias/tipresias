@@ -4,7 +4,6 @@ import os
 from functools import partial, reduce
 from datetime import datetime, date
 from typing import List, Optional
-from mypy_extensions import TypedDict
 from django.core.management.base import BaseCommand
 from django import utils
 import pandas as pd
@@ -13,21 +12,9 @@ from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
+from server.types import FixtureData
 from machine_learning.data_import import FootywireDataImporter
 from machine_learning.ml_data import JoinedMLData
-
-FixtureData = TypedDict(
-    "FixtureData",
-    {
-        "date": pd.Timestamp,
-        "season": int,
-        "season_game": int,
-        "round": int,
-        "home_team": str,
-        "away_team": str,
-        "venue": str,
-    },
-)
 
 NO_SCORE = 0
 # We calculate rolling sums/means for some features that can span over 5 seasons
@@ -182,7 +169,11 @@ class Command(BaseCommand):
             print("Match data saved!\n")
 
     def __build_match(self, match_data: FixtureData) -> Optional[List[TeamMatch]]:
-        raw_date = match_data["date"].to_pydatetime()
+        raw_date = (
+            match_data["date"].to_pydatetime()
+            if isinstance(match_data["date"], pd.Timestamp)
+            else match_data["date"]
+        )
 
         # 'make_aware' raises error if datetime already has a timezone
         if raw_date.tzinfo is None or raw_date.tzinfo.utcoffset(raw_date) is None:

@@ -1,7 +1,5 @@
 from unittest import TestCase
-from datetime import datetime
 from faker import Faker
-import pandas as pd
 import numpy as np
 
 from machine_learning.data_processors.feature_functions import (
@@ -21,10 +19,14 @@ from machine_learning.data_processors.feature_functions import (
     add_elo_pred_win,
     add_shifted_team_features,
 )
-from project.settings.common import MELBOURNE_TIMEZONE
+from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
+from machine_learning.data_config import VENUES
 
 FAKE = Faker()
-N_ROWS = 10
+MATCH_COUNT_PER_YEAR = 10
+YEAR_RANGE = (2015, 2016)
+# Need to multiply by two, because we add team & oppo_team row per match
+TOTAL_ROWS = MATCH_COUNT_PER_YEAR * len(range(*YEAR_RANGE)) * 2
 
 
 def assert_column_added(
@@ -78,25 +80,7 @@ def make_column_assertions(
 
 class TestFeatureFunctions(TestCase):
     def setUp(self):
-        teams = [FAKE.company() for _ in range(N_ROWS)]
-        oppo_teams = list(reversed(teams))
-
-        self.data_frame = (
-            pd.DataFrame(
-                {
-                    "date": [datetime(2015, 4, 10, 13, tzinfo=MELBOURNE_TIMEZONE)]
-                    * N_ROWS,
-                    "team": teams,
-                    "oppo_team": oppo_teams,
-                    "year": [2015] * N_ROWS,
-                    "round_number": ([3] * int(N_ROWS / 2)) + ([4] * int(N_ROWS / 2)),
-                    "score": np.random.randint(50, 150, N_ROWS),
-                    "oppo_score": np.random.randint(50, 150, N_ROWS),
-                }
-            )
-            .set_index(["team", "year", "round_number"], drop=False)
-            .rename_axis([None, None, None])
-        )
+        self.data_frame = fake_cleaned_match_data(MATCH_COUNT_PER_YEAR, YEAR_RANGE)
 
     def test_add_result(self):
         feature_function = add_result
@@ -125,8 +109,8 @@ class TestFeatureFunctions(TestCase):
     def test_add_cum_percent(self):
         feature_function = add_cum_percent
         valid_data_frame = self.data_frame.assign(
-            prev_match_score=np.random.randint(50, 150, 10),
-            prev_match_oppo_score=np.random.randint(50, 150, 10),
+            prev_match_score=np.random.randint(50, 150, TOTAL_ROWS),
+            prev_match_oppo_score=np.random.randint(50, 150, TOTAL_ROWS),
         )
 
         make_column_assertions(
@@ -140,7 +124,7 @@ class TestFeatureFunctions(TestCase):
     def test_add_cum_win_points(self):
         feature_function = add_cum_win_points
         valid_data_frame = self.data_frame.assign(
-            prev_match_result=np.random.randint(0, 2, 10)
+            prev_match_result=np.random.randint(0, 2, TOTAL_ROWS)
         )
 
         make_column_assertions(
@@ -154,10 +138,10 @@ class TestFeatureFunctions(TestCase):
     def test_add_betting_pred_win(self):
         feature_function = add_betting_pred_win
         valid_data_frame = self.data_frame.assign(
-            win_odds=np.random.randint(0, 2, 10),
-            oppo_win_odds=np.random.randint(0, 2, 10),
-            line_odds=np.random.randint(-50, 50, 10),
-            oppo_line_odds=np.random.randint(-50, 50, 10),
+            win_odds=np.random.randint(0, 2, TOTAL_ROWS),
+            oppo_win_odds=np.random.randint(0, 2, TOTAL_ROWS),
+            line_odds=np.random.randint(-50, 50, TOTAL_ROWS),
+            oppo_line_odds=np.random.randint(-50, 50, TOTAL_ROWS),
         )
 
         make_column_assertions(
@@ -171,8 +155,8 @@ class TestFeatureFunctions(TestCase):
     def test_add_elo_pred_win(self):
         feature_function = add_elo_pred_win
         valid_data_frame = self.data_frame.assign(
-            elo_rating=np.random.randint(900, 1100, 10),
-            oppo_elo_rating=np.random.randint(900, 1100, 10),
+            elo_rating=np.random.randint(900, 1100, TOTAL_ROWS),
+            oppo_elo_rating=np.random.randint(900, 1100, TOTAL_ROWS),
         )
 
         make_column_assertions(
@@ -187,8 +171,8 @@ class TestFeatureFunctions(TestCase):
         feature_function = add_ladder_position
         valid_data_frame = self.data_frame.assign(
             # Float from 0.5 to 2.0 covers most percentages
-            cum_percent=(2.5 * np.random.ranf(10)) - 0.5,
-            cum_win_points=np.random.randint(0, 60, 10),
+            cum_percent=(2.5 * np.random.ranf(TOTAL_ROWS)) - 0.5,
+            cum_win_points=np.random.randint(0, 60, TOTAL_ROWS),
         )
 
         make_column_assertions(
@@ -202,7 +186,7 @@ class TestFeatureFunctions(TestCase):
     def test_add_win_streak(self):
         feature_function = add_win_streak
         valid_data_frame = self.data_frame.assign(
-            prev_match_result=np.random.randint(0, 2, 10)
+            prev_match_result=np.random.randint(0, 2, TOTAL_ROWS)
         )
 
         make_column_assertions(
@@ -214,34 +198,9 @@ class TestFeatureFunctions(TestCase):
         )
 
     def test_add_out_of_state(self):
-        teams = [
-            "Adelaide",
-            "Brisbane",
-            "Carlton",
-            "Collingwood",
-            "Essendon",
-            "Fitzroy",
-            "Western Bulldogs",
-            "Fremantle",
-            "GWS",
-            "Geelong",
-        ]
-        venues = [
-            "Football Park",
-            "S.C.G.",
-            "Windy Hill",
-            "Subiaco",
-            "Moorabbin Oval",
-            "M.C.G.",
-            "Kardinia Park",
-            "Victoria Park",
-            "Waverley Park",
-            "Princes Park",
-        ]
-
         feature_function = add_out_of_state
         valid_data_frame = self.data_frame.assign(
-            team=teams, oppo_team=reversed(teams), venue=venues
+            venue=[VENUES[idx % len(VENUES)] for idx in range(TOTAL_ROWS)]
         )
 
         make_column_assertions(
@@ -253,34 +212,9 @@ class TestFeatureFunctions(TestCase):
         )
 
     def test_add_travel_distance(self):
-        teams = [
-            "Adelaide",
-            "Brisbane",
-            "Carlton",
-            "Collingwood",
-            "Essendon",
-            "Fitzroy",
-            "Western Bulldogs",
-            "Fremantle",
-            "GWS",
-            "Geelong",
-        ]
-        venues = [
-            "Football Park",
-            "S.C.G.",
-            "Windy Hill",
-            "Subiaco",
-            "Moorabbin Oval",
-            "M.C.G.",
-            "Kardinia Park",
-            "Victoria Park",
-            "Waverley Park",
-            "Princes Park",
-        ]
-
         feature_function = add_travel_distance
         valid_data_frame = self.data_frame.assign(
-            team=teams, oppo_team=reversed(teams), venue=venues
+            venue=[VENUES[idx % len(VENUES)] for idx in range(TOTAL_ROWS)]
         )
 
         make_column_assertions(
@@ -294,8 +228,8 @@ class TestFeatureFunctions(TestCase):
     def test_add_last_year_brownlow_votes(self):
         feature_function = add_last_year_brownlow_votes
         valid_data_frame = self.data_frame.assign(
-            player_id=np.random.randint(100, 1000, 10),
-            brownlow_votes=np.random.randint(0, 20, 10),
+            player_id=np.random.randint(100, 1000, TOTAL_ROWS),
+            brownlow_votes=np.random.randint(0, 20, TOTAL_ROWS),
         )
 
         make_column_assertions(
@@ -335,7 +269,10 @@ class TestFeatureFunctions(TestCase):
 
         feature_function = add_rolling_player_stats
         valid_data_frame = self.data_frame.assign(
-            **{stats_col: np.random.randint(0, 20, 10) for stats_col in STATS_COLS}
+            **{
+                stats_col: np.random.randint(0, 20, TOTAL_ROWS)
+                for stats_col in STATS_COLS
+            }
         )
 
         make_column_assertions(
@@ -354,7 +291,7 @@ class TestFeatureFunctions(TestCase):
     def test_add_cum_matches_played(self):
         feature_function = add_cum_matches_played
         valid_data_frame = self.data_frame.assign(
-            player_id=np.random.randint(100, 1000, 10)
+            player_id=np.random.randint(100, 1000, TOTAL_ROWS)
         )
 
         make_column_assertions(

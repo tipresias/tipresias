@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+import warnings
 from unittest import TestCase
 from unittest.mock import Mock
 import pandas as pd
@@ -7,33 +7,26 @@ from faker import Faker
 
 from machine_learning.ml_data import JoinedMLData
 from machine_learning.data_transformation import data_cleaning
-from project.settings.common import MELBOURNE_TIMEZONE
+from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../fixtures"))
 FAKE = Faker()
-N_ROWS = 10
-N_TEAMS = 5
+MATCH_COUNT_PER_YEAR = 10
+YEAR_RANGE = (2016, 2017)
+# Need to multiply by two, because we add team & oppo_team row per match
+ROW_COUNT = MATCH_COUNT_PER_YEAR * len(range(*YEAR_RANGE)) * 2
+
+# JoinedMLData does a .loc call with all the column names, resulting in a
+# warning about passing missing column names to .loc when we run tests, so
+# we're ignoring the warnings rather than adding all the columns
+warnings.simplefilter("ignore", FutureWarning)
 
 
 class TestJoinedMLData(TestCase):
     """Tests for JoinedMLData class"""
 
     def setUp(self):
-        teams = [FAKE.company() for _ in range(N_TEAMS)]
-        base_data = pd.DataFrame(
-            [
-                {
-                    "date": datetime(2016, 3, 20, 14, tzinfo=MELBOURNE_TIMEZONE),
-                    "team": teams[n % (N_TEAMS - 1)],
-                    "oppo_team": teams[-(n % (N_TEAMS - 1))],
-                    "year": 2016,
-                    "round_number": 1,
-                    "score": 50,
-                    "oppo_score": 150,
-                }
-                for n in range(N_ROWS)
-            ]
-        )
+        base_data = fake_cleaned_match_data(MATCH_COUNT_PER_YEAR, YEAR_RANGE)
 
         betting_data_reader = Mock()
         betting_data_reader.data = base_data.assign(line_odds=20, oppo_line_odds=-20)

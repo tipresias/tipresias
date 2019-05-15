@@ -1,7 +1,6 @@
 from unittest import TestCase
 from faker import Faker
 import pandas as pd
-import numpy as np
 
 from machine_learning.data_processors.feature_calculation import (
     feature_calculator,
@@ -11,8 +10,11 @@ from machine_learning.data_processors.feature_calculation import (
     calculate_rolling_mean_by_dimension,
     calculate_addition,
 )
+from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
 
 FAKE = Faker()
+ROW_COUNT = 10
+YEAR_RANGE = (2015, 2016)
 
 
 def assert_required_columns(
@@ -27,23 +29,7 @@ def assert_required_columns(
 
 class TestFeatureCalculations(TestCase):
     def setUp(self):
-        teams = [FAKE.company() for _ in range(10)]
-        oppo_teams = list(reversed(teams))
-
-        self.data_frame = (
-            pd.DataFrame(
-                {
-                    "team": teams,
-                    "oppo_team": oppo_teams,
-                    "year": [2015 for _ in range(10)],
-                    "round_number": [3 for _ in range(5)] + [4 for _ in range(5)],
-                    "score": np.random.randint(50, 150, 10),
-                    "oppo_score": np.random.randint(50, 150, 10),
-                }
-            )
-            .set_index(["team", "year", "round_number"], drop=False)
-            .rename_axis([None, None, None])
-        )
+        self.data_frame = fake_cleaned_match_data(ROW_COUNT, YEAR_RANGE)
 
     def test_feature_calculator(self):
         def calc_func(col):

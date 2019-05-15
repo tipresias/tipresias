@@ -4,7 +4,6 @@ import os
 from functools import partial, reduce
 from datetime import datetime, date
 from typing import List, Optional
-from mypy_extensions import TypedDict
 from django.core.management.base import BaseCommand
 from django import utils
 import pandas as pd
@@ -170,7 +169,11 @@ class Command(BaseCommand):
             print("Match data saved!\n")
 
     def __build_match(self, match_data: FixtureData) -> Optional[List[TeamMatch]]:
-        raw_date = match_data["date"].to_pydatetime()
+        raw_date = (
+            match_data["date"].to_pydatetime()
+            if isinstance(match_data["date"], pd.Timestamp)
+            else match_data["date"]
+        )
 
         # 'make_aware' raises error if datetime already has a timezone
         if raw_date.tzinfo is None or raw_date.tzinfo.utcoffset(raw_date) is None:

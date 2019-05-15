@@ -1,21 +1,18 @@
-import itertools
-from datetime import datetime
 from unittest.mock import Mock, patch
 from django.test import TestCase
-import pandas as pd
 from sklearn.externals import joblib
 
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import seed_db
-from machine_learning.ml_data import BettingMLData
-from machine_learning.tests.fixtures import TestEstimator
 from server.tests.fixtures.data_factories import (
     fake_footywire_fixture_data,
     fake_footywire_betting_data,
 )
+from machine_learning.ml_data import BettingMLData
+from machine_learning.tests.fixtures import TestEstimator
 
 
-ROW_COUNT = 5
+MATCH_COUNT_PER_YEAR = 5
 
 
 class TestSeedDb(TestCase):
@@ -34,8 +31,12 @@ class TestSeedDb(TestCase):
         data_years = (self.years[0] - 1, self.years[1])
 
         # Mock footywire fixture data
-        self.fixture_data_frame = fake_footywire_fixture_data(ROW_COUNT, data_years)
-        self.betting_data_frame = fake_footywire_betting_data(ROW_COUNT, data_years)
+        self.fixture_data_frame = fake_footywire_fixture_data(
+            MATCH_COUNT_PER_YEAR, data_years
+        )
+        self.betting_data_frame = fake_footywire_betting_data(
+            MATCH_COUNT_PER_YEAR, data_years
+        )
 
         with patch(
             "machine_learning.ml_data.betting_ml_data.FootywireDataImporter"
@@ -70,12 +71,15 @@ class TestSeedDb(TestCase):
 
         self.assertGreater(Team.objects.count(), 0)
         self.assertEqual(MLModel.objects.count(), 1)
-        self.assertEqual(Match.objects.count(), ROW_COUNT * len(range(*self.years)))
         self.assertEqual(
-            TeamMatch.objects.count(), ROW_COUNT * len(range(*self.years)) * 2
+            Match.objects.count(), MATCH_COUNT_PER_YEAR * len(range(*self.years))
         )
         self.assertEqual(
-            Prediction.objects.count(), ROW_COUNT * len(range(*self.years))
+            TeamMatch.objects.count(),
+            MATCH_COUNT_PER_YEAR * len(range(*self.years)) * 2,
+        )
+        self.assertEqual(
+            Prediction.objects.count(), MATCH_COUNT_PER_YEAR * len(range(*self.years))
         )
         self.assertEqual(TeamMatch.objects.filter(score=0).count(), 0)
 

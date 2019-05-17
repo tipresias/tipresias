@@ -2,12 +2,10 @@
 import React, { Component } from 'react';
 import styled from 'styled-components';
 import { Query } from 'react-apollo';
-import {
-  BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
-} from 'recharts';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
 import images from '../../images';
+import BarChartMain from '../../components/BarChartMain';
 import BarChartContainer from '../BarChartContainer';
 import Select from '../../components/Select';
 import ErrorBar from '../../components/ErrorBar';
@@ -153,7 +151,21 @@ class App extends Component<Props, State> {
   render() {
     const { year } = this.state;
 
-    const queryChildren = ({ loading, error, data }) => {
+    // const BarChartCustomQueryChildren = ({ loading, error, data }) => {
+    //   const nonNullData = data || {};
+    //   const dataWithAllPredictions = { predictions: [], ...nonNullData };
+    //   const { predictions } = dataWithAllPredictions;
+
+    //   if (loading) return <LoadingBar text="Loading predictions..." />;
+
+    //   if (error) return <ErrorBar text={error.message} />;
+
+    //   if (predictions.length === 0) return <EmptyChart text="No data found" />;
+
+    //   return <BarChartContainer games={predictions} />;
+    // };
+
+    const BarChartMainQueryChildren = ({ loading, error, data }) => {
       const nonNullData = data || {};
       const dataWithAllPredictions = { predictions: [], ...nonNullData };
       const { predictions } = dataWithAllPredictions;
@@ -164,7 +176,7 @@ class App extends Component<Props, State> {
 
       if (predictions.length === 0) return <EmptyChart text="No data found" />;
 
-      return <BarChartContainer games={predictions} />;
+      return <BarChartMain data={predictions} />;
     };
 
     return (
@@ -175,33 +187,18 @@ class App extends Component<Props, State> {
             <a href="https://github.com/tipresias">About</a>
           </HeaderLinksStyled>
         </HeaderStyled>
+
+
         <Widget gridColumn="2 / -2">
-          <BarChart
-            width={600}
-            height={300}
-            data={[
-              { name: 'models', tipresias: 200, other: 100 },
-              { name: 'models', tipresias: 300, other: 200 },
-              { name: 'models', tipresias: 400, other: 300 },
-              { name: 'models', tipresias: 500, other: 400 },
-            ]}
-            margin={{
-              top: 5, right: 30, left: 20, bottom: 5,
-            }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="tipresias" fill="#8884d8" />
-            <Bar dataKey="other" fill="#82ca9d" />
-          </BarChart>
+          <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
+            {BarChartMainQueryChildren}
+          </Query>
         </Widget>
-        <Widget gridColumn="2 / -2">
+
+        {/* <Widget gridColumn="2 / -2">
           <WidgetHeading>Cumulative points per round:</WidgetHeading>
           <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
-            {queryChildren}
+            {BarChartCustomQueryChildren}
           </Query>
           <WidgetFooter>
             <label htmlFor="tipresias">
@@ -224,7 +221,7 @@ class App extends Component<Props, State> {
               options={this.OPTIONS}
             />
           </WidgetFooter>
-        </Widget>
+        </Widget> */}
 
         <Widget gridColumn="2 / 4">
           <WidgetHeading>Tipresias predictions for round x</WidgetHeading>

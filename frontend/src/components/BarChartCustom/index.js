@@ -6,7 +6,7 @@ import type { Bar } from '../../types';
 type Props = {
   bars: Array<Array<Bar>>
 }
-const BarChart = ({ bars }: Props): Node => (
+const BarChartCustom = ({ bars }: Props): Node => (
   bars.map((item, index) => (
     // todo: add a key to bars array.
     // eslint-disable-next-line react/no-array-index-key
@@ -27,4 +27,4 @@ const BarChart = ({ bars }: Props): Node => (
   ))
 );
 
-export default BarChart;
+export default BarChartCustom;

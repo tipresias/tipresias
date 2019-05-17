@@ -1,8 +1,8 @@
 // @flow
 import React from 'react';
 import type { Game, Bar } from '../../types';
-import groupModelsByRound from './GroupModelsByRound';
-import createCumulativeModels from './CreateCumulativeModels';
+import groupModelsByRound from '../../utils/GroupModelsByRound';
+import createCumulativeModels from '../../utils/CreateCumulativeModels';
 import createBarGroups from './CreateBarGroups';
 import {
   createTipPointScale,
@@ -10,7 +10,7 @@ import {
   createColorScale,
 } from './CreateScales';
 
-import BarChart from '../../components/BarChart';
+import BarChartCustom from '../../components/BarChartCustom';
 import Axis from '../../components/Axis';
 
 type Props = {
@@ -83,7 +83,7 @@ class BarChartContainer extends React.Component<Props, State> {
           !isCalculating
           && (
             <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} style={{ height: 'auto', width: '100%' }}>
-              <BarChart bars={bars} barWidth={BAR_WIDTH} />
+              <BarChartCustom bars={bars} barWidth={BAR_WIDTH} />
               <Axis xScale={xScale} yScale={yScale} />
             </svg>
           )

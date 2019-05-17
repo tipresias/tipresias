@@ -1,7 +1,7 @@
 // @flow
 import type {
   CumulTipPointPerModel,
-} from '../../types';
+} from '../types';
 
 const createCumulativeModels = (modelsByRound: any): Array<Array<CumulTipPointPerModel>> => {
   const roundsArray = Object.keys(modelsByRound);

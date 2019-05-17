@@ -1,9 +1,10 @@
 # Tipresias
+
 [![Build Status](https://travis-ci.com/cfranklin11/tipresias.svg?branch=master)](https://travis-ci.com/cfranklin11/tipresias)
 
->I Tipresias, old bot with dusty cores<br>
->Perceived the match, and foretold the score—<br>
->I too awaited the fanatics' roar.<br>
+> I Tipresias, old bot with dusty cores<br>
+> Perceived the match, and foretold the score—<br>
+> I too awaited the fanatics' roar.<br>
 
 Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias, has, like Zeus before it, arisen to vanquish its father and claim its throne as the master of AFL footy tipping models.
 
@@ -11,6 +12,7 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ### Setup
 
+- Create the `node_modules` volume: `docker volume create --name=node_modules`
 - To build and run the app: `docker-compose up --build`
 - Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
 - Seed the DB: `docker-compose run --rm backend python3 manage.py seed_db`
@@ -38,21 +40,21 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 
 - `docker-compose run --rm backend python3 -Wi manage.py test`
 - Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
-    - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
+  - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 
 ### Run Javascript tests
 
 - `docker-compose run --rm frontend yarn run test:unit`
 - Linting: `docker-compose run --rm frontend yarn run eslint src`
-    - Note: The ESLint rule `"import/no-unresolved"` is disabled, because code editors can't find the `node_modules` inside the docker container, and it made everything red. Also, basic testing should catch erroneous imports anyway.
+  - Note: The ESLint rule `"import/no-unresolved"` is disabled, because code editors can't find the `node_modules` inside the docker container, and it made everything red. Also, basic testing should catch erroneous imports anyway.
 - Flow: `docker-compose run --rm frontend yarn run flow`
 
 ### Deploy
 
 - Via Travis CI (recommended):
-    - In the Travis dashboard, navigate to the tipresias repository.
-    - Under 'More Options', trigger a build on `master`.
-    - This will build the image, run tests, and deploy to Heroku.
+  - In the Travis dashboard, navigate to the tipresias repository.
+  - Under 'More Options', trigger a build on `master`.
+  - This will build the image, run tests, and deploy to Heroku.
 
 ## Pro-Tips
 

@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import styled from 'styled-components';
 import { Query } from 'react-apollo';
-import { BarChart } from 'recharts';
+import { BarChart, Bar } from 'recharts';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
 import images from '../../images';
@@ -16,9 +16,9 @@ const tipresiasLogo = images.logo;
 
 type State = {
   year: number
-}
+};
 
-type Props = {}
+type Props = {};
 
 const AppContainerStyled = styled.div`
   display: grid;
@@ -51,11 +51,11 @@ const LogoStyled = styled.img`
 `;
 
 const HeaderLinksStyled = styled.div`
-position: absolute;
-right: 0;
+  position: absolute;
+  right: 0;
   a {
     font-size: 1rem;
-    color: rgba(0,0,0,0.30);
+    color: rgba(0, 0, 0, 0.3);
     padding: 0.5rem;
   }
 `;
@@ -63,9 +63,9 @@ right: 0;
 const Widget = styled.div`
   grid-column: 1/ -1;
   background-color: #fff;
-  border: 1px solid rgba(0,0,0,.125);
-  border-radius: .25rem;
-  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, .05);
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  border-radius: 0.25rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
   padding: 1.25rem;
   @media (min-width: 768px) {
     grid-column: ${props => props.gridColumn};
@@ -75,21 +75,21 @@ const Widget = styled.div`
 const WidgetHeading = styled.h3`
   font-style: bold;
   font-size: 0.8rem;
-  color: #373A3C;
+  color: #373a3c;
   letter-spacing: 0;
   text-align: left;
 `;
 
 const List = styled.div`
   display: flex;
-  flex-direction:column;
+  flex-direction: column;
 `;
 
 const ListItem = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid #DDDDDD;
+  border: 1px solid #dddddd;
   border-radius: 4px;
 `;
 
@@ -102,18 +102,18 @@ const Stat = styled.div`
   &::after {
     content: "|";
     float: right;
-    color: rgba(0,0,0,.125);
+    color: rgba(0, 0, 0, 0.125);
   }
   &:last-child::after {
-    display:none;
+    display: none;
   }
   .key {
     font-size: 1rem;
-    color: #373A3C;
+    color: #373a3c;
   }
   .value {
     font-size: 1.625rem;
-    color: #373A3C;
+    color: #373a3c;
   }
 `;
 
@@ -123,13 +123,13 @@ const WidgetFooter = styled.div`
 
 const FooterStyled = styled.footer`
   grid-column: 1 / -1;
-  background: #F0F3F7;
-  border-top: 1px solid #D7D7D7;
+  background: #f0f3f7;
+  border-top: 1px solid #d7d7d7;
   text-align: center;
   font-size: 1rem;
-  color: #373A3C;
+  color: #373a3c;
   a {
-    color: #373A3C;
+    color: #373a3c;
   }
 `;
 
@@ -142,19 +142,17 @@ class App extends Component<Props, State> {
 
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
-  }
+  };
 
   onSomethingElse = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
-  }
+  };
 
   render() {
-    const {
-      year,
-    } = this.state;
+    const { year } = this.state;
 
     const queryChildren = ({ loading, error, data }) => {
-      const nonNullData = (data || {});
+      const nonNullData = data || {};
       const dataWithAllPredictions = { predictions: [], ...nonNullData };
       const { predictions } = dataWithAllPredictions;
 
@@ -175,14 +173,33 @@ class App extends Component<Props, State> {
             <a href="https://github.com/tipresias">About</a>
           </HeaderLinksStyled>
         </HeaderStyled>
-
+        <Widget gridColumn="2 / -2">
+          <BarChart
+            width={600}
+            height={400}
+            data={[
+              { name: 'models', tipresias: 200, other: 100 },
+              { name: 'models', tipresias: 300, other: 200 },
+              { name: 'models', tipresias: 400, other: 300 },
+              { name: 'models', tipresias: 500, other: 400 },
+            ]}
+          >
+            <Bar dataKey="tipresias" fill="#8884d8" />
+            <Bar dataKey="other" fill="#82ca9d" />
+          </BarChart>
+        </Widget>
         <Widget gridColumn="2 / -2">
           <WidgetHeading>Cumulative points per round:</WidgetHeading>
           <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
             {queryChildren}
           </Query>
           <WidgetFooter>
-            <input type="checkbox" id="tipresias" name="model" value="tipresias" />
+            <input
+              type="checkbox"
+              id="tipresias"
+              name="model"
+              value="tipresias"
+            />
             <label htmlFor="tipresias">tipresias</label>
 
             <input type="checkbox" id="another" name="model" value="another" />
@@ -197,7 +214,7 @@ class App extends Component<Props, State> {
         </Widget>
 
         <Widget gridColumn="2 / 4">
-          <WidgetHeading>Tipresias's predictions for round x</WidgetHeading>
+          <WidgetHeading>Tipresias predictions for round x</WidgetHeading>
           <List>
             <ListItem>
               <Stat>
@@ -263,7 +280,10 @@ class App extends Component<Props, State> {
         </Widget>
 
         <FooterStyled>
-          <p>Tipresias 2019 - Created in Melbourne by <a href="https://github.com/tipresias">Team Tipresias</a></p>
+          <p>
+            Tipresias 2019 - Created in Melbourne by
+            <a href="https://github.com/tipresias">Team Tipresias</a>
+          </p>
           <p>
             <a href="#top">back to top</a>
           </p>

@@ -26,12 +26,16 @@ creating object like:
 const groupModelsByRoundFlat = (data: Array<Game>): any => {
   const modelsByRound = data.reduce((final, currentItem) => {
     // eslint-disable-next-line camelcase
-    // const { mlModel: { name } } = currentItem;
+    const { mlModel: { name } } = currentItem;
     const { match: { roundNumber } } = currentItem;
 
-    // eslint-disable-next-line no-param-reassign
-    final[roundNumber - 1] = final[roundNumber - 1] || [];
-    final[roundNumber - 1].push(currentItem);
+    // creating the data structure:
+    final[roundNumber - 1] = final[roundNumber - 1] || {};
+    final[roundNumber - 1][name] = final[roundNumber - 1][name] || {};
+    final[roundNumber - 1][name].rounds = final[roundNumber - 1][name].rounds || [];
+
+    // pushing values to the data structure:
+    final[roundNumber - 1][name].rounds.push(currentItem);
 
     return final;
   }, []);

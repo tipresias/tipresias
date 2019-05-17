@@ -1,21 +1,14 @@
 FIRST_AFL_SEASON = '1897-01-01'
 
+matches = modules::import("matches")
+
 #' Return match results data
 #' @param fetch_data Whether to fetch fresh data from afltables.com
 #' @param start_date Minimum match date for fetched data
 #' @param end_date Maximum match date for fetched data
 #' @get /matches
 function(fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
-  data <- if (fetch_data) {
-    fitzRoy::get_match_results()
-  } else {
-    fitzRoy::match_results
-  }
-
-  data %>%
-    dplyr::filter(., Date >= start_date & Date <= end_date) %>%
-    dplyr::rename_all(dplyr::funs(stringr::str_to_lower(.) %>% stringr::str_replace_all(., "\\.", "_"))) %>%
-    jsonlite::toJSON()
+  matches$match_results(fetch_data, start_date, end_date)
 }
 
 #' Return player data

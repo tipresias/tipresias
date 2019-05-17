@@ -14,7 +14,8 @@ Imports:
     dplyr,
     stringr,
     plogr,
-    fitzRoy
-    magrittr
+    fitzRoy,
+    modules
 Remotes:
-    git@github.com:jimmyday12/fitzRoy.git
+    git@github.com:jimmyday12/fitzRoy.git,
+    git@github.com:klmr/modules.git

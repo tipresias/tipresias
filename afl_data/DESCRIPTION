@@ -15,5 +15,6 @@ Imports:
     stringr,
     plogr,
     fitzRoy
+    magrittr
 Remotes:
     git@github.com:jimmyday12/fitzRoy.git

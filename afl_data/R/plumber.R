@@ -13,8 +13,8 @@ function(fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date(
   }
 
   data %>%
-    filter(., Date >= start_date & Date <= end_date) %>%
-    rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
+    dplyr::filter(., Date >= start_date & Date <= end_date) %>%
+    dplyr::rename_all(dplyr::funs(stringr::str_to_lower(.) %>% stringr::str_replace_all(., "\\.", "_"))) %>%
     jsonlite::toJSON()
 }
 
@@ -62,6 +62,6 @@ function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
 
   data %>%
     filter(., Date >= start_date & Date <= end_date) %>%
-    rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
+    dplyr::rename_all(dplyr::funs(stringr::str_to_lower(.) %>% stringr::str_replace_all(., "\\.", "_"))) %>%
     jsonlite::toJSON()
 }

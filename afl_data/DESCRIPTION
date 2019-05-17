@@ -15,7 +15,10 @@ Imports:
     stringr,
     plogr,
     fitzRoy,
-    modules
+    modules,
+    rvest,
+    purrr,
+    tidyr
 Remotes:
     git@github.com:jimmyday12/fitzRoy.git,
     git@github.com:klmr/modules.git

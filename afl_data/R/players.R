@@ -8,7 +8,7 @@ player_results <- function(start_date, end_date) {
   )
 
   data %>%
-    filter(., Date >= start_date & Date <= end_date) %>%
+    dplyr::filter(., Date >= start_date & Date <= end_date) %>%
     dplyr::rename_all(dplyr::funs(stringr::str_to_lower(.) %>% stringr::str_replace_all(., "\\.", "_"))) %>%
     jsonlite::toJSON()
 }

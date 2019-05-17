@@ -104,6 +104,11 @@ GithubRepo: fitzRoy
 GithubUsername: jimmyday12
 GithubRef: master
 GithubSha1: 183ac0ba0488e58684ae746348c0d0a3ca86293e
+RemoteHost: api.github.com
+RemoteRepo: fitzRoy
+RemoteUsername: jimmyday12
+RemoteRef: master
+RemoteSha: 183ac0ba0488e58684ae746348c0d0a3ca86293e
 
 Package: glue
 Source: CRAN

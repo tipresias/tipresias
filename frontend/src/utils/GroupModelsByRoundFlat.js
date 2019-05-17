@@ -24,20 +24,20 @@ creating object like:
 */
 
 const groupModelsByRoundFlat = (data: Array<Game>): any => {
-  const modelsByRound = data.reduce((final, currentItem) => {
-    // eslint-disable-next-line camelcase
+  const modelsByRound = data.reduce((acc, currentItem) => {
+    // The values to use as "keys" in the data structure
     const { mlModel: { name } } = currentItem;
     const { match: { roundNumber } } = currentItem;
 
     // creating the data structure:
-    final[roundNumber - 1] = final[roundNumber - 1] || {};
-    final[roundNumber - 1][name] = final[roundNumber - 1][name] || {};
-    final[roundNumber - 1][name].rounds = final[roundNumber - 1][name].rounds || [];
+    acc[roundNumber - 1] = acc[roundNumber - 1] || {};
+    acc[roundNumber - 1][name] = acc[roundNumber - 1][name] || {};
+    acc[roundNumber - 1][name].rounds = acc[roundNumber - 1][name].rounds || [];
 
     // pushing values to the data structure:
-    final[roundNumber - 1][name].rounds.push(currentItem);
+    acc[roundNumber - 1][name].rounds.push(currentItem);
 
-    return final;
+    return acc;
   }, []);
 
   return modelsByRound;

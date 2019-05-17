@@ -2,7 +2,9 @@
 import React, { Component } from 'react';
 import styled from 'styled-components';
 import { Query } from 'react-apollo';
-import { BarChart, Bar } from 'recharts';
+import {
+  BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
+} from 'recharts';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
 import images from '../../images';
@@ -176,14 +178,22 @@ class App extends Component<Props, State> {
         <Widget gridColumn="2 / -2">
           <BarChart
             width={600}
-            height={400}
+            height={300}
             data={[
               { name: 'models', tipresias: 200, other: 100 },
               { name: 'models', tipresias: 300, other: 200 },
               { name: 'models', tipresias: 400, other: 300 },
               { name: 'models', tipresias: 500, other: 400 },
             ]}
+            margin={{
+              top: 5, right: 30, left: 20, bottom: 5,
+            }}
           >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
             <Bar dataKey="tipresias" fill="#8884d8" />
             <Bar dataKey="other" fill="#82ca9d" />
           </BarChart>
@@ -194,16 +204,19 @@ class App extends Component<Props, State> {
             {queryChildren}
           </Query>
           <WidgetFooter>
-            <input
-              type="checkbox"
-              id="tipresias"
-              name="model"
-              value="tipresias"
-            />
-            <label htmlFor="tipresias">tipresias</label>
-
-            <input type="checkbox" id="another" name="model" value="another" />
-            <label htmlFor="another">another</label>
+            <label htmlFor="tipresias">
+              tipresias
+              <input
+                type="checkbox"
+                id="tipresias"
+                name="model"
+                value="tipresias"
+              />
+            </label>
+            <label htmlFor="another">
+              another
+              <input type="checkbox" id="another" name="model" value="another" />
+            </label>
             <Select
               name="year"
               value={year}

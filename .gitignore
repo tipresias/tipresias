@@ -134,3 +134,4 @@ backend/data
 
 # Folders added via dask
 dask-worker-space
+.Rproj.user

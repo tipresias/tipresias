@@ -36,18 +36,24 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 - Copy the URL given and paste it into your browser.
 - Alternatively, copy just the token from the terminal, navigate your browser to `http://localhost:8888`, and paste the token into the given field.
 
-### Run Python tests
+### Testing
+
+#### Run Python tests
 
 - `docker-compose run --rm backend python3 -Wi manage.py test`
 - Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
   - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 
-### Run Javascript tests
+#### Run Javascript tests
 
 - `docker-compose run --rm frontend yarn run test:unit`
 - Linting: `docker-compose run --rm frontend yarn run eslint src`
   - Note: The ESLint rule `"import/no-unresolved"` is disabled, because code editors can't find the `node_modules` inside the docker container, and it made everything red. Also, basic testing should catch erroneous imports anyway.
 - Flow: `docker-compose run --rm frontend yarn run flow`
+
+#### Run R tests
+
+- `docker-compose run --rm afl_data Rscript -e "devtools::test()"`
 
 ### Deploy
 

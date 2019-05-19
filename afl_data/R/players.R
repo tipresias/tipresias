@@ -1,3 +1,7 @@
+#' Fetches player data via the fitzRoy package and filters by date range.
+#' @param start_date Minimum match date for fetched data
+#' @param end_date Maximum match date for fetched data
+#' @export
 player_results <- function(start_date, end_date) {
   this_year <- Sys.Date() %>% substring(0, 4) %>% as.integer()
 

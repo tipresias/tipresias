@@ -1,64 +1,24 @@
 FOOTY_WIRE_DOMAIN = "https://www.footywire.com"
 BETTING_PATH = "/afl/footy/afl_betting"
-BETTING_COL_NAMES = c(
-  "Date",
-  "Venue",
-  "blank_one",
-  "Team",
-  "Score",
-  "Margin",
-  "Win Odds",
-  "Win Paid",
-  "Line Odds",
-  "colon",
-  "redundant_line_paid",
-  "Line Paid",
-  "blank_two",
-  "blank_three",
-  "Round",
-  "Season"
-)
-COLS_TO_DROP = c(
-  "blank_one", "colon", "redundant_line_paid", "blank_two", "blank_three"
-)
+COL_NAMES = c("Date", "Venue", "blank_one", "Team", "Score", "Margin", "Win Odds", "Win Paid", "Line Odds", "colon", "redundant_line_paid",
+              "Line Paid", "blank_two", "blank_three", "Round", "Season")
+COLS_TO_DROP = c("blank_one", "colon", "redundant_line_paid", "blank_two", "blank_three")
 
 
-#' Scrapes betting data from footywire, cleans it, and returns it
-#' as a dataframe.
-#' @param start_date Minimum match date for fetched data
-#' @param end_date Maximum match date for fetched data
-#' @export
 fetch_betting_odds <- function(start_date, end_date) {
-  get_year(start_date):get_year(end_date) %>%
+  betting_odds <- get_year(start_date):get_year(end_date) %>%
     purrr::map(fetch_betting_odds_page) %>%
     unlist(., recursive = FALSE) %>%
     normalize_row_length %>%
     unlist(.) %>%
-    matrix(
-      .,
-      ncol = length(BETTING_COL_NAMES),
-      byrow = TRUE,
-      dimnames = list(NULL, BETTING_COL_NAMES)
-    ) %>%
+    matrix(., ncol = length(COL_NAMES), byrow = TRUE, dimnames = list(NULL, COL_NAMES)) %>%
     as.data.frame(.) %>%
     drop_unwanted_columns(.) %>%
     tidyr::fill(c(Date, Venue)) %>%
     dplyr::mutate(Date = lubridate::dmy(Date)) %>%
     dplyr::filter(., Date >= start_date & Date <= end_date) %>%
     normalize_column_names(.)
-}
-
-
-get_year <- function(date) lubridate::ymd(date) %>% lubridate::year(.)
-
-
-normalize_row_length <- function(rows) {
-  max_row_length <- rows %>%
-    purrr::map(~ length(.)) %>%
-    unlist(.) %>%
-    max(.)
-
-  rows %>% purrr::map(~ c(row_padding(., max_row_length), .))
+    #jsonlite::toJSON(.)
 }
 
 
@@ -70,11 +30,22 @@ drop_unwanted_columns <- function(betting_odds) {
 normalize_column_names <- function(data_frame) {
   dplyr::rename_all(
     data_frame,
-    dplyr::funs(
-      stringr::str_to_lower(.) %>% stringr::str_replace_all(., "[.\\s]", "_")
-    )
+    dplyr::funs(stringr::str_to_lower(.) %>% stringr::str_replace_all(., "[.\\s]", "_"))
   )
 }
+
+
+normalize_row_length <- function(rows) {
+  max_row_length <- rows %>%
+    purrr::map(~ length(.)) %>%
+    unlist(.) %>%
+    max(.)
+  
+  rows %>% purrr::map(~ c(row_padding(., max_row_length), .))
+}
+
+
+get_year <- function(date) lubridate::ymd(date) %>% lubridate::year(.)
 
 
 fetch_betting_odds_page <- function(year) {
@@ -105,7 +76,7 @@ group_table_rows_by_round <- function(table_rows) {
     purrr::map(~ length(.) > 0) %>%
     unlist(.) %>%
     which(.)
-
+  
   1:length(round_label_row_indices) %>%
     purrr::map(~ round_label_row_indices[.:(. + 1)]) %>%
     purrr::map(~ slice_table_rows(., table_rows))
@@ -119,7 +90,7 @@ slice_table_rows <- function(label_row_index_pair, table_rows) {
     length(table_rows),
     label_row_index_pair[2]
   )
-
+  
   table_rows[slice_start:slice_end]
 }
 
@@ -130,14 +101,13 @@ parse_betting_data_rows <- function(round_rows) {
   }
 
   round_label <- round_rows[[1]] %>% rvest::html_text(.)
-
+  
   round_rows %>%
     purrr::keep(., contains_data_elements) %>%
     purrr::map(rvest::html_text) %>%
     purrr::map(~ stringr::str_split(., "\\n")) %>%
-    # str_split returns a list of length 1 that contains the split strings
-    # for some reason. Unlisting the weirdly embedded list seems to be
-    # the only thing that works
+    # str_split returns a list of length 1 that contains the split strings for some reason.
+    # Unlisting the weirdly embedded list seems to be the only thing that works
     purrr::map(unlist) %>%
     purrr::map(stringr::str_trim) %>%
     purrr::map(~ c(., round_label))
@@ -153,10 +123,10 @@ contains_data_elements <- function(element) {
 
 row_padding <- function(data_row, max_row_length) {
   pad_length = max_row_length - length(data_row)
-
+  
   if (pad_length == 0) {
     return(list())
   }
-
-  1:pad_length %>% purrr::map(~ NA)
+  
+  1:pad_length %>% purrr::map(~ NA) 
 }

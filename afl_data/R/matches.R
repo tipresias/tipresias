@@ -1,3 +1,8 @@
+#' Fetches match data via the fitzRoy package and filters by date range.
+#' @param fetch_data Whether to fetch fresh data from afltables
+#' @param start_date Minimum match date for fetched data
+#' @param end_date Maximum match date for fetched data
+#' @export
 match_results <- function(fetch_data, start_date, end_date) {
   data <- if (fetch_data) {
     fitzRoy::get_match_results()

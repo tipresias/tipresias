@@ -56,6 +56,11 @@ Source: CRAN
 Version: 0.6.0
 Hash: b696ba40d4f4e96f56e82040ed09dd19
 
+Package: clisymbols
+Source: CRAN
+Version: 1.2.0
+Hash: a76a309884277a4fd8a5d741965fbef5
+
 Package: commonmark
 Source: CRAN
 Version: 1.7
@@ -76,6 +81,14 @@ Source: CRAN
 Version: 1.2.0
 Hash: a0a3ca939997679a52816bae4ed6aaae
 Requires: R6, assertthat, crayon, rprojroot
+
+Package: devtools
+Source: CRAN
+Version: 2.0.2
+Hash: 9d0d6e31d44ffe876c3328fc444ae787
+Requires: callr, cli, digest, git2r, httr, jsonlite, memoise, pkgbuild,
+    pkgload, rcmdcheck, remotes, rstudioapi, sessioninfo, usethis,
+    withr
 
 Package: digest
 Source: CRAN
@@ -110,6 +123,23 @@ RemoteUsername: jimmyday12
 RemoteRef: master
 RemoteSha: 183ac0ba0488e58684ae746348c0d0a3ca86293e
 
+Package: fs
+Source: CRAN
+Version: 1.3.1
+Hash: 7969e4a40c4e7c620ea42ad9c4ba7bb3
+Requires: Rcpp
+
+Package: gh
+Source: CRAN
+Version: 1.0.1
+Hash: 3f8812accd1320227d744bca620e8c42
+Requires: httr, ini, jsonlite
+
+Package: git2r
+Source: CRAN
+Version: 0.25.2
+Hash: 95c91baea310d669c023627b454b5887
+
 Package: glue
 Source: CRAN
 Version: 1.3.1
@@ -133,6 +163,11 @@ Version: 1.4.0
 Hash: 62d62d3ffcc9a34411b6e35a813f72dd
 Requires: R6, curl, jsonlite, mime, openssl
 
+Package: ini
+Source: CRAN
+Version: 0.3.1
+Hash: 9d6de5178c1cedabfb24e7d2acc9a092
+
 Package: jsonlite
 Source: CRAN
 Version: 1.6
@@ -155,20 +190,21 @@ Source: CRAN
 Version: 1.5
 Hash: bdc4d48c3135e8f3b399536ddf160df4
 
+Package: memoise
+Source: CRAN
+Version: 1.1.0
+Hash: 410fcd334bc626db100237cc1370f2e9
+Requires: digest
+
 Package: mime
 Source: CRAN
 Version: 0.6
 Hash: 2ed8f98b8284ad733f3907fc6e2f1334
 
 Package: modules
-Source: github
-Version: 0.9.10
-Hash: 919ff1c24395685877ba963f787f2aa5
-Requires: roxygen2
-GithubRepo: modules
-GithubUsername: klmr
-GithubRef: master
-GithubSha1: b279fc68cf23c335be75fa737e03a761381473d8
+Source: CRAN
+Version: 0.8.0
+Hash: f1a8137576ff6da9bcc3c90a9cd848dd
 
 Package: openssl
 Source: CRAN
@@ -215,6 +251,11 @@ Version: 0.4.6
 Hash: 56b7230d3ec9bfe86c17b83af6a9b011
 Requires: R6, crayon, httpuv, jsonlite, stringi
 
+Package: praise
+Source: CRAN
+Version: 1.0.0
+Hash: 77da8f1df873a4b91e5c4a68fe2fb1b6
+
 Package: prettyunits
 Source: CRAN
 Version: 1.0.2
@@ -250,11 +291,23 @@ Version: 0.3.2
 Hash: d7bb7f62bb3af2d6510f50cb7190a060
 Requires: magrittr, rlang
 
+Package: rcmdcheck
+Source: CRAN
+Version: 1.3.3
+Hash: df2319559a8ed16e5b4d5f99de3e00a0
+Requires: R6, callr, cli, crayon, desc, digest, pkgbuild, prettyunits,
+    rprojroot, sessioninfo, withr, xopen
+
 Package: readr
 Source: CRAN
 Version: 1.3.1
 Hash: a50c0fdc47816ab982876293aa36e794
 Requires: BH, R6, Rcpp, clipr, crayon, hms, tibble
+
+Package: remotes
+Source: CRAN
+Version: 2.0.4
+Hash: 0c43ff5305e5ac1fa6d4a5546a8e6d87
 
 Package: rlang
 Source: CRAN
@@ -291,6 +344,12 @@ Version: 0.4-1
 Hash: b12802c11e35dec9d16a74d30ed0f3ed
 Requires: R6, stringr
 
+Package: sessioninfo
+Source: CRAN
+Version: 1.1.1
+Hash: 9e50c8458e611f166ba702277cbb5096
+Requires: cli, withr
+
 Package: stringi
 Source: CRAN
 Version: 1.4.3
@@ -306,6 +365,12 @@ Package: sys
 Source: CRAN
 Version: 3.1
 Hash: dc2a997b1b9a2d3f9c234491153cb951
+
+Package: testthat
+Source: CRAN
+Version: 2.1.1
+Hash: 00a20d71ed0d31e2d284e4d2d3b3d7e3
+Requires: R6, cli, crayon, digest, magrittr, praise, rlang, withr
 
 Package: tibble
 Source: CRAN
@@ -326,10 +391,22 @@ Version: 0.2.5
 Hash: ce32c88efe672d565819caa17238b04c
 Requires: Rcpp, glue, purrr, rlang
 
+Package: usethis
+Source: CRAN
+Version: 1.5.0
+Hash: 56dfac7b823f31dede3b13a256d4e6f1
+Requires: clipr, clisymbols, crayon, curl, desc, fs, gh, git2r, glue,
+    purrr, rlang, rprojroot, rstudioapi, whisker, withr, yaml
+
 Package: utf8
 Source: CRAN
 Version: 1.1.4
 Hash: f3f97ce59092abc8ed3fd098a59e236c
+
+Package: whisker
+Source: CRAN
+Version: 0.3-2
+Hash: 803d662762e532705c2c066a82d066e7
 
 Package: withr
 Source: CRAN
@@ -341,3 +418,14 @@ Source: CRAN
 Version: 1.2.0
 Hash: 6e643a368e9748966b96332eaa631411
 Requires: Rcpp
+
+Package: xopen
+Source: CRAN
+Version: 1.0.0
+Hash: 22c2708f177f9fd9f8a52012bac61d6a
+Requires: processx
+
+Package: yaml
+Source: CRAN
+Version: 2.2.0
+Hash: a5ad5616d83d89f8d84cbf3cf4034e13

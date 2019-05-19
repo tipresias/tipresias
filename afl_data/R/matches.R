@@ -12,5 +12,5 @@ fetch_match_results <- function(fetch_data, start_date, end_date) {
 
   data %>%
     dplyr::filter(., Date >= start_date & Date <= end_date) %>%
-    dplyr::rename_all(dplyr::funs(stringr::str_to_lower(.) %>% stringr::str_replace_all(., "\\.", "_")))
+    dplyr::rename_all(~ stringr::str_to_lower(.) %>% stringr::str_replace_all(., "\\.", "_"))
 }

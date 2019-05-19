@@ -201,11 +201,6 @@ Source: CRAN
 Version: 0.6
 Hash: 2ed8f98b8284ad733f3907fc6e2f1334
 
-Package: modules
-Source: CRAN
-Version: 0.8.0
-Hash: f1a8137576ff6da9bcc3c90a9cd848dd
-
 Package: openssl
 Source: CRAN
 Version: 1.3

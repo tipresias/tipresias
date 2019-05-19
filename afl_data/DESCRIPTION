@@ -24,8 +24,7 @@ Imports:
     tidyr,
     testthat,
     devtools,
-    roxygen2,
-    modules
+    roxygen2
 Remotes:
-    git@github.com:jimmyday12/fitzRoy.git,
+    git@github.com:jimmyday12/fitzRoy.git
 RoxygenNote: 6.1.1

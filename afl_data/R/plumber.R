@@ -1,8 +1,8 @@
-FIRST_AFL_SEASON = '1897-01-01'
+FIRST_AFL_SEASON = "1897-01-01"
 
-matches = modules::use(paste0(getwd(), "/R/matches.R"))
-players = modules::use(paste0(getwd(), "/R/players.R"))
-bettingodds = modules::use(paste0(getwd(), "/R/betting-odds.R"))
+matches = modules::use("R/matches.R")
+players = modules::use("R/players.R")
+bettingodds = modules::use("R/betting-odds.R")
 
 #' Return match results data
 #' @param fetch_data Whether to fetch fresh data from afltables.com
@@ -10,7 +10,7 @@ bettingodds = modules::use(paste0(getwd(), "/R/betting-odds.R"))
 #' @param end_date Maximum match date for fetched data
 #' @get /matches
 function(fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
-  matches$match_results(fetch_data, start_date, end_date) %>%
+  matches$fetch_match_results(fetch_data, start_date, end_date) %>%
     jsonlite::toJSON(.)
 }
 
@@ -19,7 +19,7 @@ function(fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date(
 #' @param end_date Maximum match date for fetched data
 #' @get /players
 function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
-  players$player_results(start_date, end_date) %>%
+  players$fetch_player_results(start_date, end_date) %>%
     jsonlite::toJSON(.)
 }
 

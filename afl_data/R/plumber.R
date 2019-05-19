@@ -10,7 +10,8 @@ betting_odds = modules::import("betting-odds")
 #' @param end_date Maximum match date for fetched data
 #' @get /matches
 function(fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
-  matches$match_results(fetch_data, start_date, end_date)
+  matches$match_results(fetch_data, start_date, end_date) %>%
+    jsonlite::toJSON(.)
 }
 
 #' Return player data
@@ -18,7 +19,8 @@ function(fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date(
 #' @param end_date Maximum match date for fetched data
 #' @get /players
 function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
-  players$player_results
+  players$player_results(start_date, end_date) %>%
+    jsonlite::toJSON(.)
 }
 
 #' Return betting data along with some basic match data
@@ -26,5 +28,6 @@ function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
 #' @param end_date Maximum match date for fetched data
 #' @get /betting_odds
 function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
-  betting_odds$fetch_betting_odds(start_date, end_date)
+  betting_odds$fetch_betting_odds(start_date, end_date) %>%
+    jsonlite::toJSON(.)
 }

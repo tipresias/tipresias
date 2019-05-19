@@ -40,8 +40,7 @@ fetch_betting_odds <- function(start_date, end_date) {
     tidyr::fill(c(Date, Venue)) %>%
     dplyr::mutate(Date = lubridate::dmy(Date)) %>%
     dplyr::filter(., Date >= start_date & Date <= end_date) %>%
-    normalize_column_names(.) %>%
-    jsonlite::toJSON(.)
+    normalize_column_names(.)
 }
 
 

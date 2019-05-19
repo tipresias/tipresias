@@ -9,7 +9,9 @@ bettingodds = modules::use("R/betting-odds.R")
 #' @param start_date Minimum match date for fetched data
 #' @param end_date Maximum match date for fetched data
 #' @get /matches
-function(fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
+function(
+  fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date()
+) {
   matches$fetch_match_results(fetch_data, start_date, end_date) %>%
     jsonlite::toJSON(.)
 }

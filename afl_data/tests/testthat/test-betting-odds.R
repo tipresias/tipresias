@@ -12,6 +12,18 @@ describe("fetch_betting_odds()", {
 
     expect_equal(class(betting_odds_data), "data.frame")
     expect_gt(length(betting_odds_data), year_count)
+
+    expect_type(betting_odds_data$date, "Date")
+    expect_type(betting_odds_data$venue, "character")
+    expect_type(betting_odds_data$team, "character")
+    expect_type(betting_odds_data$score, "numeric")
+    expect_type(betting_odds_data$margin, "numeric")
+    expect_type(betting_odds_data$win_odds, "numeric")
+    expect_type(betting_odds_data$win_paid, "numeric")
+    expect_type(betting_odds_data$line_odds, "numeric")
+    expect_type(betting_odds_data$line_paid, "numeric")
+    expect_type(betting_odds_data$round, "character")
+    expect_type(betting_odds_data$season, "numeric")
   })
 
   describe("when one of the dates is out of range of available data", {

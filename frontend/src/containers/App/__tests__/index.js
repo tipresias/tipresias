@@ -6,7 +6,7 @@ import GET_PREDICTIONS_QUERY from '../../../graphql/getPredictions';
 import App from '../index';
 import Select from '../../../components/Select';
 
-jest.mock('../../BarChartContainer', () => MockComponent);
+jest.mock('../../../components/BarChartMain', () => MockComponent);
 jest.mock('../../../components/ErrorBar', () => MockComponent);
 jest.mock('../../../components/LoadingBar', () => MockComponent);
 const waitForData = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -152,7 +152,7 @@ describe('App with apollo', () => {
       await waitForData();
       wrapper.update();
       const barChartContainer = wrapper.find(MockComponent);
-      expect(barChartContainer.prop('games')).toEqual([{
+      expect(barChartContainer.prop('data')).toEqual([{
         id: '1',
         match: {
           roundNumber: 1,

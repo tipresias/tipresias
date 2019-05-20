@@ -112,7 +112,6 @@ def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
         .assign(
             home_team=lambda df: df["home_team"].map(_map_betting_teams_to_match_teams),
             away_team=lambda df: df["away_team"].map(_map_betting_teams_to_match_teams),
-            date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE),
         )
     )
 

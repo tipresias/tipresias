@@ -14,10 +14,12 @@ import numpy as np
 import pandas as pd
 
 from project.settings.common import DATA_DIR
+from .base_data_importer import BaseDataImporter
 
 FOOTY_WIRE_DOMAIN = "https://www.footywire.com"
 FIXTURE_PATH = "/afl/footy/ft_match_list"
 BETTING_PATH = "/afl/footy/afl_betting"
+AFL_DATA_SERVICE = "http://afl_data:8001"
 N_DATA_COLS = 7
 N_USEFUL_DATA_COLS = 5
 FIXTURE_COLS = [
@@ -63,7 +65,7 @@ FINALS_WEEK_ONE: Pattern = re.compile(r"Finals\s+Week\s+One", flags=re.I)
 warnings.simplefilter("ignore", SystemTimeWarning)
 
 
-class FootywireDataImporter:
+class FootywireDataImporter(BaseDataImporter):
     """Get data from footywire.com.au by scraping page or reading saved CSV"""
 
     def __init__(
@@ -73,10 +75,10 @@ class FootywireDataImporter:
         betting_filename: str = "afl_betting",
         verbose=1,
     ) -> None:
+        super().__init__(verbose=verbose)
         self.csv_dir = csv_dir
         self.fixture_filename = fixture_filename
         self.betting_filename = betting_filename
-        self.verbose = verbose
 
     def get_fixture(
         self, year_range: Optional[Tuple[int, int]] = None, fetch_data: bool = False
@@ -100,7 +102,10 @@ class FootywireDataImporter:
         return self.__read_data_csv(self.fixture_filename, year_range)
 
     def get_betting_odds(
-        self, year_range: Optional[Tuple[int, int]] = None, fetch_data: bool = False
+        self,
+        start_date: str = "1897-01-01",
+        end_date: str = str(date.today()),
+        fetch_data: bool = False,
     ) -> pd.DataFrame:
         """
         Get AFL betting data for given year range.
@@ -114,13 +119,29 @@ class FootywireDataImporter:
 
         if fetch_data:
             if self.verbose == 1:
-                print(f"Fetching betting data in the year range of {year_range}...")
+                print(
+                    "Fetching betting odds data from between "
+                    f"{start_date} and {end_date}..."
+                )
 
-            return self.__fetch_data(BETTING_PATH, year_range).pipe(
-                self.__clean_betting_data_frame
+            data = self._fetch_afl_data(
+                "betting_odds", params={"start_date": start_date, "end_date": end_date}
             )
 
-        return self.__read_data_csv(self.betting_filename, year_range)
+            if self.verbose == 1:
+                print("Betting odds data received!")
+
+            return (
+                pd.DataFrame(data)
+                .pipe(self.__clean_betting_data_frame)
+                .pipe(self.__merge_home_away)
+                .pipe(self.__sort_betting_columns)
+            )
+
+        start_year = int(start_date[:4])
+        end_year = int(end_date[:4])
+
+        return self.__read_data_csv(self.betting_filename, (start_year, end_year))
 
     def __read_data_csv(
         self, filename: str, year_range: Optional[Tuple[int, int]]
@@ -293,7 +314,7 @@ class FootywireDataImporter:
             valid_data_frame.drop(["Home v Away Teams", "Result"], axis=1)
             .rename(columns=lambda col: col.lower().replace(" ", "_"))
             .assign(
-                date=self.__parse_dates,
+                date=self.__parse_scraped_dates,
                 # Labelling round strings as 'round_label' and round numbers as 'round'
                 # for consistency with fitzRoy column labels.
                 round_label=lambda df: df["round"],
@@ -310,48 +331,30 @@ class FootywireDataImporter:
         )
 
     def __clean_betting_data_frame(self, data_frame: pd.DataFrame) -> pd.DataFrame:
-        cleaned_data_frame = (
-            data_frame.drop(["colon", "redundant_line_paid"], axis=1)
-            .rename(columns=lambda col: col.lower().replace(" ", "_"))
-            .ffill()
-            .assign(
-                date=self.__parse_dates,
-                round_label=lambda df: df["round"],
-                round=self.__round_number,
-            )
-            .pipe(
-                self.__convert_string_cols_to_numeric(
-                    ["score", "margin", "win_paid", "line_paid"]
-                )
-            )
+        return data_frame.assign(
+            date=self._parse_dates,
+            round_label=lambda df: df["round"],
+            round=self.__round_number,
         )
 
-        merged_df = (
-            self.__split_home_away(cleaned_data_frame, "home")
-            .merge(
-                self.__split_home_away(cleaned_data_frame, "away"),
-                on=BETTING_MATCH_COLS,
-            )
+    def __merge_home_away(self, data_frame: pd.DataFrame) -> pd.DataFrame:
+        return (
+            self.__split_home_away(data_frame, "home")
+            .merge(self.__split_home_away(data_frame, "away"), on=BETTING_MATCH_COLS)
+            .sort_values("date", ascending=True)
             .drop_duplicates(
                 subset=["home_team", "away_team", "season", "round_label"], keep="last"
             )
-            .astype(
-                {
-                    "home_win_odds": float,
-                    "home_line_odds": float,
-                    "away_win_odds": float,
-                    "away_line_odds": float,
-                    "home_score": float,
-                    "away_score": float,
-                }
-            )
+            .fillna(0)
         )
 
+    @staticmethod
+    def __sort_betting_columns(data_frame: pd.DataFrame) -> pd.DataFrame:
         sorted_cols = BETTING_MATCH_COLS + [
-            col for col in merged_df.columns if col not in BETTING_MATCH_COLS
+            col for col in data_frame.columns if col not in BETTING_MATCH_COLS
         ]
 
-        return merged_df[sorted_cols]
+        return data_frame[sorted_cols]
 
     def __round_number(self, data_frame: pd.DataFrame) -> pd.Series:
         year_groups = data_frame.groupby("season")
@@ -430,7 +433,7 @@ class FootywireDataImporter:
         )
 
     @staticmethod
-    def __parse_dates(data_frame: pd.DataFrame) -> pd.Series:
+    def __parse_scraped_dates(data_frame: pd.DataFrame) -> pd.Series:
         # Betting dates aren't displayed with years on the page, so we have to add them
         return pd.to_datetime(
             data_frame["date"] + " " + data_frame["season"].astype(int).astype(str)

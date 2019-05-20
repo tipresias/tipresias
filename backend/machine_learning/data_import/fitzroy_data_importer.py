@@ -1,12 +1,8 @@
-import json
-from typing import Dict, Any, List
 from datetime import date
-from urllib.parse import urljoin
 
 import pandas as pd
-import requests
 
-from project.settings.common import MELBOURNE_TIMEZONE
+from .base_data_importer import BaseDataImporter
 
 TEAM_TRANSLATIONS = {
     "Brisbane Lions": "Brisbane",
@@ -15,14 +11,12 @@ TEAM_TRANSLATIONS = {
     "Footscray": "Western Bulldogs",
 }
 
-AFL_DATA_SERVICE = "http://afl_data:8001"
 
-
-class FitzroyDataImporter:
+class FitzroyDataImporter(BaseDataImporter):
     """Get data from the fitzRoy R package and return it as a pandas DataFrame."""
 
     def __init__(self, verbose=1):
-        self.verbose = verbose
+        super().__init__(verbose=verbose)
 
     def match_results(
         self,
@@ -43,7 +37,7 @@ class FitzroyDataImporter:
         if self.verbose == 1:
             print(f"Fetching match data from between {start_date} and {end_date}...")
 
-        data = self.__fetch_afl_data(
+        data = self._fetch_afl_data(
             "matches",
             params={
                 "fetch_data": fetch_data,
@@ -57,7 +51,7 @@ class FitzroyDataImporter:
 
         return (
             pd.DataFrame(data)
-            .pipe(self.__parse_dates)
+            .pipe(self._parse_dates)
             .assign(
                 home_team=self.__translate_team_column("home_team"),
                 away_team=self.__translate_team_column("away_team"),
@@ -79,7 +73,7 @@ class FitzroyDataImporter:
         if self.verbose == 1:
             print(f"Fetching player data from between {start_date} and {end_date}...")
 
-        data = self.__fetch_afl_data(
+        data = self._fetch_afl_data(
             "players", params={"start_date": start_date, "end_date": end_date}
         )
 
@@ -88,39 +82,11 @@ class FitzroyDataImporter:
 
         return (
             pd.DataFrame(data)
-            .pipe(self.__parse_dates)
+            .pipe(self._parse_dates)
             .assign(
                 home_team=self.__translate_team_column("home_team"),
                 away_team=self.__translate_team_column("away_team"),
                 playing_for=self.__translate_team_column("playing_for"),
-            )
-        )
-
-    @staticmethod
-    def __fetch_afl_data(
-        path: str, params: Dict[str, Any] = {}
-    ) -> List[Dict[str, Any]]:
-        data = requests.get(urljoin(AFL_DATA_SERVICE, path), params=params).json()
-
-        if isinstance(data, dict) and "error" in data.keys():
-            raise RuntimeError(data["error"])
-
-        if len(data) == 1:
-            # For some reason, when returning match data with fetch_data=False,
-            # plumber returns JSON as a big string inside a list, so we have to parse
-            # the first element
-            return json.loads(data[0])
-
-        if any(data):
-            return data
-
-        return []
-
-    @staticmethod
-    def __parse_dates(data_frame: pd.DataFrame) -> pd.DataFrame:
-        return data_frame.assign(
-            date=lambda df: pd.to_datetime(data_frame["date"]).dt.tz_localize(
-                MELBOURNE_TIMEZONE
             )
         )
 

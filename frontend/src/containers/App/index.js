@@ -1,6 +1,6 @@
 // @flow
 import React, { Component } from 'react';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 import { Query } from 'react-apollo';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
@@ -59,7 +59,7 @@ const HeaderLinksStyled = styled.div`
   }
 `;
 
-const Widget = styled.div`
+const WidgetStyled = styled.div`
   grid-column: 1/ -1;
   background-color: #fff;
   border: 1px solid rgba(0, 0, 0, 0.125);
@@ -71,7 +71,7 @@ const Widget = styled.div`
   }
 `;
 
-const WidgetHeading = styled.h3`
+const WidgetHeadingStyled = styled.h3`
   font-style: bold;
   font-size: 0.8rem;
   color: #373a3c;
@@ -79,12 +79,12 @@ const WidgetHeading = styled.h3`
   text-align: left;
 `;
 
-const List = styled.div`
+const ListStyled = styled.div`
   display: flex;
   flex-direction: column;
 `;
 
-const ListItem = styled.div`
+const ListItemStyled = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -92,7 +92,7 @@ const ListItem = styled.div`
   border-radius: 4px;
 `;
 
-const Stat = styled.div`
+const StatStyled = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -116,7 +116,7 @@ const Stat = styled.div`
   }
 `;
 
-const WidgetFooter = styled.div`
+const WidgetFooterStyled = styled.div`
   padding: 1rem 0.5rem;
 `;
 
@@ -174,12 +174,12 @@ class App extends Component<Props, State> {
         </HeaderStyled>
 
 
-        <Widget gridColumn="2 / -2">
-          <WidgetHeading>Cumulative points per round</WidgetHeading>
+        <WidgetStyled gridColumn="2 / -2">
+          <WidgetHeadingStyled>Cumulative points per round</WidgetHeadingStyled>
           <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
             {BarChartMainQueryChildren}
           </Query>
-          <WidgetFooter>
+          <WidgetFooterStyled>
             <label htmlFor="tipresias">
               tipresias
               <input
@@ -199,74 +199,74 @@ class App extends Component<Props, State> {
               onChange={this.onChangeYear}
               options={this.OPTIONS}
             />
-          </WidgetFooter>
-        </Widget>
+          </WidgetFooterStyled>
+        </WidgetStyled>
 
-        <Widget gridColumn="2 / 4">
-          <WidgetHeading>Tipresias predictions for round x</WidgetHeading>
-          <List>
-            <ListItem>
-              <Stat>
+        <WidgetStyled gridColumn="2 / 4">
+          <WidgetHeadingStyled>Tipresias predictions for round x</WidgetHeadingStyled>
+          <ListStyled>
+            <ListItemStyled>
+              <StatStyled>
                 <div className="key">Team Name 1</div>
                 <div className="value">77</div>
-              </Stat>
-              <Stat>
+              </StatStyled>
+              <StatStyled>
                 <div className="key">Team Name 2</div>
                 <div className="value">90</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
+              </StatStyled>
+            </ListItemStyled>
+            <ListItemStyled>
+              <StatStyled>
                 <div className="key">Team Name 1</div>
                 <div className="value">77</div>
-              </Stat>
-              <Stat>
+              </StatStyled>
+              <StatStyled>
                 <div className="key">Team Name 2</div>
                 <div className="value">90</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
+              </StatStyled>
+            </ListItemStyled>
+            <ListItemStyled>
+              <StatStyled>
                 <div className="key">Team Name 1</div>
                 <div className="value">77</div>
-              </Stat>
-              <Stat>
+              </StatStyled>
+              <StatStyled>
                 <div className="key">Team Name 2</div>
                 <div className="value">90</div>
-              </Stat>
-            </ListItem>
-          </List>
-        </Widget>
+              </StatStyled>
+            </ListItemStyled>
+          </ListStyled>
+        </WidgetStyled>
 
-        <Widget gridColumn="4 / -2">
-          <WidgetHeading>Model performace round x</WidgetHeading>
-          <List>
-            <ListItem>
-              <Stat>
+        <WidgetStyled gridColumn="4 / -2">
+          <WidgetHeadingStyled>Model performace round x</WidgetHeadingStyled>
+          <ListStyled>
+            <ListItemStyled>
+              <StatStyled>
                 <div className="key">Total Points</div>
                 <div className="value">90</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
+              </StatStyled>
+            </ListItemStyled>
+            <ListItemStyled>
+              <StatStyled>
                 <div className="key">Total Margin</div>
                 <div className="value">77</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
+              </StatStyled>
+            </ListItemStyled>
+            <ListItemStyled>
+              <StatStyled>
                 <div className="key">MAE</div>
                 <div className="value">77</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
+              </StatStyled>
+            </ListItemStyled>
+            <ListItemStyled>
+              <StatStyled>
                 <div className="key">Bits</div>
                 <div className="value">49</div>
-              </Stat>
-            </ListItem>
-          </List>
-        </Widget>
+              </StatStyled>
+            </ListItemStyled>
+          </ListStyled>
+        </WidgetStyled>
 
         <FooterStyled>
           <p>

@@ -5,7 +5,7 @@
 .*/webpack.config.js
 .*/dist/.*
 .*/node_modules/.*
-
+.*/node_modules/styled-components/.*
 
 [include]
 

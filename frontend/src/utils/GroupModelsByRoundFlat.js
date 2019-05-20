@@ -2,45 +2,43 @@
 import type {
   Game,
 } from '../types';
-/*
-creating object like:
-
-[
-  {
-    tipresias: {
-      roundArray: []
-    },
-    another_model: {
-      roundArray: []
-    }
-  }
-]
-*/
-
-/*
-[
-  [{}, {}, {}, {}, {}]
-]
-*/
 
 const groupModelsByRoundFlat = (data: Array<Game>): any => {
-  const modelsByRound = data.reduce((acc, currentItem) => {
+  const rounds = data.reduce((acc, currentItem) => {
     // The values to use as "keys" in the data structure
     const { mlModel: { name } } = currentItem;
     const { match: { roundNumber } } = currentItem;
-
+    const index = roundNumber - 1;
     // creating the data structure:
-    acc[roundNumber - 1] = acc[roundNumber - 1] || {};
-    acc[roundNumber - 1][name] = acc[roundNumber - 1][name] || {};
-    acc[roundNumber - 1][name].rounds = acc[roundNumber - 1][name].rounds || [];
+    acc[index] = acc[index] || {};
+    acc[index][name] = acc[index][name] || {};
+    acc[index][name].rounds = acc[index][name].rounds || [];
 
     // pushing values to the data structure:
-    acc[roundNumber - 1][name].rounds.push(currentItem);
+    acc[index][name].rounds.push(currentItem);
+
+    // total_points key
+    const totalPointsPerRound = acc[index][name].rounds.reduce(
+      (totalPoints, currentMatch) => totalPoints + currentMatch.isCorrect, 0,
+    );
+    acc[index][name].total_points = totalPointsPerRound || 0;
 
     return acc;
   }, []);
 
-  return modelsByRound;
+
+  const models = Object.keys(rounds[0]);
+  const newRounds = rounds.reduce((acc, currentItem, currentIndex) => {
+    acc[currentIndex] = acc[currentIndex] || {};
+
+    models.forEach((model) => {
+      acc[currentIndex][model] = currentItem[model].total_points;
+    });
+    return acc;
+  }, []);
+
+
+  return newRounds;
 };
 
 export default groupModelsByRoundFlat;

@@ -6,7 +6,6 @@ import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
 import images from '../../images';
 import BarChartMain from '../../components/BarChartMain';
-import BarChartContainer from '../BarChartContainer';
 import Select from '../../components/Select';
 import ErrorBar from '../../components/ErrorBar';
 import LoadingBar from '../../components/LoadingBar';
@@ -151,20 +150,6 @@ class App extends Component<Props, State> {
   render() {
     const { year } = this.state;
 
-    // const BarChartCustomQueryChildren = ({ loading, error, data }) => {
-    //   const nonNullData = data || {};
-    //   const dataWithAllPredictions = { predictions: [], ...nonNullData };
-    //   const { predictions } = dataWithAllPredictions;
-
-    //   if (loading) return <LoadingBar text="Loading predictions..." />;
-
-    //   if (error) return <ErrorBar text={error.message} />;
-
-    //   if (predictions.length === 0) return <EmptyChart text="No data found" />;
-
-    //   return <BarChartContainer games={predictions} />;
-    // };
-
     const BarChartMainQueryChildren = ({ loading, error, data }) => {
       const nonNullData = data || {};
       const dataWithAllPredictions = { predictions: [], ...nonNullData };
@@ -190,15 +175,9 @@ class App extends Component<Props, State> {
 
 
         <Widget gridColumn="2 / -2">
+          <WidgetHeading>Cumulative points per round</WidgetHeading>
           <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
             {BarChartMainQueryChildren}
-          </Query>
-        </Widget>
-
-        {/* <Widget gridColumn="2 / -2">
-          <WidgetHeading>Cumulative points per round:</WidgetHeading>
-          <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
-            {BarChartCustomQueryChildren}
           </Query>
           <WidgetFooter>
             <label htmlFor="tipresias">
@@ -221,7 +200,7 @@ class App extends Component<Props, State> {
               options={this.OPTIONS}
             />
           </WidgetFooter>
-        </Widget> */}
+        </Widget>
 
         <Widget gridColumn="2 / 4">
           <WidgetHeading>Tipresias predictions for round x</WidgetHeading>

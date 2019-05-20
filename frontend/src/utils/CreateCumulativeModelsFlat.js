@@ -1,76 +1,25 @@
-// {
-//   1: {
-//     benchmark_estimator: {
-//       roundArray: [{ … }, { … }, { … }, { … }, { … }, { … }, { … }, { … }, { … }]
-//       total_points: 5
-//     }
-//     tipresias: {
-//       roundArray: (9)[{ … }, { … }, { … }, { … }, { … }, { … }, { … }, { … }, { … }]
-//       total_points: 5
-//     }
-//   },
-//   2: {
-//     benchmark_estimator: {
-//       roundArray: [{ … }, { … }, { … }, { … }, { … }, { … }, { … }, { … }, { … }]
-//       total_points: 5
-//     }
-//     tipresias: {
-//       roundArray: (9)[{ … }, { … }, { … }, { … }, { … }, { … }, { … }, { … }, { … }]
-//       total_points: 5
-//     }
-//   }
-// }
+const createCumulativeModelsFlat = (rounds) => {
+  const models = Object.keys(rounds[0]);
+  const data = rounds.reduce((roundsAcc, currentItem, currentIndex) => {
+    const newCurrentItem = { ...currentItem };
 
-// const current = [
-//   [
-//     { model: 'benchmark_estimator', cumulativeTotalPoints: 5 },
-//     { model: 'tipresias', cumulativeTotalPoints: 5 },
-//   ],
-//   [
-//     { model: 'benchmark_estimator', cumulativeTotalPoints: 13 },
-//     { model: 'tipresias', cumulativeTotalPoints: 13 },
-//   ],
-//   [
-//     { model: 'benchmark_estimator', cumulativeTotalPoints: 20 },
+    models.forEach((model) => {
+      const prevIndex = currentIndex - 1;
+      if (prevIndex < 0) {
+        newCurrentItem[model] += 0;
+      } else {
+        newCurrentItem[model] += roundsAcc[prevIndex][model];
+      }
+    });
 
-//     { model: 'tipresias', cumulativeTotalPoints: 21 },
-//   ],
-// ];
+    newCurrentItem.round = currentIndex + 1;
 
-// const new = [
-//   { round: '1', benchmark_estimator: 5, tipresias: 5 },
-//   { round: '2', benchmark_estimator: 13, tipresias: 13 },
-//   { round: '3', benchmark_estimator: 20, tipresias: 21 },
-// ];
+    roundsAcc.push(newCurrentItem);
 
+    return roundsAcc;
+  }, []);
 
-const createCumulativeModelsFlat = (modelsByRound) => {
-  // const roundsArray = Object.keys(modelsByRound);
-  // const modelsNamesArray = Object.keys(modelsByRound[0]);
-  // const data = modelsByRound.reduce((acc, currentItem, currentIndex, array) => {
-
-  // });
-
-  // return data;
+  return data;
 };
 
 export default createCumulativeModelsFlat;
-
-
-// const data = roundsArray.map((currentRound, index) => {
-//   const cumulativeModels = modelsNamesArray.map((model) => {
-//     const prevRound = parseInt(currentRound, 10) - 1;
-//     const currentModel = modelsByRound[currentRound][model];
-//     let prevModel;
-
-//     if (index === 0) {
-//       prevModel = { total_points: 0 };
-//     }
-//     prevModel = modelsByRound[prevRound][model];
-
-//     const cumulativeTotalPoints = currentModel.total_points + prevModel.total_points;
-//     currentModel.total_points = cumulativeTotalPoints;
-//     return { model, cumulativeTotalPoints };
-//   });
-//   return cumulativeModels;
-// });

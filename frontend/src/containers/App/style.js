@@ -77,15 +77,3 @@ export const Stat = styled.div`
 export const WidgetFooter = styled.div`
   padding: 1rem 0.5rem;
 `;
-
-export const Footer = styled.footer`
-  grid-column: 1 / -1;
-  background: #f0f3f7;
-  border-top: 1px solid #d7d7d7;
-  text-align: center;
-  font-size: 1rem;
-  color: #373a3c;
-  a {
-    color: #373a3c;
-  }
-`;

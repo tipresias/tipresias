@@ -7,8 +7,8 @@ import App from '../index';
 import Select from '../../../components/Select';
 
 jest.mock('../../../components/BarChartMain', () => MockComponent);
-jest.mock('../../../components/ErrorBar', () => MockComponent);
-jest.mock('../../../components/LoadingBar', () => MockComponent);
+jest.mock('../../../components/StatusBar', () => MockComponent);
+jest.mock('../../../components/BarChartLoading', () => MockComponent);
 const waitForData = () => new Promise(resolve => setTimeout(resolve, 0));
 const mocks = [
   {
@@ -80,11 +80,6 @@ describe('App container', () => {
     shallowMountedApp = undefined;
   });
 
-  it.skip('always renders a div', () => {
-    const divs = app().find('AppContainerStyled');
-    expect(divs.length).toBeGreaterThan(0);
-  });
-
   it('always renders a Select', () => {
     const select = app().find(Select);
     expect(select.length).toBe(1);
@@ -125,12 +120,12 @@ describe('App with apollo', () => {
   });
 
   describe('when is in initial state', () => {
-    it('should render loading component', () => {
+    it('should render BarChartLoading component', () => {
       props = { mocks: [] };
       const wrapper = appWithApollo();
       wrapper.update();
-      const loadingBar = wrapper.find(MockComponent);
-      expect(loadingBar.prop('text')).toBe('Loading predictions...');
+      const BarChartLoading = wrapper.find(MockComponent);
+      expect(BarChartLoading.prop('text')).toBe('Loading predictions...');
     });
   });
 
@@ -140,49 +135,19 @@ describe('App with apollo', () => {
       const wrapper = appWithApollo();
       await waitForData();
       wrapper.update();
-      const ErrorBar = wrapper.find(MockComponent);
-      expect(ErrorBar.prop('text')).toBe('Network error: Error');
+      const StatusBar = wrapper.find(MockComponent);
+      expect(StatusBar.prop('text')).toBe('Network error: Error');
     });
   });
 
   describe('when response is 200', () => {
-    it('should render barChartContainer', async () => {
+    it('should render BarChartMain', async () => {
       props = { mocks, addTypename: false };
       const wrapper = appWithApollo();
       await waitForData();
       wrapper.update();
-      const barChartContainer = wrapper.find(MockComponent);
-      expect(barChartContainer.prop('data')).toEqual([{
-        id: '1',
-        match: {
-          roundNumber: 1,
-          year: 2014,
-          teammatchSet: [
-            {
-              atHome: false,
-              team: {
-                name: 'Fremantle',
-              },
-              score: 0,
-            },
-            {
-              atHome: true,
-              team: {
-                name: 'Collingwood',
-              },
-              score: 0,
-            },
-          ],
-        },
-        mlModel: {
-          name: 'benchmark_estimator',
-        },
-        predictedWinner: {
-          name: 'Fremantle',
-        },
-        predictedMargin: 6,
-        isCorrect: false,
-      }]);
+      const BarChartMain = wrapper.find(MockComponent);
+      expect(BarChartMain.prop('data').length).toBe(1);
     });
   });
 });

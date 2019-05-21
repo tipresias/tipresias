@@ -158,17 +158,21 @@ fetch_betting_odds <- function(start_date, end_date) {
       dplyr::mutate(Date = lubridate::dmy(Date)) %>%
       dplyr::filter(., Date >= start_date & Date <= end_date) %>%
       normalize_column_names(.) %>%
-      dplyr::mutate_all(as.character) %>%
       dplyr::mutate(
-        score = as.numeric(.$score),
+        venue = as.character(.$venue),
+        team = as.character(.$team),
+        score = as.character(.$score) %>% as.numeric(.),
         margin = stringr::str_replace_all(.$margin, '\\+', '') %>%
+          as.character(.) %>%
           as.numeric(.),
-        win_odds = as.numeric(.$win_odds),
-        win_paid = as.numeric(.$win_paid),
+        win_odds = as.character(.$win_odds) %>% as.numeric(.),
+        win_paid = as.character(.$win_paid) %>% as.numeric(.),
         line_odds = stringr::str_replace_all(.$line_odds, '\\+', '') %>%
+          as.character(.) %>%
           as.numeric(.),
-        line_paid = as.numeric(.$line_paid),
-        season = as.numeric(.$season)
+        line_paid = as.character(.$line_paid) %>% as.numeric(.),
+        round = as.character(.$round),
+        season = as.character(.$season) %>% as.numeric(.)
       )
   )
 }

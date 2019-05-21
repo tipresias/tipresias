@@ -24,16 +24,13 @@ type Props = {};
 
 const Widget = styled.div`${WidgetStyles}`;
 
-
 const BarChartMainQueryChildren = ({ loading, error, data }) => {
   const nonNullData = data || {};
   const dataWithAllPredictions = { predictions: [], ...nonNullData };
   const { predictions } = dataWithAllPredictions;
 
   if (loading) return <BarChartLoading text="Loading predictions..." />;
-
   if (error) return <StatusBar text={error.message} error />;
-
   if (predictions.length === 0) return <StatusBar text="No data found" empty />;
 
   const dataObject = createDataObject(predictions);
@@ -41,13 +38,12 @@ const BarChartMainQueryChildren = ({ loading, error, data }) => {
   return <BarChartMain data={dataObject} />;
 };
 
-
 class App extends Component<Props, State> {
   state = {
     year: 2014,
   };
 
-  OPTIONS = [2011, 2014, 2015, 2016, 2017];
+  OPTIONS = [2011, 2014, 2015, 2016, 2017, 2018];
 
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });

@@ -41,7 +41,7 @@ const PageHeader = (): Node => (
     <Logo src={logo} alt="Tipresias" width="120" />
     <HeaderLinks>
       {
-        links.map(link => <a href={link.url}>{link.text}</a>)
+        links.map(link => <a key={link.url} href={link.url}>{link.text}</a>)
       }
     </HeaderLinks>
   </Header>

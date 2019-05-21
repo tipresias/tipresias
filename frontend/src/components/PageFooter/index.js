@@ -19,9 +19,9 @@ const Footer = styled.footer`
 `;
 
 const Isotype = styled.img`
-  height: 20px;
+  height: 18px;
   width: auto;
-  fill: #CCCCCC;
+  margin: 0 5px;
 `;
 
 const PageFooter = (): Node => (
@@ -32,7 +32,7 @@ const PageFooter = (): Node => (
     </p>
     <p>
       <Isotype src={isotype} alt="Tipresias" />
-      <a href="https://gist.github.com/meligatt/72b359279b5da1eb6d75be9a2ae403b0"> logo credits</a>
+      <a href="https://gist.github.com/meligatt/72b359279b5da1eb6d75be9a2ae403b0">credits</a>
     </p>
   </Footer>
 );

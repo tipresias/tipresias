@@ -10,9 +10,8 @@ import PageFooter from '../../components/PageFooter';
 import BarChartMain from '../../components/BarChartMain';
 import Select from '../../components/Select';
 import Checkbox from '../../components/Checkbox';
-import ErrorBar from '../../components/ErrorBar';
-import LoadingBar from '../../components/LoadingBar';
-import EmptyChart from '../../components/EmptyChart';
+import BarChartLoading from '../../components/BarChartLoading';
+import StatusBar from '../../components/StatusBar';
 import {
   AppContainer, WidgetStyles, WidgetHeading,
   List, ListItem, Stat, WidgetFooter,
@@ -32,11 +31,11 @@ const BarChartMainQueryChildren = ({ loading, error, data }) => {
   const dataWithAllPredictions = { predictions: [], ...nonNullData };
   const { predictions } = dataWithAllPredictions;
 
-  if (loading) return <LoadingBar text="Loading predictions..." />;
+  if (loading) return <BarChartLoading text="Loading predictions..." />;
 
-  if (error) return <ErrorBar text={error.message} />;
+  if (error) return <StatusBar text={error.message} error />;
 
-  if (predictions.length === 0) return <EmptyChart text="No data found" />;
+  if (predictions.length === 0) return <StatusBar text="No data found" empty />;
 
   return <BarChartMain data={predictions} />;
 };

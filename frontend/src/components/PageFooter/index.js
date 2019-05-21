@@ -6,7 +6,7 @@ import images from '../../images';
 
 const { isotype } = images;
 
-export const Footer = styled.footer`
+const Footer = styled.footer`
   grid-column: 1 / -1;
   background: #f0f3f7;
   border-top: 1px solid #d7d7d7;
@@ -18,7 +18,7 @@ export const Footer = styled.footer`
   }
 `;
 
-export const Isotype = styled.img`
+const Isotype = styled.img`
   height: 20px;
   width: auto;
   fill: #CCCCCC;

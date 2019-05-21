@@ -15,4 +15,4 @@ COPY . /app/afl_data
 
 EXPOSE 8001
 
-CMD Rscript R/app.R
+CMD Rscript app.R

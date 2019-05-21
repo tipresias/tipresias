@@ -1,21 +1,19 @@
-FIRST_AFL_SEASON = '1897-01-01'
+source(paste0(getwd(), "/R/matches.R"))
+source(paste0(getwd(), "/R/players.R"))
+source(paste0(getwd(), "/R/betting-odds.R"))
+
+FIRST_AFL_SEASON = "1897-01-01"
 
 #' Return match results data
 #' @param fetch_data Whether to fetch fresh data from afltables.com
 #' @param start_date Minimum match date for fetched data
 #' @param end_date Maximum match date for fetched data
 #' @get /matches
-function(fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
-  data <- if (fetch_data) {
-    fitzRoy::get_match_results()
-  } else {
-    fitzRoy::match_results
-  }
-
-  data %>%
-    filter(., Date >= start_date & Date <= end_date) %>%
-    rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
-    jsonlite::toJSON()
+function(
+  fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date()
+) {
+  fetch_match_results(fetch_data, start_date, end_date) %>%
+    jsonlite::toJSON(.)
 }
 
 #' Return player data
@@ -23,45 +21,15 @@ function(fetch_data = FALSE, start_date = FIRST_AFL_SEASON, end_date = Sys.Date(
 #' @param end_date Maximum match date for fetched data
 #' @get /players
 function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
-  this_year <- Sys.Date() %>% substring(0, 4) %>% as.integer()
+  fetch_player_results(start_date, end_date) %>%
+    jsonlite::toJSON(.)
+}
 
-  handle_players_route_error <- function(start_date, end_date) {
-    end_date_year <- end_date %>% substring(0, 4) %>% as.integer()
-
-    function(err) {
-      if (end_date_year > this_year) {
-        retry_with_last_year_end_date(start_date, end_date)
-      } else {
-        stop(err)
-      }
-    }
-  }
-
-  retry_with_last_year_end_date <- function(start_date, end_date) {
-      end_date_last_year <- paste0(this_year - 1, "-12-31")
-
-      warning(
-        paste0(
-          "end_date of ", end_date, " is in a year for which AFLTables has no ",
-          "data. Retrying with an end_date of the end of last year: ",
-          end_date_last_year
-        )
-      )
-
-      fitzRoy::get_afltables_stats(
-        start_date = start_date,
-        end_date = end_date_last_year
-      )
-  }
-
-  data <- tryCatch({
-      fitzRoy::get_afltables_stats(start_date = start_date, end_date = end_date)
-    },
-    error = handle_players_route_error(start_date, end_date)
-  )
-
-  data %>%
-    filter(., Date >= start_date & Date <= end_date) %>%
-    rename_all(funs(str_to_lower(.) %>% str_replace_all(., "\\.", "_"))) %>%
-    jsonlite::toJSON()
+#' Return betting data along with some basic match data
+#' @param start_date Minimum match date for fetched data
+#' @param end_date Maximum match date for fetched data
+#' @get /betting_odds
+function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
+  fetch_betting_odds(start_date, end_date) %>%
+    jsonlite::toJSON(.)
 }

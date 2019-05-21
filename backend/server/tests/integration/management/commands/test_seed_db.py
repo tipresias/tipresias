@@ -110,14 +110,12 @@ class TestSeedDb(TestCase):
         )
 
     def __betting_side_effect(
-        self, year_range=None, fetch_data=False
+        self, start_date=None, end_date=None, fetch_data=False
     ):  # pylint: disable=W0613
-        if year_range is None:
+        if start_date is None and end_date is None:
             return self.betting_data_frame
 
-        return self.betting_data_frame.query(
-            "season >= @year_range[0] & season < @year_range[1]"
-        )
+        return self.betting_data_frame.query("date >= @start_date & date <= @end_date")
 
     @staticmethod
     def __clear_db():

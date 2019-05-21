@@ -53,7 +53,7 @@ class TestFootywireDataImporter(TestCase):
     def test_get_betting_odds(self):
         with self.subTest("when fetch_data is True"):
             data_frame = self.data_reader.get_betting_odds(
-                year_range=(2014, 2015), fetch_data=True
+                start_date="2014-01-01", end_date="2015-12-31", fetch_data=True
             )
 
             self.assertIsInstance(data_frame, pd.DataFrame)
@@ -76,7 +76,7 @@ class TestFootywireDataImporter(TestCase):
 
         with self.subTest("when fetch_data is False and year_range is specified"):
             data_frame = self.data_reader.get_betting_odds(
-                fetch_data=False, year_range=(2018, 2019)
+                start_date="2018-01-01", end_date="2019-12-31", fetch_data=False
             )
 
             self.assertIsInstance(data_frame, pd.DataFrame)

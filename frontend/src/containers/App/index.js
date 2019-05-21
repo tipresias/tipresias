@@ -1,17 +1,23 @@
 // @flow
 import React, { Component } from 'react';
-import styled from 'styled-components/macro';
 import { Query } from 'react-apollo';
+import styled from 'styled-components/macro';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 // import type { Game } from '../../types';
-import images from '../../images';
+// import images from '../../images';
+import PageHeader from '../../components/PageHeader';
+import PageFooter from '../../components/PageFooter';
 import BarChartMain from '../../components/BarChartMain';
 import Select from '../../components/Select';
+import Checkbox from '../../components/Checkbox';
 import ErrorBar from '../../components/ErrorBar';
 import LoadingBar from '../../components/LoadingBar';
 import EmptyChart from '../../components/EmptyChart';
+import {
+  AppContainer, WidgetStyles, WidgetHeading,
+  List, ListItem, Stat, WidgetFooter,
+} from './style';
 
-const tipresiasLogo = images.logo;
 
 type State = {
   year: number
@@ -19,118 +25,22 @@ type State = {
 
 type Props = {};
 
-const AppContainerStyled = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-gap: 5px;
-  font-family: sans-serif;
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 18% 18% 18% 18% 1fr;
-    grid-template-rows: 80px auto auto 100px;
-    grid-gap: 20px;
-  }
-`;
+const Widget = styled.div`${WidgetStyles}`;
 
-const HeaderStyled = styled.header`
-  grid-column: 1 / -1;
-  display:flex;
-  position relative;
-  align-items: center;
-  justify-content: center;
-  background-color: white;
-  border-bottom: 1px solid rgba(0,0,0,.125);
-  @media (min-width: 768px) {
-    grid-column: 2 / -2;
-  }
-`;
+const BarChartMainQueryChildren = ({ loading, error, data }) => {
+  const nonNullData = data || {};
+  const dataWithAllPredictions = { predictions: [], ...nonNullData };
+  const { predictions } = dataWithAllPredictions;
 
-const LogoStyled = styled.img`
-  height: auto;
-  width: 150px;
-`;
+  if (loading) return <LoadingBar text="Loading predictions..." />;
 
-const HeaderLinksStyled = styled.div`
-  position: absolute;
-  right: 0;
-  a {
-    font-size: 1rem;
-    color: rgba(0, 0, 0, 0.3);
-    padding: 0.5rem;
-  }
-`;
+  if (error) return <ErrorBar text={error.message} />;
 
-const WidgetStyled = styled.div`
-  grid-column: 1/ -1;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.125);
-  border-radius: 0.25rem;
-  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
-  padding: 1.25rem;
-  @media (min-width: 768px) {
-    grid-column: ${props => props.gridColumn};
-  }
-`;
+  if (predictions.length === 0) return <EmptyChart text="No data found" />;
 
-const WidgetHeadingStyled = styled.h3`
-  font-style: bold;
-  font-size: 0.8rem;
-  color: #373a3c;
-  letter-spacing: 0;
-  text-align: left;
-`;
+  return <BarChartMain data={predictions} />;
+};
 
-const ListStyled = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const ListItemStyled = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid #dddddd;
-  border-radius: 4px;
-`;
-
-const StatStyled = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex: 1;
-  padding: 0.5rem;
-  &::after {
-    content: "|";
-    float: right;
-    color: rgba(0, 0, 0, 0.125);
-  }
-  &:last-child::after {
-    display: none;
-  }
-  .key {
-    font-size: 1rem;
-    color: #373a3c;
-  }
-  .value {
-    font-size: 1.625rem;
-    color: #373a3c;
-  }
-`;
-
-const WidgetFooterStyled = styled.div`
-  padding: 1rem 0.5rem;
-`;
-
-const FooterStyled = styled.footer`
-  grid-column: 1 / -1;
-  background: #f0f3f7;
-  border-top: 1px solid #d7d7d7;
-  text-align: center;
-  font-size: 1rem;
-  color: #373a3c;
-  a {
-    color: #373a3c;
-  }
-`;
 
 class App extends Component<Props, State> {
   state = {
@@ -143,141 +53,113 @@ class App extends Component<Props, State> {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
   };
 
-  onSomethingElse = (event: SyntheticEvent<HTMLSelectElement>): void => {
-    this.setState({ year: parseInt(event.currentTarget.value, 10) });
-  };
-
   render() {
     const { year } = this.state;
-
-    const BarChartMainQueryChildren = ({ loading, error, data }) => {
-      const nonNullData = data || {};
-      const dataWithAllPredictions = { predictions: [], ...nonNullData };
-      const { predictions } = dataWithAllPredictions;
-
-      if (loading) return <LoadingBar text="Loading predictions..." />;
-
-      if (error) return <ErrorBar text={error.message} />;
-
-      if (predictions.length === 0) return <EmptyChart text="No data found" />;
-
-      return <BarChartMain data={predictions} />;
-    };
-
     return (
-      <AppContainerStyled>
-        <HeaderStyled>
-          <LogoStyled src={tipresiasLogo} alt="Tipresias" width="120" />
-          <HeaderLinksStyled>
-            <a href="https://github.com/tipresias">About</a>
-          </HeaderLinksStyled>
-        </HeaderStyled>
+      <AppContainer>
+        <PageHeader links={[{ url: 'https://github.com/tipresias', text: 'About' }]} />
 
-
-        <WidgetStyled gridColumn="2 / -2">
-          <WidgetHeadingStyled>Cumulative points per round</WidgetHeadingStyled>
+        <Widget gridColumn="2 / -2">
+          <WidgetHeading>Cumulative points per round</WidgetHeading>
           <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
             {BarChartMainQueryChildren}
           </Query>
-          <WidgetFooterStyled>
-            <label htmlFor="tipresias">
-              tipresias
-              <input
-                type="checkbox"
-                id="tipresias"
-                name="model"
-                value="tipresias"
-              />
-            </label>
-            <label htmlFor="another">
-              another
-              <input type="checkbox" id="another" name="model" value="another" />
-            </label>
+          <WidgetFooter>
+            <Checkbox
+              label="Tipresias"
+              id="tipresias"
+              name="model"
+              value="tipresias"
+              onChange={() => {
+                console.log('onChange tipresias');
+              }}
+            />
+            <Checkbox
+              label="Benchmark estimator"
+              id="benchmark_estimator"
+              name="model"
+              value="benchmark_estimator"
+              onChange={() => {
+                console.log('onChange benchmark_estimator');
+              }}
+            />
             <Select
               name="year"
               value={year}
               onChange={this.onChangeYear}
               options={this.OPTIONS}
             />
-          </WidgetFooterStyled>
-        </WidgetStyled>
+          </WidgetFooter>
+        </Widget>
 
-        <WidgetStyled gridColumn="2 / 4">
-          <WidgetHeadingStyled>Tipresias predictions for round x</WidgetHeadingStyled>
-          <ListStyled>
-            <ListItemStyled>
-              <StatStyled>
+        <Widget gridColumn="2 / 4">
+          <WidgetHeading>Tipresias predictions for round x</WidgetHeading>
+          <List>
+            <ListItem>
+              <Stat>
                 <div className="key">Team Name 1</div>
                 <div className="value">77</div>
-              </StatStyled>
-              <StatStyled>
+              </Stat>
+              <Stat>
                 <div className="key">Team Name 2</div>
                 <div className="value">90</div>
-              </StatStyled>
-            </ListItemStyled>
-            <ListItemStyled>
-              <StatStyled>
+              </Stat>
+            </ListItem>
+            <ListItem>
+              <Stat>
                 <div className="key">Team Name 1</div>
                 <div className="value">77</div>
-              </StatStyled>
-              <StatStyled>
+              </Stat>
+              <Stat>
                 <div className="key">Team Name 2</div>
                 <div className="value">90</div>
-              </StatStyled>
-            </ListItemStyled>
-            <ListItemStyled>
-              <StatStyled>
+              </Stat>
+            </ListItem>
+            <ListItem>
+              <Stat>
                 <div className="key">Team Name 1</div>
                 <div className="value">77</div>
-              </StatStyled>
-              <StatStyled>
+              </Stat>
+              <Stat>
                 <div className="key">Team Name 2</div>
                 <div className="value">90</div>
-              </StatStyled>
-            </ListItemStyled>
-          </ListStyled>
-        </WidgetStyled>
+              </Stat>
+            </ListItem>
+          </List>
+        </Widget>
 
-        <WidgetStyled gridColumn="4 / -2">
-          <WidgetHeadingStyled>Model performace round x</WidgetHeadingStyled>
-          <ListStyled>
-            <ListItemStyled>
-              <StatStyled>
+        <Widget gridColumn="4 / -2">
+          <WidgetHeading>Model performace round x</WidgetHeading>
+          <List>
+            <ListItem>
+              <Stat>
                 <div className="key">Total Points</div>
                 <div className="value">90</div>
-              </StatStyled>
-            </ListItemStyled>
-            <ListItemStyled>
-              <StatStyled>
+              </Stat>
+            </ListItem>
+            <ListItem>
+              <Stat>
                 <div className="key">Total Margin</div>
                 <div className="value">77</div>
-              </StatStyled>
-            </ListItemStyled>
-            <ListItemStyled>
-              <StatStyled>
+              </Stat>
+            </ListItem>
+            <ListItem>
+              <Stat>
                 <div className="key">MAE</div>
                 <div className="value">77</div>
-              </StatStyled>
-            </ListItemStyled>
-            <ListItemStyled>
-              <StatStyled>
+              </Stat>
+            </ListItem>
+            <ListItem>
+              <Stat>
                 <div className="key">Bits</div>
                 <div className="value">49</div>
-              </StatStyled>
-            </ListItemStyled>
-          </ListStyled>
-        </WidgetStyled>
+              </Stat>
+            </ListItem>
+          </List>
+        </Widget>
 
-        <FooterStyled>
-          <p>
-            Tipresias 2019 - Created in Melbourne by
-            <a href="https://github.com/tipresias">Team Tipresias</a>
-          </p>
-          <p>
-            <a href="#top">back to top</a>
-          </p>
-        </FooterStyled>
-      </AppContainerStyled>
+        <PageFooter />
+      </AppContainer>
     );
   }
 }

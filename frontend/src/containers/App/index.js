@@ -3,8 +3,7 @@ import React, { Component } from 'react';
 import { Query } from 'react-apollo';
 import styled from 'styled-components/macro';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
-// import type { Game } from '../../types';
-// import images from '../../images';
+import createDataObject from '../../utils/CreateDataObject';
 import PageHeader from '../../components/PageHeader';
 import PageFooter from '../../components/PageFooter';
 import BarChartMain from '../../components/BarChartMain';
@@ -17,7 +16,6 @@ import {
   List, ListItem, Stat, WidgetFooter,
 } from './style';
 
-
 type State = {
   year: number
 };
@@ -25,6 +23,7 @@ type State = {
 type Props = {};
 
 const Widget = styled.div`${WidgetStyles}`;
+
 
 const BarChartMainQueryChildren = ({ loading, error, data }) => {
   const nonNullData = data || {};
@@ -37,7 +36,9 @@ const BarChartMainQueryChildren = ({ loading, error, data }) => {
 
   if (predictions.length === 0) return <StatusBar text="No data found" empty />;
 
-  return <BarChartMain data={predictions} />;
+  const dataObject = createDataObject(predictions);
+
+  return <BarChartMain data={dataObject} />;
 };
 
 
@@ -56,8 +57,7 @@ class App extends Component<Props, State> {
     const { year } = this.state;
     return (
       <AppContainer>
-        <PageHeader links={[{ url: 'https://github.com/tipresias', text: 'About' }]} />
-
+        <PageHeader />
         <Widget gridColumn="2 / -2">
           <WidgetHeading>Cumulative points per round</WidgetHeading>
           <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>

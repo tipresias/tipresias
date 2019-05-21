@@ -1,4 +1,5 @@
-const createCumulativeModelsFlat = (rounds) => {
+// @flow
+const createCumulativeModels = (rounds: Array<Object>): Array<Object> => {
   const models = Object.keys(rounds[0]);
   const data = rounds.reduce((roundsAcc, currentItem, currentIndex) => {
     const newCurrentItem = { ...currentItem };
@@ -22,4 +23,4 @@ const createCumulativeModelsFlat = (rounds) => {
   return data;
 };
 
-export default createCumulativeModelsFlat;
+export default createCumulativeModels;

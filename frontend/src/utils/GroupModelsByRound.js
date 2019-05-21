@@ -3,7 +3,7 @@ import type {
   Game,
 } from '../types';
 
-const groupModelsByRoundFlat = (data: Array<Game>): any => {
+const groupModelsByRound = (data: Array<Game>): Array<Object> => {
   const rounds = data.reduce((acc, currentItem) => {
     // The values to use as "keys" in the data structure
     const { mlModel: { name } } = currentItem;
@@ -41,4 +41,4 @@ const groupModelsByRoundFlat = (data: Array<Game>): any => {
   return newRounds;
 };
 
-export default groupModelsByRoundFlat;
+export default groupModelsByRound;

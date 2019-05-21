@@ -34,13 +34,9 @@ export const HeaderLinks = styled.div`
   }
 `;
 
-type Props = {
-  links: any
-}
+const links = [{ url: 'https://github.com/tipresias', text: 'About' }];
 
-const PageHeader = ({
-  links,
-}: Props): Node => (
+const PageHeader = (): Node => (
   <Header>
     <Logo src={logo} alt="Tipresias" width="120" />
     <HeaderLinks>

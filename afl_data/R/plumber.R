@@ -1,6 +1,7 @@
 source(paste0(getwd(), "/R/matches.R"))
 source(paste0(getwd(), "/R/players.R"))
 source(paste0(getwd(), "/R/betting-odds.R"))
+source(paste0(getwd(), "/R/fixtures.R"))
 
 FIRST_AFL_SEASON = "1897-01-01"
 
@@ -31,5 +32,14 @@ function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
 #' @get /betting_odds
 function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
   fetch_betting_odds(start_date, end_date) %>%
+    jsonlite::toJSON(.)
+}
+
+#' Return fixture data (match data without results)
+#' @param start_date Minimum match date for fetched data
+#' @param end_date Maximum match date for fetched data
+#' @get /fixtures
+function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
+  fetch_fixtures(start_date, end_date) %>%
     jsonlite::toJSON(.)
 }

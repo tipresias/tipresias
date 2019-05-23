@@ -18,7 +18,6 @@ from .base_data_importer import BaseDataImporter
 
 FOOTY_WIRE_DOMAIN = "https://www.footywire.com"
 FIXTURE_PATH = "/afl/footy/ft_match_list"
-BETTING_PATH = "/afl/footy/afl_betting"
 AFL_DATA_SERVICE = "http://afl_data:8001"
 N_DATA_COLS = 7
 N_USEFUL_DATA_COLS = 5
@@ -28,21 +27,6 @@ FIXTURE_COLS = [
     "Venue",
     "Crowd",
     "Result",
-    "Round",
-    "Season",
-]
-BETTING_COLS = [
-    "Date",
-    "Venue",
-    "Team",
-    "Score",
-    "Margin",
-    "Win Odds",
-    "Win Paid",
-    "Line Odds",
-    "colon",
-    "redundant_line_paid",
-    "Line Paid",
     "Round",
     "Season",
 ]
@@ -189,7 +173,7 @@ class FootywireDataImporter(BaseDataImporter):
             )
 
         data = list(itertools.chain.from_iterable(yearly_data))
-        columns = FIXTURE_COLS if url_path == FIXTURE_PATH else BETTING_COLS
+        columns = FIXTURE_COLS
 
         if self.verbose == 1:
             print("Data received!")
@@ -204,50 +188,7 @@ class FootywireDataImporter(BaseDataImporter):
         if url_path == FIXTURE_PATH:
             return self.__get_fixture_data(soup, year)
 
-        if url_path == BETTING_PATH:
-            return self.__get_betting_data(soup, year)
-
         raise ValueError(f"Unknown path: {url_path}")
-
-    def __get_betting_data(
-        self, soup: BeautifulSoup, year: int
-    ) -> Optional[np.ndarray]:
-        # afl_betting page nests the data table inside of multiple outer tables
-        table_rows = soup.select("form table table table tr")
-
-        if not any(table_rows):
-            return None
-
-        are_round_labels = [any(row.select(".tbtitle")) for row in table_rows]
-        round_groups = self.__group_by_round(table_rows, are_round_labels)
-
-        # Due to some elements using rowspan to cover multiple rows, we need to get the
-        # max length of all rows, then pad the shorter rows and forward fill the values
-        max_len = max(
-            [len(tr.find_all("td")) for tr in table_rows if any(tr.select(".data"))]
-        )
-
-        grouped_data = [
-            self.__betting_data(year, max_len, round_group)
-            for round_group in round_groups
-        ]
-
-        return list(itertools.chain.from_iterable(grouped_data))
-
-    def __betting_data(
-        self, year: int, max_len: int, round_group: List[element.Tag]
-    ) -> np.ndarray:
-        round_label = next(round_group[0].stripped_strings)
-        round_rows = [
-            self.__betting_row(max_len, row)
-            for row in round_group
-            if any(row.select(".data"))
-        ]
-        row_count = len(round_rows)
-        round_label_column = np.repeat(round_label, row_count).reshape(-1, 1)
-        season_column = np.repeat(year, row_count).reshape(-1, 1)
-
-        return np.concatenate([round_rows, round_label_column, season_column], axis=1)
 
     def __get_fixture_data(self, soup: BeautifulSoup, year: int) -> np.ndarray:
         # CSS selector for elements with round labels and all table data
@@ -386,16 +327,6 @@ class FootywireDataImporter(BaseDataImporter):
         }
 
         return lambda df: df.assign(**converted_column_assignments)
-
-    @staticmethod
-    def __betting_row(max_len: int, tr: element.Tag) -> List[Optional[str]]:
-        # Can't used stripped_strings method on tr, because it removes blank <td>
-        # elements (e.g. 'Margin' column before a match is played), resulting in row
-        # values not matching column labels
-        table_row_strings = [td.get_text(strip=True) for td in tr.find_all("td")]
-        padding = [None] * (max_len - len(table_row_strings))
-
-        return list(itertools.chain.from_iterable([padding, table_row_strings]))
 
     @staticmethod
     def __group_by_round(

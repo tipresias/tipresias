@@ -49,13 +49,10 @@ class FitzroyDataImporter(BaseDataImporter):
         if self.verbose == 1:
             print("Match data received!")
 
-        return (
-            pd.DataFrame(data)
-            .pipe(self._parse_dates)
-            .assign(
-                home_team=self.__translate_team_column("home_team"),
-                away_team=self.__translate_team_column("away_team"),
-            )
+        return pd.DataFrame(data).assign(
+            date=self._parse_dates,
+            home_team=self.__translate_team_column("home_team"),
+            away_team=self.__translate_team_column("away_team"),
         )
 
     def get_afltables_stats(

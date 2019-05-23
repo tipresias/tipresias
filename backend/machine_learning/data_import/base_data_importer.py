@@ -35,9 +35,5 @@ class BaseDataImporter:
         return []
 
     @staticmethod
-    def _parse_dates(data_frame: pd.DataFrame) -> pd.DataFrame:
-        return data_frame.assign(
-            date=lambda df: pd.to_datetime(data_frame["date"]).dt.tz_localize(
-                MELBOURNE_TIMEZONE
-            )
-        )
+    def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
+        return pd.to_datetime(data_frame["date"]).dt.tz_localize(MELBOURNE_TIMEZONE)

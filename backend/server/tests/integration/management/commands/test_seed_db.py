@@ -95,10 +95,10 @@ class TestSeedDb(TestCase):
         if start_date is None or end_date is None:
             return self.match_results_data_frame
 
-        tz_start_date = datetime.strptime(  # pylint disable=W0612
+        tz_start_date = datetime.strptime(  # pylint: disable=W0612
             start_date, "%Y-%m-%d"
         ).replace(tzinfo=MELBOURNE_TIMEZONE)
-        tz_end_date = datetime.strptime(  # pylint disable=W0612
+        tz_end_date = datetime.strptime(  # pylint: disable=W0612
             end_date, "%Y-%m-%d"
         ).replace(tzinfo=MELBOURNE_TIMEZONE)
 
@@ -112,10 +112,10 @@ class TestSeedDb(TestCase):
         if start_date is None and end_date is None:
             return self.betting_data_frame
 
-        tz_start_date = datetime.strptime(  # pylint disable=W0612
+        tz_start_date = datetime.strptime(  # pylint: disable=W0612
             start_date, "%Y-%m-%d"
         ).replace(tzinfo=MELBOURNE_TIMEZONE)
-        tz_end_date = datetime.strptime(  # pylint disable=W0612
+        tz_end_date = datetime.strptime(  # pylint: disable=W0612
             end_date, "%Y-%m-%d"
         ).replace(tzinfo=MELBOURNE_TIMEZONE)
 

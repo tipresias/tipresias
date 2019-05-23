@@ -1,16 +1,11 @@
 """Module for FootywireDataImporter, which scrapes footywire.com.au for betting & match data"""
 
-from typing import Optional, Tuple, List, Pattern
+from typing import Optional, Tuple, Pattern
 import warnings
-import itertools
 import re
 from datetime import date
-from urllib.parse import urljoin
 from functools import partial
 from urllib3.exceptions import SystemTimeWarning
-import requests
-from bs4 import BeautifulSoup, element
-import numpy as np
 import pandas as pd
 
 from project.settings.common import DATA_DIR

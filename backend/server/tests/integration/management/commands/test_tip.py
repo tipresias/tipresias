@@ -6,9 +6,9 @@ from freezegun import freeze_time
 
 from server.models import Match, TeamMatch, Prediction
 from server.management.commands import tip
-from server.tests.fixtures.data_factories import fake_footywire_fixture_data
+from server.tests.fixtures.data_factories import fake_fixture_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
-from machine_learning.data_import import FootywireDataImporter
+from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import BettingMLData
 
 ROW_COUNT = 5
@@ -22,10 +22,10 @@ class TestTip(TestCase):
         year = tomorrow.year
 
         # Mock footywire fixture data
-        fixture_data = fake_footywire_fixture_data(ROW_COUNT, (year, year + 1))
+        fixture_data = fake_fixture_data(ROW_COUNT, (year, year + 1))
 
-        footywire = FootywireDataImporter()
-        footywire.get_fixture = Mock(return_value=fixture_data)
+        fitzroy = FitzroyDataImporter()
+        fitzroy.fetch_fixtures = Mock(return_value=fixture_data)
 
         # Mock bulk_create to make assertions on calls
         pred_bulk_create = copy.copy(Prediction.objects.bulk_create)
@@ -42,7 +42,7 @@ class TestTip(TestCase):
 
         # Not fetching data, because it takes forever
         self.tip_command = tip.Command(
-            data_reader=footywire, fetch_data=False, data=BettingMLData()
+            data_reader=fitzroy, fetch_data=False, data=BettingMLData()
         )
 
     def test_handle(self):

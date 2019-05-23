@@ -7,7 +7,7 @@ import pandas as pd
 # TODO: These commands need to be refactored, then the refactored classes/functions
 # used in this cron job, but I want to get something working, so I'm gonna be lazy
 from server.management.commands import tip, send_email
-from machine_learning.data_import import FootywireDataImporter
+from machine_learning.data_import import FitzroyDataImporter
 from project.settings.common import MELBOURNE_TIMEZONE
 
 # Note that Python starts weeks on Monday (index = 0) and ends them on Sunday
@@ -23,7 +23,7 @@ class SendTips(CronJobBase):
     schedule = Schedule(run_every_mins=MINS_PER_12_HOURS)
     code = "tipresias.send_tips"
 
-    def __init__(self, verbose=1, data_reader=FootywireDataImporter()):
+    def __init__(self, verbose=1, data_reader=FitzroyDataImporter()):
         super().__init__()
 
         self.verbose = verbose
@@ -64,8 +64,8 @@ class SendTips(CronJobBase):
         return None
 
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
-        fixture_data_frame = self.data_reader.get_fixture(
-            year_range=(year, year + 1), fetch_data=True
+        fixture_data_frame = self.data_reader.fetch_fixtures(
+            start_date=f"{year}-01-01", end_date=f"{year}-12-31"
         ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
 
         latest_match_datetime = fixture_data_frame["date"].max()
@@ -77,8 +77,8 @@ class SendTips(CronJobBase):
                     f"We will try to fetch fixture for {year + 1}.\n"
                 )
 
-            fixture_data_frame = self.data_reader.get_fixture(
-                year_range=(year, year + 1), fetch_data=True
+            fixture_data_frame = self.data_reader.fetch_fixtures(
+                start_date=f"{year}-01-01", end_date=f"{year}-12-31"
             ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
 
             latest_match_datetime = fixture_data_frame["date"].max()

@@ -6,15 +6,26 @@ from pandas import Timestamp
 FixtureData = TypedDict(
     "FixtureData",
     {
-        "date": Union[datetime, Timestamp],
+        "date": Union[datetime],
         "season": int,
         "round": int,
-        "round_label": str,
-        "crowd": int,
         "home_team": str,
         "away_team": str,
+        "venue": str,
+    },
+)
+
+MatchData = TypedDict(
+    "MatchData",
+    {
+        "date": Union[datetime, Timestamp],
+        "season": int,
+        "round": str,
+        "round_number": int,
+        "home_team": str,
+        "away_team": str,
+        "venue": str,
         "home_score": int,
         "away_score": int,
-        "venue": str,
     },
 )

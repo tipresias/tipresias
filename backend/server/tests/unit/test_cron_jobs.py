@@ -5,8 +5,8 @@ from django.test import TestCase
 from freezegun import freeze_time
 
 from server.cron_jobs import SendTips
-from server.tests.fixtures.data_factories import fake_footywire_fixture_data
-from machine_learning.data_import import FootywireDataImporter
+from server.tests.fixtures.data_factories import fake_fixture_data
+from machine_learning.data_import import FitzroyDataImporter
 
 THURSDAY = "2019-3-28"
 FRIDAY = "2019-3-29"
@@ -31,13 +31,13 @@ class TestSendTips(TestCase):
         days = [friday, saturday, sunday]
 
         year = friday.year
-        fixture_data = fake_footywire_fixture_data(ROW_COUNT, (year, year + 1))
+        fixture_data = fake_fixture_data(ROW_COUNT, (year, year + 1))
 
         for idx, day in enumerate(days):
             fixture_data.loc[idx, "date"] = day
 
-        self.data_reader = FootywireDataImporter()
-        self.data_reader.get_fixture = Mock(return_value=fixture_data)
+        self.data_reader = FitzroyDataImporter()
+        self.data_reader.fetch_fixtures = Mock(return_value=fixture_data)
 
     def test_do(self):
         with patch("server.management.commands.tip.Command") as MockTipCommand:

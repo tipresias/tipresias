@@ -2,7 +2,8 @@
 
 import itertools
 from functools import partial
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Union
+from datetime import datetime
 from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
@@ -10,18 +11,19 @@ from django import utils
 from django.core.management.base import BaseCommand
 
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
-from machine_learning.data_import import FootywireDataImporter
+from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_estimators import BaseMLEstimator
 from machine_learning.ml_data import BaseMLData, JoinedMLData
 from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
 
-FixtureData = TypedDict(
-    "FixtureData",
+MatchData = TypedDict(
+    "MatchData",
     {
-        "date": pd.Timestamp,
+        "date": Union[datetime, pd.Timestamp],
         "season": int,
-        "season_game": int,
-        "round": int,
+        "round_number": int,
+        "round": str,
+        "crowd": int,
         "home_team": str,
         "away_team": str,
         "home_score": int,
@@ -45,7 +47,7 @@ class Command(BaseCommand):
     def __init__(
         self,
         *args,
-        data_reader=FootywireDataImporter(),
+        data_reader=FitzroyDataImporter(),
         estimators: List[BaseMLEstimator] = ESTIMATORS,
         data=JoinedMLData(fetch_data=True),
         **kwargs,
@@ -79,14 +81,16 @@ class Command(BaseCommand):
         # which is open-ended, then try to use a restricted tuple type
         year_range_tuple = (years_list[0], years_list[1])
 
-        fixture_data_frame = self.data_reader.get_fixture(year_range=year_range_tuple)
+        match_data_frame = self.data_reader.match_results(
+            start_date=f"{years_list[0]}-01-01", end_date=f"{years_list[1] - 1}-12-31"
+        )
 
         # Putting saving records in a try block, so we can go back and delete everything
         # if an error is raised
         try:
-            self.__create_teams(fixture_data_frame)
+            self.__create_teams(match_data_frame)
             ml_models = self.__create_ml_models()
-            self.__create_matches(fixture_data_frame.to_dict("records"))
+            self.__create_matches(match_data_frame.to_dict("records"))
             self.__make_predictions(year_range_tuple, ml_models=ml_models)
 
             if self.verbose == 1:
@@ -125,7 +129,7 @@ class Command(BaseCommand):
 
         return ml_models
 
-    def __create_matches(self, fixture_data: List[FixtureData]) -> None:
+    def __create_matches(self, fixture_data: List[MatchData]) -> None:
         if not any(fixture_data):
             raise ValueError("No match data found.")
 
@@ -140,18 +144,24 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print("Match data saved!")
 
-    def __build_match(self, match_data: FixtureData) -> List[TeamMatch]:
-        raw_date = match_data["date"].to_pydatetime()
+    def __build_match(self, match_data: MatchData) -> List[TeamMatch]:
+        raw_date = match_data["date"]
+        python_date = (
+            raw_date if isinstance(raw_date, datetime) else raw_date.to_pydatetime()
+        )
 
         # 'make_aware' raises error if datetime already has a timezone
-        if raw_date.tzinfo is None or raw_date.tzinfo.utcoffset(raw_date) is None:
-            match_date = utils.timezone.make_aware(raw_date)
+        if (
+            python_date.tzinfo is None
+            or python_date.tzinfo.utcoffset(python_date) is None
+        ):
+            match_date = utils.timezone.make_aware(python_date)
         else:
-            match_date = raw_date
+            match_date = python_date
 
         match: Match = Match(
             start_date_time=match_date,
-            round_number=int(match_data["round"]),
+            round_number=int(match_data["round_number"]),
             venue=match_data["venue"],
         )
 
@@ -301,7 +311,7 @@ class Command(BaseCommand):
         return team
 
     @staticmethod
-    def __build_team_match(match: Match, match_data: FixtureData) -> List[TeamMatch]:
+    def __build_team_match(match: Match, match_data: MatchData) -> List[TeamMatch]:
         home_team = Team.objects.get(name=match_data["home_team"])
         away_team = Team.objects.get(name=match_data["away_team"])
 

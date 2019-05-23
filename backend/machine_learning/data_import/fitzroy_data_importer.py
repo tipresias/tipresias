@@ -10,6 +10,8 @@ TEAM_TRANSLATIONS = {
     "Greater Western Sydney": "GWS",
     "Footscray": "Western Bulldogs",
 }
+EARLIEST_FOOTYWIRE_SEASON = "1965"
+EARLIEST_AFLTABLES_SEASON = "1897"
 
 
 class FitzroyDataImporter(BaseDataImporter):
@@ -21,7 +23,7 @@ class FitzroyDataImporter(BaseDataImporter):
     def match_results(
         self,
         fetch_data: bool = False,
-        start_date: str = "1897-01-01",
+        start_date: str = f"{EARLIEST_AFLTABLES_SEASON}-01-01",
         end_date: str = str(date.today()),
     ) -> pd.DataFrame:
         """Get match results data.
@@ -56,7 +58,9 @@ class FitzroyDataImporter(BaseDataImporter):
         )
 
     def get_afltables_stats(
-        self, start_date: str = "1965-01-01", end_date: str = str(date.today())
+        self,
+        start_date: str = f"{EARLIEST_FOOTYWIRE_SEASON}-01-01",
+        end_date: str = str(date.today()),
     ) -> pd.DataFrame:
         """Get player data from AFL tables
         Args:
@@ -77,14 +81,39 @@ class FitzroyDataImporter(BaseDataImporter):
         if self.verbose == 1:
             print("Player data received!")
 
+        return pd.DataFrame(data).assign(
+            date=self._parse_dates,
+            home_team=self.__translate_team_column("home_team"),
+            away_team=self.__translate_team_column("away_team"),
+            playing_for=self.__translate_team_column("playing_for"),
+        )
+
+    def fetch_fixtures(
+        self,
+        start_date: str = f"{EARLIEST_FOOTYWIRE_SEASON}-01-01",
+        end_date: str = str(date.today()),
+    ) -> pd.DataFrame:
+        """Get fixture data (unplayed matches) from Footywire (by way of fitzRoy)"""
+
+        if self.verbose == 1:
+            print(f"Fetching fixture data from between {start_date} and {end_date}...")
+
+        data = self._fetch_afl_data(
+            "fixtures", params={"start_date": start_date, "end_date": end_date}
+        )
+
+        if self.verbose == 1:
+            print("Fixture data received!")
+
         return (
             pd.DataFrame(data)
-            .pipe(self._parse_dates)
+            .drop("season_game", axis=1)
             .assign(
+                date=self._parse_dates,
                 home_team=self.__translate_team_column("home_team"),
                 away_team=self.__translate_team_column("away_team"),
-                playing_for=self.__translate_team_column("playing_for"),
             )
+            .sort_values("date")
         )
 
     def __translate_team_column(self, col_name):

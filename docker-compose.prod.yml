@@ -29,7 +29,7 @@ services:
     networks:
       - webnet
     restart: unless-stopped
-    command: Rscript R/app.R
+    command: Rscript app.R
   db:
     image: postgres
     environment:

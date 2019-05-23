@@ -13,7 +13,7 @@ from sklearn.externals import joblib
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.types import FixtureData
-from machine_learning.data_import import FootywireDataImporter
+from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import JoinedMLData
 
 NO_SCORE = 0
@@ -37,7 +37,7 @@ class Command(BaseCommand):
     def __init__(
         self,
         *args,
-        data_reader=FootywireDataImporter(),
+        data_reader=FitzroyDataImporter(),
         fetch_data=True,
         data=JoinedMLData(fetch_data=True, start_date=PREDICTION_DATA_START_DATE),
         **kwargs,
@@ -107,9 +107,9 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print(f"Fetching fixture for {year}...\n")
 
-        fixture_data_frame = self.data_reader.get_fixture(
-            year_range=(year, year + 1), fetch_data=self.fetch_data
-        ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
+        fixture_data_frame = self.data_reader.fetch_fixtures(
+            start_date=f"{year}-01-01", end_date=f"{year}-12-31"
+        )
 
         latest_match = fixture_data_frame["date"].max()
 
@@ -119,9 +119,9 @@ class Command(BaseCommand):
                 f"fixture for {year + 1}.\n"
             )
 
-            fixture_data_frame = self.data_reader.get_fixture(
-                year_range=(year, year + 1), fetch_data=self.fetch_data
-            ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
+            fixture_data_frame = self.data_reader.fetch_fixtures(
+                start_date=f"{year}-01-01", end_date=f"{year}-12-31"
+            )
 
             latest_match = fixture_data_frame["date"].max()
 

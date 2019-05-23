@@ -22,7 +22,11 @@ fixture_mock_df = (
     fixture_df.sort_values("date", ascending=False)
     .iloc[:10, :]
     .drop_duplicates(subset="round")
-    .assign(date=FAKE.date_time_this_month(after_now=True, before_now=False))
+    .assign(
+        date=FAKE.date_time_this_month(
+            after_now=True, before_now=False, tzinfo=MELBOURNE_TIMEZONE
+        )
+    )
 )
 # Try to grab one round's worth of match data and change date to be in the future to mock
 # fetching data for upcoming round

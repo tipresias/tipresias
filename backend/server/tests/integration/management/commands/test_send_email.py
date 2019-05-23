@@ -6,7 +6,7 @@ from faker import Faker
 import numpy as np
 
 from server.management.commands import send_email
-from server.tests.fixtures.data_factories import fake_footywire_fixture_data
+from server.tests.fixtures.data_factories import fake_match_results_data
 from server.tests.fixtures.factories import MLModelFactory, FullMatchFactory
 from project.settings.common import MELBOURNE_TIMEZONE
 
@@ -19,18 +19,18 @@ class TestSendEmail(TestCase):
         today = datetime.now(tz=MELBOURNE_TIMEZONE)
         year = today.year
 
-        self.fixture_data = fake_footywire_fixture_data(ROW_COUNT, (year, year + 1))
+        self.match_results_data = fake_match_results_data(ROW_COUNT, (year, year + 1))
 
         # Save records in DB
         ml_model = MLModelFactory(name="tipresias")
 
-        for match_data in self.fixture_data.to_dict("records"):
+        for match_data in self.match_results_data.to_dict("records"):
             match_date = (
                 match_data["date"].to_pydatetime().replace(tzinfo=MELBOURNE_TIMEZONE)
             )
             match_attrs = {
                 "start_date_time": match_date,
-                "round_number": match_data["round"],
+                "round_number": match_data["round_number"],
                 "venue": match_data["venue"],
             }
             prediction_attrs = {

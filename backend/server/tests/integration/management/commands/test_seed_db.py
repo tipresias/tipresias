@@ -1,15 +1,19 @@
 from unittest.mock import Mock, patch
+from datetime import datetime
+
 from django.test import TestCase
 from sklearn.externals import joblib
 
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import seed_db
 from server.tests.fixtures.data_factories import (
-    fake_footywire_fixture_data,
+    fake_match_results_data,
     fake_footywire_betting_data,
 )
 from machine_learning.ml_data import BettingMLData
+from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.tests.fixtures import TestEstimator
+from project.settings.common import MELBOURNE_TIMEZONE
 
 
 MATCH_COUNT_PER_YEAR = 5
@@ -30,37 +34,25 @@ class TestSeedDb(TestCase):
         # of training data
         data_years = (self.years[0] - 1, self.years[1])
 
-        # Mock footywire fixture data
-        self.fixture_data_frame = fake_footywire_fixture_data(
+        self.match_results_data_frame = fake_match_results_data(
             MATCH_COUNT_PER_YEAR, data_years
         )
         self.betting_data_frame = fake_footywire_betting_data(
             MATCH_COUNT_PER_YEAR, data_years
         )
 
-        with patch(
-            "machine_learning.ml_data.betting_ml_data.FootywireDataImporter"
-        ) as MockDataReader:
-            MockDataReader.return_value.get_fixture = Mock(
-                side_effect=self.__fixture_side_effect
-            )
-            MockDataReader.return_value.get_betting_odds = Mock(
-                side_effect=self.__betting_side_effect
-            )
+        fitzroy = FitzroyDataImporter(verbose=0)
 
-            self.seed_command = seed_db.Command(
-                estimators=[TestEstimator()],
-                data_reader=MockDataReader(),
-                data=BettingMLData(),
-            )
+        fitzroy.match_results = Mock(side_effect=self.__match_results_side_effect)
+
+        self.seed_command = seed_db.Command(
+            estimators=[TestEstimator()], data_reader=fitzroy, data=BettingMLData()
+        )
 
     def test_handle(self):
         with patch(
             "machine_learning.ml_data.betting_ml_data.FootywireDataImporter"
         ) as MockDataReader:
-            MockDataReader.return_value.get_fixture = Mock(
-                side_effect=self.__fixture_side_effect
-            )
             MockDataReader.return_value.get_betting_odds = Mock(
                 side_effect=self.__betting_side_effect
             )
@@ -99,14 +91,19 @@ class TestSeedDb(TestCase):
                         year_range=f"{self.years[0]}{symbol}{self.years[1]}", verbose=0
                     )
 
-    def __fixture_side_effect(
-        self, year_range=None, fetch_data=False
-    ):  # pylint: disable=W0613
-        if year_range is None:
-            return self.fixture_data_frame
+    def __match_results_side_effect(self, start_date=None, end_date=None):
+        if start_date is None or end_date is None:
+            return self.match_results_data_frame
 
-        return self.fixture_data_frame.query(
-            "season >= @year_range[0] & season < @year_range[1]"
+        tz_start_date = datetime.strptime(  # pylint: disable=W0612
+            start_date, "%Y-%m-%d"
+        ).replace(tzinfo=MELBOURNE_TIMEZONE)
+        tz_end_date = datetime.strptime(  # pylint: disable=W0612
+            end_date, "%Y-%m-%d"
+        ).replace(tzinfo=MELBOURNE_TIMEZONE)
+
+        return self.match_results_data_frame.query(
+            "date >= @tz_start_date & date <= @tz_end_date"
         )
 
     def __betting_side_effect(
@@ -115,7 +112,16 @@ class TestSeedDb(TestCase):
         if start_date is None and end_date is None:
             return self.betting_data_frame
 
-        return self.betting_data_frame.query("date >= @start_date & date <= @end_date")
+        tz_start_date = datetime.strptime(  # pylint: disable=W0612
+            start_date, "%Y-%m-%d"
+        ).replace(tzinfo=MELBOURNE_TIMEZONE)
+        tz_end_date = datetime.strptime(  # pylint: disable=W0612
+            end_date, "%Y-%m-%d"
+        ).replace(tzinfo=MELBOURNE_TIMEZONE)
+
+        return self.betting_data_frame.query(
+            "date >= @tz_start_date & date <= @tz_end_date"
+        )
 
     @staticmethod
     def __clear_db():

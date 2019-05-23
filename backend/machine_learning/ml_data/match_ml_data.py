@@ -30,7 +30,7 @@ from machine_learning.data_processors.feature_calculation import (
     calculate_rolling_mean_by_dimension,
 )
 from machine_learning.data_transformation.data_cleaning import clean_match_data
-from machine_learning.data_import import FitzroyDataImporter, FootywireDataImporter
+from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import BaseMLData
 from machine_learning.data_config import INDEX_COLS
 from machine_learning.utils import DataTransformerMixin
@@ -125,7 +125,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
 ]
 DATA_READERS: DataReadersParam = {
     "match": (FitzroyDataImporter().match_results, {}),
-    "fixture": (FootywireDataImporter().get_fixture, {}),
+    "fixture": (FitzroyDataImporter().fetch_fixtures, {}),
 }
 
 
@@ -198,9 +198,9 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
 
     def __fetch_fixture_data(self, data_reader: Callable) -> pd.DataFrame:
         fixture_data_frame = data_reader(
-            year_range=(self.current_year, self.current_year + 1),
-            fetch_data=self.fetch_data,
-        ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
+            start_date=f"{self.current_year}-01-01",
+            end_date=f"{self.current_year}-12-31",
+        )
 
         latest_match_date = fixture_data_frame["date"].max()
 
@@ -211,9 +211,10 @@ class MatchMLData(BaseMLData, DataTransformerMixin):
             )
 
             fixture_data_frame = data_reader(
-                year_range=(self.current_year + 1, self.current_year + 2),
-                fetch_data=self.fetch_data,
-            ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
+                start_date=f"{self.current_year + 1}-01-01",
+                end_date=f"{self.current_year + 1}-12-31",
+            )
+
             latest_match_date = fixture_data_frame["date"].max()
 
             if self.right_now > latest_match_date:

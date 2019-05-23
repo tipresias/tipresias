@@ -3,6 +3,8 @@
 from typing import Optional, Pattern, Callable, List
 from datetime import datetime, date
 import re
+from functools import partial
+
 import pandas as pd
 
 from machine_learning.data_config import TEAM_TRANSLATIONS, FOOTYWIRE_VENUE_TRANSLATIONS
@@ -123,10 +125,44 @@ def _map_footywire_venues(venue: str) -> str:
     return FOOTYWIRE_VENUE_TRANSLATIONS[venue]
 
 
-def _round_type_column(data_frame: pd.DataFrame) -> pd.DataFrame:
-    return data_frame["round_label"].map(
-        lambda label: "Finals" if re.search(REGULAR_ROUND, label) is None else "Regular"
+def _map_round_type(year: int, round_number: int) -> str:
+
+    TWENTY_ELEVEN_AND_LATER_FINALS = year > 2011 and round_number > 23
+    TWENTY_TEN_FINALS = year == 2010 and round_number > 24
+    TWO_THOUSAND_NINE_AND_EARLIER_FINALS = (
+        year > 1994 and year < 2010 and round_number > 22
     )
+
+    if year <= 1994:
+        import pdb
+
+        pdb.set_trace()
+        raise ValueError(
+            f"Tried to get fixtures for {year}, but fixture data is meant for "
+            "upcoming matches, not historical match data. Try getting fixture data "
+            "from 1995 or later, or fetch match results data for older matches."
+        )
+
+    if (
+        TWENTY_ELEVEN_AND_LATER_FINALS
+        or TWENTY_TEN_FINALS
+        or TWO_THOUSAND_NINE_AND_EARLIER_FINALS
+    ):
+        return "Finals"
+
+    return "Regular"
+
+
+def _round_type_column(data_frame: pd.DataFrame) -> pd.DataFrame:
+    years = data_frame["year"].drop_duplicates()
+
+    if len(years) > 1:
+        raise ValueError(
+            "Fixture data should only include matches from the next round, but "
+            f"fixture data for seasons {years} were given"
+        )
+
+    return data_frame["round_number"].map(partial(_map_round_type, years.iloc[0]))
 
 
 def _match_data_from_next_round(future_match_data):
@@ -134,21 +170,15 @@ def _match_data_from_next_round(future_match_data):
     next_round = future_match_data.query("date > @right_now")["round"].min()
 
     return (
-        future_match_data.assign(round_type=_round_type_column)
-        .loc[
+        future_match_data.loc[
             future_match_data["round"] == next_round,
-            [
-                "date",
-                "venue",
-                "season",
-                "round",
-                "home_team",
-                "away_team",
-                "round_type",
-            ],
+            ["date", "venue", "season", "round", "home_team", "away_team"],
         ]
         .rename(columns={"round": "round_number", "season": "year"})
-        .assign(venue=lambda df: df["venue"].map(_map_footywire_venues))
+        .assign(
+            venue=lambda df: df["venue"].map(_map_footywire_venues),
+            round_type=_round_type_column,
+        )
     )
 
 

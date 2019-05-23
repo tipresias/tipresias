@@ -8,7 +8,7 @@ import pandas as pd
 from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
 from machine_learning.types import CleanedMatchData
 from machine_learning.data_config import INDEX_COLS
-
+from project.settings.common import MELBOURNE_TIMEZONE
 
 FIRST = 1
 SECOND = 2
@@ -44,7 +44,9 @@ def _min_max_datetimes_by_year(year: int) -> Dict[str, datetime]:
 
 def _match_data(year: int, team_names: Tuple[str, str], idx: int) -> CleanedMatchData:
     return {
-        "date": FAKE.date_time_between_dates(**_min_max_datetimes_by_year(year)),
+        "date": FAKE.date_time_between_dates(
+            **_min_max_datetimes_by_year(year), tzinfo=MELBOURNE_TIMEZONE
+        ),
         "year": year,
         "round_number": round(idx / (len(CONTEMPORARY_TEAM_NAMES) / 2)) + 1,
         "team": team_names[0],

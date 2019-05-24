@@ -4,6 +4,7 @@ import { Query } from 'react-apollo';
 import styled from 'styled-components/macro';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 import createDataObject from '../../utils/CreateDataObject';
+import createListDataObject from '../../utils/CreateListDataObject';
 import PageHeader from '../../components/PageHeader';
 import PageFooter from '../../components/PageFooter';
 import BarChartMain from '../../components/BarChartMain';
@@ -19,49 +20,6 @@ import {
 type State = {
   year: number
 };
-
-const itemsMocked = [
-  {
-    match: 1,
-    teams: [
-      {
-        name: 'team ABC', isHome: true, predictedMargin: 35,
-      },
-      {
-        name: 'team DEF', isHome: false, predictedMargin: null,
-      }],
-  },
-  {
-    match: 2,
-    teams: [
-      {
-        name: 'team GHI', isHome: false, predictedMargin: null,
-      },
-      {
-        name: 'team JKL', isHome: true, predictedMargin: 10,
-      }],
-  },
-  {
-    match: 3,
-    teams: [
-      {
-        name: 'team MNL', isHome: false, predictedMargin: 50,
-      },
-      {
-        name: 'team OPQ', isHome: true, predictedMargin: null,
-      }],
-  },
-  {
-    match: 4,
-    teams: [
-      {
-        name: 'team RST', isHome: true, predictedMargin: null,
-      },
-      {
-        name: 'team UVW', isHome: false, predictedMargin: 12,
-      }],
-  },
-];
 
 type Props = {};
 
@@ -80,13 +38,27 @@ const BarChartMainQueryChildren = ({ loading, error, data }) => {
 
   return <BarChartMain data={dataObject} />;
 };
+const PredictionListQueryChildren = ({ loading, error, data }) => {
+  const nonNullData = data || {};
+  const dataWithAllPredictions = { predictions: [], ...nonNullData };
+  const { predictions } = dataWithAllPredictions;
+
+  if (loading) return <p>Loading predictions...</p>;
+  if (error) return <StatusBar text={error.message} error />;
+  if (predictions.length === 0) return <StatusBar text="No data found" empty />;
+
+  const dataObject = createListDataObject(predictions);
+
+  return <PredictionList items={dataObject} />;
+};
+
 
 class App extends Component<Props, State> {
   state = {
     year: 2014,
   };
 
-  OPTIONS = [2011, 2014, 2015, 2016, 2017, 2018];
+  OPTIONS = [2011, 2014, 2015, 2016, 2017, 2018, 2019];
 
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
@@ -132,7 +104,9 @@ class App extends Component<Props, State> {
 
         <Widget gridColumn="2 / 4">
           <WidgetHeading>Tipresias predictions for current round in season</WidgetHeading>
-          <PredictionList items={itemsMocked} />
+          <Query query={GET_PREDICTIONS_QUERY} variables={{ year: 2018 }}>
+            {PredictionListQueryChildren}
+          </Query>
         </Widget>
 
         <Widget gridColumn="4 / -2">

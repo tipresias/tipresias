@@ -20,7 +20,6 @@ const renderTeamWinner = team => (
   </Stat>
 );
 
-
 const renderTeam = team => (
   <Stat key={team.name}>
     <div className="key">

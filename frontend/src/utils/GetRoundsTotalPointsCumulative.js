@@ -1,5 +1,5 @@
 // @flow
-const createCumulativeModels = (rounds: Array<Object>): Array<Object> => {
+const GetRoundsTotalPointsCumulative = (rounds: Array<Object>): Array<Object> => {
   const models = Object.keys(rounds[0]);
   const data = rounds.reduce((roundsAcc, currentItem, currentIndex) => {
     const newCurrentItem = { ...currentItem };
@@ -23,4 +23,4 @@ const createCumulativeModels = (rounds: Array<Object>): Array<Object> => {
   return data;
 };
 
-export default createCumulativeModels;
+export default GetRoundsTotalPointsCumulative;

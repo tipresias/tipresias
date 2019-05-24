@@ -1,8 +1,7 @@
 import { css } from 'styled-components';
 import styled from 'styled-components/macro';
 
-// AppContainer, Header, Logo, HeaderLinks,
-// Widget, WidgetHeading, List, ListItem, Stat, WidgetFooter, Footer
+// AppContainer, Widget, WidgetHeading, WidgetFooter, Footer
 
 export const AppContainer = styled.div`
   display: grid;
@@ -35,43 +34,6 @@ export const WidgetHeading = styled.h3`
   color: #373a3c;
   letter-spacing: 0;
   text-align: left;
-`;
-
-export const List = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-export const ListItem = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid #dddddd;
-  border-radius: 4px;
-`;
-
-export const Stat = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex: 1;
-  padding: 0.5rem;
-  &::after {
-    content: "|";
-    float: right;
-    color: rgba(0, 0, 0, 0.125);
-  }
-  &:last-child::after {
-    display: none;
-  }
-  .key {
-    font-size: 1rem;
-    color: #373a3c;
-  }
-  .value {
-    font-size: 1.625rem;
-    color: #373a3c;
-  }
 `;
 
 export const WidgetFooter = styled.div`

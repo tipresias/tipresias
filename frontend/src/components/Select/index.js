@@ -3,20 +3,20 @@ import React from 'react';
 import type { Node } from 'react';
 
 type Props = {
-  value: number,
   name: string,
+  value: number,
   onChange: (event: SyntheticEvent<HTMLSelectElement>) => void,
   options: Array<number>
 }
 const Select = ({
-  value,
   name,
+  value,
   onChange,
   options,
 }: Props): Node => (
   <select
-    value={value}
     name={name}
+    value={value}
     onChange={onChange}
   >
     {

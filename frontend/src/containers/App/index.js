@@ -11,14 +11,57 @@ import Select from '../../components/Select';
 import Checkbox from '../../components/Checkbox';
 import BarChartLoading from '../../components/BarChartLoading';
 import StatusBar from '../../components/StatusBar';
+import PredictionList from '../../components/PredictionList';
 import {
-  AppContainer, WidgetStyles, WidgetHeading,
-  List, ListItem, Stat, WidgetFooter,
+  AppContainer, WidgetStyles, WidgetHeading, WidgetFooter,
 } from './style';
 
 type State = {
   year: number
 };
+
+const itemsMocked = [
+  {
+    match: 1,
+    teams: [
+      {
+        name: 'team ABC', isHome: true, predictedMargin: 35,
+      },
+      {
+        name: 'team DEF', isHome: false, predictedMargin: null,
+      }],
+  },
+  {
+    match: 2,
+    teams: [
+      {
+        name: 'team GHI', isHome: false, predictedMargin: null,
+      },
+      {
+        name: 'team JKL', isHome: true, predictedMargin: 10,
+      }],
+  },
+  {
+    match: 3,
+    teams: [
+      {
+        name: 'team MNL', isHome: false, predictedMargin: 50,
+      },
+      {
+        name: 'team OPQ', isHome: true, predictedMargin: null,
+      }],
+  },
+  {
+    match: 4,
+    teams: [
+      {
+        name: 'team RST', isHome: true, predictedMargin: null,
+      },
+      {
+        name: 'team UVW', isHome: false, predictedMargin: 12,
+      }],
+  },
+];
 
 type Props = {};
 
@@ -88,69 +131,13 @@ class App extends Component<Props, State> {
         </Widget>
 
         <Widget gridColumn="2 / 4">
-          <WidgetHeading>Tipresias predictions for round x</WidgetHeading>
-          <List>
-            <ListItem>
-              <Stat>
-                <div className="key">Team Name 1</div>
-                <div className="value">77</div>
-              </Stat>
-              <Stat>
-                <div className="key">Team Name 2</div>
-                <div className="value">90</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">Team Name 1</div>
-                <div className="value">77</div>
-              </Stat>
-              <Stat>
-                <div className="key">Team Name 2</div>
-                <div className="value">90</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">Team Name 1</div>
-                <div className="value">77</div>
-              </Stat>
-              <Stat>
-                <div className="key">Team Name 2</div>
-                <div className="value">90</div>
-              </Stat>
-            </ListItem>
-          </List>
+          <WidgetHeading>Tipresias predictions for current round in season</WidgetHeading>
+          <PredictionList items={itemsMocked} />
         </Widget>
 
         <Widget gridColumn="4 / -2">
           <WidgetHeading>Model performace round x</WidgetHeading>
-          <List>
-            <ListItem>
-              <Stat>
-                <div className="key">Total Points</div>
-                <div className="value">90</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">Total Margin</div>
-                <div className="value">77</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">MAE</div>
-                <div className="value">77</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">Bits</div>
-                <div className="value">49</div>
-              </Stat>
-            </ListItem>
-          </List>
+          <p>wip</p>
         </Widget>
 
         <PageFooter />

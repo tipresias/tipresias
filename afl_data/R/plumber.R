@@ -2,6 +2,7 @@ source(paste0(getwd(), "/R/matches.R"))
 source(paste0(getwd(), "/R/players.R"))
 source(paste0(getwd(), "/R/betting-odds.R"))
 source(paste0(getwd(), "/R/fixtures.R"))
+source(paste0(getwd(), "/R/rosters.R"))
 
 FIRST_AFL_SEASON = "1897-01-01"
 
@@ -41,5 +42,13 @@ function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
 #' @get /fixtures
 function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
   fetch_fixtures(start_date, end_date) %>%
+    jsonlite::toJSON(.)
+}
+
+#' Return team rosters for a given round (current season only)
+#' @param round_number Fetch the rosters from this round. Note that missing param defaults to current round
+#' @get /rosters
+function(round_number = NULL) {
+  fetch_rosters(round_number) %>%
     jsonlite::toJSON(.)
 }

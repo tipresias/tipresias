@@ -10,6 +10,7 @@ from machine_learning.data_transformation.data_cleaning import (
     clean_player_data,
     clean_joined_data,
 )
+from project.settings.common import MELBOURNE_TIMEZONE
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../fixtures"))
 N_PLAYERS = 20
@@ -19,8 +20,15 @@ FAKE = Faker()
 
 class TestDataCleaning(TestCase):
     def test_clean_betting_data(self):
-        betting_data = pd.read_csv(
-            os.path.join(DATA_DIR, "afl_betting.csv"), parse_dates=["date"]
+        betting_data = (
+            pd.read_csv(os.path.join(DATA_DIR, "afl_betting.csv"), parse_dates=["date"])
+            .assign(
+                date=lambda df: pd.to_datetime(df["date"]).dt.tz_localize(
+                    MELBOURNE_TIMEZONE
+                )
+            )
+            .drop("round", axis=1)
+            .rename(columns={"round_label": "round"})
         )
 
         clean_data = clean_betting_data(betting_data)

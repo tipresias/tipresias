@@ -1,7 +1,7 @@
 """Module for data cleaning functions"""
 
 from typing import Optional, Pattern, Callable, List
-from datetime import datetime, date
+from datetime import datetime
 import re
 from functools import partial
 
@@ -87,17 +87,75 @@ PLAYER_FILLNA = {
 
 LABEL_COLS = ["score", "oppo_score"]
 
+DIGITS: Pattern = re.compile(r"round\s+(\d+)$", flags=re.I)
+QUALIFYING: Pattern = re.compile(r"qualifying", flags=re.I)
+ELIMINATION: Pattern = re.compile(r"elimination", flags=re.I)
+SEMI: Pattern = re.compile(r"semi", flags=re.I)
+PRELIMINARY: Pattern = re.compile(r"preliminary", flags=re.I)
+GRAND: Pattern = re.compile(r"grand", flags=re.I)
+FINALS_WEEK: Pattern = re.compile(r"Finals\s+Week\s+(\d+)$", flags=re.I)
+# One bloody week in 2010 uses 'One' instead of '1' on afl_betting
+FINALS_WEEK_ONE: Pattern = re.compile(r"Finals\s+Week\s+One", flags=re.I)
 
-def _map_betting_teams_to_match_teams(team_name: str) -> str:
-    if team_name in TEAM_TRANSLATIONS.keys():
-        return TEAM_TRANSLATIONS[team_name]
 
-    return team_name
+def _translate_team_name(team_name: str) -> str:
+    return TEAM_TRANSLATIONS[team_name] if team_name in TEAM_TRANSLATIONS else team_name
+
+
+def _translate_team_column(col_name: str) -> Callable[[pd.DataFrame], str]:
+    return lambda data_frame: data_frame[col_name].map(_translate_team_name)
+
+
+def _parse_round_label(max_regular_round: int, round_label: str) -> int:
+    round_number = DIGITS.search(round_label)
+    finals_week = FINALS_WEEK.search(round_label)
+
+    if round_number is not None:
+        return int(round_number.group(1))
+    if finals_week is not None:
+        # Betting data uses the format "YYYY Finals Week N" to label finals rounds
+        # so we can just add N to max round to get the round number
+        return int(finals_week.group(1)) + max_regular_round
+    if (
+        QUALIFYING.search(round_label) is not None
+        or ELIMINATION.search(round_label) is not None
+        or FINALS_WEEK_ONE.search(round_label) is not None
+    ):
+        # Basing finals round numbers on max regular season round number rather than
+        # fixed values for consistency with other data sources
+        return max_regular_round + 1
+    if SEMI.search(round_label) is not None:
+        return max_regular_round + 2
+    if PRELIMINARY.search(round_label) is not None:
+        return max_regular_round + 3
+    if GRAND.search(round_label) is not None:
+        return max_regular_round + 4
+
+    raise ValueError(f"Round label {round_label} doesn't match any known patterns")
+
+
+def _yearly_round_number(data_frame: pd.DataFrame) -> pd.Series:
+    yearly_round_col = data_frame["round"]
+    # Digit regex has to be at the end because betting round labels include
+    # the year at the start
+    round_numbers = yearly_round_col.str.extract(DIGITS, expand=False)
+    max_regular_round = pd.to_numeric(round_numbers, errors="coerce").max()
+
+    return yearly_round_col.map(partial(_parse_round_label, max_regular_round))
+
+
+def _convert_round_label_to_number(data_frame: pd.DataFrame) -> pd.Series:
+    year_groups = data_frame.groupby("year")
+    yearly_series_list = [
+        _yearly_round_number(year_data_frame) for _, year_data_frame in year_groups
+    ]
+
+    return pd.concat(yearly_series_list)
 
 
 def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
     return (
-        betting_data.rename(columns={"season": "year", "round": "round_number"})
+        betting_data.rename(columns={"season": "year"})
         .drop(
             [
                 "home_win_paid",
@@ -105,24 +163,26 @@ def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
                 "away_win_paid",
                 "away_line_paid",
                 "venue",
-                "round_label",
                 "home_margin",
                 "away_margin",
             ],
             axis=1,
         )
         .assign(
-            home_team=lambda df: df["home_team"].map(_map_betting_teams_to_match_teams),
-            away_team=lambda df: df["away_team"].map(_map_betting_teams_to_match_teams),
+            home_team=_translate_team_column("home_team"),
+            away_team=_translate_team_column("away_team"),
+            round_number=_convert_round_label_to_number,
         )
+        .drop("round", axis=1)
     )
 
 
 def _map_footywire_venues(venue: str) -> str:
-    if venue not in FOOTYWIRE_VENUE_TRANSLATIONS.keys():
-        return venue
-
-    return FOOTYWIRE_VENUE_TRANSLATIONS[venue]
+    return (
+        FOOTYWIRE_VENUE_TRANSLATIONS[venue]
+        if venue in FOOTYWIRE_VENUE_TRANSLATIONS
+        else venue
+    )
 
 
 def _map_round_type(year: int, round_number: int) -> str:
@@ -165,19 +225,24 @@ def _round_type_column(data_frame: pd.DataFrame) -> pd.DataFrame:
     return data_frame["round_number"].map(partial(_map_round_type, years.iloc[0]))
 
 
-def _match_data_from_next_round(future_match_data):
+def clean_fixture_data(fixture_data: Optional[pd.DataFrame]) -> Optional[pd.DataFrame]:
+    if fixture_data is None:
+        return None
+
     right_now = datetime.now(tz=MELBOURNE_TIMEZONE)  # pylint: disable=W0612
-    next_round = future_match_data.query("date > @right_now")["round"].min()
+    next_round = fixture_data.query("date > @right_now")["round"].min()
 
     return (
-        future_match_data.loc[
-            future_match_data["round"] == next_round,
+        fixture_data.loc[
+            fixture_data["round"] == next_round,
             ["date", "venue", "season", "round", "home_team", "away_team"],
         ]
         .rename(columns={"round": "round_number", "season": "year"})
         .assign(
             venue=lambda df: df["venue"].map(_map_footywire_venues),
             round_type=_round_type_column,
+            home_team=_translate_team_column("home_team"),
+            away_team=_translate_team_column("away_team"),
         )
     )
 
@@ -189,7 +254,7 @@ def _append_fixture_to_match_data(
         return match_data
 
     return (
-        pd.concat([match_data, _match_data_from_next_round(fixture_data)], sort=False)
+        pd.concat([match_data, fixture_data], sort=False)
         .reset_index(drop=True)
         .drop_duplicates(
             subset=["date", "venue", "year", "round_number", "home_team", "away_team"]
@@ -233,11 +298,17 @@ def clean_match_data(
                 duplicate_subset=["year", "round_number", "home_team", "away_team"]
             )
         )
-        .assign(match_id=_convert_id_to_string("match_id"))
+        .assign(
+            match_id=_convert_id_to_string("match_id"),
+            home_team=_translate_team_column("home_team"),
+            away_team=_translate_team_column("away_team"),
+        )
         .drop(["round"], axis=1)
     )
 
-    return _append_fixture_to_match_data(match_data, fixture_data)
+    cleaned_fixture_data = clean_fixture_data(fixture_data)
+
+    return _append_fixture_to_match_data(match_data, cleaned_fixture_data)
 
 
 def _player_id_col(data_frame: pd.DataFrame) -> pd.DataFrame:
@@ -258,10 +329,9 @@ def _clean_roster_data(
     if not roster_data.any().any():
         return roster_data.assign(player_id=[])
 
-    year = date.today().year
-
     roster_data_frame = (
-        roster_data.merge(
+        roster_data.rename(columns={"season": "year"})
+        .merge(
             player_data_frame[["player_name", "player_id"]],
             on=["player_name"],
             how="left",
@@ -272,9 +342,6 @@ def _clean_roster_data(
         # entry into the AFL. If two players with the same name are playing in the
         # league at the same time, that will likely result in errors
         .drop_duplicates(subset=["player_name"], keep="first")
-        .assign(
-            year=year, date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE)
-        )
     )
 
     # If a player is new to the league, he won't have a player_id per AFL Tables data,
@@ -310,6 +377,9 @@ def clean_player_data(
             venue=lambda x: x["venue"].str.strip(),
             player_name=lambda x: x["first_name"] + " " + x["surname"],
             player_id=_convert_id_to_string("player_id"),
+            home_team=_translate_team_column("home_team"),
+            away_team=_translate_team_column("away_team"),
+            playing_for=_translate_team_column("playing_for"),
         )
         .drop(UNUSED_PLAYER_COLS + ["first_name", "surname", "round_number"], axis=1)
         # Player data match IDs are wrong for recent years.
@@ -331,7 +401,6 @@ def clean_player_data(
         .drop("venue", axis=1)
         # brownlow_votes aren't known until the end of the season
         .fillna({"brownlow_votes": 0})
-        # As of 11-10-2018, match_results is still missing finals data from 2018.
         # Joining on date/venue leaves two duplicates played at M.C.G.
         # on 29-4-1986 & 9-8-1986, but that's an acceptable loss of data
         # and easier than munging team names

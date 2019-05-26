@@ -12,9 +12,10 @@ from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.types import FixtureData
+from server.types import CleanedFixtureData
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import JoinedMLData
+from machine_learning.data_transformation.data_cleaning import clean_fixture_data
 
 NO_SCORE = 0
 # We calculate rolling sums/means for some features that can span over 5 seasons
@@ -56,15 +57,14 @@ class Command(BaseCommand):
         self.verbose = verbose  # pylint: disable=W0201
         self.data_reader.verbose = verbose
 
-        fixture_data_frame = self.__fetch_fixture_data(self.current_year)
+        fixture_data_frame = self.__fetch_fixture_data(self.current_year).pipe(
+            clean_fixture_data
+        )
+        upcoming_round = fixture_data_frame["round_number"].min()
 
         if fixture_data_frame is None:
             raise ValueError("Could not fetch data.")
 
-        fixture_rounds = fixture_data_frame["round"]
-        upcoming_round = fixture_rounds[
-            fixture_data_frame["date"] > self.right_now
-        ].min()
         saved_match_count = Match.objects.filter(
             start_date_time__gt=self.right_now
         ).count()
@@ -76,17 +76,12 @@ class Command(BaseCommand):
                     "Creating new match and prediction records...\n"
                 )
 
-            upcoming_fixture = fixture_data_frame[
-                (fixture_data_frame["round"] == upcoming_round)
-                & (fixture_data_frame["date"] > self.right_now)
-            ]
-
             if self.verbose == 1:
                 print(
                     f"Saving Match and TeamMatch records for round {upcoming_round}..."
                 )
 
-            self.__create_matches(upcoming_fixture.to_dict("records"))
+            self.__create_matches(fixture_data_frame.to_dict("records"))
         else:
             if self.verbose == 1:
                 print(
@@ -133,12 +128,12 @@ class Command(BaseCommand):
 
         return fixture_data_frame
 
-    def __create_matches(self, fixture_data: List[FixtureData]) -> None:
+    def __create_matches(self, fixture_data: List[CleanedFixtureData]) -> None:
         if not any(fixture_data):
             raise ValueError("No fixture data found.")
 
-        round_number = {match_data["round"] for match_data in fixture_data}.pop()
-        year = {match_data["season"] for match_data in fixture_data}.pop()
+        round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
+        year = {match_data["year"] for match_data in fixture_data}.pop()
 
         team_match_lists = [
             self.__build_match(match_data) for match_data in fixture_data
@@ -168,7 +163,9 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print("Match data saved!\n")
 
-    def __build_match(self, match_data: FixtureData) -> Optional[List[TeamMatch]]:
+    def __build_match(
+        self, match_data: CleanedFixtureData
+    ) -> Optional[List[TeamMatch]]:
         raw_date = (
             match_data["date"].to_pydatetime()
             if isinstance(match_data["date"], pd.Timestamp)
@@ -185,7 +182,7 @@ class Command(BaseCommand):
 
         match, was_created = Match.objects.get_or_create(
             start_date_time=match_date,
-            round_number=int(match_data["round"]),
+            round_number=int(match_data["round_number"]),
             venue=match_data["venue"],
         )
 
@@ -318,7 +315,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def __build_team_match(
-        match: Match, match_data: FixtureData
+        match: Match, match_data: CleanedFixtureData
     ) -> Optional[List[TeamMatch]]:
         team_match_count = match.teammatch_set.count()
 

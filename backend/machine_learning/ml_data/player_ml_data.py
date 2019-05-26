@@ -21,7 +21,7 @@ from machine_learning.data_processors.feature_calculation import (
     calculate_division,
     calculate_addition,
 )
-from machine_learning.data_import import FitzroyDataImporter, afl_data_importer
+from machine_learning.data_import import FitzroyDataImporter, AflDataImporter
 from machine_learning.data_transformation.data_cleaning import clean_player_data
 from machine_learning.ml_data import BaseMLData
 from machine_learning.data_config import INDEX_COLS
@@ -75,6 +75,7 @@ DATA_TRANSFORMERS: List[DataFrameTransformer] = [
 ]
 
 fitzroy = FitzroyDataImporter()
+afl = AflDataImporter()
 DATA_READERS: DataReadersParam = {
     "player": (
         fitzroy.get_afltables_stats,
@@ -84,7 +85,7 @@ DATA_READERS: DataReadersParam = {
         {"start_date": "1965-01-01", "end_date": str(date.today())},
     ),
     "match": (fitzroy.match_results, {}),
-    "roster": (afl_data_importer.get_rosters, {}),
+    "roster": (afl.fetch_rosters, {}),
 }
 
 
@@ -161,9 +162,7 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
             current_year = date.today().year
             round_number = self.__upcoming_round_number(match_data, current_year)
             roster_data_reader, roster_data_kwargs = self.data_readers["roster"]
-            return roster_data_reader(
-                round_number, **{**roster_data_kwargs, **{"year": current_year}}
-            )
+            return roster_data_reader(round_number, **{**roster_data_kwargs})
 
         return None
 

@@ -225,19 +225,24 @@ def _round_type_column(data_frame: pd.DataFrame) -> pd.DataFrame:
     return data_frame["round_number"].map(partial(_map_round_type, years.iloc[0]))
 
 
-def _match_data_from_next_round(future_match_data):
+def clean_fixture_data(fixture_data: Optional[pd.DataFrame]) -> Optional[pd.DataFrame]:
+    if fixture_data is None:
+        return None
+
     right_now = datetime.now(tz=MELBOURNE_TIMEZONE)  # pylint: disable=W0612
-    next_round = future_match_data.query("date > @right_now")["round"].min()
+    next_round = fixture_data.query("date > @right_now")["round"].min()
 
     return (
-        future_match_data.loc[
-            future_match_data["round"] == next_round,
+        fixture_data.loc[
+            fixture_data["round"] == next_round,
             ["date", "venue", "season", "round", "home_team", "away_team"],
         ]
         .rename(columns={"round": "round_number", "season": "year"})
         .assign(
             venue=lambda df: df["venue"].map(_map_footywire_venues),
             round_type=_round_type_column,
+            home_team=_translate_team_column("home_team"),
+            away_team=_translate_team_column("away_team"),
         )
     )
 
@@ -249,7 +254,7 @@ def _append_fixture_to_match_data(
         return match_data
 
     return (
-        pd.concat([match_data, _match_data_from_next_round(fixture_data)], sort=False)
+        pd.concat([match_data, fixture_data], sort=False)
         .reset_index(drop=True)
         .drop_duplicates(
             subset=["date", "venue", "year", "round_number", "home_team", "away_team"]
@@ -293,14 +298,17 @@ def clean_match_data(
                 duplicate_subset=["year", "round_number", "home_team", "away_team"]
             )
         )
-        .assign(match_id=_convert_id_to_string("match_id"))
+        .assign(
+            match_id=_convert_id_to_string("match_id"),
+            home_team=_translate_team_column("home_team"),
+            away_team=_translate_team_column("away_team"),
+        )
         .drop(["round"], axis=1)
     )
 
-    return _append_fixture_to_match_data(match_data, fixture_data).assign(
-        home_team=_translate_team_column("home_team"),
-        away_team=_translate_team_column("away_team"),
-    )
+    cleaned_fixture_data = clean_fixture_data(fixture_data)
+
+    return _append_fixture_to_match_data(match_data, cleaned_fixture_data)
 
 
 def _player_id_col(data_frame: pd.DataFrame) -> pd.DataFrame:

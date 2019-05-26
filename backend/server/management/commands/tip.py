@@ -15,6 +15,7 @@ from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.types import FixtureData
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import JoinedMLData
+from machine_learning.data_transformation.data_cleaning import clean_fixture_data
 
 NO_SCORE = 0
 # We calculate rolling sums/means for some features that can span over 5 seasons
@@ -56,15 +57,14 @@ class Command(BaseCommand):
         self.verbose = verbose  # pylint: disable=W0201
         self.data_reader.verbose = verbose
 
-        fixture_data_frame = self.__fetch_fixture_data(self.current_year)
+        fixture_data_frame = self.__fetch_fixture_data(self.current_year).pipe(
+            clean_fixture_data
+        )
+        upcoming_round = fixture_data_frame["round_number"].min()
 
         if fixture_data_frame is None:
             raise ValueError("Could not fetch data.")
 
-        fixture_rounds = fixture_data_frame["round"]
-        upcoming_round = fixture_rounds[
-            fixture_data_frame["date"] > self.right_now
-        ].min()
         saved_match_count = Match.objects.filter(
             start_date_time__gt=self.right_now
         ).count()

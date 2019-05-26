@@ -162,9 +162,7 @@ class PlayerMLData(BaseMLData, DataTransformerMixin):
             current_year = date.today().year
             round_number = self.__upcoming_round_number(match_data, current_year)
             roster_data_reader, roster_data_kwargs = self.data_readers["roster"]
-            return roster_data_reader(
-                round_number, **{**roster_data_kwargs, **{"year": current_year}}
-            )
+            return roster_data_reader(round_number, **{**roster_data_kwargs})
 
         return None
 

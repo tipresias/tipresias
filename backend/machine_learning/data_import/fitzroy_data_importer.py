@@ -4,12 +4,6 @@ import pandas as pd
 
 from .base_data_importer import BaseDataImporter
 
-TEAM_TRANSLATIONS = {
-    "Brisbane Lions": "Brisbane",
-    "Brisbane Bears": "Brisbane",
-    "Greater Western Sydney": "GWS",
-    "Footscray": "Western Bulldogs",
-}
 EARLIEST_FOOTYWIRE_SEASON = "1965"
 EARLIEST_AFLTABLES_SEASON = "1897"
 
@@ -31,6 +25,8 @@ class FitzroyDataImporter(BaseDataImporter):
         Args:
             fetch_data (boolean): Whether to fetch fresh data or use the match data
                 that comes with the package.
+            start_date (string: YYYY-MM-DD): Earliest date for match data returned.
+            end_date (string: YYYY-MM-DD): Latest date for match data returned.
 
         Returns:
             pandas.DataFrame
@@ -51,11 +47,7 @@ class FitzroyDataImporter(BaseDataImporter):
         if self.verbose == 1:
             print("Match data received!")
 
-        return pd.DataFrame(data).assign(
-            date=self._parse_dates,
-            home_team=self.__translate_team_column("home_team"),
-            away_team=self.__translate_team_column("away_team"),
-        )
+        return pd.DataFrame(data).assign(date=self._parse_dates)
 
     def get_afltables_stats(
         self,
@@ -81,19 +73,23 @@ class FitzroyDataImporter(BaseDataImporter):
         if self.verbose == 1:
             print("Player data received!")
 
-        return pd.DataFrame(data).assign(
-            date=self._parse_dates,
-            home_team=self.__translate_team_column("home_team"),
-            away_team=self.__translate_team_column("away_team"),
-            playing_for=self.__translate_team_column("playing_for"),
-        )
+        return pd.DataFrame(data).assign(date=self._parse_dates)
 
     def fetch_fixtures(
         self,
         start_date: str = f"{EARLIEST_FOOTYWIRE_SEASON}-01-01",
         end_date: str = str(date.today()),
     ) -> pd.DataFrame:
-        """Get fixture data (unplayed matches) from Footywire (by way of fitzRoy)"""
+        """
+        Get fixture data (unplayed matches) from Footywire (by way of fitzRoy)
+
+        Args:
+            start_date (string: YYYY-MM-DD): Earliest date for match data returned.
+            end_date (string: YYYY-MM-DD): Latest date for match data returned.
+
+        Returns:
+            pandas.DataFrame
+        """
 
         if self.verbose == 1:
             print(f"Fetching fixture data from between {start_date} and {end_date}...")
@@ -107,22 +103,7 @@ class FitzroyDataImporter(BaseDataImporter):
 
         return (
             pd.DataFrame(data)
+            .assign(date=self._parse_dates)
             .drop("season_game", axis=1)
-            .assign(
-                date=self._parse_dates,
-                home_team=self.__translate_team_column("home_team"),
-                away_team=self.__translate_team_column("away_team"),
-            )
             .sort_values("date")
-        )
-
-    def __translate_team_column(self, col_name):
-        return lambda data_frame: data_frame[col_name].map(self.__translate_team_name)
-
-    @staticmethod
-    def __translate_team_name(team_name):
-        return (
-            TEAM_TRANSLATIONS[team_name]
-            if team_name in TEAM_TRANSLATIONS
-            else team_name
         )

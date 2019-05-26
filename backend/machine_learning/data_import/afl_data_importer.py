@@ -47,7 +47,7 @@ class AflDataImporter(BaseDataImporter):
             columns=[
                 "date",
                 "round_number",
-                "year",
+                "season",
                 "match_id",
                 "playing_for",
                 "player_name",

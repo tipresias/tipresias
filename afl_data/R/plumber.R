@@ -5,6 +5,7 @@ source(paste0(getwd(), "/R/fixtures.R"))
 source(paste0(getwd(), "/R/rosters.R"))
 
 FIRST_AFL_SEASON = "1897-01-01"
+END_OF_YEAR = past0(lubridate::ymd(Sys.Date() %>% lubridate::year, "12-31"))
 
 #' Return match results data
 #' @param fetch_data Whether to fetch fresh data from afltables.com
@@ -40,7 +41,7 @@ function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
 #' @param start_date Minimum match date for fetched data
 #' @param end_date Maximum match date for fetched data
 #' @get /fixtures
-function(start_date = FIRST_AFL_SEASON, end_date = Sys.Date()) {
+function(start_date = FIRST_AFL_SEASON, end_date = END_OF_YEAR) {
   fetch_fixtures(start_date, end_date) %>%
     jsonlite::toJSON(.)
 }

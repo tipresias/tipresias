@@ -76,17 +76,12 @@ class Command(BaseCommand):
                     "Creating new match and prediction records...\n"
                 )
 
-            upcoming_fixture = fixture_data_frame[
-                (fixture_data_frame["round"] == upcoming_round)
-                & (fixture_data_frame["date"] > self.right_now)
-            ]
-
             if self.verbose == 1:
                 print(
                     f"Saving Match and TeamMatch records for round {upcoming_round}..."
                 )
 
-            self.__create_matches(upcoming_fixture.to_dict("records"))
+            self.__create_matches(fixture_data_frame.to_dict("records"))
         else:
             if self.verbose == 1:
                 print(
@@ -137,8 +132,8 @@ class Command(BaseCommand):
         if not any(fixture_data):
             raise ValueError("No fixture data found.")
 
-        round_number = {match_data["round"] for match_data in fixture_data}.pop()
-        year = {match_data["season"] for match_data in fixture_data}.pop()
+        round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
+        year = {match_data["year"] for match_data in fixture_data}.pop()
 
         team_match_lists = [
             self.__build_match(match_data) for match_data in fixture_data
@@ -185,7 +180,7 @@ class Command(BaseCommand):
 
         match, was_created = Match.objects.get_or_create(
             start_date_time=match_date,
-            round_number=int(match_data["round"]),
+            round_number=int(match_data["round_number"]),
             venue=match_data["venue"],
         )
 

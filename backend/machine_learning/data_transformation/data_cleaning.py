@@ -330,11 +330,13 @@ def _clean_roster_data(
         return roster_data.assign(player_id=[])
 
     roster_data_frame = (
-        roster_data.merge(
+        roster_data.rename(columns={"season": "year"})
+        .merge(
             player_data_frame[["player_name", "player_id"]],
             on=["player_name"],
             how="left",
-        ).sort_values("player_id", ascending=False)
+        )
+        .sort_values("player_id", ascending=False)
         # There are some duplicate player names over the years, so we drop the oldest,
         # hoping that the contemporary player matches the one with the most-recent
         # entry into the AFL. If two players with the same name are playing in the

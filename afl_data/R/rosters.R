@@ -1,0 +1,105 @@
+AFL_DOMAIN = "https://www.afl.com.au"
+TEAMS_PATH = "/news/teams"
+PLAYER_COL_NAMES = c(
+  "player_name",
+  "playing_for",
+  "home_team",
+  "away_team",
+  "date",
+  "match_id"
+)
+
+
+#' Scrapes team roster data (i.e. which players are playing for each team) for
+#' a given round from afl.com.au, cleans it, and returns it as a dataframe.
+#' @param round_number Which round to get rosters for
+#' @export
+fetch_rosters <- function(round_number) {
+  assign_home_away_teams <- function(home_team_player, away_team_player) {
+    home_team <- home_team_player["playing_for"] %>% as.character(.)
+    away_team <- away_team_player["playing_for"] %>% as.character(.)
+
+    list(
+      c(home_team_player, home_team = home_team, away_team = away_team),
+      c(away_team_player, home_team = home_team, away_team = away_team)
+    )
+  }
+
+
+  collect_players <- function(team_data) {
+    team_name = team_data[[1]]
+
+    team_data[2:length(team_data)] %>%
+      purrr::map(., ~ c(player_name = ., playing_for = team_name))
+  }
+
+
+  parse_team_data <- function(team_element) {
+    team_element %>%
+      rvest::html_nodes('li') %>%
+      purrr::map(., ~ rvest::html_text(.)) %>%
+      purrr::map(., ~ stringr::str_trim(.) %>% stringr::str_split(., "\\s*\\n\\s*")) %>%
+      unlist(.) %>%
+      purrr::discard(., grepl("\\d", .))
+  }
+
+
+  parse_match_datetime <- function(match_element) {
+    rvest::html_text(match_element, ".game-time") %>%
+      stringr::str_trim(.)  %>%
+      stringr::str_split(., "\\n") %>%
+      unlist(.) %>%
+      purrr::map(., stringr::str_squish) %>%
+      dplyr::last(.)
+  }
+
+
+  parse_match_data <- function(index, match_element, roster_element) {
+    match_datetime = parse_match_datetime(match_element)
+    team_elements = rvest::html_nodes(roster_element, "ul")
+
+    # If the rosters for the given game haven't been announced yet, there will be no
+    # <ul> element with roster info
+    if (length(team_elements) == 0) {
+      return(list)
+    }
+
+    team_roster_data <- team_elements %>%
+      purrr::map(., parse_team_data) %>%
+      purrr::map(., collect_players) %>%
+      purrr::pmap(., assign_home_away_teams) %>%
+      unlist(., recursive = FALSE) %>%
+      purrr::map(., ~ c(., date = match_datetime, match_id = index))
+  }
+
+
+  collect_team_rosters <- function(html_page) {
+    match_elements <- rvest::html_nodes(html_page, "#tteamlist .lineup-detail")
+    roster_elements <- rvest::html_nodes(html_page, "#tteamlist .list-inouts")
+    match_indices <- 1:length(match_elements)
+
+    list(match_indices, match_elements, roster_elements)
+  }
+
+
+  paste0(AFL_DOMAIN, TEAMS_PATH, "?round=", round_number) %>%
+    xml2::read_html(.)  %>%
+    collect_team_rosters %>%
+    purrr::pmap(., parse_match_data) %>%
+    unlist(.) %>%
+    matrix(
+      .,
+      ncol = length(PLAYER_COL_NAMES),
+      byrow = TRUE,
+      dimnames = list(NULL, PLAYER_COL_NAMES)
+    ) %>%
+    as.data.frame(.) %>%
+    dplyr::mutate_all(., as.character) %>%
+    dplyr::mutate(
+      .,
+      date = lubridate::parse_date_time(
+        .$date, "%I:%M%p, %B %d, %Y", tz = "Australia/Melbourne"
+      )
+    ) %>%
+    dplyr::mutate(., season = lubridate::year(.$date))
+}

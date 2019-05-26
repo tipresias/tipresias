@@ -55,6 +55,7 @@ def _match_data(year: int, team_names: Tuple[str, str]) -> MatchData:
         "venue": FAKE.city(),
         "home_score": np.random.randint(50, 150),
         "away_score": np.random.randint(50, 150),
+        "match_id": FAKE.ean(),
     }
 
 

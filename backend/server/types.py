@@ -39,5 +39,6 @@ MatchData = TypedDict(
         "venue": str,
         "home_score": int,
         "away_score": int,
+        "match_id": int,
     },
 )

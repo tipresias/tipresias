@@ -119,7 +119,7 @@ def _players_by_match(
         {
             **match_data,
             **{
-                "player_id": FAKE.ssn(),
+                "player_id": FAKE.ean(),
                 "player_name": FAKE.name(),
                 "playing_for": playing_for,
             },

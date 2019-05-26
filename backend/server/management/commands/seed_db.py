@@ -15,6 +15,7 @@ from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_estimators import BaseMLEstimator
 from machine_learning.ml_data import BaseMLData, JoinedMLData
 from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
+from machine_learning.data_transformation.data_cleaning import clean_match_data
 
 MatchData = TypedDict(
     "MatchData",
@@ -83,7 +84,7 @@ class Command(BaseCommand):
 
         match_data_frame = self.data_reader.match_results(
             start_date=f"{years_list[0]}-01-01", end_date=f"{years_list[1] - 1}-12-31"
-        )
+        ).pipe(clean_match_data)
 
         # Putting saving records in a try block, so we can go back and delete everything
         # if an error is raised

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
-from server.types import FixtureData, MatchData
+from server.types import RawFixtureData, MatchData
 from project.settings.common import MELBOURNE_TIMEZONE
 
 FIRST = 1
@@ -82,7 +82,7 @@ def fake_match_results_data(
     return pd.DataFrame(list(reduced_data))
 
 
-def _fixture_data(year: int, team_names: Tuple[str, str]) -> FixtureData:
+def _fixture_data(year: int, team_names: Tuple[str, str]) -> RawFixtureData:
     return {
         "date": FAKE.date_time_between_dates(
             **_min_max_datetimes_by_year(year), tzinfo=MELBOURNE_TIMEZONE
@@ -95,7 +95,7 @@ def _fixture_data(year: int, team_names: Tuple[str, str]) -> FixtureData:
     }
 
 
-def _fixture_by_round(row_count: int, year: int) -> List[FixtureData]:
+def _fixture_by_round(row_count: int, year: int) -> List[RawFixtureData]:
     team_names = CyclicalTeamNames()
 
     return [
@@ -106,7 +106,7 @@ def _fixture_by_round(row_count: int, year: int) -> List[FixtureData]:
 
 def _fixture_by_year(
     row_count: int, year_range: Tuple[int, int]
-) -> List[List[FixtureData]]:
+) -> List[List[RawFixtureData]]:
     return [_fixture_by_round(row_count, year) for year in range(*year_range)]
 
 

@@ -12,7 +12,7 @@ from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.types import FixtureData
+from server.types import CleanedFixtureData
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import JoinedMLData
 from machine_learning.data_transformation.data_cleaning import clean_fixture_data
@@ -128,7 +128,7 @@ class Command(BaseCommand):
 
         return fixture_data_frame
 
-    def __create_matches(self, fixture_data: List[FixtureData]) -> None:
+    def __create_matches(self, fixture_data: List[CleanedFixtureData]) -> None:
         if not any(fixture_data):
             raise ValueError("No fixture data found.")
 
@@ -163,7 +163,9 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print("Match data saved!\n")
 
-    def __build_match(self, match_data: FixtureData) -> Optional[List[TeamMatch]]:
+    def __build_match(
+        self, match_data: CleanedFixtureData
+    ) -> Optional[List[TeamMatch]]:
         raw_date = (
             match_data["date"].to_pydatetime()
             if isinstance(match_data["date"], pd.Timestamp)
@@ -313,7 +315,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def __build_team_match(
-        match: Match, match_data: FixtureData
+        match: Match, match_data: CleanedFixtureData
     ) -> Optional[List[TeamMatch]]:
         team_match_count = match.teammatch_set.count()
 

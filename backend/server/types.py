@@ -3,12 +3,24 @@ from datetime import datetime
 from mypy_extensions import TypedDict
 from pandas import Timestamp
 
-FixtureData = TypedDict(
-    "FixtureData",
+RawFixtureData = TypedDict(
+    "RawFixtureData",
     {
         "date": Union[datetime],
         "season": int,
         "round": int,
+        "home_team": str,
+        "away_team": str,
+        "venue": str,
+    },
+)
+
+CleanedFixtureData = TypedDict(
+    "CleanedFixtureData",
+    {
+        "date": Union[datetime],
+        "year": int,
+        "round_number": int,
         "home_team": str,
         "away_team": str,
         "venue": str,

@@ -5,7 +5,7 @@ source(paste0(getwd(), "/R/fixtures.R"))
 source(paste0(getwd(), "/R/rosters.R"))
 
 FIRST_AFL_SEASON = "1897-01-01"
-END_OF_YEAR = past0(lubridate::ymd(Sys.Date() %>% lubridate::year, "12-31"))
+END_OF_YEAR = paste0(lubridate::year(lubridate::ymd(Sys.Date())), "12-31")
 
 #' Return match results data
 #' @param fetch_data Whether to fetch fresh data from afltables.com

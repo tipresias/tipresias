@@ -25,6 +25,7 @@ script:
   - docker run cfranklin11/tipresias_client:master yarn run flow
   - docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit
   - docker build --cache-from cfranklin11/tipresias_afl_data:latest -t cfranklin11/tipresias_afl_data:latest ./afl_data
+  - docker run cfranklin11/tipresias_afl_data:latest Rscript -e "devtools::test()"
 deploy:
   provider: script
   script: bash ./deploy.sh

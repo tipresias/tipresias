@@ -210,11 +210,8 @@ fetch_betting_odds <- function(start_date, end_date) {
   }
 
 
-  get_year <- function(date) lubridate::ymd(date) %>% lubridate::year(.)
-
-
   return(
-    get_year(start_date):get_year(end_date) %>%
+    lubridate::year(start_date):lubridate::year(end_date) %>%
       purrr::map(fetch_betting_odds_page) %>%
       unlist(., recursive = FALSE) %>%
       normalize_row_length %>%

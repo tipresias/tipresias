@@ -14,7 +14,7 @@ const Stat = styled.div`${StatStyles}`;
 const renderTeamWinner = team => (
   <Stat key={team.name} isHighlighted>
     <div className="key">
-      {`${team.isHome ? '🏠' : ''} ${team.name}`}
+      {team.name}
     </div>
     <div className="value">{team.predictedMargin}</div>
   </Stat>
@@ -23,7 +23,7 @@ const renderTeamWinner = team => (
 const renderTeam = team => (
   <Stat key={team.name}>
     <div className="key">
-      {`${team.isHome ? '🏠' : ''} ${team.name}`}
+      {team.name}
     </div>
   </Stat>
 );
@@ -32,6 +32,10 @@ const PredictionList = ({ items }: Props): Node => {
   if (!items || items.length === 0) { return (<p>no data found</p>); }
   return (
     <List>
+      <ListItem>
+        <Stat>Away</Stat>
+        <Stat>Home</Stat>
+      </ListItem>
       {
         items && items.length > 0 && items.map(item => (
           <ListItem key={item.match}>
@@ -46,6 +50,5 @@ const PredictionList = ({ items }: Props): Node => {
     </List>
   );
 };
-
 
 export default PredictionList;

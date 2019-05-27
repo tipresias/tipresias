@@ -4,50 +4,6 @@ import type {
   Game,
 } from '../types';
 
-
-const itemsMocked = [
-  {
-    match: 1,
-    teams: [
-      {
-        name: 'team ABC', isHome: true, predictedMargin: 35,
-      },
-      {
-        name: 'team DEF', isHome: false, predictedMargin: null,
-      }],
-  },
-  {
-    match: 2,
-    teams: [
-      {
-        name: 'team GHI', isHome: false, predictedMargin: null,
-      },
-      {
-        name: 'team JKL', isHome: true, predictedMargin: 10,
-      }],
-  },
-  {
-    match: 3,
-    teams: [
-      {
-        name: 'team MNL', isHome: false, predictedMargin: 50,
-      },
-      {
-        name: 'team OPQ', isHome: true, predictedMargin: null,
-      }],
-  },
-  {
-    match: 4,
-    teams: [
-      {
-        name: 'team RST', isHome: true, predictedMargin: null,
-      },
-      {
-        name: 'team UVW', isHome: false, predictedMargin: 12,
-      }],
-  },
-];
-
 const mockedCurrentRound = 6;
 
 const createListDataObject = (data: Array<Game>): Array<Object> => {
@@ -56,21 +12,18 @@ const createListDataObject = (data: Array<Game>): Array<Object> => {
     item => item,
   );
 
-  // console.log(roundsByCurrentRoundTipresias);
-
   const newRoundsByCurrentRoundTipresias = roundsByCurrentRoundTipresias.reduce(
     (acc, currentitem, currentIndex) => {
       acc[currentIndex] = acc[currentIndex] || {};
       acc[currentIndex].match = currentIndex;
       acc[currentIndex].teams = acc[currentIndex].teams || [];
 
-      currentitem.match.teammatchSet.forEach((element, i) => {
-        console.log(element);
+      currentitem.match.teammatchSet.forEach((element) => {
+        const isWinner = (currentitem.predictedWinner.name === element.team.name);
 
-        const isWinner = (currentitem.predictedWinner.name === element.team[i].name);
         const team = {
-          name: element.team[i].name,
-          atHome: element.team[i].atHome,
+          name: element.team.name,
+          atHome: element.atHome,
           predictedMargin: (isWinner ? currentitem.predictedMargin : null),
         };
 
@@ -81,9 +34,7 @@ const createListDataObject = (data: Array<Game>): Array<Object> => {
     }, [],
   );
 
-  console.log(newRoundsByCurrentRoundTipresias);
-
-  return itemsMocked;
+  return newRoundsByCurrentRoundTipresias;
 };
 
 export default createListDataObject;

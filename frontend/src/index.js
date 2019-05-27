@@ -8,9 +8,6 @@ import registerServiceWorker from './registerServiceWorker';
 const client = new ApolloClient({
   resolvers: {},
 });
-console.log(client);
-console.log(client.cache);
-
 
 const withApollo = Component => (
   <ApolloProvider client={client}>

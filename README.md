@@ -1,6 +1,6 @@
 # Tipresias
 
-[![Build Status](https://travis-ci.com/cfranklin11/tipresias.svg?branch=master)](https://travis-ci.com/cfranklin11/tipresias)
+[![Build Status](https://travis-ci.com/tipresias/tipresias.svg?branch=master)](https://travis-ci.com/tipresias/tipresias)
 
 > I Tipresias, old bot with dusty cores<br>
 > Perceived the match, and foretold the score—<br>

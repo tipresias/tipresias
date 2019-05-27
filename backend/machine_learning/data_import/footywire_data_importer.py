@@ -9,26 +9,8 @@ import pandas as pd
 from project.settings.common import DATA_DIR
 from .base_data_importer import BaseDataImporter
 
-FOOTY_WIRE_DOMAIN = "https://www.footywire.com"
-FIXTURE_PATH = "/afl/footy/ft_match_list"
 AFL_DATA_SERVICE = "http://afl_data:8001"
-N_DATA_COLS = 7
-N_USEFUL_DATA_COLS = 5
-FIXTURE_COLS = [
-    "Date",
-    "Home v Away Teams",
-    "Venue",
-    "Crowd",
-    "Result",
-    "Round",
-    "Season",
-]
-BETTING_MATCH_COLS = ["date", "venue", "round", "season"]
-
-INVALID_MATCH_REGEX = r"BYE|MATCH CANCELLED"
-TEAM_SEPARATOR_REGEX = r"\sv\s"
-RESULT_SEPARATOR = "-"
-
+BETTING_MATCH_COLS = ["date", "venue", "round", "round_number", "season"]
 
 # I get this warning when I run tests, but not in other contexts
 warnings.simplefilter("ignore", SystemTimeWarning)
@@ -100,8 +82,7 @@ class FootywireDataImporter(BaseDataImporter):
         csv_data_frame = (
             pd.read_csv(f"{self.csv_dir}/{filename}.csv", parse_dates=["date"])
             .assign(date=self._parse_dates)
-            .drop("round", axis=1)
-            .rename(columns={"round_label": "round"})
+            .rename(columns={"round": "round_number", "round_label": "round"})
         )
 
         if year_range is None:

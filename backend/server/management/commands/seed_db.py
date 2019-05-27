@@ -97,11 +97,15 @@ class Command(BaseCommand):
             if self.verbose == 1:
                 print("\n...DB seeded!\n")
         except:
-            print("\nRolling back DB changes...")
+            if self.verbose == 1:
+                print("\nRolling back DB changes...")
+
             Team.objects.all().delete()
             MLModel.objects.all().delete()
             Match.objects.all().delete()
-            print("...DB unseeded!\n")
+
+            if self.verbose == 1:
+                print("...DB unseeded!\n")
 
             raise
 

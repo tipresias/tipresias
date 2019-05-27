@@ -16,11 +16,22 @@ BETTING_COL_NAMES = c(
   "blank_two",
   "blank_three",
   "Round",
+  "Round Number",
   "Season"
 )
 COLS_TO_DROP = c(
   "blank_one", "colon", "redundant_line_paid", "blank_two", "blank_three"
 )
+
+DIGITS <- "round\\s+\\d+$"
+QUALIFYING <- "qualifying"
+ELIMINATION <- "elimination"
+SEMI <- "semi"
+PRELIMINARY <- "preliminary"
+GRAND <- "grand"
+FINALS_WEEK <- "Finals\\s+Week\\s+\\d+$"
+# One bloody week in 2010 uses 'One' instead of '1' on afl_betting
+FINALS_WEEK_ONE <- "Finals\\s+Week\\s+One"
 
 
 #' Scrapes betting data from footywire, cleans it, and returns it
@@ -29,6 +40,67 @@ COLS_TO_DROP = c(
 #' @param end_date Maximum match date for fetched data
 #' @export
 fetch_betting_odds <- function(start_date, end_date) {
+  get_round_number <- function(max_regular_round, table_row) {
+    round_label <- table_row[[length(table_row)]]
+
+    if (grepl(DIGITS, round_label, ignore.case = TRUE)) {
+      return(
+        round_label %>%
+          stringr::str_extract(., "\\d+$") %>%
+          as.numeric(.)
+      )
+    }
+
+    # Basing finals round numbers on max regular season round number rather than
+    # fixed values for consistency with other data sources
+    if (grepl(FINALS_WEEK, round_label, ignore.case = TRUE)) {
+      return(
+        round_label %>%
+          # Betting data uses the format "YYYY Finals Week N" to label finals rounds
+          # so we can just add N to max round to get the round number
+          stringr::str_extract(., "\\d+$") %>%
+          as.numeric(.) + max_regular_round
+      )
+    }
+
+    first_finals_week_pattern <- paste0(
+      QUALIFYING, "|", ELIMINATION, "|", FINALS_WEEK_ONE
+    )
+
+    if (grepl(first_finals_week_pattern, round_label, ignore.case = TRUE)) {
+      return(max_regular_round + 1)
+    }
+
+    if (grepl(SEMI, round_label, ignore.case = TRUE)) {
+      return(max_regular_round + 2)
+    }
+
+    if (grepl(PRELIMINARY, round_label, ignore.case = TRUE)) {
+      return(max_regular_round + 3)
+    }
+
+    if (grepl(GRAND, round_label, ignore.case = TRUE)) {
+      return(max_regular_round + 4)
+    }
+
+    stop(
+      paste0("Round label ", round_label, " doesn't match any known patterns")
+    )
+  }
+
+
+  get_round_numbers <- function(table_rows) {
+    max_regular_round <- table_rows %>%
+      unlist(.) %>%
+      purrr::keep(., ~ grepl(DIGITS, ., ignore.case = TRUE)) %>%
+      stringr::str_extract(., "\\d+$") %>%
+      as.numeric(.) %>%
+      max(.)
+
+    table_rows %>% purrr::map(., ~ c(., get_round_number(max_regular_round, .)))
+  }
+
+
   slice_table_rows <- function(label_row_index_pair, table_rows) {
     slice_start <- label_row_index_pair[1]
     slice_end <- ifelse(
@@ -99,6 +171,7 @@ fetch_betting_odds <- function(start_date, end_date) {
       paste0(FOOTY_WIRE_DOMAIN, BETTING_PATH, "?year=", .) %>%
       xml2::read_html(.) %>%
       get_betting_table_rows(.) %>%
+      get_round_numbers(.) %>%
       purrr::map(~ c(., year))
   }
 
@@ -172,6 +245,7 @@ fetch_betting_odds <- function(start_date, end_date) {
           as.numeric(.),
         line_paid = as.character(.$line_paid) %>% as.numeric(.),
         round = as.character(.$round),
+        round_number = as.character(.$round_number) %>% as.numeric(.),
         season = as.character(.$season) %>% as.numeric(.)
       )
   )

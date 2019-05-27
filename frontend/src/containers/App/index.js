@@ -43,7 +43,7 @@ class App extends Component<Props, State> {
     year: 2014,
   };
 
-  OPTIONS = [2011, 2014, 2015, 2016, 2017, 2018];
+  OPTIONS = [2014, 2015, 2016, 2017, 2018, 2019];
 
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });

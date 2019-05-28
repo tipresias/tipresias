@@ -66,9 +66,8 @@ class FootywireDataImporter(BaseDataImporter):
 
             return (
                 pd.DataFrame(data)
-                .pipe(self.__merge_home_away)
-                .pipe(self.__sort_betting_columns)
                 .assign(date=self._parse_dates)
+                .pipe(self.__sort_betting_columns)
             )
 
         start_year = int(start_date[:4])
@@ -95,17 +94,6 @@ class FootywireDataImporter(BaseDataImporter):
             & (csv_data_frame["season"] < max_year)
         ]
 
-    def __merge_home_away(self, data_frame: pd.DataFrame) -> pd.DataFrame:
-        return (
-            self.__split_home_away(data_frame, "home")
-            .merge(self.__split_home_away(data_frame, "away"), on=BETTING_MATCH_COLS)
-            .sort_values("date", ascending=True)
-            .drop_duplicates(
-                subset=["home_team", "away_team", "season", "round"], keep="last"
-            )
-            .fillna(0)
-        )
-
     @staticmethod
     def __sort_betting_columns(data_frame: pd.DataFrame) -> pd.DataFrame:
         sorted_cols = BETTING_MATCH_COLS + [
@@ -113,21 +101,3 @@ class FootywireDataImporter(BaseDataImporter):
         ]
 
         return data_frame[sorted_cols]
-
-    @staticmethod
-    def __split_home_away(data_frame: pd.DataFrame, team_type: str) -> pd.DataFrame:
-        if team_type not in ["home", "away"]:
-            raise ValueError(
-                f"team_type must either be 'home' or 'away', but {team_type} was given."
-            )
-
-        # Raw betting data has two rows per match: the top team is home and the bottom
-        # is away
-        filter_remainder = 0 if team_type == "home" else 1
-        row_filter = [n % 2 == filter_remainder for n in range(len(data_frame))]
-
-        return data_frame[row_filter].rename(
-            columns=lambda col: f"{team_type}_" + col
-            if col not in BETTING_MATCH_COLS
-            else col
-        )

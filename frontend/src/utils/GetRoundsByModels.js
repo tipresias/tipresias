@@ -3,7 +3,7 @@ import type {
   Game,
 } from '../types';
 
-const groupModelsByRound = (data: Array<Game>): Array<Object> => {
+const getRoundsByModels = (data: Array<Game>): Array<Object> => {
   const rounds = data.reduce((acc, currentItem) => {
     // The values to use as "keys" in the data structure
     const { mlModel: { name } } = currentItem;
@@ -26,19 +26,7 @@ const groupModelsByRound = (data: Array<Game>): Array<Object> => {
     return acc;
   }, []);
 
-
-  const models = Object.keys(rounds[0]);
-  const newRounds = rounds.reduce((acc, currentItem, currentIndex) => {
-    acc[currentIndex] = acc[currentIndex] || {};
-
-    models.forEach((model) => {
-      acc[currentIndex][model] = currentItem[model].total_points;
-    });
-    return acc;
-  }, []);
-
-
-  return newRounds;
+  return rounds;
 };
 
-export default groupModelsByRound;
+export default getRoundsByModels;

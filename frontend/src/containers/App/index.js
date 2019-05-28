@@ -4,6 +4,7 @@ import { Query } from 'react-apollo';
 import styled from 'styled-components/macro';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 import createDataObject from '../../utils/CreateDataObject';
+import createListDataObject from '../../utils/CreateListDataObject';
 import PageHeader from '../../components/PageHeader';
 import PageFooter from '../../components/PageFooter';
 import BarChartMain from '../../components/BarChartMain';
@@ -11,9 +12,9 @@ import Select from '../../components/Select';
 import Checkbox from '../../components/Checkbox';
 import BarChartLoading from '../../components/BarChartLoading';
 import StatusBar from '../../components/StatusBar';
+import PredictionList from '../../components/PredictionList';
 import {
-  AppContainer, WidgetStyles, WidgetHeading,
-  List, ListItem, Stat, WidgetFooter,
+  AppContainer, WidgetStyles, WidgetHeading, WidgetFooter,
 } from './style';
 
 type State = {
@@ -38,9 +39,24 @@ const BarChartMainQueryChildren = ({ loading, error, data }) => {
   return <BarChartMain data={dataObject} />;
 };
 
+const PredictionListQueryChildren = ({ loading, error, data }) => {
+  const nonNullData = data || {};
+  const dataWithAllPredictions = { predictions: [], ...nonNullData };
+  const { predictions } = dataWithAllPredictions;
+
+  if (loading) return <p>Loading predictions...</p>;
+  if (error) return <StatusBar text={error.message} error />;
+  if (predictions.length === 0) return <StatusBar text="No data found" empty />;
+
+  const dataObject = createListDataObject(predictions);
+
+  return <PredictionList items={dataObject} />;
+};
+
+
 class App extends Component<Props, State> {
   state = {
-    year: 2014,
+    year: 2019,
   };
 
   OPTIONS = [2014, 2015, 2016, 2017, 2018, 2019];
@@ -88,69 +104,15 @@ class App extends Component<Props, State> {
         </Widget>
 
         <Widget gridColumn="2 / 4">
-          <WidgetHeading>Tipresias predictions for round x</WidgetHeading>
-          <List>
-            <ListItem>
-              <Stat>
-                <div className="key">Team Name 1</div>
-                <div className="value">77</div>
-              </Stat>
-              <Stat>
-                <div className="key">Team Name 2</div>
-                <div className="value">90</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">Team Name 1</div>
-                <div className="value">77</div>
-              </Stat>
-              <Stat>
-                <div className="key">Team Name 2</div>
-                <div className="value">90</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">Team Name 1</div>
-                <div className="value">77</div>
-              </Stat>
-              <Stat>
-                <div className="key">Team Name 2</div>
-                <div className="value">90</div>
-              </Stat>
-            </ListItem>
-          </List>
+          <WidgetHeading>Tipresias predictions for current round in season</WidgetHeading>
+          <Query query={GET_PREDICTIONS_QUERY} variables={{ year: 2018 }}>
+            {PredictionListQueryChildren}
+          </Query>
         </Widget>
 
         <Widget gridColumn="4 / -2">
           <WidgetHeading>Model performace round x</WidgetHeading>
-          <List>
-            <ListItem>
-              <Stat>
-                <div className="key">Total Points</div>
-                <div className="value">90</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">Total Margin</div>
-                <div className="value">77</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">MAE</div>
-                <div className="value">77</div>
-              </Stat>
-            </ListItem>
-            <ListItem>
-              <Stat>
-                <div className="key">Bits</div>
-                <div className="value">49</div>
-              </Stat>
-            </ListItem>
-          </List>
+          <p>wip</p>
         </Widget>
 
         <PageFooter />

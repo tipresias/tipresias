@@ -5,7 +5,9 @@ import { ApolloProvider } from 'react-apollo';
 import App from './containers/App';
 import registerServiceWorker from './registerServiceWorker';
 
-const client = new ApolloClient();
+const client = new ApolloClient({
+  resolvers: {},
+});
 
 const withApollo = Component => (
   <ApolloProvider client={client}>

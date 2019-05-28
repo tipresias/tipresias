@@ -34,7 +34,7 @@ describe('PredictionList', () => {
       },
     ];
     const wrapper = shallow(<PredictionList items={itemsMocked} />);
-    expect(wrapper.find('style__List').children().length).toBe(1);
+    expect(wrapper.find('style__List').children().length).toBe(2);
   });
 
   it('renders message when items prop is not passed', () => {

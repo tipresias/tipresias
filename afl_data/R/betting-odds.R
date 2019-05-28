@@ -1,6 +1,6 @@
-FOOTY_WIRE_DOMAIN = "https://www.footywire.com"
-BETTING_PATH = "/afl/footy/afl_betting"
-BETTING_COL_NAMES = c(
+FOOTY_WIRE_DOMAIN <- "https://www.footywire.com"
+BETTING_PATH <- "/afl/footy/afl_betting"
+BETTING_COL_NAMES <- c(
   "Date",
   "Venue",
   "blank_one",
@@ -19,9 +19,10 @@ BETTING_COL_NAMES = c(
   "Round Number",
   "Season"
 )
-COLS_TO_DROP = c(
+COLS_TO_DROP <- c(
   "blank_one", "colon", "redundant_line_paid", "blank_two", "blank_three"
 )
+BETTING_MATCH_COLS <- c("date", "venue", "round", "round_number", "season")
 
 DIGITS <- "round\\s+\\d+$"
 QUALIFYING <- "qualifying"
@@ -40,6 +41,13 @@ FINALS_WEEK_ONE <- "Finals\\s+Week\\s+One"
 #' @param end_date Maximum match date for fetched data
 #' @export
 fetch_betting_odds <- function(start_date, end_date) {
+  rename_home_away_columns <- function(col_name) {
+    paste0(
+      ifelse(grepl("_home$", col_name), "home_", "away_"),
+      as.character(col_name) %>% stringr::str_remove(., "_home$|_away$")
+    )
+  }
+
   get_round_number <- function(max_regular_round, table_row) {
     round_label <- table_row[[length(table_row)]]
 
@@ -171,6 +179,8 @@ fetch_betting_odds <- function(start_date, end_date) {
       paste0(FOOTY_WIRE_DOMAIN, BETTING_PATH, "?year=", .) %>%
       xml2::read_html(.) %>%
       get_betting_table_rows(.) %>%
+      # Max regular round number is season dependent, so we assign round numbers
+      # while rounds are still grouped by year
       get_round_numbers(.) %>%
       purrr::map(~ c(., year))
   }
@@ -244,6 +254,17 @@ fetch_betting_odds <- function(start_date, end_date) {
         round = as.character(.$round),
         round_number = as.character(.$round_number) %>% as.numeric(.),
         season = as.character(.$season) %>% as.numeric(.)
-      )
+      ) %>%
+      # Raw betting data has two rows per match: the top team is home
+      # and the bottom is away
+      dplyr::mutate(., at_home = ifelse(dplyr::row_number() %% 2 == 1, "home", "away")) %>%
+      tidyr::pivot_wider(
+        .,
+        names_from = c(at_home),
+        values_from = c(
+          team, score, margin, win_odds, win_paid, line_odds, line_paid
+        )
+      ) %>%
+      dplyr::rename_if(., names(.) %>% grepl("_home$|_away$", .), rename_home_away_columns)
   )
 }

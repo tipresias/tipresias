@@ -9,26 +9,9 @@ import pandas as pd
 from project.settings.common import DATA_DIR
 from .base_data_importer import BaseDataImporter
 
-FOOTY_WIRE_DOMAIN = "https://www.footywire.com"
-FIXTURE_PATH = "/afl/footy/ft_match_list"
 AFL_DATA_SERVICE = "http://afl_data:8001"
-N_DATA_COLS = 7
-N_USEFUL_DATA_COLS = 5
-FIXTURE_COLS = [
-    "Date",
-    "Home v Away Teams",
-    "Venue",
-    "Crowd",
-    "Result",
-    "Round",
-    "Season",
-]
-BETTING_MATCH_COLS = ["date", "venue", "round", "season"]
-
-INVALID_MATCH_REGEX = r"BYE|MATCH CANCELLED"
-TEAM_SEPARATOR_REGEX = r"\sv\s"
-RESULT_SEPARATOR = "-"
-
+BETTING_MATCH_COLS = ["date", "venue", "round", "round_number", "season"]
+FIRST_YEAR_OF_BETTING_DATA = 2010
 
 # I get this warning when I run tests, but not in other contexts
 warnings.simplefilter("ignore", SystemTimeWarning)
@@ -51,7 +34,7 @@ class FootywireDataImporter(BaseDataImporter):
 
     def get_betting_odds(
         self,
-        start_date: str = "1897-01-01",
+        start_date: str = f"{FIRST_YEAR_OF_BETTING_DATA}-01-01",
         end_date: str = str(date.today()),
         fetch_data: bool = False,
     ) -> pd.DataFrame:
@@ -84,9 +67,8 @@ class FootywireDataImporter(BaseDataImporter):
 
             return (
                 pd.DataFrame(data)
-                .pipe(self.__merge_home_away)
-                .pipe(self.__sort_betting_columns)
                 .assign(date=self._parse_dates)
+                .pipe(self.__sort_betting_columns)
             )
 
         start_year = int(start_date[:4])
@@ -100,8 +82,7 @@ class FootywireDataImporter(BaseDataImporter):
         csv_data_frame = (
             pd.read_csv(f"{self.csv_dir}/{filename}.csv", parse_dates=["date"])
             .assign(date=self._parse_dates)
-            .drop("round", axis=1)
-            .rename(columns={"round_label": "round"})
+            .rename(columns={"round": "round_number", "round_label": "round"})
         )
 
         if year_range is None:
@@ -114,17 +95,6 @@ class FootywireDataImporter(BaseDataImporter):
             & (csv_data_frame["season"] < max_year)
         ]
 
-    def __merge_home_away(self, data_frame: pd.DataFrame) -> pd.DataFrame:
-        return (
-            self.__split_home_away(data_frame, "home")
-            .merge(self.__split_home_away(data_frame, "away"), on=BETTING_MATCH_COLS)
-            .sort_values("date", ascending=True)
-            .drop_duplicates(
-                subset=["home_team", "away_team", "season", "round"], keep="last"
-            )
-            .fillna(0)
-        )
-
     @staticmethod
     def __sort_betting_columns(data_frame: pd.DataFrame) -> pd.DataFrame:
         sorted_cols = BETTING_MATCH_COLS + [
@@ -132,21 +102,3 @@ class FootywireDataImporter(BaseDataImporter):
         ]
 
         return data_frame[sorted_cols]
-
-    @staticmethod
-    def __split_home_away(data_frame: pd.DataFrame, team_type: str) -> pd.DataFrame:
-        if team_type not in ["home", "away"]:
-            raise ValueError(
-                f"team_type must either be 'home' or 'away', but {team_type} was given."
-            )
-
-        # Raw betting data has two rows per match: the top team is home and the bottom
-        # is away
-        filter_remainder = 0 if team_type == "home" else 1
-        row_filter = [n % 2 == filter_remainder for n in range(len(data_frame))]
-
-        return data_frame[row_filter].rename(
-            columns=lambda col: f"{team_type}_" + col
-            if col not in BETTING_MATCH_COLS
-            else col
-        )

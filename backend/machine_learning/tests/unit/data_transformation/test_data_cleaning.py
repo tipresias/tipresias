@@ -27,8 +27,7 @@ class TestDataCleaning(TestCase):
                     MELBOURNE_TIMEZONE
                 )
             )
-            .drop("round", axis=1)
-            .rename(columns={"round_label": "round"})
+            .rename(columns={"round": "round_number", "round_label": "round"})
         )
 
         clean_data = clean_betting_data(betting_data)

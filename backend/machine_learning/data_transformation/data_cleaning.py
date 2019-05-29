@@ -87,16 +87,6 @@ PLAYER_FILLNA = {
 
 LABEL_COLS = ["score", "oppo_score"]
 
-DIGITS: Pattern = re.compile(r"round\s+(\d+)$", flags=re.I)
-QUALIFYING: Pattern = re.compile(r"qualifying", flags=re.I)
-ELIMINATION: Pattern = re.compile(r"elimination", flags=re.I)
-SEMI: Pattern = re.compile(r"semi", flags=re.I)
-PRELIMINARY: Pattern = re.compile(r"preliminary", flags=re.I)
-GRAND: Pattern = re.compile(r"grand", flags=re.I)
-FINALS_WEEK: Pattern = re.compile(r"Finals\s+Week\s+(\d+)$", flags=re.I)
-# One bloody week in 2010 uses 'One' instead of '1' on afl_betting
-FINALS_WEEK_ONE: Pattern = re.compile(r"Finals\s+Week\s+One", flags=re.I)
-
 
 def _translate_team_name(team_name: str) -> str:
     return TEAM_TRANSLATIONS[team_name] if team_name in TEAM_TRANSLATIONS else team_name
@@ -104,53 +94,6 @@ def _translate_team_name(team_name: str) -> str:
 
 def _translate_team_column(col_name: str) -> Callable[[pd.DataFrame], str]:
     return lambda data_frame: data_frame[col_name].map(_translate_team_name)
-
-
-def _parse_round_label(max_regular_round: int, round_label: str) -> int:
-    round_number = DIGITS.search(round_label)
-    finals_week = FINALS_WEEK.search(round_label)
-
-    if round_number is not None:
-        return int(round_number.group(1))
-    if finals_week is not None:
-        # Betting data uses the format "YYYY Finals Week N" to label finals rounds
-        # so we can just add N to max round to get the round number
-        return int(finals_week.group(1)) + max_regular_round
-    if (
-        QUALIFYING.search(round_label) is not None
-        or ELIMINATION.search(round_label) is not None
-        or FINALS_WEEK_ONE.search(round_label) is not None
-    ):
-        # Basing finals round numbers on max regular season round number rather than
-        # fixed values for consistency with other data sources
-        return max_regular_round + 1
-    if SEMI.search(round_label) is not None:
-        return max_regular_round + 2
-    if PRELIMINARY.search(round_label) is not None:
-        return max_regular_round + 3
-    if GRAND.search(round_label) is not None:
-        return max_regular_round + 4
-
-    raise ValueError(f"Round label {round_label} doesn't match any known patterns")
-
-
-def _yearly_round_number(data_frame: pd.DataFrame) -> pd.Series:
-    yearly_round_col = data_frame["round"]
-    # Digit regex has to be at the end because betting round labels include
-    # the year at the start
-    round_numbers = yearly_round_col.str.extract(DIGITS, expand=False)
-    max_regular_round = pd.to_numeric(round_numbers, errors="coerce").max()
-
-    return yearly_round_col.map(partial(_parse_round_label, max_regular_round))
-
-
-def _convert_round_label_to_number(data_frame: pd.DataFrame) -> pd.Series:
-    year_groups = data_frame.groupby("year")
-    yearly_series_list = [
-        _yearly_round_number(year_data_frame) for _, year_data_frame in year_groups
-    ]
-
-    return pd.concat(yearly_series_list)
 
 
 def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
@@ -171,7 +114,6 @@ def clean_betting_data(betting_data: pd.DataFrame) -> pd.DataFrame:
         .assign(
             home_team=_translate_team_column("home_team"),
             away_team=_translate_team_column("away_team"),
-            round_number=_convert_round_label_to_number,
         )
         .drop("round", axis=1)
     )

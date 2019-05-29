@@ -104,6 +104,8 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
             match_data = self.data_readers["match"].data
 
             self.data_readers["betting"].fetch_data = self.fetch_data
+            self.data_readers["betting"].start_date = self.start_date
+            self.data_readers["betting"].end_date = self.end_date
             # Betting data dates are correct, but the times are arbitrarily set by the
             # parser, so better to leave the date definition to a different data source
             betting_data = self.data_readers["betting"].data.drop("date", axis=1)

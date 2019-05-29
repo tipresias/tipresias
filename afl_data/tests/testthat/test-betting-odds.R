@@ -11,7 +11,7 @@ describe("fetch_betting_odds()", {
   )
 
   it("returns a data.frame composed of match rows", {
-    expect_equal(class(betting_odds_data), "data.frame")
+    expect_true("data.frame" %in% class(betting_odds_data))
     # To make sure that data is organised by match, not by year
     expect_gt(length(betting_odds_data), year_count)
   })
@@ -19,14 +19,22 @@ describe("fetch_betting_odds()", {
   it("has the correct data type for each column", {
     expect_type(betting_odds_data$date, "double")
     expect_type(betting_odds_data$venue, "character")
-    expect_type(betting_odds_data$team, "character")
-    expect_type(betting_odds_data$score, "double")
-    expect_type(betting_odds_data$margin, "double")
-    expect_type(betting_odds_data$win_odds, "double")
-    expect_type(betting_odds_data$win_paid, "double")
-    expect_type(betting_odds_data$line_odds, "double")
-    expect_type(betting_odds_data$line_paid, "double")
+    expect_type(betting_odds_data$home_team, "character")
+    expect_type(betting_odds_data$away_team, "character")
+    expect_type(betting_odds_data$home_score, "double")
+    expect_type(betting_odds_data$away_score, "double")
+    expect_type(betting_odds_data$home_margin, "double")
+    expect_type(betting_odds_data$away_margin, "double")
+    expect_type(betting_odds_data$home_win_odds, "double")
+    expect_type(betting_odds_data$away_win_odds, "double")
+    expect_type(betting_odds_data$home_win_paid, "double")
+    expect_type(betting_odds_data$away_win_paid, "double")
+    expect_type(betting_odds_data$home_line_odds, "double")
+    expect_type(betting_odds_data$away_line_odds, "double")
+    expect_type(betting_odds_data$home_line_paid, "double")
+    expect_type(betting_odds_data$away_line_paid, "double")
     expect_type(betting_odds_data$round, "character")
+    expect_type(betting_odds_data$round_number, "double")
     expect_type(betting_odds_data$season, "double")
   })
 
@@ -36,7 +44,7 @@ describe("fetch_betting_odds()", {
         unlist(.) %>%
         min(.)
 
-    expect_equal(class(betting_odds_data), "data.frame")
+    expect_true("data.frame" %in% class(betting_odds_data))
     expect_equal(earliest_year, EARLIEST_BETTING_DATA_SEASON)
   })
 })

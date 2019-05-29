@@ -1,2 +1,2 @@
 install.packages("jetpack")
-jetpack::install()
+jetpack::install(deployment=TRUE)

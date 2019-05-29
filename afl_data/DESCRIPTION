@@ -21,10 +21,11 @@ Imports:
     fitzRoy,
     rvest,
     purrr,
-    tidyr,
     testthat,
     devtools,
-    roxygen2
+    roxygen2,
+    tidyr
 Remotes:
-    git@github.com:jimmyday12/fitzRoy.git
+    git@github.com:jimmyday12/fitzRoy.git,
+    git@github.com:tidyverse/tidyr@master.git
 RoxygenNote: 6.1.1

@@ -131,8 +131,8 @@ def _betting_data(year: int, team_names: Tuple[str, str]) -> Dict[str, Any]:
             **_min_max_datetimes_by_year(year), tzinfo=MELBOURNE_TIMEZONE
         ),
         "season": year,
-        "round": 1,
-        "round_label": f"{year} Round 1",
+        "round_number": 1,
+        "round": f"{year} Round 1",
         "home_team": team_names[0],
         "away_team": team_names[1],
         "home_score": home_score,

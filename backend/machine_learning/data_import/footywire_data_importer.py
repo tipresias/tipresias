@@ -11,6 +11,7 @@ from .base_data_importer import BaseDataImporter
 
 AFL_DATA_SERVICE = "http://afl_data:8001"
 BETTING_MATCH_COLS = ["date", "venue", "round", "round_number", "season"]
+FIRST_YEAR_OF_BETTING_DATA = 2010
 
 # I get this warning when I run tests, but not in other contexts
 warnings.simplefilter("ignore", SystemTimeWarning)
@@ -33,7 +34,7 @@ class FootywireDataImporter(BaseDataImporter):
 
     def get_betting_odds(
         self,
-        start_date: str = "1897-01-01",
+        start_date: str = f"{FIRST_YEAR_OF_BETTING_DATA}-01-01",
         end_date: str = str(date.today()),
         fetch_data: bool = False,
     ) -> pd.DataFrame:

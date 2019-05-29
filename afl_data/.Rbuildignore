@@ -1,2 +1,4 @@
 ^afldata\.Rproj$
 ^\.Rproj\.user$
+^packrat/
+^\.Rprofile$

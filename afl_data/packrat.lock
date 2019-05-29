@@ -92,15 +92,30 @@ Requires: callr, cli, digest, git2r, httr, jsonlite, memoise, pkgbuild,
 
 Package: digest
 Source: CRAN
-Version: 0.6.18
-Hash: 65f62365ec69ddd17230d2ffe891a6ab
+Version: 0.6.19
+Hash: 99a5cdd9144b03b7a2ddbbef862fb07f
 
 Package: dplyr
 Source: CRAN
-Version: 0.8.0.1
-Hash: 61622995e32970a772e895bec2b4a305
+Version: 0.8.1
+Hash: f092b978f36cc14b36ef9a1807a93cf8
 Requires: BH, R6, Rcpp, assertthat, glue, magrittr, pkgconfig, plogr,
     rlang, tibble, tidyselect
+
+Package: ellipsis
+Source: github
+Version: 0.1.0.9000
+Hash: 9148a46c918e0588c4f3e17a4ed4bd00
+Requires: rlang
+GithubRepo: ellipsis
+GithubUsername: r-lib
+GithubRef: master
+GithubSha1: d8bf8a34eb3be04a52169bc69759ebccc7f247e2
+RemoteHost: api.github.com
+RemoteRepo: ellipsis
+RemoteUsername: r-lib
+RemoteRef: master
+RemoteSha: d8bf8a34eb3be04a52169bc69759ebccc7f247e2
 
 Package: fansi
 Source: CRAN
@@ -214,9 +229,9 @@ Hash: 498643e765d1442ba7b1160a1df3abf9
 
 Package: pillar
 Source: CRAN
-Version: 1.3.1
-Hash: 9ed4c2a5d3047bfba3e852ad5e806d91
-Requires: cli, crayon, fansi, rlang, utf8
+Version: 1.4.0
+Hash: 1bca62875e57d03cd7b8d15bd1613fc9
+Requires: cli, crayon, fansi, rlang, utf8, vctrs
 
 Package: pkgbuild
 Source: CRAN
@@ -305,9 +320,18 @@ Version: 2.0.4
 Hash: 0c43ff5305e5ac1fa6d4a5546a8e6d87
 
 Package: rlang
-Source: CRAN
-Version: 0.3.4
-Hash: 6a5220d1a973463418286038095d8c0b
+Source: github
+Version: 0.3.4.9003
+Hash: a350370e79f0ab5180709ca93d52113c
+GithubRepo: rlang
+GithubUsername: r-lib
+GithubRef: master
+GithubSha1: 6a232c019b21a566d994f104ebcb76e83d730076
+RemoteHost: api.github.com
+RemoteRepo: rlang
+RemoteUsername: r-lib
+RemoteRef: master
+RemoteSha: 6a232c019b21a566d994f104ebcb76e83d730076
 
 Package: roxygen2
 Source: CRAN
@@ -374,11 +398,20 @@ Hash: e9d844f966bd4d40556b50c3b2239646
 Requires: cli, crayon, fansi, pillar, pkgconfig, rlang
 
 Package: tidyr
-Source: CRAN
-Version: 0.8.3
-Hash: abb47affef711a0d4965f25cfdeb4df0
-Requires: Rcpp, dplyr, glue, magrittr, purrr, rlang, stringi, tibble,
-    tidyselect
+Source: github
+Version: 0.8.3.9000
+Hash: 009cfc7e4dac4b3b391e3f5245a4f912
+Requires: Rcpp, dplyr, ellipsis, glue, magrittr, purrr, rlang, stringi,
+    tibble, tidyselect, vctrs
+GithubRepo: tidyr
+GithubUsername: tidyverse
+GithubRef: master
+GithubSha1: 56fb136a12594c527050357a8b6893509b9fc15b
+RemoteHost: api.github.com
+RemoteRepo: tidyr
+RemoteUsername: tidyverse
+RemoteRef: master
+RemoteSha: 56fb136a12594c527050357a8b6893509b9fc15b
 
 Package: tidyselect
 Source: CRAN
@@ -397,6 +430,21 @@ Package: utf8
 Source: CRAN
 Version: 1.1.4
 Hash: f3f97ce59092abc8ed3fd098a59e236c
+
+Package: vctrs
+Source: github
+Version: 0.1.0.9003
+Hash: 16701a3ebca095ef720b4a8ad6fb6578
+Requires: backports, digest, ellipsis, glue, rlang, zeallot
+GithubRepo: vctrs
+GithubUsername: r-lib
+GithubRef: master
+GithubSha1: 157080c7cccf1dfcee92f1761f6829dc456b5b22
+RemoteHost: api.github.com
+RemoteRepo: vctrs
+RemoteUsername: r-lib
+RemoteRef: master
+RemoteSha: 157080c7cccf1dfcee92f1761f6829dc456b5b22
 
 Package: whisker
 Source: CRAN
@@ -424,3 +472,8 @@ Package: yaml
 Source: CRAN
 Version: 2.2.0
 Hash: a5ad5616d83d89f8d84cbf3cf4034e13
+
+Package: zeallot
+Source: CRAN
+Version: 0.1.0
+Hash: 10b2ed48e202b4db421ae864041dc4b2

@@ -15,6 +15,44 @@ PLAYER_COL_NAMES = c(
 #' @param round_number Which round to get rosters for
 #' @export
 fetch_rosters <- function(round_number) {
+  clean_data_frame <- function(roster_df) {
+    roster_df %>%
+      dplyr::mutate_all(., as.character) %>%
+      dplyr::mutate(
+        .,
+        date = lubridate::parse_date_time(
+          .$date, "%I:%M%p, %B %d, %Y", tz = "Australia/Melbourne"
+        )
+      ) %>%
+      dplyr::mutate(., season = lubridate::year(.$date))
+  }
+
+
+  convert_to_data_frame <- function(matches) {
+    row_lengths_sum <- matches %>%
+      purrr::map(., length) %>%
+      purrr::reduce(., sum)
+
+    if (row_lengths_sum == 0) {
+      return(
+        matrix(ncol = length(PLAYER_COL_NAMES), nrow = 0) %>%
+          as.data.frame(.) %>%
+          setNames(PLAYER_COL_NAMES)
+      )
+    }
+
+    matches %>%
+      unlist(.) %>%
+      matrix(
+        .,
+        ncol = length(PLAYER_COL_NAMES),
+        byrow = TRUE,
+        dimnames = list(NULL, PLAYER_COL_NAMES)
+      ) %>%
+      as.data.frame(.)
+  }
+
+
   assign_home_away_teams <- function(home_team_player, away_team_player) {
     home_team <- home_team_player["playing_for"] %>% as.character(.)
     away_team <- away_team_player["playing_for"] %>% as.character(.)
@@ -61,7 +99,7 @@ fetch_rosters <- function(round_number) {
     # If the rosters for the given game haven't been announced yet, there will be no
     # <ul> element with roster info
     if (length(team_elements) == 0) {
-      return(list)
+      return(list())
     }
 
     team_roster_data <- team_elements %>%
@@ -86,20 +124,6 @@ fetch_rosters <- function(round_number) {
     xml2::read_html(.)  %>%
     collect_team_rosters %>%
     purrr::pmap(., parse_match_data) %>%
-    unlist(.) %>%
-    matrix(
-      .,
-      ncol = length(PLAYER_COL_NAMES),
-      byrow = TRUE,
-      dimnames = list(NULL, PLAYER_COL_NAMES)
-    ) %>%
-    as.data.frame(.) %>%
-    dplyr::mutate_all(., as.character) %>%
-    dplyr::mutate(
-      .,
-      date = lubridate::parse_date_time(
-        .$date, "%I:%M%p, %B %d, %Y", tz = "Australia/Melbourne"
-      )
-    ) %>%
-    dplyr::mutate(., season = lubridate::year(.$date))
+    convert_to_data_frame %>%
+    clean_data_frame
 }

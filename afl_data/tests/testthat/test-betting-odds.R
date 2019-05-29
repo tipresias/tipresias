@@ -11,7 +11,7 @@ describe("fetch_betting_odds()", {
   )
 
   it("returns a data.frame composed of match rows", {
-    expect_equal(class(betting_odds_data), "data.frame")
+    expect_true("data.frame" %in% class(betting_odds_data))
     # To make sure that data is organised by match, not by year
     expect_gt(length(betting_odds_data), year_count)
   })
@@ -44,7 +44,7 @@ describe("fetch_betting_odds()", {
         unlist(.) %>%
         min(.)
 
-    expect_equal(class(betting_odds_data), "data.frame")
+    expect_true("data.frame" %in% class(betting_odds_data))
     expect_equal(earliest_year, EARLIEST_BETTING_DATA_SEASON)
   })
 })

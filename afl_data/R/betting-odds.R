@@ -98,6 +98,10 @@ fetch_betting_odds <- function(start_date, end_date) {
 
 
   get_round_numbers <- function(table_rows) {
+    if (is.null(table_rows)) {
+      return(list())
+    }
+
     max_regular_round <- table_rows %>%
       unlist(.) %>%
       purrr::keep(., ~ grepl(DIGITS, ., ignore.case = TRUE)) %>%
@@ -175,10 +179,16 @@ fetch_betting_odds <- function(start_date, end_date) {
 
 
   fetch_betting_odds_page <- function(year) {
-    year %>%
+    betting_rows <- year %>%
       paste0(FOOTY_WIRE_DOMAIN, BETTING_PATH, "?year=", .) %>%
       xml2::read_html(.) %>%
-      get_betting_table_rows(.) %>%
+      get_betting_table_rows(.)
+
+    if (length(betting_rows) == 0) {
+      return(list())
+    }
+
+    betting_rows %>%
       # Max regular round number is season dependent, so we assign round numbers
       # while rounds are still grouped by year
       get_round_numbers(.) %>%

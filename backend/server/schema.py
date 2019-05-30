@@ -6,6 +6,8 @@ from datetime import date
 
 import graphene
 from graphene_django.types import DjangoObjectType
+from django.db.models import Count, Q
+import pandas as pd
 
 from server.models import Prediction, MLModel, TeamMatch, Match, Team
 
@@ -34,54 +36,110 @@ class MLModelType(DjangoObjectType):
 
 
 class PredictionType(DjangoObjectType):
+    """Basic prediction type based on Prediction data model"""
+
     class Meta:
         model = Prediction
 
-    is_correct = graphene.Boolean()
 
-
-class CorrectPredictionCount(graphene.ObjectType):
-    """Cumulative correct predictions for the year broken down by round"""
+class ModelPredictionType(graphene.ObjectType):
+    """
+    Stats for predictions made by the given model through the given round
+    """
 
     model_name = graphene.String()
-    round_number = graphene.Int()
-    is_correct = graphene.Boolean()
+    cumulative_correct_count = graphene.Int()
 
     def resolve_model_name(self, _info):
-        return self.ml_model.name
+        return self.get("model_name")
+
+    def resolve_cumulative_correct_count(self, _info):
+        return self.get("cumulative_correct_count")
+
+
+class RoundPredictionType(graphene.ObjectType):
+    """Predictions for the year grouped by round"""
+
+    round_number = graphene.Int()
+    model_predictions = graphene.List(
+        ModelPredictionType,
+        description=(
+            "Stats for predictions made by the given model through the given round"
+        ),
+    )
 
     def resolve_round_number(self, _info):
-        return self.match.round_number
+        return self.get("match__round_number")
+
+    def resolve_model_predictions(self, _info):
+        return [
+            {"model_name": model_name, "cumulative_correct_count": correct_count}
+            for model_name, correct_count in self.items()
+            if model_name != "match__round_number"
+        ]
 
 
-class CumulativePredictionsType(graphene.ObjectType):
-    """Cumulative model prediction stats per year"""
+class YearlyPredictionsType(graphene.ObjectType):
+    """Model prediction stats per year"""
 
-    prediction_model_names = graphene.List(graphene.String)
-    cumulative_correct_predictions = graphene.List(
-        CorrectPredictionCount,
-        description="Cumulative correct predictions for the year broken down by round",
+    prediction_model_names = graphene.List(
+        graphene.String, description="All model names available for the given year"
+    )
+    predictions_by_round = graphene.List(
+        RoundPredictionType, description=("Predictions for the year grouped by round")
     )
 
     def resolve_prediction_model_names(self, _info):
         return self.distinct("ml_model__name").values_list("ml_model__name", flat=True)
 
-    def resolve_cumulative_correct_predictions(self, _info):
-        return self
+    def resolve_predictions_by_round(self, _info):
+        query_set = (
+            self.values("match__round_number", "ml_model__name")
+            .order_by("match__round_number")
+            .annotate(correct_count=Count("is_correct", filter=Q(is_correct=True)))
+        )
+
+        calculate_cumulative_correct = (
+            lambda df: df.groupby("ml_model__name")
+            .expanding()
+            .sum()
+            .reset_index(level=0)["correct_count"]
+            .rename("cumulative_correct_count")
+        )
+
+        # TODO: There's definitely a way to do these calculations via SQL, but chained
+        # GROUP BYs and calculations based on calculations is a bit much for me
+        # right now, so I'll come back and figure it out later
+        return (
+            pd.DataFrame(list(query_set))
+            .assign(cumulative_correct=calculate_cumulative_correct)
+            .pivot(
+                columns="ml_model__name",
+                values="cumulative_correct",
+                index="match__round_number",
+            )
+            .reset_index()
+            .fillna(0)
+            .to_dict("records")
+        )
 
 
 class Query(graphene.ObjectType):
-    predictions = graphene.List(PredictionType, year=graphene.Int(default_value=None))
+    predictions = graphene.List(
+        PredictionType,
+        year=graphene.Int(default_value=None),
+        description="Basic prediction type based on Prediction data model",
+    )
 
     prediction_years = graphene.List(
         graphene.Int,
         description="All years for which model predictions exist in the database",
     )
 
-    cumulative_predictions = graphene.Field(
-        CumulativePredictionsType,
+    yearly_predictions = graphene.Field(
+        YearlyPredictionsType,
         year=graphene.Int(),
-        description="Cumulative model prediction stats per year",
+        description="Model prediction stats per year",
     )
 
     def resolve_predictions(self, _info, year=None):
@@ -98,7 +156,7 @@ class Query(graphene.ObjectType):
             .values_list("match__start_date_time__year", flat=True)
         )
 
-    def resolve_cumulative_predictions(self, _info, year=date.today().year):
+    def resolve_yearly_predictions(self, _info, year=date.today().year):
         return Prediction.objects.filter(
             match__start_date_time__year=year
         ).select_related("ml_model", "match")

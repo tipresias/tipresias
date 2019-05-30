@@ -20,7 +20,7 @@ class TestPrediction(TestCase):
         self.match.teammatch_set.create(team=self.home_team, at_home=True, score=150)
         self.match.teammatch_set.create(team=self.away_team, at_home=False, score=100)
 
-    def test_is_correct(self):
+    def test_calculate_is_correct(self):
         with self.subTest("when higher-scoring team is predicted winner"):
             prediction = Prediction(
                 match=self.match,
@@ -28,7 +28,9 @@ class TestPrediction(TestCase):
                 predicted_winner=self.home_team,
                 predicted_margin=50,
             )
-            self.assertTrue(prediction.is_correct)
+            self.assertTrue(
+                Prediction.calculate_is_correct(self.match, prediction.predicted_winner)
+            )
 
         with self.subTest("when lower-scoring team is predicted winner"):
             prediction = Prediction(
@@ -37,7 +39,9 @@ class TestPrediction(TestCase):
                 predicted_winner=self.away_team,
                 predicted_margin=50,
             )
-            self.assertFalse(prediction.is_correct)
+            self.assertFalse(
+                Prediction.calculate_is_correct(self.match, prediction.predicted_winner)
+            )
 
         with self.subTest("when match is a draw"):
             self.match.teammatch_set.update(score=100)
@@ -48,7 +52,9 @@ class TestPrediction(TestCase):
                 predicted_margin=50,
             )
 
-            self.assertTrue(prediction.is_correct)
+            self.assertTrue(
+                Prediction.calculate_is_correct(self.match, prediction.predicted_winner)
+            )
 
     def test_clean(self):
         with self.subTest("when predicted margin rounds to 0"):

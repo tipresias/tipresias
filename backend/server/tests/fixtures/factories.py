@@ -2,7 +2,6 @@ from datetime import date, datetime
 
 import factory
 from factory.django import DjangoModelFactory
-import numpy as np
 from faker import Faker
 
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
@@ -40,8 +39,8 @@ class MatchFactory(DjangoModelFactory):
             tzinfo=MELBOURNE_TIMEZONE,
         )
     )
-    round_number = np.random.randint(1, 24)
-    venue = VENUES[np.random.randint(0, len(VENUES) - 1)]
+    round_number = factory.Faker("pyint", min=1, max=24)
+    venue = VENUES[FAKE.pyint(min=0, max=(len(VENUES) - 1))]
 
 
 class TeamMatchFactory(DjangoModelFactory):
@@ -51,7 +50,7 @@ class TeamMatchFactory(DjangoModelFactory):
     team = factory.SubFactory(TeamFactory)
     match = factory.SubFactory(MatchFactory)
     at_home = factory.Faker("pybool")
-    score = np.random.randint(50, 150)
+    score = factory.Faker("pyint", min=50, max=150)
 
 
 class MLModelFactory(DjangoModelFactory):
@@ -71,10 +70,13 @@ class PredictionFactory(DjangoModelFactory):
     match = factory.SubFactory(MatchFactory)
     ml_model = factory.SubFactory(MLModelFactory)
     predicted_winner = factory.SubFactory(TeamFactory)
-    predicted_margin = np.random.randint(0, 50)
+    predicted_margin = factory.Faker("pyint", min=0, max=50)
+    is_correct = factory.Faker("pybool")
 
 
 class FullMatchFactory(MatchFactory):
     prediction = factory.RelatedFactory(PredictionFactory, "match")
+    prediction_two = factory.RelatedFactory(PredictionFactory, "match")
+
     home_team_match = factory.RelatedFactory(TeamMatchFactory, "match", at_home=True)
     away_team_match = factory.RelatedFactory(TeamMatchFactory, "match", at_home=False)

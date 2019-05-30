@@ -1,3 +1,8 @@
+"""
+One-off script for restoring 2019 predictions data from a saved data file after
+resetting the production database
+"""
+
 import os
 import sys
 

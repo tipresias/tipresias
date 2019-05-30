@@ -13,6 +13,7 @@ import Checkbox from '../../components/Checkbox';
 import BarChartLoading from '../../components/BarChartLoading';
 import StatusBar from '../../components/StatusBar';
 import PredictionList from '../../components/PredictionList';
+import Table from '../../components/Table';
 import {
   AppContainer, WidgetStyles, WidgetHeading, WidgetFooter,
 } from './style';
@@ -53,6 +54,10 @@ const PredictionListQueryChildren = ({ loading, error, data }) => {
   return <PredictionList items={dataObject} />;
 };
 
+const performanceHeaders = ['Total Points', 'Total Margin', 'MAE'];
+const performanceRows = [
+  ['value 1', 'value 2', 'value 3'],
+];
 
 class App extends Component<Props, State> {
   state = {
@@ -112,7 +117,7 @@ class App extends Component<Props, State> {
 
         <Widget gridColumn="4 / -2">
           <WidgetHeading>Model performace round x</WidgetHeading>
-          <p>wip</p>
+          <Table caption="table caption" rows={performanceRows} headers={performanceHeaders} />
         </Widget>
 
         <PageFooter />

@@ -2,10 +2,12 @@
 import React from 'react';
 import type { Node } from 'react';
 
+type Row = Array<string>
+
 type Props = {
   caption: string,
   headers: Array<string>,
-  rows: Array<Array>
+  rows: Array<Row>
 }
 
 const Table = ({ caption, headers, rows }: Props): Node => (

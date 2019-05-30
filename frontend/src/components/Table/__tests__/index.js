@@ -24,10 +24,12 @@ describe('Table', () => {
   it('renders row items when rows prop is passed', () => {
     // arrange:
     const rowsMocked = [
-      ['row 1 value 1', 'row 1 value 2', 'row 1 value 3'],
+      [123, 'row 1 value 2', 'row 1 value 3'],
     ];
     const wrapper = shallow(<Table rows={rowsMocked} />);
     //  expect the row of the table tr to have 3 items passed via rows props
     expect(wrapper.find('tbody').childAt(1).children()).toHaveLength(3);
   });
+
+  // TODO: check why the compoennts doesnt complain about the tye of the rowMocked
 });

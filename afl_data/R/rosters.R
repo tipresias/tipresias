@@ -8,6 +8,10 @@ PLAYER_COL_NAMES = c(
   "date",
   "match_id"
 )
+# As of 30-05-2019 afl.com.au has seen fit to change the structure of the HTML
+# on the /news/teams page, adding promotional links to the last 3 positions,
+# shifting the match datetime to 4th from last
+DATE_TIME_POSITION_FROM_END = 3
 
 
 #' Scrapes team roster data (i.e. which players are playing for each team) for
@@ -88,7 +92,7 @@ fetch_rosters <- function(round_number) {
       stringr::str_split(., "\\n") %>%
       unlist(.) %>%
       purrr::map(., stringr::str_squish) %>%
-      dplyr::last(.)
+      .[[length(.) - DATE_TIME_POSITION_FROM_END]]
   }
 
 

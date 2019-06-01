@@ -10,8 +10,9 @@ PLAYER_COL_NAMES = c(
 )
 # As of 30-05-2019 afl.com.au has seen fit to change the structure of the HTML
 # on the /news/teams page, adding promotional links to the last 3 positions,
-# shifting the match datetime to 4th from last
-DATE_TIME_POSITION_FROM_END = 3
+# shifting the match datetime to 4th from last. This only applies to matches
+# that haven't been played yet.
+PREMATCH_LINKS_COUNT = 3
 
 
 #' Scrapes team roster data (i.e. which players are playing for each team) for
@@ -19,14 +20,21 @@ DATE_TIME_POSITION_FROM_END = 3
 #' @param round_number Which round to get rosters for
 #' @export
 fetch_rosters <- function(round_number) {
+  parse_date_time <- function(date_time_string) {
+    lubridate::parse_date_time(
+      date_time_string, "%I:%M%p, %B %d, %Y",
+      tz = "Australia/Melbourne",
+      quiet = TRUE
+    )
+  }
+
+
   clean_data_frame <- function(roster_df) {
     roster_df %>%
       dplyr::mutate_all(., as.character) %>%
       dplyr::mutate(
         .,
-        date = lubridate::parse_date_time(
-          .$date, "%I:%M%p, %B %d, %Y", tz = "Australia/Melbourne"
-        )
+        date = parse_date_time(.$date)
       ) %>%
       dplyr::mutate(., season = lubridate::year(.$date))
   }
@@ -86,18 +94,31 @@ fetch_rosters <- function(round_number) {
   }
 
 
-  parse_match_datetime <- function(match_element) {
+  get_datetime_string <- function(strings) {
+    last_index <- length(strings)
+    last_string <- strings[[last_index]]
+    maybe_date_time <- parse_date_time(last_string)
+
+    if (is.na(maybe_date_time)) {
+      return(strings[[last_index - PREMATCH_LINKS_COUNT]])
+    }
+
+    last_string
+  }
+
+
+  get_match_datetime <- function(match_element) {
     rvest::html_text(match_element, ".game-time") %>%
       stringr::str_trim(.)  %>%
       stringr::str_split(., "\\n") %>%
       unlist(.) %>%
       purrr::map(., stringr::str_squish) %>%
-      .[[length(.) - DATE_TIME_POSITION_FROM_END]]
+      get_datetime_string(.)
   }
 
 
   parse_match_data <- function(index, match_element, roster_element) {
-    match_datetime = parse_match_datetime(match_element)
+    match_datetime = get_match_datetime(match_element)
     team_elements = rvest::html_nodes(roster_element, "ul")
 
     # If the rosters for the given game haven't been announced yet, there will be no

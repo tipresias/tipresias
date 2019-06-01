@@ -9,12 +9,20 @@ services:
       - "8000:8000"
     depends_on:
       - db
+      - afl_data
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
       - EMAIL_RECIPIENT=test@test.com
       - SENDGRID_API_KEY=test
     command: python3 manage.py runserver 0.0.0.0:8000
+  afl_data:
+    image: cfranklin11/tipresias_afl_data:latest
+    volumes:
+      - ./afl_data:/app/afl_data
+    ports:
+      - "8001:8001"
+    command: Rscript app.R
   frontend:
     image: cfranklin11/tipresias_client:master
     volumes:

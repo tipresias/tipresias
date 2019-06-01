@@ -16,6 +16,8 @@ before_script:
   - docker pull cfranklin11/tipresias_client:master
   - docker pull cfranklin11/tipresias_afl_data:latest
 script:
+  - docker build --cache-from cfranklin11/tipresias_afl_data:latest -t cfranklin11/tipresias_afl_data:latest ./afl_data
+  - docker run cfranklin11/tipresias_afl_data:latest Rscript -e "devtools::test()"
   - docker build --cache-from cfranklin11/tipresias_server:master -t cfranklin11/tipresias_server:master ./backend
   - docker run cfranklin11/tipresias_server:master pylint --disable=R server project scripts machine_learning
   - docker run cfranklin11/tipresias_server:master mypy server project scripts machine_learning
@@ -24,8 +26,7 @@ script:
   - docker run cfranklin11/tipresias_client:master yarn run eslint src
   - docker run cfranklin11/tipresias_client:master yarn run flow
   - docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit
-  - docker build --cache-from cfranklin11/tipresias_afl_data:latest -t cfranklin11/tipresias_afl_data:latest ./afl_data
-  - docker run cfranklin11/tipresias_afl_data:latest Rscript -e "devtools::test()"
+
 deploy:
   provider: script
   script: bash ./deploy.sh

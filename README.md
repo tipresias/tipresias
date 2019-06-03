@@ -60,7 +60,11 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 - Via Travis CI (recommended):
   - In the Travis dashboard, navigate to the tipresias repository.
   - Under 'More Options', trigger a build on `master`.
-  - This will build the image, run tests, and deploy to Heroku.
+  - This will build the image, run tests, and deploy to DigitalOcean.
+
+- Deploy `afl_data` to Google Cloud:
+  - `gcloud builds submit --config cloudbuild.yaml ./afl_data`
+  - `gcloud beta run deploy $SERVICE_NAME --image gcr.io/$PROJECT_ID/afl_data`
 
 ## Pro-Tips
 

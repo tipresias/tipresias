@@ -2,7 +2,7 @@
 import React from 'react';
 import type { Node } from 'react';
 
-type Row = Array<string>
+import type { Row } from '../../types';
 
 type Props = {
   caption: string,
@@ -12,8 +12,8 @@ type Props = {
 
 const Table = ({ caption, headers, rows }: Props): Node => (
   <table>
+    {caption && <caption>{caption}</caption>}
     <tbody>
-      {caption && <caption>{caption}</caption>}
       <tr>
         {
           headers && headers.length > 0 && headers.map(item => (
@@ -21,7 +21,6 @@ const Table = ({ caption, headers, rows }: Props): Node => (
           ))
         }
       </tr>
-
       {
         rows && rows.length > 0 && rows.map(row => (
           <tr key={Math.random()}>

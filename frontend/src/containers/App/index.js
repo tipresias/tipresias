@@ -4,7 +4,7 @@ import { Query } from 'react-apollo';
 import styled from 'styled-components/macro';
 import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
 import createDataObject from '../../utils/CreateDataObject';
-import createListDataObject from '../../utils/CreateListDataObject';
+import createTableDataRows from '../../utils/CreateTableDataRows';
 import PageHeader from '../../components/PageHeader';
 import PageFooter from '../../components/PageFooter';
 import BarChartMain from '../../components/BarChartMain';
@@ -12,7 +12,7 @@ import Select from '../../components/Select';
 import Checkbox from '../../components/Checkbox';
 import BarChartLoading from '../../components/BarChartLoading';
 import StatusBar from '../../components/StatusBar';
-import PredictionList from '../../components/PredictionList';
+// import PredictionList from '../../components/PredictionList';
 import Table from '../../components/Table';
 import {
   AppContainer, WidgetStyles, WidgetHeading, WidgetFooter,
@@ -49,9 +49,14 @@ const PredictionListQueryChildren = ({ loading, error, data }) => {
   if (error) return <StatusBar text={error.message} error />;
   if (predictions.length === 0) return <StatusBar text="No data found" empty />;
 
-  const dataObject = createListDataObject(predictions);
-
-  return <PredictionList items={dataObject} />;
+  const rows = createTableDataRows(predictions);
+  return (
+    <Table
+      caption="Tipresias predictions for matches of round X, season 2019"
+      headers={['Date', 'Winner', 'Predicted margin', 'Loser']}
+      rows={rows}
+    />
+  );
 };
 
 const performanceHeaders = ['Total Points', 'Total Margin', 'MAE'];
@@ -61,10 +66,11 @@ const performanceRows = [
 
 class App extends Component<Props, State> {
   state = {
-    year: 2019,
+    year: 2018, // todo: add this data, according to current year, dynamic.
   };
 
-  OPTIONS = [2014, 2015, 2016, 2017, 2018, 2019];
+  // todo: add this data dynamic.
+  OPTIONS = [2014, 2015, 2016, 2017, 2018];
 
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
@@ -108,15 +114,13 @@ class App extends Component<Props, State> {
           </WidgetFooter>
         </Widget>
 
-        <Widget gridColumn="2 / 4">
-          <WidgetHeading>Tipresias predictions for current round in season</WidgetHeading>
+        <Widget gridColumn="2 / -3">
           <Query query={GET_PREDICTIONS_QUERY} variables={{ year: 2018 }}>
             {PredictionListQueryChildren}
           </Query>
         </Widget>
 
-        <Widget gridColumn="4 / -2">
-          <WidgetHeading>Model performace round x</WidgetHeading>
+        <Widget gridColumn="5 / -2">
           <Table caption="table caption" rows={performanceRows} headers={performanceHeaders} />
         </Widget>
 

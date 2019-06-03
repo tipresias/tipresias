@@ -13,19 +13,20 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     BH,
+    dplyr,
+    devtools,
+    fitzRoy,
+    plogr,
     plumber,
     progress,
-    dplyr,
-    stringr,
-    plogr,
-    fitzRoy,
-    rvest,
     purrr,
-    testthat,
-    devtools,
-    roxygen2,
+    rvest,
+    stringr,
     tidyr
+Suggests:
+    roxygen2,
+    testthat,
 Remotes:
     git@github.com:jimmyday12/fitzRoy.git,
-    git@github.com:tidyverse/tidyr@master.git
+    git@github.com:tidyverse/tidyr.git
 RoxygenNote: 6.1.1

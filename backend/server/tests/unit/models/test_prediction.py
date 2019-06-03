@@ -20,7 +20,7 @@ class TestPrediction(TestCase):
         self.match.teammatch_set.create(team=self.home_team, at_home=True, score=150)
         self.match.teammatch_set.create(team=self.away_team, at_home=False, score=100)
 
-    def test_calculate_is_correct(self):
+    def test_calculate_whether_correct(self):
         with self.subTest("when higher-scoring team is predicted winner"):
             prediction = Prediction(
                 match=self.match,
@@ -29,7 +29,9 @@ class TestPrediction(TestCase):
                 predicted_margin=50,
             )
             self.assertTrue(
-                Prediction.calculate_is_correct(self.match, prediction.predicted_winner)
+                Prediction.calculate_whether_correct(
+                    self.match, prediction.predicted_winner
+                )
             )
 
         with self.subTest("when lower-scoring team is predicted winner"):
@@ -40,7 +42,9 @@ class TestPrediction(TestCase):
                 predicted_margin=50,
             )
             self.assertFalse(
-                Prediction.calculate_is_correct(self.match, prediction.predicted_winner)
+                Prediction.calculate_whether_correct(
+                    self.match, prediction.predicted_winner
+                )
             )
 
         with self.subTest("when match is a draw"):
@@ -53,7 +57,9 @@ class TestPrediction(TestCase):
             )
 
             self.assertTrue(
-                Prediction.calculate_is_correct(self.match, prediction.predicted_winner)
+                Prediction.calculate_whether_correct(
+                    self.match, prediction.predicted_winner
+                )
             )
 
     def test_clean(self):

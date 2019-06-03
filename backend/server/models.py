@@ -114,7 +114,7 @@ class Prediction(models.Model):
     is_correct = models.BooleanField(default=False)
 
     @classmethod
-    def calculate_is_correct(cls, match: Match, predicted_winner: Team) -> bool:
+    def calculate_whether_correct(cls, match: Match, predicted_winner: Team) -> bool:
         """
         Calculate if a prediction is correct. Implemented as a class method to allow
         for one-step creation of new prediction records.

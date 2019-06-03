@@ -13,6 +13,6 @@ RUN Rscript init.R
 
 COPY . /app/afl_data
 
-EXPOSE 8001
+EXPOSE 8080
 
 CMD Rscript app.R

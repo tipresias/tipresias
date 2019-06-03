@@ -1,8 +1,7 @@
 import { css } from 'styled-components';
 import styled from 'styled-components/macro';
 
-// AppContainer, Widget, WidgetHeading, WidgetFooter, Footer
-
+// mobile first app container
 export const AppContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr;
@@ -10,7 +9,7 @@ export const AppContainer = styled.div`
   font-family: sans-serif;
   @media (min-width: 768px) {
     grid-template-columns: 1fr 18% 18% 18% 18% 1fr;
-    grid-template-rows: 80px auto auto 100px;
+    grid-template-rows: 80px auto auto auto 80px;
     grid-gap: 20px;
   }
 `;

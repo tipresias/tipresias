@@ -9,3 +9,5 @@ export type Game = {
 }
 
 export type BarChartDataType = Array<Object>
+
+export type Row = Array<string>;

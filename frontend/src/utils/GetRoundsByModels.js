@@ -25,7 +25,6 @@ const getRoundsByModels = (data: Array<Game>): Array<Object> => {
 
     return acc;
   }, []);
-
   return rounds;
 };
 

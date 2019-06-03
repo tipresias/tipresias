@@ -5,6 +5,7 @@ const GET_PREDICTIONS_QUERY = gql`
     predictions(year: $year) {
       id
       match {
+        startDateTime
         roundNumber
         year
         teammatchSet {

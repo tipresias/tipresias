@@ -3,22 +3,51 @@
 from typing import Dict, Any, List
 import json
 from urllib.parse import urljoin
+import os
 
 import requests
 import pandas as pd
 
 from project.settings.common import MELBOURNE_TIMEZONE
 
-AFL_DATA_SERVICE = "http://afl_data:8001"
+LOCAL_AFL_DATA_SERVICE = "http://afl_data:8080"
+AFL_DATA_SERVICE = os.getenv("AFL_DATA_SERVICE", default=LOCAL_AFL_DATA_SERVICE)
+PRODUCTION_SETTINGS = "project.settings.production"
 
 
 class BaseDataImporter:
     def __init__(self, verbose=1):
         self.verbose = verbose
 
+    def _fetch_afl_data(
+        self, path: str, params: Dict[str, Any] = {}
+    ) -> List[Dict[str, Any]]:
+        service_host = (
+            AFL_DATA_SERVICE
+            if os.getenv("DJANGO_SETTINGS_MODULE") == PRODUCTION_SETTINGS
+            else LOCAL_AFL_DATA_SERVICE
+        )
+        service_url = urljoin(service_host, path)
+
+        response = self._make_request(service_url, params)
+
+        return self._handle_response_data(response)
+
     @staticmethod
-    def _fetch_afl_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
-        data = requests.get(urljoin(AFL_DATA_SERVICE, path), params=params).json()
+    def _make_request(url: str, params: Dict[str, Any] = {}) -> requests.Response:
+        response = requests.get(url, params=params)
+
+        if response.status_code != 200:
+            raise Exception(
+                "Bad response from application: "
+                f"{response.status_code} / {response.headers} / {response.text}"
+            )
+
+        return response
+
+    @staticmethod
+    def _handle_response_data(response: requests.Response) -> List[Dict[str, Any]]:
+        data = response.json()
 
         if isinstance(data, dict) and "error" in data.keys():
             raise RuntimeError(data["error"])

@@ -22,12 +22,12 @@ describe('DefinitionList', () => {
 
   it('renders a definition list', () => {
     const wrapper = shallow(<DefinitionList items={itemsMocked} />);
-    expect(wrapper.find('dl').length).toBe(1);
+    expect(wrapper.find('style__DefinitionListStyled').length).toBe(1);
   });
 
   it('renders items if items prop is passed', () => {
     const wrapper = shallow(<DefinitionList items={itemsMocked} />);
-    expect(wrapper.find('dl').children().length).toBe(4);
+    expect(wrapper.find('style__DefinitionListStyled').children().length).toBe(4);
   });
 
   it('renders message when items prop is not passed', () => {

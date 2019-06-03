@@ -7,7 +7,7 @@ export const DefinitionListStyled = styled.dl`
 `;
 
 export const DefinitionTermStyled = styled.dt`
-  width: 30%;
+  width: 40%;
   margin: 0;
   border-top: 1px solid #DDDDDD;
   font-weight: bold;
@@ -18,7 +18,7 @@ export const DefinitionTermStyled = styled.dt`
 `;
 
 export const DefinitionDescriptionStyled = styled.dd`
-  width: 70%;
+  width: 60%;
   margin-left: auto;
   border-top: 1px solid #DDDDDD;
   padding: 0.5rem 0;

@@ -11,7 +11,7 @@ type Props = {
 }
 
 const BarChartMain = ({ data }: Props): Node => (
-  <ResponsiveContainer width="80%" height={300}>
+  <ResponsiveContainer width="100%" height={300}>
     <BarChart
       width={800}
       height={300}

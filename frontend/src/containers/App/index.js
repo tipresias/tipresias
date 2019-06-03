@@ -12,7 +12,7 @@ import Select from '../../components/Select';
 import Checkbox from '../../components/Checkbox';
 import BarChartLoading from '../../components/BarChartLoading';
 import StatusBar from '../../components/StatusBar';
-// import PredictionList from '../../components/PredictionList';
+import DefinitionList from '../../components/DefinitionList';
 import Table from '../../components/Table';
 import {
   AppContainer, WidgetStyles, WidgetHeading, WidgetFooter,
@@ -59,9 +59,22 @@ const PredictionListQueryChildren = ({ loading, error, data }) => {
   );
 };
 
-const performanceHeaders = ['Total Points', 'Total Margin', 'MAE'];
-const performanceRows = [
-  ['value 1', 'value 2', 'value 3'],
+const performanceTerms = [
+  {
+    id: 1,
+    key: 'Total Points',
+    value: 123,
+  },
+  {
+    id: 2,
+    key: 'Total Margin',
+    value: 30,
+  },
+  {
+    id: 3,
+    key: 'MAE',
+    value: 21,
+  },
 ];
 
 class App extends Component<Props, State> {
@@ -121,7 +134,7 @@ class App extends Component<Props, State> {
         </Widget>
 
         <Widget gridColumn="5 / -2">
-          <Table caption="table caption" rows={performanceRows} headers={performanceHeaders} />
+          <DefinitionList items={performanceTerms} />
         </Widget>
 
         <PageFooter />

@@ -59,28 +59,29 @@ const PredictionListQueryChildren = ({ loading, error, data }) => {
   );
 };
 
-const performanceTerms = [
-  {
-    id: 1,
-    key: 'Total Points',
-    value: 123,
-  },
-  {
-    id: 2,
-    key: 'Total Margin',
-    value: 30,
-  },
-  {
-    id: 3,
-    key: 'MAE',
-    value: 21,
-  },
-];
 
 class App extends Component<Props, State> {
   state = {
     year: 2018, // todo: add this data, according to current year, dynamic.
   };
+
+  PERFORMANCE_ITEMS = [
+    {
+      id: 1,
+      key: 'Total Points',
+      value: 'wip',
+    },
+    {
+      id: 2,
+      key: 'Total Margin',
+      value: 'wip',
+    },
+    {
+      id: 3,
+      key: 'MAE',
+      value: 'wip',
+    },
+  ];
 
   // todo: add this data dynamic.
   OPTIONS = [2014, 2015, 2016, 2017, 2018];
@@ -134,8 +135,8 @@ class App extends Component<Props, State> {
         </Widget>
 
         <Widget gridColumn="2 / -4">
-          <WidgetHeading>Tipresias Performance</WidgetHeading>
-          <DefinitionList items={performanceTerms} />
+          <WidgetHeading>Tipresias performace round X, season 2019</WidgetHeading>
+          <DefinitionList items={this.PERFORMANCE_ITEMS} />
         </Widget>
 
         <PageFooter />

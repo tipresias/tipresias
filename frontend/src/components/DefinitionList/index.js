@@ -1,6 +1,7 @@
 // @flow
 import React, { Fragment } from 'react';
 import type { Node } from 'react';
+import { DefinitionListStyled, DefinitionTermStyled, DefinitionDescriptionStyled } from './style';
 
 type Definition = {
   id: number,
@@ -15,16 +16,16 @@ type Props = {
 const DefinitionList = ({ items }: Props): Node => {
   if (!items || items.length === 0) { return (<p>No items found</p>); }
   return (
-    <dl>
+    <DefinitionListStyled>
       {
         items && items.length > 0 && items.map(item => (
           <Fragment key={item.id}>
-            <dt>{item.key}</dt>
-            <dd>{item.value}</dd>
+            <DefinitionTermStyled>{item.key}</DefinitionTermStyled>
+            <DefinitionDescriptionStyled>{item.value}</DefinitionDescriptionStyled>
           </Fragment>
         ))
       }
-    </dl>
+    </DefinitionListStyled>
   );
 };
 

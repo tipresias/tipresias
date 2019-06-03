@@ -127,13 +127,14 @@ class App extends Component<Props, State> {
           </WidgetFooter>
         </Widget>
 
-        <Widget gridColumn="2 / -3">
+        <Widget gridColumn="2 / -2">
           <Query query={GET_PREDICTIONS_QUERY} variables={{ year: 2018 }}>
             {PredictionListQueryChildren}
           </Query>
         </Widget>
 
-        <Widget gridColumn="5 / -2">
+        <Widget gridColumn="2 / -4">
+          <WidgetHeading>Tipresias Performance</WidgetHeading>
           <DefinitionList items={performanceTerms} />
         </Widget>
 

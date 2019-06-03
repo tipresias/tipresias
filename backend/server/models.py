@@ -103,18 +103,38 @@ class MLModel(models.Model):
 
 
 class Prediction(models.Model):
+    """Model for ML model predictions for each match"""
+
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     ml_model = models.ForeignKey(MLModel, on_delete=models.CASCADE)
-    predicted_winner = models.ForeignKey(Team, on_delete=models.CASCADE)
+    predicted_winner = models.ForeignKey(
+        Team, on_delete=models.CASCADE, related_name="predicted_wins"
+    )
     predicted_margin = models.PositiveSmallIntegerField()
+    is_correct = models.BooleanField(default=False)
+
+    @classmethod
+    def calculate_whether_correct(cls, match: Match, predicted_winner: Team) -> bool:
+        """
+        Calculate if a prediction is correct. Implemented as a class method to allow
+        for one-step creation of new prediction records.
+
+        Args:
+            match (Match): Match data model
+            predicted_winner (Team): Team data model for the team
+                that's predicted to win
+
+        Returns:
+            bool
+        """
+
+        # In footy tipping competitions its typical to grant everyone a correct tip
+        # in the case of a draw
+        return match.has_been_played and (
+            match.is_draw or predicted_winner == match.winner
+        )
 
     def clean(self):
         # Judgement call, but I want to avoid 0 predicted margin values for the cases
         # where the floating prediction is < 0.5, because we're never predicting a draw
         self.predicted_margin = round(self.predicted_margin) or 1
-
-    @property
-    def is_correct(self):
-        return self.match.has_been_played and (
-            self.match.is_draw or self.predicted_winner == self.match.winner
-        )

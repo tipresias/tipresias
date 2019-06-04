@@ -2,12 +2,12 @@
 import React, { Component } from 'react';
 import { Query } from 'react-apollo';
 import styled from 'styled-components/macro';
-import { GET_PREDICTIONS_QUERY, GET_PREDICTION_YEARS_QUERY } from '../../graphql';
-import createDataObject from '../../utils/CreateDataObject';
+import { GET_PREDICTIONS_QUERY, GET_PREDICTION_YEARS_QUERY, GET_YEARLY_PREDICTIONS_QUERY } from '../../graphql';
+// import createDataObject from '../../utils/CreateDataObject';
 import createTableDataRows from '../../utils/CreateTableDataRows';
 import PageHeader from '../../components/PageHeader';
 import PageFooter from '../../components/PageFooter';
-import BarChartMain from '../../components/BarChartMain';
+// import BarChartMain from '../../components/BarChartMain';
 import Select from '../../components/Select';
 import Checkbox from '../../components/Checkbox';
 import BarChartLoading from '../../components/BarChartLoading';
@@ -28,16 +28,19 @@ const Widget = styled.div`${WidgetStyles}`;
 
 const BarChartMainQueryChildren = ({ loading, error, data }) => {
   const nonNullData = data || {};
-  const dataWithAllPredictions = { predictions: [], ...nonNullData };
-  const { predictions } = dataWithAllPredictions;
+  const dataWithAllPredictions = { yearlyPredictions: {}, ...nonNullData };
+  const { yearlyPredictions } = dataWithAllPredictions;
 
   if (loading) return <BarChartLoading text="Loading predictions..." />;
   if (error) return <StatusBar text={error.message} error />;
-  if (predictions.length === 0) return <StatusBar text="No data found" empty />;
+  if (yearlyPredictions.length === 0) return <StatusBar text="No data found" empty />;
 
-  const dataObject = createDataObject(predictions);
+  // const dataObject = createDataObject(predictions);
 
-  return <BarChartMain data={dataObject} />;
+  // return <BarChartMain data={dataObject} />;
+  console.log('yearlyPredictions >>> ', yearlyPredictions);
+
+  return <div>test</div>;
 };
 
 const PredictionListQueryChildren = ({ loading, error, data }) => {
@@ -62,7 +65,7 @@ const PredictionListQueryChildren = ({ loading, error, data }) => {
 
 class App extends Component<Props, State> {
   state = {
-    year: 2018, // todo: add this data, according to current year, dynamic.
+    year: 2018,
   };
 
   PERFORMANCE_ITEMS = [
@@ -109,7 +112,10 @@ class App extends Component<Props, State> {
         <PageHeader />
         <Widget gridColumn="2 / -2">
           <WidgetHeading>Cumulative points per round</WidgetHeading>
-          <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
+          {/* <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
+            {BarChartMainQueryChildren}
+          </Query> */}
+          <Query query={GET_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
             {BarChartMainQueryChildren}
           </Query>
           <WidgetFooter>

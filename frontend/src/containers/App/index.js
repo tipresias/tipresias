@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import { Query } from 'react-apollo';
 import styled from 'styled-components/macro';
-import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
+import { GET_PREDICTIONS_QUERY, GET_PREDICTION_YEARS_QUERY } from '../../graphql';
 import createDataObject from '../../utils/CreateDataObject';
 import createTableDataRows from '../../utils/CreateTableDataRows';
 import PageHeader from '../../components/PageHeader';
@@ -83,15 +83,27 @@ class App extends Component<Props, State> {
     },
   ];
 
-  // todo: add this data dynamic.
-  OPTIONS = [2014, 2015, 2016, 2017, 2018];
-
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
   };
 
   render() {
     const { year } = this.state;
+
+    const PredictionYearsQueryChildren = ({ loading, error, data }) => {
+      if (loading) return <p>Loading predictions...</p>;
+      if (error) return <StatusBar text={error.message} error />;
+      return (
+        <Select
+          name="year"
+          value={year}
+          onChange={this.onChangeYear}
+          options={data.predictionYears}
+        />
+      );
+    };
+
+
     return (
       <AppContainer>
         <PageHeader />
@@ -119,12 +131,11 @@ class App extends Component<Props, State> {
                 console.log('onChange benchmark_estimator');
               }}
             />
-            <Select
-              name="year"
-              value={year}
-              onChange={this.onChangeYear}
-              options={this.OPTIONS}
-            />
+
+            <Query query={GET_PREDICTION_YEARS_QUERY}>
+              {PredictionYearsQueryChildren}
+            </Query>
+
           </WidgetFooter>
         </Widget>
 

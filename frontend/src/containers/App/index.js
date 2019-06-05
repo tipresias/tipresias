@@ -7,9 +7,9 @@ import { GET_PREDICTIONS_QUERY, GET_PREDICTION_YEARS_QUERY, GET_YEARLY_PREDICTIO
 import createTableDataRows from '../../utils/CreateTableDataRows';
 import PageHeader from '../../components/PageHeader';
 import PageFooter from '../../components/PageFooter';
-// import BarChartMain from '../../components/BarChartMain';
+import BarChartMain from '../../components/BarChartMain';
 import Select from '../../components/Select';
-import Checkbox from '../../components/Checkbox';
+// import Checkbox from '../../components/Checkbox';
 import BarChartLoading from '../../components/BarChartLoading';
 import StatusBar from '../../components/StatusBar';
 import DefinitionList from '../../components/DefinitionList';
@@ -35,12 +35,7 @@ const BarChartMainQueryChildren = ({ loading, error, data }) => {
   if (error) return <StatusBar text={error.message} error />;
   if (yearlyPredictions.length === 0) return <StatusBar text="No data found" empty />;
 
-  // const dataObject = createDataObject(predictions);
-
-  // return <BarChartMain data={dataObject} />;
-  console.log('yearlyPredictions >>> ', yearlyPredictions);
-
-  return <div>test</div>;
+  return <BarChartMain data={yearlyPredictions.predictionsByRound} />;
 };
 
 const PredictionListQueryChildren = ({ loading, error, data }) => {
@@ -119,24 +114,6 @@ class App extends Component<Props, State> {
             {BarChartMainQueryChildren}
           </Query>
           <WidgetFooter>
-            <Checkbox
-              label="Tipresias"
-              id="tipresias"
-              name="model"
-              value="tipresias"
-              onChange={() => {
-                console.log('onChange tipresias');
-              }}
-            />
-            <Checkbox
-              label="Benchmark estimator"
-              id="benchmark_estimator"
-              name="model"
-              value="benchmark_estimator"
-              onChange={() => {
-                console.log('onChange benchmark_estimator');
-              }}
-            />
 
             <Query query={GET_PREDICTION_YEARS_QUERY}>
               {PredictionYearsQueryChildren}

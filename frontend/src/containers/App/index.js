@@ -128,7 +128,9 @@ class App extends Component<Props, State> {
         </Widget>
 
         <Widget gridColumn="2 / -4">
-          <WidgetHeading>Tipresias performace round X, season 2019</WidgetHeading>
+          <WidgetHeading>
+            Tipresias performance metrics for last round in current season (year: 2019)
+          </WidgetHeading>
           <DefinitionList items={this.PERFORMANCE_ITEMS} />
         </Widget>
 

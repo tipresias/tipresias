@@ -1,5 +1,6 @@
 // @flow
 import React, { Component } from 'react';
+import type { Node } from 'react';
 import { Query } from 'react-apollo';
 import styled from 'styled-components/macro';
 import { GET_PREDICTIONS_QUERY, GET_PREDICTION_YEARS_QUERY, GET_YEARLY_PREDICTIONS_QUERY } from '../../graphql';
@@ -18,6 +19,7 @@ import {
   AppContainer, WidgetStyles, WidgetHeading, WidgetFooter,
 } from './style';
 
+
 type State = {
   year: number
 };
@@ -26,7 +28,7 @@ type Props = {};
 
 const Widget = styled.div`${WidgetStyles}`;
 
-const BarChartMainQueryChildren = ({ loading, error, data }) => {
+const BarChartMainQueryChildren = ({ loading, error, data }): Node => {
   const nonNullData = data || {};
   const dataWithAllPredictions = { yearlyPredictions: {}, ...nonNullData };
   const { yearlyPredictions } = dataWithAllPredictions;
@@ -38,7 +40,7 @@ const BarChartMainQueryChildren = ({ loading, error, data }) => {
   return <BarChartMain data={yearlyPredictions.predictionsByRound} />;
 };
 
-const PredictionListQueryChildren = ({ loading, error, data }) => {
+const PredictionListQueryChildren = ({ loading, error, data }): Node => {
   const nonNullData = data || {};
   const dataWithAllPredictions = { predictions: [], ...nonNullData };
   const { predictions } = dataWithAllPredictions;
@@ -88,7 +90,11 @@ class App extends Component<Props, State> {
   render() {
     const { year } = this.state;
 
-    const PredictionYearsQueryChildren = ({ loading, error, data }) => {
+    const PredictionYearsQueryChildren = ({ loading, error, data }): Node => {
+      const nonNullData = data || {};
+      const dataWithAllPredictionYears = { predictionYears: [], ...nonNullData };
+      const { predictionYears } = dataWithAllPredictionYears;
+
       if (loading) return <p>Loading predictions...</p>;
       if (error) return <StatusBar text={error.message} error />;
       return (
@@ -96,7 +102,7 @@ class App extends Component<Props, State> {
           name="year"
           value={year}
           onChange={this.onChangeYear}
-          options={data.predictionYears}
+          options={predictionYears}
         />
       );
     };
@@ -107,18 +113,13 @@ class App extends Component<Props, State> {
         <PageHeader />
         <Widget gridColumn="2 / -2">
           <WidgetHeading>Cumulative points per round</WidgetHeading>
-          {/* <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
-            {BarChartMainQueryChildren}
-          </Query> */}
           <Query query={GET_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
             {BarChartMainQueryChildren}
           </Query>
           <WidgetFooter>
-
             <Query query={GET_PREDICTION_YEARS_QUERY}>
               {PredictionYearsQueryChildren}
             </Query>
-
           </WidgetFooter>
         </Widget>
 

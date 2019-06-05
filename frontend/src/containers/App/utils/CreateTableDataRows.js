@@ -2,7 +2,7 @@
 import getRoundsByModels from './GetRoundsByModels';
 import type {
   Game, Row,
-} from '../types';
+} from '../../../types';
 
 const MOCKED_CURRENT_ROUND_NUMBER = 6;
 

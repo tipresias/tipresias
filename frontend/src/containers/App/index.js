@@ -1,15 +1,14 @@
 // @flow
 import React, { Component } from 'react';
+import type { Node } from 'react';
 import { Query } from 'react-apollo';
 import styled from 'styled-components/macro';
-import GET_PREDICTIONS_QUERY from '../../graphql/getPredictions';
-import createDataObject from '../../utils/CreateDataObject';
-import createTableDataRows from '../../utils/CreateTableDataRows';
+import { GET_PREDICTIONS_QUERY, GET_PREDICTION_YEARS_QUERY, GET_YEARLY_PREDICTIONS_QUERY } from '../../graphql';
+import createTableDataRows from './utils/CreateTableDataRows';
 import PageHeader from '../../components/PageHeader';
 import PageFooter from '../../components/PageFooter';
 import BarChartMain from '../../components/BarChartMain';
 import Select from '../../components/Select';
-import Checkbox from '../../components/Checkbox';
 import BarChartLoading from '../../components/BarChartLoading';
 import StatusBar from '../../components/StatusBar';
 import DefinitionList from '../../components/DefinitionList';
@@ -17,6 +16,7 @@ import Table from '../../components/Table';
 import {
   AppContainer, WidgetStyles, WidgetHeading, WidgetFooter,
 } from './style';
+
 
 type State = {
   year: number
@@ -26,21 +26,19 @@ type Props = {};
 
 const Widget = styled.div`${WidgetStyles}`;
 
-const BarChartMainQueryChildren = ({ loading, error, data }) => {
+const BarChartMainQueryChildren = ({ loading, error, data }): Node => {
   const nonNullData = data || {};
-  const dataWithAllPredictions = { predictions: [], ...nonNullData };
-  const { predictions } = dataWithAllPredictions;
+  const dataWithAllPredictions = { yearlyPredictions: {}, ...nonNullData };
+  const { yearlyPredictions } = dataWithAllPredictions;
 
   if (loading) return <BarChartLoading text="Loading predictions..." />;
   if (error) return <StatusBar text={error.message} error />;
-  if (predictions.length === 0) return <StatusBar text="No data found" empty />;
+  if (yearlyPredictions.length === 0) return <StatusBar text="No data found" empty />;
 
-  const dataObject = createDataObject(predictions);
-
-  return <BarChartMain data={dataObject} />;
+  return <BarChartMain data={yearlyPredictions.predictionsByRound} />;
 };
 
-const PredictionListQueryChildren = ({ loading, error, data }) => {
+const PredictionListQueryChildren = ({ loading, error, data }): Node => {
   const nonNullData = data || {};
   const dataWithAllPredictions = { predictions: [], ...nonNullData };
   const { predictions } = dataWithAllPredictions;
@@ -62,7 +60,7 @@ const PredictionListQueryChildren = ({ loading, error, data }) => {
 
 class App extends Component<Props, State> {
   state = {
-    year: 2018, // todo: add this data, according to current year, dynamic.
+    year: 2018,
   };
 
   PERFORMANCE_ITEMS = [
@@ -83,48 +81,43 @@ class App extends Component<Props, State> {
     },
   ];
 
-  // todo: add this data dynamic.
-  OPTIONS = [2014, 2015, 2016, 2017, 2018];
-
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
   };
 
   render() {
     const { year } = this.state;
+
+    const PredictionYearsQueryChildren = ({ loading, error, data }): Node => {
+      const nonNullData = data || {};
+      const dataWithAllPredictionYears = { predictionYears: [], ...nonNullData };
+      const { predictionYears } = dataWithAllPredictionYears;
+
+      if (loading) return <p>Loading predictions...</p>;
+      if (error) return <StatusBar text={error.message} error />;
+      return (
+        <Select
+          name="year"
+          value={year}
+          onChange={this.onChangeYear}
+          options={predictionYears}
+        />
+      );
+    };
+
+
     return (
       <AppContainer>
         <PageHeader />
         <Widget gridColumn="2 / -2">
           <WidgetHeading>Cumulative points per round</WidgetHeading>
-          <Query query={GET_PREDICTIONS_QUERY} variables={{ year }}>
+          <Query query={GET_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
             {BarChartMainQueryChildren}
           </Query>
           <WidgetFooter>
-            <Checkbox
-              label="Tipresias"
-              id="tipresias"
-              name="model"
-              value="tipresias"
-              onChange={() => {
-                console.log('onChange tipresias');
-              }}
-            />
-            <Checkbox
-              label="Benchmark estimator"
-              id="benchmark_estimator"
-              name="model"
-              value="benchmark_estimator"
-              onChange={() => {
-                console.log('onChange benchmark_estimator');
-              }}
-            />
-            <Select
-              name="year"
-              value={year}
-              onChange={this.onChangeYear}
-              options={this.OPTIONS}
-            />
+            <Query query={GET_PREDICTION_YEARS_QUERY}>
+              {PredictionYearsQueryChildren}
+            </Query>
           </WidgetFooter>
         </Widget>
 

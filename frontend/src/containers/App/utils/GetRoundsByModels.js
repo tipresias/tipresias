@@ -1,7 +1,7 @@
 // @flow
 import type {
   Game,
-} from '../types';
+} from '../../../types';
 
 const getRoundsByModels = (data: Array<Game>): Array<Object> => {
   const rounds = data.reduce((acc, currentItem) => {

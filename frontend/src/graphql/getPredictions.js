@@ -1,6 +1,7 @@
 import { gql } from 'apollo-boost';
 
-const GET_PREDICTIONS_QUERY = gql`
+// eslint-disable-next-line import/prefer-default-export
+export const GET_PREDICTIONS_QUERY = gql`
   query Predictions($year: Int){
     predictions(year: $year) {
       id
@@ -27,4 +28,3 @@ const GET_PREDICTIONS_QUERY = gql`
     }
   }
 `;
-export default GET_PREDICTIONS_QUERY;

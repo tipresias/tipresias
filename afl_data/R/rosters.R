@@ -137,7 +137,7 @@ fetch_rosters <- function(round_number) {
 
 
   collect_team_rosters <- function(html_page) {
-    match_elements <- rvest::html_nodes(html_page, "#tteamlist .lineup-detail")
+    match_elements <- rvest::html_nodes(html_page, "#tteamlist .lineup-detail:not(.byes)")
     roster_elements <- rvest::html_nodes(html_page, "#tteamlist .list-inouts")
     match_indices <- 1:length(match_elements)
 

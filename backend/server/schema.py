@@ -2,7 +2,7 @@
 # use it, so we need to silence the suggestions to make everything a staticmethod
 # pylint: disable=R0201
 
-from typing import List, Union, Dict
+from typing import List, cast
 from datetime import date
 
 import graphene
@@ -13,8 +13,14 @@ from mypy_extensions import TypedDict
 
 from server.models import Prediction, MLModel, TeamMatch, Match, Team
 
+
 ModelPrediction = TypedDict(
-    "ModelPrediction", {"model_name": str, "cumulative_correct_count": int}
+    "ModelPrediction", {"ml_model__name": str, "cumulative_correct": int}
+)
+
+RoundPrediction = TypedDict(
+    "RoundPrediction",
+    {"match__round_number": int, "model_predictions": List[ModelPrediction]},
 )
 
 
@@ -57,10 +63,10 @@ class ModelPredictionType(graphene.ObjectType):
     cumulative_correct_count = graphene.Int()
 
     def resolve_model_name(self, _info) -> str:
-        return self.get("model_name")
+        return self.get("ml_model__name")
 
     def resolve_cumulative_correct_count(self, _info) -> int:
-        return self.get("cumulative_correct_count")
+        return self.get("cumulative_correct")
 
 
 class RoundPredictionType(graphene.ObjectType):
@@ -78,10 +84,16 @@ class RoundPredictionType(graphene.ObjectType):
         return self.get("match__round_number")
 
     def resolve_model_predictions(self, _info) -> List[ModelPrediction]:
+        model_predictions_to_dict = lambda df: [
+            {df.index.names[0]: value, **df.loc[value, :].to_dict()}
+            for value in df.index
+        ]
+
+        prediction_dicts = self.get("model_predictions").pipe(model_predictions_to_dict)
+
         return [
-            {"model_name": model_name, "cumulative_correct_count": correct_count}
-            for model_name, correct_count in self.items()
-            if model_name != "match__round_number"
+            cast(ModelPrediction, model_prediction)
+            for model_prediction in prediction_dicts
         ]
 
 
@@ -98,13 +110,16 @@ class YearlyPredictionsType(graphene.ObjectType):
     def resolve_prediction_model_names(self, _info) -> List[str]:
         return self.distinct("ml_model__name").values_list("ml_model__name", flat=True)
 
-    def resolve_predictions_by_round(self, _info) -> List[Dict[str, Union[str, int]]]:
+    def resolve_predictions_by_round(self, _info) -> List[RoundPrediction]:
         query_set = (
             self.values("match__round_number", "ml_model__name")
             .order_by("match__round_number")
             .annotate(correct_count=Count("is_correct", filter=Q(is_correct=True)))
         )
 
+        # TODO: There's definitely a way to do these calculations via SQL, but chained
+        # GROUP BYs and calculations based on calculations is a bit much for me
+        # right now, so I'll come back and figure it out later
         calculate_cumulative_correct = (
             lambda df: df.groupby("ml_model__name")
             .expanding()
@@ -113,20 +128,17 @@ class YearlyPredictionsType(graphene.ObjectType):
             .rename("cumulative_correct_count")
         )
 
-        # TODO: There's definitely a way to do these calculations via SQL, but chained
-        # GROUP BYs and calculations based on calculations is a bit much for me
-        # right now, so I'll come back and figure it out later
+        round_predictions = lambda df: [
+            {df.index.names[0]: value, "model_predictions": df.xs(value, level=0)}
+            for value in df.index.levels[0]
+        ]
+
         return (
             pd.DataFrame(list(query_set))
             .assign(cumulative_correct=calculate_cumulative_correct)
-            .pivot(
-                columns="ml_model__name",
-                values="cumulative_correct",
-                index="match__round_number",
-            )
-            .reset_index()
-            .fillna(0)
-            .to_dict("records")
+            .groupby(["match__round_number", "ml_model__name"])
+            .mean()
+            .pipe(round_predictions)
         )
 
 

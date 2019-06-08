@@ -10,12 +10,8 @@ from mypy_extensions import TypedDict
 from server.models import Prediction, MLModel, TeamMatch, Match, Team
 
 
-# MatchPrediction = TypedDict(
-#     "MatchPrediction", {"ml_model__name": str, "home_team": str}
-# )
-
 ModelPrediction = TypedDict(
-    "ModelPrediction", {"ml_model__name": str, "cumulative_correct": Optional[int]}
+    "ModelPrediction", {"ml_model__name": str, "cumulative_correct": int}
 )
 
 RoundPrediction = TypedDict(
@@ -60,29 +56,34 @@ class PredictionType(DjangoObjectType):
         model = Prediction
 
 
-class RoundModelPredictionType(graphene.ObjectType):
+class CumulativePredictionsByRoundType(graphene.ObjectType):
     """
     Cumulative stats for predictions made by the given model through the given round
     """
 
     model_name = graphene.String()
-    cumulative_correct_count = graphene.Int()
+    cumulative_correct_count = graphene.Int(
+        description=(
+            "Cumulative sum of correct tips made by the given model "
+            "for the given season"
+        )
+    )
 
     @staticmethod
     def resolve_model_name(root, _info) -> str:
         return root.get("ml_model__name")
 
     @staticmethod
-    def resolve_cumulative_correct_count(root, _info) -> Optional[int]:
-        return root.get("cumulative_correct", None)
+    def resolve_cumulative_correct_count(root, _info) -> int:
+        return root.get("cumulative_correct", 0)
 
 
-class RoundPredictionType(graphene.ObjectType):
-    """Predictions for the year grouped by round"""
+class RoundType(graphene.ObjectType):
+    """Match and prediction data for a given season grouped by round"""
 
     round_number = graphene.Int()
     model_predictions = graphene.List(
-        RoundModelPredictionType,
+        CumulativePredictionsByRoundType,
         description=(
             "Cumulative stats for predictions made by the given model "
             "through the given round"
@@ -114,22 +115,21 @@ class RoundPredictionType(graphene.ObjectType):
         root.get("matches")
 
 
-class YearlyPredictionsType(graphene.ObjectType):
-    """Model prediction stats per year"""
+class SeasonType(graphene.ObjectType):
+    """Match and prediction data grouped by season"""
 
     prediction_model_names = graphene.List(
         graphene.String, description="All model names available for the given year"
     )
     predictions_by_round = graphene.List(
-        RoundPredictionType, description=("Predictions for the year grouped by round")
+        RoundType, description="Match and prediction data grouped by round"
     )
 
     @staticmethod
     def resolve_prediction_model_names(root, _info) -> List[str]:
         return root.distinct("ml_model__name").values_list("ml_model__name", flat=True)
 
-
-        @staticmethod@staticmethod
+    @staticmethod
     def resolve_predictions_by_round(root, _info) -> List[RoundPrediction]:
         query_set = (
             root.values("match__round_number", "ml_model__name")
@@ -153,9 +153,9 @@ class YearlyPredictionsType(graphene.ObjectType):
                 df.index.names[0]: value,
                 "model_predictions": df.xs(value, level=0),
                 "matches": Match.objects.filter(
-                    id__in=query_set.filter(match__round_number=value)
-                    .distinct("match")
-                    .values_list("match", flat=True)
+                    id__in=query_set.filter(match__round_number=value).values_list(
+                        "match", flat=True
+                    )
                 ),
             }
             for value in df.index.levels[0]
@@ -171,11 +171,7 @@ class YearlyPredictionsType(graphene.ObjectType):
 
 
 class Query(graphene.ObjectType):
-    predictions = graphene.List(
-        PredictionType,
-        year=graphene.Int(default_value=None),
-        description="Basic prediction type based on Prediction data model",
-    )
+    predictions = graphene.List(PredictionType, year=graphene.Int(default_value=None))
 
     prediction_years = graphene.List(
         graphene.Int,
@@ -183,13 +179,11 @@ class Query(graphene.ObjectType):
     )
 
     yearly_predictions = graphene.Field(
-        YearlyPredictionsType,
-        year=graphene.Int(default_value=date.today().year),
-        description="Model prediction stats per year",
+        SeasonType, year=graphene.Int(default_value=date.today().year)
     )
 
     latest_round_predictions = graphene.Field(
-        RoundPredictionType,
+        RoundType,
         ml_model_name=graphene.String(default_value=TIPRESIAS),
         description=(
             "Match info and predictions for the latest round for which data "

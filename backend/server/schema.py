@@ -1,8 +1,4 @@
-# Due to GraphQL magic, all the resolver methods require `self`, but don't actually
-# use it, so we need to silence the suggestions to make everything a staticmethod
-# pylint: disable=R0201
-
-from typing import List, cast, Optional
+from typing import List, cast
 from datetime import date
 
 import graphene
@@ -72,11 +68,13 @@ class RoundModelPredictionType(graphene.ObjectType):
     model_name = graphene.String()
     cumulative_correct_count = graphene.Int()
 
-    def resolve_model_name(self, _info) -> str:
-        return self.get("ml_model__name")
+    @staticmethod
+    def resolve_model_name(root, _info) -> str:
+        return root.get("ml_model__name")
 
-    def resolve_cumulative_correct_count(self, _info) -> Optional[int]:
-        return self.get("cumulative_correct", None)
+    @staticmethod
+    def resolve_cumulative_correct_count(root, _info) -> Optional[int]:
+        return root.get("cumulative_correct", None)
 
 
 class RoundPredictionType(graphene.ObjectType):
@@ -93,24 +91,27 @@ class RoundPredictionType(graphene.ObjectType):
     )
     matches = graphene.List(MatchType, default_value=[])
 
-    def resolve_round_number(self, _info) -> int:
-        return self.get("match__round_number")
+    @staticmethod
+    def resolve_round_number(root, _info) -> int:
+        return root.get("match__round_number")
 
-    def resolve_model_predictions(self, _info) -> List[ModelPrediction]:
+    @staticmethod
+    def resolve_model_predictions(root, _info) -> List[ModelPrediction]:
         model_predictions_to_dict = lambda df: [
             {df.index.names[0]: value, **df.loc[value, :].to_dict()}
             for value in df.index
         ]
 
-        prediction_dicts = self.get("model_predictions").pipe(model_predictions_to_dict)
+        prediction_dicts = root.get("model_predictions").pipe(model_predictions_to_dict)
 
         return [
             cast(ModelPrediction, model_prediction)
             for model_prediction in prediction_dicts
         ]
 
-    def resolve_matches(self, _info) -> QuerySet:
-        self.get("matches")
+    @staticmethod
+    def resolve_matches(root, _info) -> QuerySet:
+        root.get("matches")
 
 
 class YearlyPredictionsType(graphene.ObjectType):
@@ -123,12 +124,15 @@ class YearlyPredictionsType(graphene.ObjectType):
         RoundPredictionType, description=("Predictions for the year grouped by round")
     )
 
-    def resolve_prediction_model_names(self, _info) -> List[str]:
-        return self.distinct("ml_model__name").values_list("ml_model__name", flat=True)
+    @staticmethod
+    def resolve_prediction_model_names(root, _info) -> List[str]:
+        return root.distinct("ml_model__name").values_list("ml_model__name", flat=True)
 
-    def resolve_predictions_by_round(self, _info) -> List[RoundPrediction]:
+
+        @staticmethod@staticmethod
+    def resolve_predictions_by_round(root, _info) -> List[RoundPrediction]:
         query_set = (
-            self.values("match__round_number", "ml_model__name")
+            root.values("match__round_number", "ml_model__name")
             .order_by("match__round_number")
             .annotate(correct_count=Count("is_correct", filter=Q(is_correct=True)))
         )
@@ -193,13 +197,15 @@ class Query(graphene.ObjectType):
         ),
     )
 
-    def resolve_predictions(self, _info, year=None) -> QuerySet:
+    @staticmethod
+    def resolve_predictions(root, _info, year=None) -> QuerySet:
         if year is None:
             return Prediction.objects.all()
 
         return Prediction.objects.filter(match__start_date_time__year=year)
 
-    def resolve_prediction_years(self, _info) -> List[int]:
+    @staticmethod
+    def resolve_prediction_years(root, _info) -> List[int]:
         return (
             Prediction.objects.select_related("match")
             .distinct("match__start_date_time__year")
@@ -207,12 +213,14 @@ class Query(graphene.ObjectType):
             .values_list("match__start_date_time__year", flat=True)
         )
 
-    def resolve_yearly_predictions(self, _info, year) -> QuerySet:
+    @staticmethod
+    def resolve_yearly_predictions(root, _info, year) -> QuerySet:
         return Prediction.objects.filter(
             match__start_date_time__year=year
         ).select_related("ml_model", "match")
 
-    def resolve_latest_round_predictions(self, _info, ml_model_name) -> RoundPrediction:
+    @staticmethod
+    def resolve_latest_round_predictions(root, _info, ml_model_name) -> RoundPrediction:
         year = date.today().year
         max_round_number = Match.objects.aggregate(Max("round_number")).get(
             "round_number__max"

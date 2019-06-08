@@ -154,7 +154,9 @@ class TestSchema(TestCase):
                     roundNumber
                     matches {
                         predictionSet { predictedWinner { name }, predictedMargin }
-                        teammatchSet { team { name } }
+                        winner { name }
+                        homeTeam { name }
+                        awayTeam { name }
                     }
                 }
             }

@@ -37,6 +37,16 @@ class MatchType(DjangoObjectType):
 
     winner = graphene.Field(TeamType)
     year = graphene.Int()
+    home_team = graphene.Field(TeamType)
+    away_team = graphene.Field(TeamType)
+
+    @staticmethod
+    def resolve_home_team(root, _info):
+        return root.teammatch_set.get(at_home=True).team
+
+    @staticmethod
+    def resolve_away_team(root, _info):
+        return root.teammatch_set.get(at_home=False).team
 
 
 class TeamMatchType(DjangoObjectType):

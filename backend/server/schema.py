@@ -2,26 +2,36 @@
 # use it, so we need to silence the suggestions to make everything a staticmethod
 # pylint: disable=R0201
 
-from typing import List, cast
+from typing import List, cast, Optional
 from datetime import date
 
 import graphene
 from graphene_django.types import DjangoObjectType
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Count, Q, QuerySet, Max
 import pandas as pd
 from mypy_extensions import TypedDict
 
 from server.models import Prediction, MLModel, TeamMatch, Match, Team
 
 
+# MatchPrediction = TypedDict(
+#     "MatchPrediction", {"ml_model__name": str, "home_team": str}
+# )
+
 ModelPrediction = TypedDict(
-    "ModelPrediction", {"ml_model__name": str, "cumulative_correct": int}
+    "ModelPrediction", {"ml_model__name": str, "cumulative_correct": Optional[int]}
 )
 
 RoundPrediction = TypedDict(
     "RoundPrediction",
-    {"match__round_number": int, "model_predictions": List[ModelPrediction]},
+    {
+        "match__round_number": int,
+        "model_predictions": List[ModelPrediction],
+        "matches": QuerySet,
+    },
 )
+
+TIPRESIAS = "tipresias"
 
 
 class TeamType(DjangoObjectType):
@@ -54,9 +64,9 @@ class PredictionType(DjangoObjectType):
         model = Prediction
 
 
-class ModelPredictionType(graphene.ObjectType):
+class RoundModelPredictionType(graphene.ObjectType):
     """
-    Stats for predictions made by the given model through the given round
+    Cumulative stats for predictions made by the given model through the given round
     """
 
     model_name = graphene.String()
@@ -65,8 +75,8 @@ class ModelPredictionType(graphene.ObjectType):
     def resolve_model_name(self, _info) -> str:
         return self.get("ml_model__name")
 
-    def resolve_cumulative_correct_count(self, _info) -> int:
-        return self.get("cumulative_correct")
+    def resolve_cumulative_correct_count(self, _info) -> Optional[int]:
+        return self.get("cumulative_correct", None)
 
 
 class RoundPredictionType(graphene.ObjectType):
@@ -74,11 +84,14 @@ class RoundPredictionType(graphene.ObjectType):
 
     round_number = graphene.Int()
     model_predictions = graphene.List(
-        ModelPredictionType,
+        RoundModelPredictionType,
         description=(
-            "Stats for predictions made by the given model through the given round"
+            "Cumulative stats for predictions made by the given model "
+            "through the given round"
         ),
+        default_value=pd.DataFrame(),
     )
+    matches = graphene.List(MatchType, default_value=[])
 
     def resolve_round_number(self, _info) -> int:
         return self.get("match__round_number")
@@ -95,6 +108,9 @@ class RoundPredictionType(graphene.ObjectType):
             cast(ModelPrediction, model_prediction)
             for model_prediction in prediction_dicts
         ]
+
+    def resolve_matches(self, _info) -> QuerySet:
+        self.get("matches")
 
 
 class YearlyPredictionsType(graphene.ObjectType):
@@ -129,7 +145,15 @@ class YearlyPredictionsType(graphene.ObjectType):
         )
 
         round_predictions = lambda df: [
-            {df.index.names[0]: value, "model_predictions": df.xs(value, level=0)}
+            {
+                df.index.names[0]: value,
+                "model_predictions": df.xs(value, level=0),
+                "matches": Match.objects.filter(
+                    id__in=query_set.filter(match__round_number=value)
+                    .distinct("match")
+                    .values_list("match", flat=True)
+                ),
+            }
             for value in df.index.levels[0]
         ]
 
@@ -160,6 +184,15 @@ class Query(graphene.ObjectType):
         description="Model prediction stats per year",
     )
 
+    latest_round_predictions = graphene.Field(
+        RoundPredictionType,
+        ml_model_name=graphene.String(default_value=TIPRESIAS),
+        description=(
+            "Match info and predictions for the latest round for which data "
+            "is available"
+        ),
+    )
+
     def resolve_predictions(self, _info, year=None) -> QuerySet:
         if year is None:
             return Prediction.objects.all()
@@ -178,6 +211,24 @@ class Query(graphene.ObjectType):
         return Prediction.objects.filter(
             match__start_date_time__year=year
         ).select_related("ml_model", "match")
+
+    def resolve_latest_round_predictions(self, _info, ml_model_name) -> RoundPrediction:
+        year = date.today().year
+        max_round_number = Match.objects.aggregate(Max("round_number")).get(
+            "round_number__max"
+        )
+
+        return {
+            "match__round_number": max_round_number,
+            "model_predictions": pd.DataFrame(),
+            "matches": Match.objects.filter(
+                start_date_time__year=year,
+                round_number=max_round_number,
+                prediction__ml_model__name=ml_model_name,
+            )
+            .select_related("prediction", "teammatch")
+            .order_by("start_date_time"),
+        }
 
 
 schema = graphene.Schema(query=Query)

@@ -133,6 +133,26 @@ class TestSchema(TestCase):
 
         self.assertLessEqual(sum(earlier_round_counts), sum(later_round_counts))
 
+    def test_latest_round_predictions(self):
+        executed = self.client.execute(
+            """
+            query QueryType {
+                latestRoundPredictions(mlModelName: "accurate_af") {
+                    roundNumber
+                    matches {
+                        predictionSet { predictedWinner { name }, predictedMargin }
+                        teammatchSet { team { name } }
+                    }
+                }
+            }
+            """
+        )
+
+        data = executed["data"]["latestRoundPredictions"]
+        max_match_round = max([match.round_number for match in self.matches])
+
+        self.assertEqual(data["roundNumber"], max_match_round)
+
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting
         # on results a little more complicated

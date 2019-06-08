@@ -11,7 +11,7 @@ from server.models import Prediction, MLModel, TeamMatch, Match, Team
 
 
 ModelPrediction = TypedDict(
-    "ModelPrediction", {"ml_model__name": str, "cumulative_correct": int}
+    "ModelPrediction", {"ml_model__name": str, "cumulative_correct_count": int}
 )
 
 RoundPrediction = TypedDict(
@@ -35,7 +35,7 @@ class MatchType(DjangoObjectType):
     class Meta:
         model = Match
 
-    winner = graphene.Field(TeamType, id=graphene.Int(), name=graphene.String())
+    winner = graphene.Field(TeamType)
     year = graphene.Int()
 
 
@@ -61,27 +61,20 @@ class CumulativePredictionsByRoundType(graphene.ObjectType):
     Cumulative stats for predictions made by the given model through the given round
     """
 
-    model_name = graphene.String()
+    ml_model__name = graphene.String(name="modelName")
     cumulative_correct_count = graphene.Int(
         description=(
             "Cumulative sum of correct tips made by the given model "
             "for the given season"
-        )
+        ),
+        default_value=0,
     )
-
-    @staticmethod
-    def resolve_model_name(root, _info) -> str:
-        return root.get("ml_model__name")
-
-    @staticmethod
-    def resolve_cumulative_correct_count(root, _info) -> int:
-        return root.get("cumulative_correct", 0)
 
 
 class RoundType(graphene.ObjectType):
     """Match and prediction data for a given season grouped by round"""
 
-    round_number = graphene.Int()
+    match__round_number = graphene.Int(name="roundNumber")
     model_predictions = graphene.List(
         CumulativePredictionsByRoundType,
         description=(
@@ -91,10 +84,6 @@ class RoundType(graphene.ObjectType):
         default_value=pd.DataFrame(),
     )
     matches = graphene.List(MatchType, default_value=[])
-
-    @staticmethod
-    def resolve_round_number(root, _info) -> int:
-        return root.get("match__round_number")
 
     @staticmethod
     def resolve_model_predictions(root, _info) -> List[ModelPrediction]:
@@ -109,10 +98,6 @@ class RoundType(graphene.ObjectType):
             cast(ModelPrediction, model_prediction)
             for model_prediction in prediction_dicts
         ]
-
-    @staticmethod
-    def resolve_matches(root, _info) -> QuerySet:
-        root.get("matches")
 
 
 class SeasonType(graphene.ObjectType):
@@ -192,14 +177,14 @@ class Query(graphene.ObjectType):
     )
 
     @staticmethod
-    def resolve_predictions(root, _info, year=None) -> QuerySet:
+    def resolve_predictions(_root, _info, year=None) -> QuerySet:
         if year is None:
             return Prediction.objects.all()
 
         return Prediction.objects.filter(match__start_date_time__year=year)
 
     @staticmethod
-    def resolve_prediction_years(root, _info) -> List[int]:
+    def resolve_prediction_years(_root, _info) -> List[int]:
         return (
             Prediction.objects.select_related("match")
             .distinct("match__start_date_time__year")
@@ -208,28 +193,38 @@ class Query(graphene.ObjectType):
         )
 
     @staticmethod
-    def resolve_yearly_predictions(root, _info, year) -> QuerySet:
+    def resolve_yearly_predictions(_root, _info, year) -> QuerySet:
         return Prediction.objects.filter(
             match__start_date_time__year=year
         ).select_related("ml_model", "match")
 
     @staticmethod
-    def resolve_latest_round_predictions(root, _info, ml_model_name) -> RoundPrediction:
-        year = date.today().year
-        max_round_number = Match.objects.aggregate(Max("round_number")).get(
-            "round_number__max"
+    def resolve_latest_round_predictions(
+        _root, _info, ml_model_name
+    ) -> RoundPrediction:
+        current_season = date.today().year
+        current_season_matches = Match.objects.filter(
+            start_date_time__year=current_season
+        )
+        max_round_number = (
+            current_season_matches.aggregate(Max("round_number")).get(
+                "round_number__max"
+            )
+            or 0
+        )
+
+        matches = (
+            current_season_matches.filter(
+                round_number=max_round_number, prediction__ml_model__name=ml_model_name
+            )
+            .prefetch_related("prediction_set", "teammatch_set")
+            .order_by("start_date_time")
         )
 
         return {
             "match__round_number": max_round_number,
             "model_predictions": pd.DataFrame(),
-            "matches": Match.objects.filter(
-                start_date_time__year=year,
-                round_number=max_round_number,
-                prediction__ml_model__name=ml_model_name,
-            )
-            .select_related("prediction", "teammatch")
-            .order_by("start_date_time"),
+            "matches": matches,
         }
 
 

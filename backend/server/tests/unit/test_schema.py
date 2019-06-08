@@ -1,9 +1,11 @@
+from datetime import date
+
 from django.test import TestCase
 from graphene.test import Client
 
 from server.schema import schema
 from server.tests.fixtures.factories import FullMatchFactory
-from server.models import Match
+from server.models import Match, MLModel
 from server.tests.fixtures.factories import MLModelFactory
 
 ROUND_COUNT = 2
@@ -90,7 +92,7 @@ class TestSchema(TestCase):
 
         self.assertEqual(expected_years, executed["data"]["predictionYears"])
 
-    def test_cumulative_predictions(self):
+    def test_yearly_predictions(self):
         ml_model_names = (
             Match.objects.filter(start_date_time__year=2015)
             .distinct("prediction__ml_model__name")
@@ -134,6 +136,17 @@ class TestSchema(TestCase):
         self.assertLessEqual(sum(earlier_round_counts), sum(later_round_counts))
 
     def test_latest_round_predictions(self):
+        ml_models = list(MLModel.objects.all())
+
+        latest_matches = [
+            FullMatchFactory(
+                year=date.today().year,
+                prediction__ml_model=ml_models[0],
+                prediction_two__ml_model=ml_models[1],
+            )
+            for _ in range(ROUND_COUNT)
+        ]
+
         executed = self.client.execute(
             """
             query QueryType {
@@ -149,7 +162,7 @@ class TestSchema(TestCase):
         )
 
         data = executed["data"]["latestRoundPredictions"]
-        max_match_round = max([match.round_number for match in self.matches])
+        max_match_round = max([match.round_number for match in latest_matches])
 
         self.assertEqual(data["roundNumber"], max_match_round)
 

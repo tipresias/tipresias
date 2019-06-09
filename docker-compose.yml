@@ -11,22 +11,13 @@ services:
     tty: true
     depends_on:
       - db
-      - afl_data
+      - data_science
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
       - GRAPHIQL=True
     command: python3 manage.py runserver 0.0.0.0:8000
-  afl_data:
-    build: ./afl_data
-    volumes:
-      - ./afl_data:/app/afl_data
-    ports:
-      - "8080:8080"
-    stdin_open: true
-    tty: true
-    command: Rscript app.R
   frontend:
     build: ./frontend
     volumes:
@@ -39,15 +30,39 @@ services:
     depends_on:
       - backend
     command: yarn start
-  notebook:
-    image: tipresias_backend:latest
+  data_science:
+    build: ./data_science
     volumes:
-      - ./backend:/app/backend
+      - ./data_science:/app
+      - ./data:/app/data
+    ports:
+      - "8008:8008"
+    stdin_open: true
+    tty: true
+    depends_on:
+      - db
+      - afl_data
+    env_file: .env
+    environment:
+      - PYTHON_ENV=development
+  afl_data:
+    build: ./afl_data
+    volumes:
+      - ./afl_data:/app/afl_data
+    ports:
+      - "8080:8080"
+    stdin_open: true
+    tty: true
+    command: Rscript app.R
+  notebook:
+    image: tipresias_data_science:latest
+    volumes:
+      - ./data_science:/app
       - ./data:/app/data
     ports:
       - "8888:8888"
     depends_on:
-      - backend
+      - data_science
     command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
   db:
     image: postgres

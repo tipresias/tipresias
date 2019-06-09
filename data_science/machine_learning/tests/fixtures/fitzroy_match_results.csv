@@ -1,0 +1,414 @@
+game,date,round,home_team,home_goals,home_behinds,home_points,away_team,away_goals,away_behinds,away_points,venue,margin,season,round_type,round_number
+14581.0,2015-04-02 00:00:00+11:00,R1,Carlton,11,12,78,Richmond,15,15,105,M.C.G.,-27,2015.0,Regular,1
+14582.0,2015-04-04 00:00:00+11:00,R1,Melbourne,17,13,115,Gold Coast,13,11,89,M.C.G.,26,2015.0,Regular,1
+14583.0,2015-04-04 00:00:00+11:00,R1,Sydney,10,12,72,Essendon,9,6,60,Stadium Australia,12,2015.0,Regular,1
+14584.0,2015-04-04 00:00:00+11:00,R1,Brisbane,11,8,74,Collingwood,12,14,86,Gabba,-12,2015.0,Regular,1
+14585.0,2015-04-04 00:00:00+11:00,R1,Western Bulldogs,14,13,97,West Coast,14,3,87,Docklands,10,2015.0,Regular,1
+14586.0,2015-04-05 00:00:00+11:00,R1,St Kilda,11,12,78,GWS,12,15,87,Docklands,-9,2015.0,Regular,1
+14587.0,2015-04-05 00:00:00+11:00,R1,Adelaide,21,14,140,North Melbourne,9,9,63,Adelaide Oval,77,2015.0,Regular,1
+14588.0,2015-04-05 00:00:00+11:00,R1,Fremantle,11,9,75,Port Adelaide,10,8,68,Subiaco,7,2015.0,Regular,1
+14589.0,2015-04-06 00:00:00+11:00,R1,Hawthorn,17,21,123,Geelong,8,13,61,M.C.G.,62,2015.0,Regular,1
+14590.0,2015-04-10 00:00:00+11:00,R2,West Coast,20,11,131,Carlton,9,8,62,Subiaco,69,2015.0,Regular,2
+14591.0,2015-04-11 00:00:00+11:00,R2,Richmond,9,12,66,Western Bulldogs,12,13,85,M.C.G.,-19,2015.0,Regular,2
+14592.0,2015-04-11 00:00:00+11:00,R2,GWS,15,11,101,Melbourne,8,8,56,Manuka Oval,45,2015.0,Regular,2
+14593.0,2015-04-11 00:00:00+11:00,R2,Collingwood,9,9,63,Adelaide,12,18,90,Docklands,-27,2015.0,Regular,2
+14594.0,2015-04-11 00:00:00+11:00,R2,Gold Coast,10,16,76,St Kilda,16,8,104,Carrara,-28,2015.0,Regular,2
+14595.0,2015-04-11 00:00:00+11:00,R2,Port Adelaide,6,8,44,Sydney,14,8,92,Adelaide Oval,-48,2015.0,Regular,2
+14596.0,2015-04-12 00:00:00+11:00,R2,Geelong,9,6,60,Fremantle,15,14,104,Kardinia Park,-44,2015.0,Regular,2
+14597.0,2015-04-12 00:00:00+11:00,R2,Essendon,12,6,78,Hawthorn,11,10,76,M.C.G.,2,2015.0,Regular,2
+14598.0,2015-04-12 00:00:00+11:00,R2,North Melbourne,20,13,133,Brisbane,7,9,51,Docklands,82,2015.0,Regular,2
+14599.0,2015-04-17 00:00:00+11:00,R3,Collingwood,21,14,140,St Kilda,10,6,66,M.C.G.,74,2015.0,Regular,3
+14600.0,2015-04-18 00:00:00+11:00,R3,Carlton,11,18,84,Essendon,16,9,105,M.C.G.,-21,2015.0,Regular,3
+14601.0,2015-04-18 00:00:00+11:00,R3,Adelaide,12,8,80,Melbourne,7,13,55,Adelaide Oval,25,2015.0,Regular,3
+14602.0,2015-04-18 00:00:00+11:00,R3,Sydney,16,15,111,GWS,12,18,90,S.C.G.,21,2015.0,Regular,3
+14603.0,2015-04-18 00:00:00+11:00,R3,North Melbourne,16,9,105,Port Adelaide,17,11,113,Docklands,-8,2015.0,Regular,3
+14604.0,2015-04-18 00:00:00+11:00,R3,Brisbane,8,10,58,Richmond,21,11,137,Gabba,-79,2015.0,Regular,3
+14605.0,2015-04-19 00:00:00+11:00,R3,Hawthorn,19,13,127,Western Bulldogs,8,9,57,York Park,70,2015.0,Regular,3
+14606.0,2015-04-19 00:00:00+11:00,R3,Geelong,16,9,105,Gold Coast,13,18,96,Kardinia Park,9,2015.0,Regular,3
+14607.0,2015-04-19 00:00:00+11:00,R3,West Coast,12,9,81,Fremantle,17,9,111,Subiaco,-30,2015.0,Regular,3
+14608.0,2015-04-24 00:00:00+11:00,R4,Richmond,6,15,51,Melbourne,12,11,83,M.C.G.,-32,2015.0,Regular,4
+14609.0,2015-04-25 00:00:00+11:00,R4,St Kilda,12,9,81,Carlton,18,13,121,Wellington,-40,2015.0,Regular,4
+14610.0,2015-04-25 00:00:00+11:00,R4,Essendon,6,13,49,Collingwood,9,15,69,M.C.G.,-20,2015.0,Regular,4
+14611.0,2015-04-25 00:00:00+11:00,R4,GWS,16,23,119,Gold Coast,7,11,53,Manuka Oval,66,2015.0,Regular,4
+14612.0,2015-04-25 00:00:00+11:00,R4,Port Adelaide,15,9,99,Hawthorn,13,13,91,Adelaide Oval,8,2015.0,Regular,4
+14613.0,2015-04-25 00:00:00+11:00,R4,Fremantle,11,8,74,Sydney,8,12,60,Subiaco,14,2015.0,Regular,4
+14614.0,2015-04-26 00:00:00+11:00,R4,Brisbane,9,11,65,West Coast,17,16,118,Gabba,-53,2015.0,Regular,4
+14615.0,2015-04-26 00:00:00+11:00,R4,Geelong,9,13,67,North Melbourne,12,11,83,Kardinia Park,-16,2015.0,Regular,4
+14616.0,2015-04-26 00:00:00+11:00,R4,Western Bulldogs,18,17,125,Adelaide,10,8,68,Docklands,57,2015.0,Regular,4
+14617.0,2015-05-01 00:00:00+11:00,R5,Carlton,6,9,45,Collingwood,18,12,120,M.C.G.,-75,2015.0,Regular,5
+14618.0,2015-05-02 00:00:00+11:00,R5,Richmond,11,10,76,Geelong,12,13,85,M.C.G.,-9,2015.0,Regular,5
+14619.0,2015-05-02 00:00:00+11:00,R5,Sydney,10,13,73,Western Bulldogs,11,11,77,S.C.G.,-4,2015.0,Regular,5
+14620.0,2015-05-02 00:00:00+11:00,R5,Gold Coast,18,10,118,Brisbane,7,12,54,Carrara,64,2015.0,Regular,5
+14621.0,2015-05-02 00:00:00+11:00,R5,North Melbourne,10,10,70,Hawthorn,19,16,130,Docklands,-60,2015.0,Regular,5
+14622.0,2015-05-02 00:00:00+11:00,R5,West Coast,18,12,120,GWS,4,9,33,Subiaco,87,2015.0,Regular,5
+14623.0,2015-05-03 00:00:00+11:00,R5,Melbourne,6,14,50,Fremantle,18,10,118,M.C.G.,-68,2015.0,Regular,5
+14624.0,2015-05-03 00:00:00+11:00,R5,St Kilda,11,14,80,Essendon,11,16,82,Docklands,-2,2015.0,Regular,5
+14625.0,2015-05-03 00:00:00+11:00,R5,Adelaide,13,13,91,Port Adelaide,18,7,115,Adelaide Oval,-24,2015.0,Regular,5
+14626.0,2015-05-08 00:00:00+11:00,R6,Collingwood,8,11,59,Geelong,15,10,100,M.C.G.,-41,2015.0,Regular,6
+14627.0,2015-05-09 00:00:00+11:00,R6,North Melbourne,16,13,109,Richmond,10,14,74,Bellerive Oval,35,2015.0,Regular,6
+14628.0,2015-05-09 00:00:00+11:00,R6,Western Bulldogs,13,9,87,St Kilda,14,10,94,Docklands,-7,2015.0,Regular,6
+14629.0,2015-05-09 00:00:00+11:00,R6,GWS,16,12,108,Hawthorn,14,14,98,Sydney Showground,10,2015.0,Regular,6
+14630.0,2015-05-09 00:00:00+11:00,R6,Gold Coast,11,12,78,Adelaide,18,11,119,Carrara,-41,2015.0,Regular,6
+14631.0,2015-05-09 00:00:00+11:00,R6,Melbourne,7,8,50,Sydney,12,16,88,M.C.G.,-38,2015.0,Regular,6
+14632.0,2015-05-09 00:00:00+11:00,R6,Fremantle,12,8,80,Essendon,7,10,52,Subiaco,28,2015.0,Regular,6
+14633.0,2015-05-10 00:00:00+11:00,R6,Carlton,11,9,75,Brisbane,12,12,84,Docklands,-9,2015.0,Regular,6
+14634.0,2015-05-10 00:00:00+11:00,R6,Port Adelaide,10,8,68,West Coast,11,12,78,Adelaide Oval,-10,2015.0,Regular,6
+14635.0,2015-05-15 00:00:00+11:00,R7,Essendon,12,10,82,North Melbourne,13,15,93,Docklands,-11,2015.0,Regular,7
+14636.0,2015-05-16 00:00:00+11:00,R7,Adelaide,18,11,119,St Kilda,10,13,73,Adelaide Oval,46,2015.0,Regular,7
+14637.0,2015-05-16 00:00:00+11:00,R7,Hawthorn,24,11,155,Melbourne,7,8,50,M.C.G.,105,2015.0,Regular,7
+14638.0,2015-05-16 00:00:00+11:00,R7,Carlton,9,3,57,GWS,19,21,135,Docklands,-78,2015.0,Regular,7
+14639.0,2015-05-16 00:00:00+11:00,R7,Sydney,18,12,120,Geelong,11,11,77,Stadium Australia,43,2015.0,Regular,7
+14640.0,2015-05-16 00:00:00+11:00,R7,West Coast,21,9,135,Gold Coast,6,7,43,Subiaco,92,2015.0,Regular,7
+14641.0,2015-05-17 00:00:00+11:00,R7,Western Bulldogs,14,4,88,Fremantle,15,11,101,Docklands,-13,2015.0,Regular,7
+14642.0,2015-05-17 00:00:00+11:00,R7,Richmond,16,9,105,Collingwood,15,10,100,M.C.G.,5,2015.0,Regular,7
+14643.0,2015-05-17 00:00:00+11:00,R7,Brisbane,15,12,102,Port Adelaide,8,17,65,Gabba,37,2015.0,Regular,7
+14644.0,2015-05-22 00:00:00+11:00,R8,Geelong,22,8,140,Carlton,9,9,63,Docklands,77,2015.0,Regular,8
+14645.0,2015-05-23 00:00:00+11:00,R8,St Kilda,12,6,78,West Coast,20,11,131,Docklands,-53,2015.0,Regular,8
+14646.0,2015-05-23 00:00:00+11:00,R8,GWS,16,12,108,Adelaide,12,12,84,Sydney Showground,24,2015.0,Regular,8
+14647.0,2015-05-23 00:00:00+11:00,R8,Gold Coast,9,9,63,Collingwood,20,12,132,Carrara,-69,2015.0,Regular,8
+14648.0,2015-05-23 00:00:00+11:00,R8,Hawthorn,9,15,69,Sydney,11,7,73,M.C.G.,-4,2015.0,Regular,8
+14649.0,2015-05-23 00:00:00+11:00,R8,Fremantle,17,13,115,North Melbourne,5,12,42,Subiaco,73,2015.0,Regular,8
+14650.0,2015-05-24 00:00:00+11:00,R8,Essendon,21,10,136,Brisbane,12,6,78,Docklands,58,2015.0,Regular,8
+14651.0,2015-05-24 00:00:00+11:00,R8,Melbourne,15,13,103,Western Bulldogs,9,10,64,M.C.G.,39,2015.0,Regular,8
+14652.0,2015-05-24 00:00:00+11:00,R8,Port Adelaide,5,13,43,Richmond,11,10,76,Adelaide Oval,-33,2015.0,Regular,8
+14653.0,2015-05-29 00:00:00+11:00,R9,Sydney,19,8,122,Carlton,9,8,62,S.C.G.,60,2015.0,Regular,9
+14654.0,2015-05-30 00:00:00+11:00,R9,Hawthorn,14,9,93,Gold Coast,6,4,40,York Park,53,2015.0,Regular,9
+14655.0,2015-05-30 00:00:00+11:00,R9,Melbourne,8,6,54,Port Adelaide,18,7,115,Traeger Park,-61,2015.0,Regular,9
+14656.0,2015-05-30 00:00:00+11:00,R9,Western Bulldogs,16,17,113,GWS,11,2,68,Docklands,45,2015.0,Regular,9
+14657.0,2015-05-30 00:00:00+11:00,R9,Richmond,10,12,72,Essendon,8,11,59,M.C.G.,13,2015.0,Regular,9
+14658.0,2015-05-30 00:00:00+11:00,R9,Adelaide,7,15,57,Fremantle,10,8,68,Adelaide Oval,-11,2015.0,Regular,9
+14659.0,2015-05-31 00:00:00+11:00,R9,Brisbane,13,8,86,St Kilda,16,12,108,Gabba,-22,2015.0,Regular,9
+14660.0,2015-05-31 00:00:00+11:00,R9,Collingwood,17,10,112,North Melbourne,14,11,95,M.C.G.,17,2015.0,Regular,9
+14661.0,2015-05-31 00:00:00+11:00,R9,West Coast,16,24,120,Geelong,10,4,64,Subiaco,56,2015.0,Regular,9
+14662.0,2015-06-05 00:00:00+11:00,R10,Fremantle,10,10,70,Richmond,15,7,97,Subiaco,-27,2015.0,Regular,10
+14663.0,2015-06-06 00:00:00+11:00,R10,Carlton,14,6,90,Adelaide,14,15,99,M.C.G.,-9,2015.0,Regular,10
+14664.0,2015-06-06 00:00:00+11:00,R10,Gold Coast,5,11,41,Sydney,13,15,93,Carrara,-52,2015.0,Regular,10
+14665.0,2015-06-06 00:00:00+11:00,R10,Essendon,7,11,53,Geelong,19,8,122,Docklands,-69,2015.0,Regular,10
+14666.0,2015-06-06 00:00:00+11:00,R10,Port Adelaide,16,4,100,Western Bulldogs,9,8,62,Adelaide Oval,38,2015.0,Regular,10
+14667.0,2015-06-07 00:00:00+11:00,R10,GWS,14,13,97,Brisbane,10,7,67,Sydney Showground,30,2015.0,Regular,10
+14668.0,2015-06-07 00:00:00+11:00,R10,North Melbourne,13,7,85,West Coast,10,15,75,Bellerive Oval,10,2015.0,Regular,10
+14669.0,2015-06-07 00:00:00+11:00,R10,St Kilda,10,9,69,Hawthorn,20,12,132,Docklands,-63,2015.0,Regular,10
+14670.0,2015-06-08 00:00:00+11:00,R10,Melbourne,13,7,85,Collingwood,17,8,110,M.C.G.,-25,2015.0,Regular,10
+14671.0,2015-06-12 00:00:00+11:00,R11,Port Adelaide,11,3,69,Geelong,14,8,92,Adelaide Oval,-23,2015.0,Regular,11
+14672.0,2015-06-13 00:00:00+11:00,R11,Gold Coast,7,4,46,Fremantle,6,17,53,Carrara,-7,2015.0,Regular,11
+14673.0,2015-06-13 00:00:00+11:00,R11,West Coast,14,12,96,Essendon,6,10,46,Subiaco,50,2015.0,Regular,11
+14674.0,2015-06-13 00:00:00+11:00,R11,North Melbourne,10,15,75,Sydney,14,7,91,Docklands,-16,2015.0,Regular,11
+14675.0,2015-06-14 00:00:00+11:00,R11,Collingwood,18,11,119,GWS,11,11,77,M.C.G.,42,2015.0,Regular,11
+14676.0,2015-06-14 00:00:00+11:00,R11,St Kilda,12,13,85,Melbourne,12,11,83,Docklands,2,2015.0,Regular,11
+14677.0,2015-06-18 00:00:00+11:00,R12,Adelaide,12,13,85,Hawthorn,17,12,114,Adelaide Oval,-29,2015.0,Regular,12
+14678.0,2015-06-19 00:00:00+11:00,R12,Richmond,10,10,70,West Coast,13,12,90,M.C.G.,-20,2015.0,Regular,12
+14679.0,2015-06-20 00:00:00+11:00,R12,Carlton,17,8,110,Port Adelaide,16,10,106,M.C.G.,4,2015.0,Regular,12
+14680.0,2015-06-20 00:00:00+11:00,R12,GWS,8,13,61,North Melbourne,18,9,117,Sydney Showground,-56,2015.0,Regular,12
+14681.0,2015-06-20 00:00:00+11:00,R12,Western Bulldogs,22,14,146,Brisbane,11,8,74,Docklands,72,2015.0,Regular,12
+14682.0,2015-06-21 00:00:00+11:00,R12,Geelong,13,11,89,Melbourne,18,5,113,Kardinia Park,-24,2015.0,Regular,12
+14683.0,2015-06-25 00:00:00+11:00,R13,Fremantle,12,8,80,Collingwood,11,7,73,Subiaco,7,2015.0,Regular,13
+14684.0,2015-06-26 00:00:00+11:00,R13,Sydney,11,11,77,Richmond,14,11,95,S.C.G.,-18,2015.0,Regular,13
+14685.0,2015-06-27 00:00:00+11:00,R13,Hawthorn,16,18,114,Essendon,11,10,76,M.C.G.,38,2015.0,Regular,13
+14686.0,2015-06-27 00:00:00+11:00,R13,Brisbane,10,9,69,Adelaide,11,16,82,Gabba,-13,2015.0,Regular,13
+14687.0,2015-06-27 00:00:00+11:00,R13,St Kilda,7,14,56,Western Bulldogs,9,8,62,Docklands,-6,2015.0,Regular,13
+14688.0,2015-06-28 00:00:00+11:00,R13,Carlton,14,19,103,Gold Coast,9,15,69,Docklands,34,2015.0,Regular,13
+14689.0,2015-07-02 00:00:00+11:00,R14,Sydney,14,10,94,Port Adelaide,12,12,84,S.C.G.,10,2015.0,Regular,14
+14690.0,2015-07-03 00:00:00+11:00,R14,Collingwood,12,19,91,Hawthorn,15,11,101,M.C.G.,-10,2015.0,Regular,14
+14691.0,2015-07-04 00:00:00+11:00,R14,Richmond,10,18,78,GWS,10,9,69,M.C.G.,9,2015.0,Regular,14
+14692.0,2015-07-04 00:00:00+11:00,R14,Gold Coast,19,11,125,North Melbourne,10,10,70,Carrara,55,2015.0,Regular,14
+14693.0,2015-07-04 00:00:00+11:00,R14,Western Bulldogs,9,10,64,Carlton,7,11,53,Docklands,11,2015.0,Regular,14
+14694.0,2015-07-04 00:00:00+11:00,R14,Melbourne,9,6,60,West Coast,16,18,114,Marrara Oval,-54,2015.0,Regular,14
+14695.0,2015-07-05 00:00:00+11:00,R14,Essendon,8,4,52,St Kilda,25,12,162,Docklands,-110,2015.0,Regular,14
+14696.0,2015-07-05 00:00:00+11:00,R14,Fremantle,13,6,84,Brisbane,7,6,48,Subiaco,36,2015.0,Regular,14
+14697.0,2015-07-09 00:00:00+11:00,R15,Port Adelaide,9,12,66,Collingwood,9,9,63,Adelaide Oval,3,2015.0,Regular,15
+14698.0,2015-07-10 00:00:00+11:00,R15,Richmond,10,11,71,Carlton,5,11,41,M.C.G.,30,2015.0,Regular,15
+14699.0,2015-07-11 00:00:00+11:00,R15,Essendon,10,9,69,Melbourne,7,18,60,M.C.G.,9,2015.0,Regular,15
+14700.0,2015-07-11 00:00:00+11:00,R15,Western Bulldogs,14,11,95,Gold Coast,11,7,73,Cazaly's Stadium,22,2015.0,Regular,15
+14701.0,2015-07-11 00:00:00+11:00,R15,North Melbourne,18,12,120,Geelong,11,13,79,Docklands,41,2015.0,Regular,15
+14702.0,2015-07-11 00:00:00+11:00,R15,West Coast,22,15,147,Adelaide,14,7,91,Subiaco,56,2015.0,Regular,15
+14703.0,2015-07-12 00:00:00+11:00,R15,GWS,12,12,84,St Kilda,6,13,49,Sydney Showground,35,2015.0,Regular,15
+14704.0,2015-07-12 00:00:00+11:00,R15,Hawthorn,17,13,115,Fremantle,6,7,43,York Park,72,2015.0,Regular,15
+14705.0,2015-07-12 00:00:00+11:00,R15,Brisbane,7,7,49,Sydney,10,10,70,Gabba,-21,2015.0,Regular,15
+14706.0,2015-07-17 00:00:00+11:00,R16,North Melbourne,14,9,93,Essendon,9,14,68,Docklands,25,2015.0,Regular,16
+14707.0,2015-07-18 00:00:00+11:00,R16,Geelong,10,12,72,Western Bulldogs,9,10,64,Kardinia Park,8,2015.0,Regular,16
+14708.0,2015-07-18 00:00:00+11:00,R16,Gold Coast,12,7,79,GWS,13,16,94,Carrara,-15,2015.0,Regular,16
+14709.0,2015-07-18 00:00:00+11:00,R16,Collingwood,7,14,56,West Coast,11,21,87,Docklands,-31,2015.0,Regular,16
+14710.0,2015-07-18 00:00:00+11:00,R16,Sydney,7,15,57,Hawthorn,23,8,146,Stadium Australia,-89,2015.0,Regular,16
+14711.0,2015-07-18 00:00:00+11:00,R16,Fremantle,13,17,95,Carlton,8,5,53,Subiaco,42,2015.0,Regular,16
+14712.0,2015-07-19 00:00:00+11:00,R16,Melbourne,8,12,60,Brisbane,4,12,36,M.C.G.,24,2015.0,Regular,16
+14713.0,2015-07-19 00:00:00+11:00,R16,Port Adelaide,17,11,113,Adelaide,18,8,116,Adelaide Oval,-3,2015.0,Regular,16
+14714.0,2015-07-19 00:00:00+11:00,R16,St Kilda,10,13,73,Richmond,13,11,89,Docklands,-16,2015.0,Regular,16
+14715.0,2015-07-24 00:00:00+11:00,R17,Carlton,4,11,35,Hawthorn,27,11,173,Docklands,-138,2015.0,Regular,17
+14716.0,2015-07-25 00:00:00+11:00,R17,GWS,6,6,42,Geelong,9,15,69,Manuka Oval,-27,2015.0,Regular,17
+14717.0,2015-07-25 00:00:00+11:00,R17,Adelaide,19,11,125,Gold Coast,12,8,80,Adelaide Oval,45,2015.0,Regular,17
+14718.0,2015-07-25 00:00:00+11:00,R17,Richmond,10,18,78,Fremantle,12,10,82,M.C.G.,-4,2015.0,Regular,17
+14719.0,2015-07-25 00:00:00+11:00,R17,Essendon,17,14,116,Port Adelaide,20,9,129,Docklands,-13,2015.0,Regular,17
+14720.0,2015-07-25 00:00:00+11:00,R17,Brisbane,5,8,38,North Melbourne,16,14,110,Gabba,-72,2015.0,Regular,17
+14721.0,2015-07-26 00:00:00+11:00,R17,Western Bulldogs,15,14,104,Collingwood,13,8,86,Docklands,18,2015.0,Regular,17
+14722.0,2015-07-26 00:00:00+11:00,R17,Melbourne,6,10,46,St Kilda,12,11,83,M.C.G.,-37,2015.0,Regular,17
+14723.0,2015-07-26 00:00:00+11:00,R17,West Coast,15,13,103,Sydney,7,9,51,Subiaco,52,2015.0,Regular,17
+14724.0,2015-07-31 00:00:00+11:00,R18,Hawthorn,7,11,53,Richmond,10,11,71,M.C.G.,-18,2015.0,Regular,18
+14725.0,2015-08-01 00:00:00+11:00,R18,Geelong,17,11,113,Brisbane,8,9,57,Kardinia Park,56,2015.0,Regular,18
+14726.0,2015-08-01 00:00:00+11:00,R18,Collingwood,7,12,54,Melbourne,13,13,91,M.C.G.,-37,2015.0,Regular,18
+14727.0,2015-08-01 00:00:00+11:00,R18,Sydney,17,15,117,Adelaide,9,11,65,S.C.G.,52,2015.0,Regular,18
+14728.0,2015-08-01 00:00:00+11:00,R18,Carlton,8,6,54,North Melbourne,18,10,118,Docklands,-64,2015.0,Regular,18
+14729.0,2015-08-01 00:00:00+11:00,R18,Gold Coast,12,11,83,West Coast,11,17,83,Carrara,0,2015.0,Regular,18
+14730.0,2015-08-02 00:00:00+11:00,R18,Port Adelaide,17,10,112,St Kilda,6,13,49,Adelaide Oval,63,2015.0,Regular,18
+14731.0,2015-08-02 00:00:00+11:00,R18,Essendon,5,10,40,Western Bulldogs,19,13,127,Docklands,-87,2015.0,Regular,18
+14732.0,2015-08-02 00:00:00+11:00,R18,Fremantle,12,12,84,GWS,9,9,63,Subiaco,21,2015.0,Regular,18
+14733.0,2015-08-07 00:00:00+11:00,R19,Adelaide,11,22,88,Richmond,8,4,52,Adelaide Oval,36,2015.0,Regular,19
+14734.0,2015-08-08 00:00:00+11:00,R19,Collingwood,16,9,105,Carlton,13,9,87,M.C.G.,18,2015.0,Regular,19
+14735.0,2015-08-08 00:00:00+11:00,R19,Western Bulldogs,19,14,128,Port Adelaide,9,10,64,Docklands,64,2015.0,Regular,19
+14736.0,2015-08-08 00:00:00+11:00,R19,Brisbane,14,16,100,Gold Coast,17,12,114,Gabba,-14,2015.0,Regular,19
+14737.0,2015-08-08 00:00:00+11:00,R19,Geelong,14,11,95,Sydney,9,9,63,Kardinia Park,32,2015.0,Regular,19
+14738.0,2015-08-08 00:00:00+11:00,R19,West Coast,11,8,74,Hawthorn,13,10,88,Subiaco,-14,2015.0,Regular,19
+14739.0,2015-08-09 00:00:00+11:00,R19,Melbourne,14,8,92,North Melbourne,19,13,127,M.C.G.,-35,2015.0,Regular,19
+14740.0,2015-08-09 00:00:00+11:00,R19,GWS,14,9,93,Essendon,8,13,61,Sydney Showground,32,2015.0,Regular,19
+14741.0,2015-08-09 00:00:00+11:00,R19,St Kilda,8,11,59,Fremantle,15,6,96,Docklands,-37,2015.0,Regular,19
+14742.0,2015-08-14 00:00:00+11:00,R20,Sydney,13,9,87,Collingwood,10,16,76,S.C.G.,11,2015.0,Regular,20
+14743.0,2015-08-15 00:00:00+11:00,R20,Essendon,8,11,59,Adelaide,27,9,171,Docklands,-112,2015.0,Regular,20
+14744.0,2015-08-15 00:00:00+11:00,R20,North Melbourne,18,12,120,St Kilda,11,17,83,Bellerive Oval,37,2015.0,Regular,20
+14745.0,2015-08-15 00:00:00+11:00,R20,Port Adelaide,16,15,111,GWS,13,12,90,Adelaide Oval,21,2015.0,Regular,20
+14746.0,2015-08-15 00:00:00+11:00,R20,Brisbane,20,11,131,Carlton,9,13,67,Gabba,64,2015.0,Regular,20
+14747.0,2015-08-15 00:00:00+11:00,R20,Geelong,12,13,85,Hawthorn,19,7,121,M.C.G.,-36,2015.0,Regular,20
+14748.0,2015-08-16 00:00:00+11:00,R20,Richmond,22,6,138,Gold Coast,8,7,55,M.C.G.,83,2015.0,Regular,20
+14749.0,2015-08-16 00:00:00+11:00,R20,Western Bulldogs,24,9,153,Melbourne,8,7,55,Docklands,98,2015.0,Regular,20
+14750.0,2015-08-16 00:00:00+11:00,R20,Fremantle,11,14,80,West Coast,15,14,104,Subiaco,-24,2015.0,Regular,20
+14751.0,2015-08-21 00:00:00+11:00,R21,Hawthorn,13,8,86,Port Adelaide,16,12,108,Docklands,-22,2015.0,Regular,21
+14752.0,2015-08-22 00:00:00+11:00,R21,Collingwood,7,14,56,Richmond,23,9,147,M.C.G.,-91,2015.0,Regular,21
+14753.0,2015-08-22 00:00:00+11:00,R21,GWS,6,8,44,Sydney,20,13,133,Sydney Showground,-89,2015.0,Regular,21
+14754.0,2015-08-22 00:00:00+11:00,R21,Gold Coast,14,13,97,Essendon,14,11,95,Carrara,2,2015.0,Regular,21
+14755.0,2015-08-22 00:00:00+11:00,R21,St Kilda,14,13,97,Geelong,15,7,97,Docklands,0,2015.0,Regular,21
+14756.0,2015-08-22 00:00:00+11:00,R21,Adelaide,20,11,131,Brisbane,6,8,44,Adelaide Oval,87,2015.0,Regular,21
+14757.0,2015-08-23 00:00:00+11:00,R21,North Melbourne,14,10,94,Fremantle,12,11,83,Docklands,11,2015.0,Regular,21
+14758.0,2015-08-23 00:00:00+11:00,R21,Carlton,12,6,78,Melbourne,7,13,55,M.C.G.,23,2015.0,Regular,21
+14759.0,2015-08-23 00:00:00+11:00,R21,West Coast,25,12,162,Western Bulldogs,13,7,85,Subiaco,77,2015.0,Regular,21
+14760.0,2015-08-28 00:00:00+11:00,R22,Geelong,9,8,62,Collingwood,17,8,110,M.C.G.,-48,2015.0,Regular,22
+14761.0,2015-08-29 00:00:00+11:00,R22,GWS,20,12,132,Carlton,7,9,51,Sydney Showground,81,2015.0,Regular,22
+14762.0,2015-08-29 00:00:00+11:00,R22,Hawthorn,21,8,134,Brisbane,9,8,62,York Park,72,2015.0,Regular,22
+14763.0,2015-08-29 00:00:00+11:00,R22,North Melbourne,10,13,73,Western Bulldogs,14,12,96,Docklands,-23,2015.0,Regular,22
+14764.0,2015-08-29 00:00:00+11:00,R22,Essendon,7,5,47,Richmond,10,14,74,M.C.G.,-27,2015.0,Regular,22
+14765.0,2015-08-29 00:00:00+11:00,R22,Gold Coast,7,9,51,Port Adelaide,12,16,88,Carrara,-37,2015.0,Regular,22
+14766.0,2015-08-30 00:00:00+11:00,R22,Adelaide,19,12,126,West Coast,10,9,69,Adelaide Oval,57,2015.0,Regular,22
+14767.0,2015-08-30 00:00:00+11:00,R22,St Kilda,4,14,38,Sydney,20,15,135,Docklands,-97,2015.0,Regular,22
+14768.0,2015-08-30 00:00:00+11:00,R22,Fremantle,17,6,108,Melbourne,8,6,54,Subiaco,54,2015.0,Regular,22
+14769.0,2015-09-04 00:00:00+11:00,R23,Richmond,16,12,108,North Melbourne,10,7,67,Docklands,41,2015.0,Regular,23
+14770.0,2015-09-05 00:00:00+11:00,R23,Geelong,17,17,119,Adelaide,11,14,80,Kardinia Park,39,2015.0,Regular,23
+14771.0,2015-09-05 00:00:00+11:00,R23,Brisbane,19,16,130,Western Bulldogs,19,8,122,Gabba,8,2015.0,Regular,23
+14772.0,2015-09-05 00:00:00+11:00,R23,Port Adelaide,18,14,122,Fremantle,8,5,53,Adelaide Oval,69,2015.0,Regular,23
+14773.0,2015-09-05 00:00:00+11:00,R23,Hawthorn,17,11,113,Carlton,8,8,56,M.C.G.,57,2015.0,Regular,23
+14774.0,2015-09-05 00:00:00+11:00,R23,Sydney,19,13,127,Gold Coast,9,10,64,S.C.G.,63,2015.0,Regular,23
+14775.0,2015-09-05 00:00:00+11:00,R23,West Coast,18,17,125,St Kilda,4,6,30,Subiaco,95,2015.0,Regular,23
+14776.0,2015-09-06 00:00:00+11:00,R23,Melbourne,15,13,103,GWS,11,11,77,Docklands,26,2015.0,Regular,23
+14777.0,2015-09-06 00:00:00+11:00,R23,Collingwood,14,8,92,Essendon,14,11,95,M.C.G.,-3,2015.0,Regular,23
+14778.0,2015-09-11 00:00:00+11:00,QF,West Coast,14,12,96,Hawthorn,9,10,64,Subiaco,32,2015.0,Finals,24
+14779.0,2015-09-12 00:00:00+11:00,QF,Fremantle,10,9,69,Sydney,7,18,60,Subiaco,9,2015.0,Finals,24
+14780.0,2015-09-12 00:00:00+11:00,EF,Adelaide,16,13,109,Western Bulldogs,14,18,102,M.C.G.,7,2015.0,Finals,24
+14781.0,2015-09-13 00:00:00+11:00,EF,North Melbourne,15,15,105,Richmond,14,4,88,M.C.G.,17,2015.0,Finals,24
+14782.0,2015-09-18 00:00:00+11:00,SF,Hawthorn,21,9,135,Adelaide,8,13,61,M.C.G.,74,2015.0,Finals,25
+14783.0,2015-09-19 00:00:00+11:00,SF,North Melbourne,11,11,77,Sydney,7,9,51,Stadium Australia,26,2015.0,Finals,25
+14784.0,2015-09-25 00:00:00+11:00,PF,Hawthorn,15,4,94,Fremantle,10,7,67,Subiaco,27,2015.0,Finals,26
+14785.0,2015-09-26 00:00:00+11:00,PF,West Coast,10,20,80,North Melbourne,7,13,55,Subiaco,25,2015.0,Finals,26
+14786.0,2015-10-03 00:00:00+11:00,GF,Hawthorn,16,11,107,West Coast,8,13,61,M.C.G.,46,2015.0,Finals,27
+14787.0,2016-03-24 00:00:00+11:00,R1,Richmond,14,8,92,Carlton,12,11,83,M.C.G.,9,2016.0,Regular,1
+14788.0,2016-03-26 00:00:00+11:00,R1,Melbourne,12,8,80,GWS,10,18,78,M.C.G.,2,2016.0,Regular,1
+14789.0,2016-03-26 00:00:00+11:00,R1,Gold Coast,17,19,121,Essendon,9,6,60,Carrara,61,2016.0,Regular,1
+14790.0,2016-03-26 00:00:00+11:00,R1,North Melbourne,16,11,107,Adelaide,14,13,97,Docklands,10,2016.0,Regular,1
+14791.0,2016-03-26 00:00:00+11:00,R1,Sydney,18,25,133,Collingwood,7,11,53,S.C.G.,80,2016.0,Regular,1
+14792.0,2016-03-27 00:00:00+11:00,R1,Western Bulldogs,15,13,103,Fremantle,5,8,38,Docklands,65,2016.0,Regular,1
+14793.0,2016-03-27 00:00:00+11:00,R1,Port Adelaide,20,13,133,St Kilda,15,10,100,Adelaide Oval,33,2016.0,Regular,1
+14794.0,2016-03-27 00:00:00+11:00,R1,West Coast,26,10,166,Brisbane,15,12,102,Subiaco,64,2016.0,Regular,1
+14795.0,2016-03-28 00:00:00+11:00,R1,Geelong,18,8,116,Hawthorn,12,14,86,M.C.G.,30,2016.0,Regular,1
+14796.0,2016-04-01 00:00:00+11:00,R2,Collingwood,13,9,87,Richmond,12,14,86,M.C.G.,1,2016.0,Regular,2
+14797.0,2016-04-02 00:00:00+11:00,R2,Adelaide,22,12,144,Port Adelaide,11,20,86,Adelaide Oval,58,2016.0,Regular,2
+14798.0,2016-04-02 00:00:00+11:00,R2,Essendon,11,14,80,Melbourne,10,7,67,M.C.G.,13,2016.0,Regular,2
+14799.0,2016-04-02 00:00:00+11:00,R2,Brisbane,11,17,83,North Melbourne,17,15,117,Gabba,-34,2016.0,Regular,2
+14800.0,2016-04-02 00:00:00+11:00,R2,St Kilda,5,6,36,Western Bulldogs,13,15,93,Docklands,-57,2016.0,Regular,2
+14801.0,2016-04-02 00:00:00+11:00,R2,Fremantle,14,16,100,Gold Coast,19,12,126,Subiaco,-26,2016.0,Regular,2
+14802.0,2016-04-03 00:00:00+11:00,R2,GWS,13,11,89,Geelong,11,10,76,Manuka Oval,13,2016.0,Regular,2
+14803.0,2016-04-03 00:00:00+11:00,R2,Hawthorn,14,15,99,West Coast,7,11,53,M.C.G.,46,2016.0,Regular,2
+14804.0,2016-04-03 00:00:00+11:00,R2,Carlton,10,11,71,Sydney,20,11,131,Docklands,-60,2016.0,Regular,2
+14805.0,2016-04-08 00:00:00+11:00,R3,Port Adelaide,17,10,112,Essendon,7,9,51,Adelaide Oval,61,2016.0,Regular,3
+14806.0,2016-04-09 00:00:00+11:00,R3,St Kilda,18,11,119,Collingwood,14,6,90,M.C.G.,29,2016.0,Regular,3
+14807.0,2016-04-09 00:00:00+11:00,R3,Richmond,13,14,92,Adelaide,19,14,128,Docklands,-36,2016.0,Regular,3
+14808.0,2016-04-09 00:00:00+11:00,R3,Sydney,14,9,93,GWS,10,8,68,S.C.G.,25,2016.0,Regular,3
+14809.0,2016-04-09 00:00:00+11:00,R3,Gold Coast,13,17,95,Carlton,5,11,41,Carrara,54,2016.0,Regular,3
+14810.0,2016-04-09 00:00:00+11:00,R3,West Coast,12,20,92,Fremantle,8,11,59,Subiaco,33,2016.0,Regular,3
+14811.0,2016-04-10 00:00:00+11:00,R3,North Melbourne,21,10,136,Melbourne,20,11,131,Bellerive Oval,5,2016.0,Regular,3
+14812.0,2016-04-10 00:00:00+11:00,R3,Western Bulldogs,13,12,90,Hawthorn,14,9,93,Docklands,-3,2016.0,Regular,3
+14813.0,2016-04-10 00:00:00+11:00,R3,Geelong,18,17,125,Brisbane,7,14,56,Kardinia Park,69,2016.0,Regular,3
+14814.0,2016-04-15 00:00:00+11:00,R4,West Coast,18,17,125,Richmond,9,3,57,Subiaco,68,2016.0,Regular,4
+14815.0,2016-04-16 00:00:00+11:00,R4,Essendon,6,6,42,Geelong,9,18,72,M.C.G.,-30,2016.0,Regular,4
+14816.0,2016-04-16 00:00:00+11:00,R4,Hawthorn,13,9,87,St Kilda,13,6,84,York Park,3,2016.0,Regular,4
+14817.0,2016-04-16 00:00:00+11:00,R4,Brisbane,14,23,107,Gold Coast,14,10,94,Gabba,13,2016.0,Regular,4
+14818.0,2016-04-16 00:00:00+11:00,R4,Carlton,7,7,49,Western Bulldogs,13,7,85,Docklands,-36,2016.0,Regular,4
+14819.0,2016-04-16 00:00:00+11:00,R4,Adelaide,16,17,113,Sydney,15,13,103,Adelaide Oval,10,2016.0,Regular,4
+14820.0,2016-04-17 00:00:00+11:00,R4,GWS,22,19,151,Port Adelaide,9,11,65,Manuka Oval,86,2016.0,Regular,4
+14821.0,2016-04-17 00:00:00+11:00,R4,Collingwood,9,13,67,Melbourne,16,6,102,M.C.G.,-35,2016.0,Regular,4
+14822.0,2016-04-17 00:00:00+11:00,R4,North Melbourne,20,12,132,Fremantle,14,17,101,Docklands,31,2016.0,Regular,4
+14823.0,2016-04-22 00:00:00+11:00,R5,Hawthorn,17,10,112,Adelaide,17,7,109,M.C.G.,3,2016.0,Regular,5
+14824.0,2016-04-23 00:00:00+11:00,R5,Sydney,12,16,88,West Coast,7,7,49,S.C.G.,39,2016.0,Regular,5
+14825.0,2016-04-23 00:00:00+11:00,R5,Gold Coast,11,15,81,North Melbourne,18,11,119,Carrara,-38,2016.0,Regular,5
+14826.0,2016-04-23 00:00:00+11:00,R5,Western Bulldogs,17,18,120,Brisbane,10,7,67,Docklands,53,2016.0,Regular,5
+14827.0,2016-04-23 00:00:00+11:00,R5,Port Adelaide,8,11,59,Geelong,16,11,107,Adelaide Oval,-48,2016.0,Regular,5
+14828.0,2016-04-24 00:00:00+11:00,R5,St Kilda,12,7,79,GWS,19,12,126,Docklands,-47,2016.0,Regular,5
+14829.0,2016-04-24 00:00:00+11:00,R5,Fremantle,9,14,68,Carlton,10,12,72,Subiaco,-4,2016.0,Regular,5
+14830.0,2016-04-24 00:00:00+11:00,R5,Melbourne,20,9,129,Richmond,14,12,96,M.C.G.,33,2016.0,Regular,5
+14831.0,2016-04-25 00:00:00+11:00,R5,Collingwood,22,10,142,Essendon,11,7,73,M.C.G.,69,2016.0,Regular,5
+14832.0,2016-04-29 00:00:00+11:00,R6,North Melbourne,9,7,61,Western Bulldogs,6,9,45,Docklands,16,2016.0,Regular,6
+14833.0,2016-04-30 00:00:00+11:00,R6,Melbourne,15,6,96,St Kilda,20,15,135,Docklands,-39,2016.0,Regular,6
+14834.0,2016-04-30 00:00:00+11:00,R6,Adelaide,14,13,97,Fremantle,8,16,64,Adelaide Oval,33,2016.0,Regular,6
+14835.0,2016-04-30 00:00:00+11:00,R6,GWS,24,14,158,Hawthorn,12,11,83,Sydney Showground,75,2016.0,Regular,6
+14836.0,2016-04-30 00:00:00+11:00,R6,Geelong,25,18,168,Gold Coast,7,6,48,Kardinia Park,120,2016.0,Regular,6
+14837.0,2016-04-30 00:00:00+11:00,R6,Richmond,8,11,59,Port Adelaide,13,16,94,M.C.G.,-35,2016.0,Regular,6
+14838.0,2016-05-01 00:00:00+11:00,R6,Brisbane,14,10,94,Sydney,15,7,97,Gabba,-3,2016.0,Regular,6
+14839.0,2016-05-01 00:00:00+11:00,R6,Carlton,10,12,72,Essendon,8,9,57,M.C.G.,15,2016.0,Regular,6
+14840.0,2016-05-01 00:00:00+11:00,R6,West Coast,18,16,124,Collingwood,9,8,62,Subiaco,62,2016.0,Regular,6
+14841.0,2016-05-06 00:00:00+11:00,R7,Richmond,13,12,90,Hawthorn,21,10,136,M.C.G.,-46,2016.0,Regular,7
+14842.0,2016-05-07 00:00:00+11:00,R7,Collingwood,12,12,84,Carlton,15,9,99,M.C.G.,-15,2016.0,Regular,7
+14843.0,2016-05-07 00:00:00+11:00,R7,Geelong,18,15,123,West Coast,12,7,79,Kardinia Park,44,2016.0,Regular,7
+14844.0,2016-05-07 00:00:00+11:00,R7,Sydney,20,15,135,Essendon,7,12,54,S.C.G.,81,2016.0,Regular,7
+14845.0,2016-05-07 00:00:00+11:00,R7,Gold Coast,14,3,87,Melbourne,24,16,160,Carrara,-73,2016.0,Regular,7
+14846.0,2016-05-07 00:00:00+11:00,R7,Western Bulldogs,18,15,123,Adelaide,17,6,108,Docklands,15,2016.0,Regular,7
+14847.0,2016-05-07 00:00:00+11:00,R7,Fremantle,11,11,77,GWS,14,11,95,Subiaco,-18,2016.0,Regular,7
+14848.0,2016-05-08 00:00:00+11:00,R7,St Kilda,11,9,75,North Melbourne,11,16,82,Docklands,-7,2016.0,Regular,7
+14849.0,2016-05-08 00:00:00+11:00,R7,Port Adelaide,21,10,136,Brisbane,7,17,59,Adelaide Oval,77,2016.0,Regular,7
+14850.0,2016-05-13 00:00:00+11:00,R8,Adelaide,11,6,72,Geelong,13,20,98,Adelaide Oval,-26,2016.0,Regular,8
+14851.0,2016-05-14 00:00:00+11:00,R8,Essendon,8,12,60,North Melbourne,10,14,74,Docklands,-14,2016.0,Regular,8
+14852.0,2016-05-14 00:00:00+11:00,R8,Hawthorn,17,14,116,Fremantle,11,9,75,York Park,41,2016.0,Regular,8
+14853.0,2016-05-14 00:00:00+11:00,R8,GWS,22,17,149,Gold Coast,9,4,58,Sydney Showground,91,2016.0,Regular,8
+14854.0,2016-05-14 00:00:00+11:00,R8,Brisbane,10,5,65,Collingwood,20,23,143,Gabba,-78,2016.0,Regular,8
+14855.0,2016-05-14 00:00:00+11:00,R8,Richmond,14,17,101,Sydney,15,10,100,M.C.G.,1,2016.0,Regular,8
+14856.0,2016-05-15 00:00:00+11:00,R8,Carlton,14,9,93,Port Adelaide,13,13,91,Docklands,2,2016.0,Regular,8
+14857.0,2016-05-15 00:00:00+11:00,R8,Melbourne,12,10,82,Western Bulldogs,17,12,114,M.C.G.,-32,2016.0,Regular,8
+14858.0,2016-05-15 00:00:00+11:00,R8,West Coast,20,12,132,St Kilda,3,11,29,Subiaco,103,2016.0,Regular,8
+14859.0,2016-05-20 00:00:00+11:00,R9,Hawthorn,7,13,55,Sydney,10,9,69,M.C.G.,-14,2016.0,Regular,9
+14860.0,2016-05-21 00:00:00+11:00,R9,Collingwood,16,8,104,Geelong,11,14,80,M.C.G.,24,2016.0,Regular,9
+14861.0,2016-05-21 00:00:00+11:00,R9,Gold Coast,11,8,74,Adelaide,22,17,149,Carrara,-75,2016.0,Regular,9
+14862.0,2016-05-21 00:00:00+11:00,R9,Port Adelaide,13,8,86,West Coast,14,10,94,Adelaide Oval,-8,2016.0,Regular,9
+14863.0,2016-05-21 00:00:00+11:00,R9,North Melbourne,17,11,113,Carlton,6,10,46,Docklands,67,2016.0,Regular,9
+14864.0,2016-05-21 00:00:00+11:00,R9,Fremantle,6,9,45,Richmond,11,17,83,Subiaco,-38,2016.0,Regular,9
+14865.0,2016-05-22 00:00:00+11:00,R9,Melbourne,19,17,131,Brisbane,9,14,68,M.C.G.,63,2016.0,Regular,9
+14866.0,2016-05-22 00:00:00+11:00,R9,GWS,15,8,98,Western Bulldogs,10,13,73,Sydney Showground,25,2016.0,Regular,9
+14867.0,2016-05-22 00:00:00+11:00,R9,St Kilda,16,13,109,Essendon,9,9,63,Docklands,46,2016.0,Regular,9
+14868.0,2016-05-27 00:00:00+11:00,R10,Sydney,14,7,91,North Melbourne,9,11,65,S.C.G.,26,2016.0,Regular,10
+14869.0,2016-05-28 00:00:00+11:00,R10,Brisbane,13,9,87,Hawthorn,21,9,135,Gabba,-48,2016.0,Regular,10
+14870.0,2016-05-28 00:00:00+11:00,R10,Melbourne,10,16,76,Port Adelaide,18,13,121,Traeger Park,-45,2016.0,Regular,10
+14871.0,2016-05-28 00:00:00+11:00,R10,St Kilda,15,11,101,Fremantle,10,7,67,Docklands,34,2016.0,Regular,10
+14872.0,2016-05-28 00:00:00+11:00,R10,Essendon,10,7,67,Richmond,16,9,105,M.C.G.,-38,2016.0,Regular,10
+14873.0,2016-05-28 00:00:00+11:00,R10,Adelaide,15,17,107,GWS,13,7,85,Adelaide Oval,22,2016.0,Regular,10
+14874.0,2016-05-29 00:00:00+11:00,R10,Carlton,16,8,104,Geelong,12,13,85,Docklands,19,2016.0,Regular,10
+14875.0,2016-05-29 00:00:00+11:00,R10,Collingwood,7,11,53,Western Bulldogs,11,8,74,M.C.G.,-21,2016.0,Regular,10
+14876.0,2016-05-29 00:00:00+11:00,R10,West Coast,20,12,132,Gold Coast,7,13,55,Subiaco,77,2016.0,Regular,10
+14877.0,2016-06-03 00:00:00+11:00,R11,North Melbourne,18,16,124,Richmond,7,12,54,Bellerive Oval,70,2016.0,Regular,11
+14878.0,2016-06-04 00:00:00+11:00,R11,Hawthorn,11,16,82,Melbourne,10,4,64,M.C.G.,18,2016.0,Regular,11
+14879.0,2016-06-04 00:00:00+11:00,R11,Carlton,16,6,102,Brisbane,9,10,64,Docklands,38,2016.0,Regular,11
+14880.0,2016-06-04 00:00:00+11:00,R11,Geelong,14,14,98,GWS,14,4,88,Kardinia Park,10,2016.0,Regular,11
+14881.0,2016-06-04 00:00:00+11:00,R11,Gold Coast,6,5,41,Sydney,11,13,79,Carrara,-38,2016.0,Regular,11
+14882.0,2016-06-04 00:00:00+11:00,R11,Fremantle,20,6,126,Essendon,6,11,47,Subiaco,79,2016.0,Regular,11
+14883.0,2016-06-05 00:00:00+11:00,R11,Collingwood,7,16,58,Port Adelaide,19,11,125,M.C.G.,-67,2016.0,Regular,11
+14884.0,2016-06-05 00:00:00+11:00,R11,Western Bulldogs,12,11,83,West Coast,11,9,75,Docklands,8,2016.0,Regular,11
+14885.0,2016-06-05 00:00:00+11:00,R11,Adelaide,19,19,133,St Kilda,6,9,45,Adelaide Oval,88,2016.0,Regular,11
+14886.0,2016-06-10 00:00:00+11:00,R12,Essendon,6,7,43,Hawthorn,23,13,151,Docklands,-108,2016.0,Regular,12
+14887.0,2016-06-11 00:00:00+11:00,R12,Port Adelaide,14,13,97,Western Bulldogs,15,10,100,Adelaide Oval,-3,2016.0,Regular,12
+14888.0,2016-06-11 00:00:00+11:00,R12,Brisbane,9,10,64,Fremantle,23,9,147,Gabba,-83,2016.0,Regular,12
+14889.0,2016-06-11 00:00:00+11:00,R12,Geelong,15,15,105,North Melbourne,12,2,74,Docklands,31,2016.0,Regular,12
+14890.0,2016-06-11 00:00:00+11:00,R12,West Coast,11,10,76,Adelaide,15,15,105,Subiaco,-29,2016.0,Regular,12
+14891.0,2016-06-12 00:00:00+11:00,R12,St Kilda,17,8,110,Carlton,12,6,78,Docklands,32,2016.0,Regular,12
+14892.0,2016-06-12 00:00:00+11:00,R12,Richmond,17,12,114,Gold Coast,15,7,97,M.C.G.,17,2016.0,Regular,12
+14893.0,2016-06-12 00:00:00+11:00,R12,GWS,15,15,105,Sydney,9,9,63,Sydney Showground,42,2016.0,Regular,12
+14894.0,2016-06-13 00:00:00+11:00,R12,Melbourne,16,8,104,Collingwood,8,10,58,M.C.G.,46,2016.0,Regular,12
+14895.0,2016-06-17 00:00:00+11:00,R13,North Melbourne,11,18,84,Hawthorn,14,9,93,Docklands,-9,2016.0,Regular,13
+14896.0,2016-06-18 00:00:00+11:00,R13,Brisbane,12,10,82,West Coast,20,11,131,Gabba,-49,2016.0,Regular,13
+14897.0,2016-06-18 00:00:00+11:00,R13,Fremantle,12,14,86,Port Adelaide,9,15,69,Subiaco,17,2016.0,Regular,13
+14898.0,2016-06-18 00:00:00+11:00,R13,Western Bulldogs,5,13,43,Geelong,16,4,100,Docklands,-57,2016.0,Regular,13
+14899.0,2016-06-19 00:00:00+11:00,R13,Sydney,12,14,86,Melbourne,4,7,31,S.C.G.,55,2016.0,Regular,13
+14900.0,2016-06-19 00:00:00+11:00,R13,Essendon,12,18,90,GWS,17,15,117,Docklands,-27,2016.0,Regular,13
+14901.0,2016-06-23 00:00:00+11:00,R14,Adelaide,12,28,100,North Melbourne,10,7,67,Adelaide Oval,33,2016.0,Regular,14
+14902.0,2016-06-24 00:00:00+11:00,R14,Collingwood,12,13,85,Fremantle,5,7,37,M.C.G.,48,2016.0,Regular,14
+14903.0,2016-06-25 00:00:00+11:00,R14,Richmond,17,15,117,Brisbane,11,9,75,M.C.G.,42,2016.0,Regular,14
+14904.0,2016-06-25 00:00:00+11:00,R14,GWS,18,19,127,Carlton,9,11,65,Sydney Showground,62,2016.0,Regular,14
+14905.0,2016-06-25 00:00:00+11:00,R14,St Kilda,14,9,93,Geelong,13,12,90,Docklands,3,2016.0,Regular,14
+14906.0,2016-06-26 00:00:00+11:00,R14,Hawthorn,12,14,86,Gold Coast,8,12,60,York Park,26,2016.0,Regular,14
+14907.0,2016-06-30 00:00:00+11:00,R15,West Coast,20,10,130,Essendon,7,10,52,Subiaco,78,2016.0,Regular,15
+14908.0,2016-07-01 00:00:00+11:00,R15,Port Adelaide,14,10,94,Richmond,8,8,56,Adelaide Oval,38,2016.0,Regular,15
+14909.0,2016-07-02 00:00:00+11:00,R15,Gold Coast,15,18,108,St Kilda,8,20,68,Carrara,40,2016.0,Regular,15
+14910.0,2016-07-02 00:00:00+11:00,R15,Sydney,11,13,79,Western Bulldogs,13,5,83,S.C.G.,-4,2016.0,Regular,15
+14911.0,2016-07-02 00:00:00+11:00,R15,Carlton,6,9,45,Collingwood,8,9,57,M.C.G.,-12,2016.0,Regular,15
+14912.0,2016-07-03 00:00:00+11:00,R15,Melbourne,15,8,98,Adelaide,18,12,120,M.C.G.,-22,2016.0,Regular,15
+14913.0,2016-07-07 00:00:00+11:00,R16,Port Adelaide,12,7,79,Hawthorn,15,11,101,Adelaide Oval,-22,2016.0,Regular,16
+14914.0,2016-07-08 00:00:00+11:00,R16,Geelong,9,6,60,Sydney,15,8,98,Kardinia Park,-38,2016.0,Regular,16
+14915.0,2016-07-09 00:00:00+11:00,R16,GWS,14,9,93,Collingwood,19,11,125,Sydney Showground,-32,2016.0,Regular,16
+14916.0,2016-07-09 00:00:00+11:00,R16,Gold Coast,22,7,139,Brisbane,17,11,113,Carrara,26,2016.0,Regular,16
+14917.0,2016-07-09 00:00:00+11:00,R16,Western Bulldogs,12,13,85,Richmond,11,9,75,Docklands,10,2016.0,Regular,16
+14918.0,2016-07-09 00:00:00+11:00,R16,Melbourne,12,15,87,Fremantle,8,7,55,Marrara Oval,32,2016.0,Regular,16
+14919.0,2016-07-10 00:00:00+11:00,R16,Carlton,7,5,47,Adelaide,16,11,107,M.C.G.,-60,2016.0,Regular,16
+14920.0,2016-07-10 00:00:00+11:00,R16,West Coast,16,8,104,North Melbourne,11,6,72,Subiaco,32,2016.0,Regular,16
+14921.0,2016-07-10 00:00:00+11:00,R16,Essendon,14,14,98,St Kilda,17,7,109,Docklands,-11,2016.0,Regular,16
+14922.0,2016-07-14 00:00:00+11:00,R17,Sydney,10,10,70,Hawthorn,11,9,75,S.C.G.,-5,2016.0,Regular,17
+14923.0,2016-07-15 00:00:00+11:00,R17,Fremantle,9,7,61,Geelong,11,12,78,Subiaco,-17,2016.0,Regular,17
+14924.0,2016-07-16 00:00:00+11:00,R17,Richmond,16,6,102,Essendon,11,17,83,M.C.G.,19,2016.0,Regular,17
+14925.0,2016-07-16 00:00:00+11:00,R17,North Melbourne,10,17,77,Port Adelaide,16,9,105,Docklands,-28,2016.0,Regular,17
+14926.0,2016-07-16 00:00:00+11:00,R17,Western Bulldogs,15,17,107,Gold Coast,8,11,59,Cazaly's Stadium,48,2016.0,Regular,17
+14927.0,2016-07-16 00:00:00+11:00,R17,Adelaide,14,13,97,Collingwood,10,9,69,Adelaide Oval,28,2016.0,Regular,17
+14928.0,2016-07-17 00:00:00+11:00,R17,Carlton,11,9,75,West Coast,12,10,82,M.C.G.,-7,2016.0,Regular,17
+14929.0,2016-07-17 00:00:00+11:00,R17,St Kilda,15,20,110,Melbourne,11,8,74,Docklands,36,2016.0,Regular,17
+14930.0,2016-07-17 00:00:00+11:00,R17,Brisbane,9,13,67,GWS,22,14,146,Gabba,-79,2016.0,Regular,17
+14931.0,2016-07-22 00:00:00+11:00,R18,Collingwood,12,12,84,North Melbourne,18,16,124,Docklands,-40,2016.0,Regular,18
+14932.0,2016-07-23 00:00:00+11:00,R18,Sydney,10,14,74,Carlton,10,8,68,S.C.G.,6,2016.0,Regular,18
+14933.0,2016-07-23 00:00:00+11:00,R18,Gold Coast,16,9,105,Fremantle,12,9,81,Carrara,24,2016.0,Regular,18
+14934.0,2016-07-23 00:00:00+11:00,R18,West Coast,10,6,66,Melbourne,8,12,60,Subiaco,6,2016.0,Regular,18
+14935.0,2016-07-23 00:00:00+11:00,R18,Geelong,12,13,85,Adelaide,7,13,55,Kardinia Park,30,2016.0,Regular,18
+14936.0,2016-07-23 00:00:00+11:00,R18,Western Bulldogs,9,6,60,St Kilda,11,9,75,Docklands,-15,2016.0,Regular,18
+14937.0,2016-07-24 00:00:00+11:00,R18,Essendon,12,19,91,Brisbane,20,8,128,Docklands,-37,2016.0,Regular,18
+14938.0,2016-07-24 00:00:00+11:00,R18,Hawthorn,16,18,114,Richmond,5,14,44,M.C.G.,70,2016.0,Regular,18
+14939.0,2016-07-24 00:00:00+11:00,R18,Port Adelaide,9,6,60,GWS,11,13,79,Adelaide Oval,-19,2016.0,Regular,18
+14940.0,2016-07-29 00:00:00+11:00,R19,Geelong,16,7,103,Western Bulldogs,11,12,78,Kardinia Park,25,2016.0,Regular,19
+14941.0,2016-07-30 00:00:00+11:00,R19,GWS,17,9,111,Richmond,3,5,23,Manuka Oval,88,2016.0,Regular,19
+14942.0,2016-07-30 00:00:00+11:00,R19,Hawthorn,10,14,74,Carlton,7,13,55,York Park,19,2016.0,Regular,19
+14943.0,2016-07-30 00:00:00+11:00,R19,Collingwood,13,13,91,West Coast,11,6,72,M.C.G.,19,2016.0,Regular,19
+14944.0,2016-07-30 00:00:00+11:00,R19,North Melbourne,12,13,85,St Kilda,8,14,62,Docklands,23,2016.0,Regular,19
+14945.0,2016-07-30 00:00:00+11:00,R19,Brisbane,11,13,79,Port Adelaide,25,23,173,Gabba,-94,2016.0,Regular,19
+14946.0,2016-07-31 00:00:00+11:00,R19,Melbourne,9,12,66,Gold Coast,9,10,64,M.C.G.,2,2016.0,Regular,19
+14947.0,2016-07-31 00:00:00+11:00,R19,Fremantle,7,5,47,Sydney,21,11,137,Subiaco,-90,2016.0,Regular,19
+14948.0,2016-07-31 00:00:00+11:00,R19,Adelaide,22,11,143,Essendon,9,7,61,Adelaide Oval,82,2016.0,Regular,19
+14949.0,2016-08-05 00:00:00+11:00,R20,Richmond,14,8,92,Collingwood,11,11,77,M.C.G.,15,2016.0,Regular,20
+14950.0,2016-08-06 00:00:00+11:00,R20,Sydney,14,16,100,Port Adelaide,4,9,33,S.C.G.,67,2016.0,Regular,20
+14951.0,2016-08-06 00:00:00+11:00,R20,Melbourne,17,8,110,Hawthorn,11,15,81,M.C.G.,29,2016.0,Regular,20
+14952.0,2016-08-06 00:00:00+11:00,R20,Gold Coast,13,6,84,GWS,14,8,92,Carrara,-8,2016.0,Regular,20
+14953.0,2016-08-06 00:00:00+11:00,R20,Western Bulldogs,9,7,61,North Melbourne,7,5,47,Docklands,14,2016.0,Regular,20
+14954.0,2016-08-06 00:00:00+11:00,R20,Adelaide,27,15,177,Brisbane,6,3,39,Adelaide Oval,138,2016.0,Regular,20
+14955.0,2016-08-07 00:00:00+11:00,R20,Carlton,7,9,51,St Kilda,19,8,122,M.C.G.,-71,2016.0,Regular,20
+14956.0,2016-08-07 00:00:00+11:00,R20,Geelong,15,10,100,Essendon,4,10,34,Docklands,66,2016.0,Regular,20
+14957.0,2016-08-07 00:00:00+11:00,R20,Fremantle,9,10,64,West Coast,17,8,110,Subiaco,-46,2016.0,Regular,20
+14958.0,2016-08-12 00:00:00+11:00,R21,Western Bulldogs,14,11,95,Collingwood,14,8,92,Docklands,3,2016.0,Regular,21
+14959.0,2016-08-13 00:00:00+11:00,R21,Brisbane,15,9,99,Carlton,13,17,95,Gabba,4,2016.0,Regular,21
+14960.0,2016-08-13 00:00:00+11:00,R21,Hawthorn,14,12,96,North Melbourne,8,9,57,M.C.G.,39,2016.0,Regular,21
+14961.0,2016-08-13 00:00:00+11:00,R21,GWS,14,12,96,West Coast,14,13,97,Sydney Showground,-1,2016.0,Regular,21
+14962.0,2016-08-13 00:00:00+11:00,R21,St Kilda,11,10,76,Sydney,23,8,146,Docklands,-70,2016.0,Regular,21
+14963.0,2016-08-13 00:00:00+11:00,R21,Port Adelaide,8,6,54,Melbourne,13,16,94,Adelaide Oval,-40,2016.0,Regular,21
+14964.0,2016-08-14 00:00:00+11:00,R21,Essendon,11,9,75,Gold Coast,9,15,69,Docklands,6,2016.0,Regular,21
+14965.0,2016-08-14 00:00:00+11:00,R21,Richmond,12,6,78,Geelong,10,22,82,M.C.G.,-4,2016.0,Regular,21
+14966.0,2016-08-14 00:00:00+11:00,R21,Fremantle,11,4,70,Adelaide,21,16,142,Subiaco,-72,2016.0,Regular,21
+14967.0,2016-08-19 00:00:00+11:00,R22,West Coast,13,14,92,Hawthorn,10,7,67,Subiaco,25,2016.0,Regular,22
+14968.0,2016-08-20 00:00:00+11:00,R22,North Melbourne,10,16,76,Sydney,12,13,85,Bellerive Oval,-9,2016.0,Regular,22
+14969.0,2016-08-20 00:00:00+11:00,R22,Richmond,6,10,46,St Kilda,7,13,55,M.C.G.,-9,2016.0,Regular,22
+14970.0,2016-08-20 00:00:00+11:00,R22,GWS,19,15,129,Fremantle,5,7,37,Sydney Showground,92,2016.0,Regular,22
+14971.0,2016-08-20 00:00:00+11:00,R22,Collingwood,16,22,118,Gold Coast,6,11,47,Docklands,71,2016.0,Regular,22
+14972.0,2016-08-20 00:00:00+11:00,R22,Port Adelaide,14,10,94,Adelaide,15,19,109,Adelaide Oval,-15,2016.0,Regular,22
+14973.0,2016-08-21 00:00:00+11:00,R22,Carlton,11,12,78,Melbourne,7,16,58,M.C.G.,20,2016.0,Regular,22
+14974.0,2016-08-21 00:00:00+11:00,R22,Brisbane,10,9,69,Geelong,19,15,129,Gabba,-60,2016.0,Regular,22
+14975.0,2016-08-21 00:00:00+11:00,R22,Essendon,7,11,53,Western Bulldogs,14,9,93,Docklands,-40,2016.0,Regular,22
+14976.0,2016-08-26 00:00:00+11:00,R23,Adelaide,10,11,71,West Coast,14,16,100,Adelaide Oval,-29,2016.0,Regular,23
+14977.0,2016-08-27 00:00:00+11:00,R23,Geelong,24,11,155,Melbourne,6,8,44,Kardinia Park,111,2016.0,Regular,23
+14978.0,2016-08-27 00:00:00+11:00,R23,Essendon,15,13,103,Carlton,10,19,79,M.C.G.,24,2016.0,Regular,23
+14979.0,2016-08-27 00:00:00+11:00,R23,Sydney,25,14,164,Richmond,7,9,51,S.C.G.,113,2016.0,Regular,23
+14980.0,2016-08-27 00:00:00+11:00,R23,North Melbourne,9,9,63,GWS,14,16,100,Docklands,-37,2016.0,Regular,23
+14981.0,2016-08-27 00:00:00+11:00,R23,Gold Coast,9,12,66,Port Adelaide,13,11,89,Carrara,-23,2016.0,Regular,23
+14982.0,2016-08-28 00:00:00+11:00,R23,St Kilda,25,11,161,Brisbane,15,13,103,Docklands,58,2016.0,Regular,23
+14983.0,2016-08-28 00:00:00+11:00,R23,Hawthorn,17,10,112,Collingwood,17,9,111,M.C.G.,1,2016.0,Regular,23
+14984.0,2016-08-28 00:00:00+11:00,R23,Fremantle,10,9,69,Western Bulldogs,6,13,49,Subiaco,20,2016.0,Regular,23
+14985.0,2016-09-08 00:00:00+11:00,EF,Western Bulldogs,14,15,99,West Coast,7,10,52,Subiaco,47,2016.0,Finals,24
+14986.0,2016-09-09 00:00:00+11:00,QF,Geelong,12,13,85,Hawthorn,12,11,83,M.C.G.,2,2016.0,Finals,24
+14987.0,2016-09-10 00:00:00+11:00,QF,GWS,12,19,91,Sydney,7,13,55,Stadium Australia,36,2016.0,Finals,24
+14988.0,2016-09-10 00:00:00+11:00,EF,Adelaide,21,15,141,North Melbourne,12,7,79,Adelaide Oval,62,2016.0,Finals,24
+14989.0,2016-09-16 00:00:00+11:00,SF,Western Bulldogs,16,11,107,Hawthorn,12,12,84,M.C.G.,23,2016.0,Finals,25
+14990.0,2016-09-17 00:00:00+11:00,SF,Sydney,18,10,118,Adelaide,12,10,82,S.C.G.,36,2016.0,Finals,25
+14991.0,2016-09-23 00:00:00+11:00,PF,Sydney,15,7,97,Geelong,8,12,60,M.C.G.,37,2016.0,Finals,26
+14992.0,2016-09-24 00:00:00+11:00,PF,Western Bulldogs,13,11,89,GWS,12,11,83,Sydney Showground,6,2016.0,Finals,26
+14993.0,2016-10-01 00:00:00+11:00,GF,Western Bulldogs,13,11,89,Sydney,10,7,67,M.C.G.,22,2016.0,Finals,27

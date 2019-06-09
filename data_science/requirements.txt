@@ -1,0 +1,27 @@
+# Data packages
+numpy
+pandas<0.24,>=0.23.0 # Required version for featuretools
+scikit-learn==0.20.1
+scipy
+xgboost==0.80
+jupyter
+ipykernel<5.0.0 # Necessary for a Jupyter bug (as of 30-9-18): https://github.com/jupyter/notebook/issues/4050
+dask[complete]
+
+# Data vis packages
+seaborn
+matplotlib
+
+# Scraping
+requests
+
+# Testing/Linting
+pylint==1.9.2 # Necessary for open bug (as of 2-10-18): https://github.com/PyCQA/pylint/issues/2315
+black
+pytest
+pytest-env
+faker
+mypy>=0.70
+freezegun
+factory_boy
+faker

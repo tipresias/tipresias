@@ -1,4 +1,4 @@
-FROM r-base@sha256:452d2ca0fd9a76314dfaba4681d0b2189d3966b64fabbb41cc071c805ff1f430
+FROM r-base:3.6.0
 
 RUN apt-get update && apt-get -y install \
   libcurl4-openssl-dev \
@@ -8,11 +8,11 @@ RUN apt-get update && apt-get -y install \
 
 WORKDIR /app/afl_data
 
-COPY init.R DESCRIPTION packrat.lock ./
+COPY init.R ./
 RUN Rscript init.R
 
 COPY . /app/afl_data
 
-EXPOSE 8001
+EXPOSE 8080
 
 CMD Rscript app.R

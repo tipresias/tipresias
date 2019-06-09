@@ -131,7 +131,7 @@ class TestSchema(TestCase):
             for prediction in later_round["modelPredictions"]
         ]
 
-        self.assertLess(sum(earlier_round_counts), sum(later_round_counts))
+        self.assertLessEqual(sum(earlier_round_counts), sum(later_round_counts))
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

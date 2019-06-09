@@ -23,7 +23,7 @@ services:
     volumes:
       - ./afl_data:/app/afl_data
     ports:
-      - "8001:8001"
+      - "8080:8080"
     stdin_open: true
     tty: true
     command: Rscript app.R

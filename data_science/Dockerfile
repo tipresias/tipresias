@@ -4,7 +4,17 @@
 # their own
 FROM python:3.6@sha256:00110125bd9c23f200cfd2cfa82e68b8ab2006e1358f7a048e005794aa51568f
 
+# Install curl & node
+RUN apt-get -y install curl \
+  && curl -sL https://deb.nodesource.com/setup_8.x | bash \
+  && apt-get -y install nodejs \
+  && npm install -g serverless
+
 WORKDIR /app
+
+# Install Serverless Framework dependencies
+COPY package.json package-lock.json ./
+RUN npm install
 
 # Install Python dependencies
 COPY requirements.txt /app

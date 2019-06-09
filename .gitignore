@@ -142,3 +142,6 @@ browser/cypress/videos/
 
 # DB dumps
 *.sql
+
+# GCP files
+.gcloud

@@ -35,6 +35,7 @@ services:
     volumes:
       - ./data_science:/app
       - ./data:/app/data
+      - ./.gcloud:/app/.gcloud
     ports:
       - "8008:8008"
     stdin_open: true

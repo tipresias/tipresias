@@ -64,7 +64,7 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 
 - Deploy `afl_data` to Google Cloud:
   - `gcloud builds submit --config cloudbuild.yaml ./afl_data`
-  - `gcloud beta run deploy $SERVICE_NAME --image gcr.io/$PROJECT_ID/afl_data`
+  - `gcloud beta run deploy $SERVICE_NAME --image gcr.io/$PROJECT_ID/afl_data --memory 2Gi`
 
 ## Pro-Tips
 

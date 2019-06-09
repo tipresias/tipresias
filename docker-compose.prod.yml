@@ -11,7 +11,6 @@ services:
     tty: true
     depends_on:
       - db
-      - afl_data
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.production

@@ -66,6 +66,9 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
   - `gcloud builds submit --config cloudbuild.yaml ./afl_data`
   - `gcloud beta run deploy $SERVICE_NAME --image gcr.io/$PROJECT_ID/afl_data --memory 2Gi`
 
+- Deploy `machine_learning` to Google Cloud:
+  - `docker-compose run --rm data_science sls deploy`
+
 ## Pro-Tips
 
 - Both `backend` and `frontend` are encapsulated, with their dependencies, in their respective containers, so if you want to take advantage of in-editor linting, autofixing, etc., open your editor from the service directory, not the project directory. Be sure to run terminal commands from the project root, though.

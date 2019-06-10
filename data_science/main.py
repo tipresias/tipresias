@@ -21,6 +21,11 @@ def predictions(request):
         `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
     """
 
+    auth_token = request.headers.get("Authorization")
+
+    if auth_token != f"Bearer {os.environ.get('GCPF_TOKEN')}":
+        return ("Not authorized", 401)
+
     year = request.args.get("year", date.today().year)
     round_number = request.args.get("round_number", None)
 

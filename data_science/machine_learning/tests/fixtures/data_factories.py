@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
-from machine_learning.types import CleanedMatchData
+from machine_learning.types import CleanedMatchData, RawFixtureData
 from machine_learning.data_config import INDEX_COLS
-from settings import MELBOURNE_TIMEZONE
+from machine_learning.settings import MELBOURNE_TIMEZONE
 
 FIRST = 1
 SECOND = 2
@@ -141,3 +141,38 @@ def fake_cleaned_player_data(
     reduced_player_data = list(itertools.chain.from_iterable(player_data))
 
     return pd.DataFrame(reduced_player_data)
+
+
+def _fixture_data(year: int, team_names: Tuple[str, str]) -> RawFixtureData:
+    return {
+        "date": FAKE.date_time_between_dates(
+            **_min_max_datetimes_by_year(year), tzinfo=MELBOURNE_TIMEZONE
+        ),
+        "season": year,
+        "round": 1,
+        "home_team": team_names[0],
+        "away_team": team_names[1],
+        "venue": FAKE.city(),
+    }
+
+
+def _fixture_by_round(row_count: int, year: int) -> List[RawFixtureData]:
+    team_names = CyclicalTeamNames()
+
+    return [
+        _fixture_data(year, (team_names.next(), team_names.next()))
+        for idx in range(row_count)
+    ]
+
+
+def _fixture_by_year(
+    row_count: int, year_range: Tuple[int, int]
+) -> List[List[RawFixtureData]]:
+    return [_fixture_by_round(row_count, year) for year in range(*year_range)]
+
+
+def fake_fixture_data(row_count: int, year_range: Tuple[int, int]) -> pd.DataFrame:
+    data = _fixture_by_year(row_count, year_range)
+    reduced_data = list(itertools.chain.from_iterable(data))
+
+    return pd.DataFrame(list(reduced_data))

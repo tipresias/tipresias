@@ -31,3 +31,15 @@ CleanedMatchData = TypedDict(
         "oppo_score": int,
     },
 )
+
+RawFixtureData = TypedDict(
+    "RawFixtureData",
+    {
+        "date": Union[datetime],
+        "season": int,
+        "round": int,
+        "home_team": str,
+        "away_team": str,
+        "venue": str,
+    },
+)

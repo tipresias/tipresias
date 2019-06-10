@@ -26,7 +26,10 @@ def predictions(request):
     if auth_token != f"Bearer {os.environ.get('GCPF_TOKEN')}":
         return ("Not authorized", 401)
 
-    year = request.args.get("year", date.today().year)
+    year = int(request.args.get("year", date.today().year))
     round_number = request.args.get("round_number", None)
+
+    if round_number is not None:
+        round_number = int(round_number)
 
     return json.dumps(api.make_predictions(year, round_number=round_number))

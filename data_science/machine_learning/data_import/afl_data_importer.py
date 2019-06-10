@@ -32,7 +32,7 @@ class AflDataImporter(BaseDataImporter):
             return self.__return_empty_data_frame(round_number)
 
         if self.verbose == 1:
-            print("Roster data received!")
+            print("Roster data received!\n")
 
         return pd.DataFrame(data).assign(date=self._parse_dates)
 

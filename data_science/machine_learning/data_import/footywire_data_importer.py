@@ -63,7 +63,7 @@ class FootywireDataImporter(BaseDataImporter):
             )
 
             if self.verbose == 1:
-                print("Betting odds data received!")
+                print("Betting odds data received!\n")
 
             return (
                 pd.DataFrame(data)

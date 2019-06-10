@@ -52,7 +52,7 @@ class FitzroyDataImporter(BaseDataImporter):
         )
 
         if self.verbose == 1:
-            print("Match data received!")
+            print("Match data received!\n")
 
         return pd.DataFrame(data).assign(date=self._parse_dates)
 
@@ -90,7 +90,7 @@ class FitzroyDataImporter(BaseDataImporter):
         )
 
         if self.verbose == 1:
-            print("All player data received!")
+            print("All player data received!\n")
 
         return pd.DataFrame(list(data)).assign(date=self._parse_dates)
 
@@ -118,7 +118,7 @@ class FitzroyDataImporter(BaseDataImporter):
         )
 
         if self.verbose == 1:
-            print("Fixture data received!")
+            print("Fixture data received!\n")
 
         return (
             pd.DataFrame(data)

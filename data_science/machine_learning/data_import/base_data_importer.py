@@ -8,7 +8,7 @@ import os
 import requests
 import pandas as pd
 
-from project.settings.common import MELBOURNE_TIMEZONE
+from machine_learning.settings import MELBOURNE_TIMEZONE
 
 LOCAL_AFL_DATA_SERVICE = "http://afl_data:8080"
 AFL_DATA_SERVICE = os.getenv("AFL_DATA_SERVICE", default=LOCAL_AFL_DATA_SERVICE)

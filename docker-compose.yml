@@ -34,7 +34,7 @@ services:
     build: ./data_science
     volumes:
       - ./data_science:/app
-      - ./data:/app/data
+      - ./data:/data
       - ./.gcloud:/app/.gcloud
     ports:
       - "8008:8008"

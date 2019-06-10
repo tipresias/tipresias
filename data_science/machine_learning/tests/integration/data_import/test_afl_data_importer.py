@@ -1,4 +1,4 @@
-from django.test import TestCase
+from unittest import TestCase
 import pandas as pd
 
 from machine_learning.data_import import AflDataImporter

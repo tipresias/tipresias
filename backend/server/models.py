@@ -1,3 +1,4 @@
+from typing import List
 from functools import reduce
 from datetime import datetime, timedelta
 from django.db import models
@@ -8,6 +9,7 @@ from sklearn.externals import joblib
 from machine_learning.ml_estimators import BaseMLEstimator
 from machine_learning.data_config import TEAM_NAMES
 from project.settings.common import MELBOURNE_TIMEZONE
+from server.types import PredictionData
 
 # Rough estimate, but exactitude isn't necessary here
 GAME_LENGTH_HRS = 3
@@ -133,6 +135,20 @@ class Prediction(models.Model):
         return match.has_been_played and (
             match.is_draw or predicted_winner == match.winner
         )
+
+    @classmethod
+    def convert_data_to_record(cls, prediction_data: List[PredictionData]):
+        """
+        Convert raw prediction data to a Prediction model instance
+
+        Args:
+            prediction_data (List[PredictionData]): List of two dictionaries
+                that include data for two teams that are playing each other
+                in a given match
+
+        Returns:
+            prediction (Prediction): Unsaved Prediction model instance
+        """
 
     def clean(self):
         # Judgement call, but I want to avoid 0 predicted margin values for the cases

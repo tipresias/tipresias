@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 from server.models import Match, MLModel, Team, Prediction
+from server.tests.fixtures.data_factories import fake_prediction_data
 
 
 class TestPrediction(TestCase):
@@ -61,6 +62,13 @@ class TestPrediction(TestCase):
                     self.match, prediction.predicted_winner
                 )
             )
+
+    def test_convert_data_to_record(self):
+        data = fake_prediction_data()
+        record = Prediction.convert_data_to_record(data)
+
+        self.assertIsInstance(record, Prediction)
+        record.clean_fields()
 
     def test_clean(self):
         with self.subTest("when predicted margin rounds to 0"):

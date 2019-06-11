@@ -1,12 +1,12 @@
 from typing import List, Dict, Any, Tuple
-from datetime import datetime
+from datetime import datetime, date
 import itertools
 from faker import Faker
 import numpy as np
 import pandas as pd
 
 from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
-from server.types import RawFixtureData, MatchData
+from server.types import RawFixtureData, MatchData, PredictionData
 from project.settings.common import MELBOURNE_TIMEZONE
 
 FIRST = 1
@@ -171,3 +171,29 @@ def fake_footywire_betting_data(
     reduced_data = list(itertools.chain.from_iterable(data))
 
     return pd.DataFrame(list(reduced_data))
+
+
+def fake_prediction_data() -> List[PredictionData]:
+    teams = np.random.choice(TEAM_NAMES, 2, replace=False)
+    year = date.today().year
+    round_number = np.random.randint(1, 24)
+
+    return [
+        {
+            "team": teams[0],
+            "year": year,
+            "round_number": round_number,
+            "oppo_team": teams[1],
+            "ml_model": "accurate_af",
+            "predicted_margin": np.random.randint(1, 50),
+        },
+        {
+            "team": teams[1],
+            "year": year,
+            "round_number": round_number,
+            "oppo_team": teams[0],
+            "ml_model": "accurate_af",
+            "predicted_margin": np.random.randint(1, 50),
+        },
+    ]
+

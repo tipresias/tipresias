@@ -43,7 +43,7 @@ fetch_rosters <- function(round_number) {
   convert_to_data_frame <- function(matches) {
     row_lengths_sum <- matches %>%
       purrr::map(., length) %>%
-      purrr::reduce(., sum)
+      purrr::reduce(., sum, .init = 0)
 
     if (row_lengths_sum == 0) {
       return(

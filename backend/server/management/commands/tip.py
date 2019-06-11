@@ -12,10 +12,12 @@ from sklearn.externals import joblib
 
 from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.types import CleanedFixtureData
+from server.types import CleanedFixtureData, PredictionData
+from server import data_import
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import JoinedMLData
 from machine_learning.data_transformation.data_cleaning import clean_fixture_data
+
 
 NO_SCORE = 0
 # We calculate rolling sums/means for some features that can span over 5 seasons
@@ -94,7 +96,7 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print("Saving prediction records...")
 
-        self.__make_predictions(upcoming_round_year, round_number=upcoming_round)
+        self.__make_predictions(upcoming_round_year, upcoming_round)
 
         return None
 
@@ -191,107 +193,89 @@ class Command(BaseCommand):
 
         return self.__build_team_match(match, match_data)
 
-    def __make_predictions(
-        self,
-        year: int,
-        ml_models: Optional[List[MLModel]] = None,
-        round_number: Optional[int] = None,
-    ) -> None:
-        matches_to_predict = Match.objects.filter(
-            start_date_time__gt=self.right_now, round_number=round_number
-        )
+    def __make_predictions(self, year: int, round_number: int) -> None:
+        predictions = data_import.fetch_predictions(year, round_number)
+        predictions_df = pd.DataFrame(predictions)
 
-        ml_models = ml_models or MLModel.objects.all()
-
-        if ml_models is None:
-            raise ValueError(
-                "Could not find any ML models in DB to make predictions.\n"
+        home_df = (
+            predictions_df.query("at_home == 1")
+            .rename(
+                columns={
+                    "team": "home_team",
+                    "oppo_team": "away_team",
+                    "margin": "home_margin",
+                }
             )
-
-        make_model_predictions = partial(
-            self.__make_model_predictions,
-            year,
-            matches_to_predict,
-            round_number=round_number,
+            .drop("at_home", axis=1)
+        )
+        away_df = (
+            predictions_df.query("at_home == 0")
+            .rename(
+                columns={
+                    "team": "away_team",
+                    "oppo_team": "home_team",
+                    "margin": "away_margin",
+                }
+            )
+            .drop("at_home", axis=1)
         )
 
-        prediction_lists = [make_model_predictions(ml_model) for ml_model in ml_models]
-        predictions: List[Optional[Prediction]] = reduce(
-            lambda acc_list, curr_list: acc_list + curr_list, prediction_lists, []
+        home_away_df = home_df.merge(
+            away_df,
+            on=["home_team", "away_team", "year", "round_number", "ml_model"],
+            how="inner",
         )
-        predictions_to_save = [pred for pred in predictions if pred is not None]
+
+        predictions_to_save = [
+            self.__build_match_prediction(pred)
+            for pred in home_away_df.to_dict("records")
+        ]
 
         Prediction.objects.bulk_create(predictions_to_save)
 
         if self.verbose == 1:
             print("Predictions saved!\n")
 
-    def __make_model_predictions(
-        self,
-        year: int,
-        matches: List[Match],
-        ml_model_record: MLModel,
-        round_number: Optional[int] = None,
-    ) -> List[Optional[Prediction]]:
-        if self.verbose == 1:
-            print(f"\tMaking predictions with {ml_model_record.name}")
-
-        loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model_record.filepath))
-        self.data.test_years = (year, year)
-        X_test, _ = self.data.test_data(test_round=round_number)
-
-        if not X_test.any().any():
-            raise ValueError(
-                "X_test doesn't have any rows, likely due to some data for the "
-                "upcoming round not being available yet."
-            )
-
-        y_pred = loaded_model.predict(X_test)
-
-        data_row_slice = (slice(None), year, slice(round_number, round_number))
-        prediction_data = self.data.data.loc[data_row_slice, :].assign(
-            predicted_margin=y_pred
-        )
-
-        build_match_prediction = partial(
-            self.__build_match_prediction, ml_model_record, prediction_data
-        )
-
-        return [build_match_prediction(match) for match in matches]
-
     @staticmethod
-    def __build_match_prediction(
-        ml_model_record: MLModel, prediction_data: pd.DataFrame, match: Match
-    ) -> Optional[Prediction]:
-        home_team = match.teammatch_set.get(at_home=True).team
-        away_team = match.teammatch_set.get(at_home=False).team
+    def __build_match_prediction(prediction_data: PredictionData) -> List[Prediction]:
+        home_team = prediction_data["home_team"]
+        away_team = prediction_data["away_team"]
 
-        predicted_home_margin = prediction_data.xs(home_team.name, level=0)[
-            "predicted_margin"
-        ].iloc[0]
-        predicted_away_margin = prediction_data.xs(away_team.name, level=0)[
-            "predicted_margin"
-        ].iloc[0]
+        home_margin = prediction_data["home_margin"]
+        away_margin = prediction_data["away_margin"]
 
         # predicted_margin is always positive as its always associated with predicted_winner
-        predicted_margin = np.mean(
-            np.abs([predicted_home_margin, predicted_away_margin])
-        )
+        predicted_margin = np.mean(np.abs([home_margin, away_margin]))
 
-        if predicted_home_margin > predicted_away_margin:
+        if predicted_margin > away_margin:
             predicted_winner = home_team
-        elif predicted_away_margin > predicted_home_margin:
+        elif away_margin > predicted_margin:
             predicted_winner = away_team
         else:
             raise ValueError(
-                "Predicted home and away margins are equal, which is basically impossible, "
-                "so figure out what's going on:\n"
-                f"home_team = {home_team.name}\n"
-                f"away_team = {away_team.name}\n"
-                f"data = {prediction_data}"
+                "Predicted home and away margins are equal, which is basically "
+                "impossible, so figure out what's going on:\n"
+                f"{prediction_data}"
             )
 
-        prediction_attributes = {"match": match, "ml_model": ml_model_record}
+        matches = Match.objects.get(
+            start_date_time__year=prediction_data["year"],
+            round_number=prediction_data["round_number"],
+            teammatch__team__name__in=[home_team, away_team],
+        )
+
+        if len(matches) != 2 or matches[0] != matches[1]:
+            raise ValueError(
+                "Prediction data should have yielded a unique match, with duplicates "
+                "returned from the DB, but we got the following instead:\n"
+                f"{matches.values('round_number', 'start_date_time')}\n\n"
+                f"{prediction_data}"
+            )
+
+        match = matches.first()
+        ml_model = MLModel.objects.get(name=prediction_data["ml_model"])
+
+        prediction_attributes = {"match": match, "ml_model": ml_model}
 
         try:
             prediction = Prediction.objects.get(**prediction_attributes)

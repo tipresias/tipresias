@@ -106,6 +106,7 @@ CITIES = {
     "Ballarat": {"state": "VIC", "lat": -37.5622, "long": 143.8503},
     "Shanghai": {"state": "CHN", "lat": 31.2304, "long": 121.4737},
     "Albury": {"state": "NSW", "lat": -36.0737, "long": 146.9135},
+    "Townsville": {"state": "QLD", "lat": -19.2590, "long": 146.8169},
 }
 
 TEAM_CITIES = {
@@ -199,6 +200,7 @@ VENUE_CITIES = {
     "Westpac Stadium": "Wellington",
     "Marvel Stadium": "Melbourne",
     "Canberra Oval": "Canberra",
+    "Riverway Stadium": "Townsville",
 }
 
 DEFUNCT_TEAM_NAMES = ["Fitzroy", "University"]

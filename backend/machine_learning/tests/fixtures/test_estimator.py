@@ -13,7 +13,11 @@ PIPELINE = make_pipeline(
         [
             (
                 "onehotencoder",
-                OneHotEncoder(categories=[TEAM_NAMES, TEAM_NAMES], sparse=False),
+                OneHotEncoder(
+                    categories=[TEAM_NAMES, TEAM_NAMES],
+                    sparse=False,
+                    handle_unknown="ignore",
+                ),
                 CATEGORY_COLS,
             )
         ],

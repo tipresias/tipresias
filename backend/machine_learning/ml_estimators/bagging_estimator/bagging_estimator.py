@@ -37,6 +37,7 @@ PIPELINE = make_pipeline(
                 OneHotEncoder(
                     categories=[TEAM_NAMES, TEAM_NAMES, ROUND_TYPES, VENUES],
                     sparse=False,
+                    handle_unknown="ignore",
                 ),
                 CATEGORY_COLS,
             )

@@ -40,7 +40,13 @@ class TestBenchmarkEstimator(TestCase):
         self.y = data_frame["oppo_score"]
         pipeline = make_pipeline(
             ColumnTransformer(
-                [("onehot", OneHotEncoder(sparse=False), ["team"])],
+                [
+                    (
+                        "onehot",
+                        OneHotEncoder(sparse=False, handle_unknown="ignore"),
+                        ["team"],
+                    )
+                ],
                 remainder="passthrough",
             ),
             Ridge(),

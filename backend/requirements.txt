@@ -20,7 +20,7 @@ html5lib
 # App packages
 django
 whitenoise
-graphene>=2.0
+graphene>=2.1.5
 graphene-django>=2.0
 psycopg2-binary
 dj-database-url

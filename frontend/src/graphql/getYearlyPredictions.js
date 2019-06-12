@@ -9,7 +9,7 @@ export const GET_YEARLY_PREDICTIONS_QUERY = gql`
         roundNumber
         modelPredictions{
           modelName
-           cumulativeCorrectCount
+          cumulativeCorrectCount
         }
       }
    }

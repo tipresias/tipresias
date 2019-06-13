@@ -1,7 +1,9 @@
 from datetime import date
+from dateutil import parser
 
 from django.test import TestCase
 from graphene.test import Client
+import numpy as np
 
 from server.schema import schema
 from server.tests.fixtures.factories import FullMatchFactory
@@ -158,10 +160,11 @@ class TestSchema(TestCase):
 
     def test_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
+        year = date.today().year
 
         latest_matches = [
             FullMatchFactory(
-                year=date.today().year,
+                year=year,
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
@@ -174,7 +177,8 @@ class TestSchema(TestCase):
                 latestRoundPredictions(mlModelName: "accurate_af") {
                     roundNumber
                     matches {
-                        predictionSet { predictedWinner { name }, predictedMargin }
+                        startDateTime
+                        predictionSet { predictedWinner { name } predictedMargin }
                         winner { name }
                         homeTeam { name }
                         awayTeam { name }
@@ -188,6 +192,12 @@ class TestSchema(TestCase):
         max_match_round = max([match.round_number for match in latest_matches])
 
         self.assertEqual(data["roundNumber"], max_match_round)
+
+        match_years = [
+            parser.parse(match["startDateTime"]).year for match in data["matches"]
+        ]
+
+        self.assertEqual(np.mean(match_years), year)
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

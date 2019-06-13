@@ -158,7 +158,7 @@ class SeasonType(graphene.ObjectType):
 
         return (
             pd.DataFrame(list(query_set))
-            .assign(cumulative_correct=calculate_cumulative_correct)
+            .assign(cumulative_correct_count=calculate_cumulative_correct)
             .groupby(["match__round_number", "ml_model__name"])
             .mean()
             .pipe(round_predictions)

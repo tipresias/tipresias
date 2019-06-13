@@ -1,7 +1,9 @@
 from datetime import date
+from dateutil import parser
 
 from django.test import TestCase
 from graphene.test import Client
+import numpy as np
 
 from server.schema import schema
 from server.tests.fixtures.factories import FullMatchFactory
@@ -107,6 +109,7 @@ class TestSchema(TestCase):
                     predictionsByRound {
                         roundNumber
                         modelPredictions { modelName, cumulativeCorrectCount }
+                        matches { predictionSet { isCorrect } }
                     }
                 }
             }
@@ -124,23 +127,44 @@ class TestSchema(TestCase):
 
         self.assertLessEqual(earlier_round["roundNumber"], later_round["roundNumber"])
 
-        earlier_round_counts = [
+        earlier_round_cum_counts = [
             prediction["cumulativeCorrectCount"]
             for prediction in earlier_round["modelPredictions"]
         ]
-        later_round_counts = [
+        earlier_round_correct = [
+            prediction["isCorrect"]
+            for match in earlier_round["matches"]
+            for prediction in match["predictionSet"]
+        ]
+
+        # Regression test to make sure cumulative counts are being calculated correctly
+        self.assertEqual(sum(earlier_round_cum_counts), sum(earlier_round_correct))
+
+        later_round_cum_counts = [
             prediction["cumulativeCorrectCount"]
             for prediction in later_round["modelPredictions"]
         ]
+        later_round_correct = [
+            prediction["isCorrect"]
+            for match in later_round["matches"]
+            for prediction in match["predictionSet"]
+        ]
 
-        self.assertLessEqual(sum(earlier_round_counts), sum(later_round_counts))
+        # Regression test to make sure cumulative counts are being calculated correctly
+        self.assertEqual(
+            sum(earlier_round_correct + later_round_correct),
+            sum(later_round_cum_counts),
+        )
+
+        self.assertLessEqual(sum(earlier_round_cum_counts), sum(later_round_cum_counts))
 
     def test_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
+        year = date.today().year
 
         latest_matches = [
             FullMatchFactory(
-                year=date.today().year,
+                year=year,
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
@@ -153,7 +177,8 @@ class TestSchema(TestCase):
                 latestRoundPredictions(mlModelName: "accurate_af") {
                     roundNumber
                     matches {
-                        predictionSet { predictedWinner { name }, predictedMargin }
+                        startDateTime
+                        predictionSet { predictedWinner { name } predictedMargin }
                         winner { name }
                         homeTeam { name }
                         awayTeam { name }
@@ -167,6 +192,12 @@ class TestSchema(TestCase):
         max_match_round = max([match.round_number for match in latest_matches])
 
         self.assertEqual(data["roundNumber"], max_match_round)
+
+        match_years = [
+            parser.parse(match["startDateTime"]).year for match in data["matches"]
+        ]
+
+        self.assertEqual(np.mean(match_years), year)
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

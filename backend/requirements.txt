@@ -18,13 +18,13 @@ bs4
 html5lib
 
 # App packages
-django
+django>=2.2,<2.99
 whitenoise
-graphene>=2.1.5
-graphene-django>=2.0
+graphene>=2.1.5,<2.1.99
+graphene-django==2.2.0 # Can't upgrade to 2.3.x, due to weird graphiql.js bug
 psycopg2-binary
 dj-database-url
-sendgrid>=6.0
+sendgrid>=6.0,<6.99
 django_cron
 
 # Testing/Linting

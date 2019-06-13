@@ -107,6 +107,7 @@ class TestSchema(TestCase):
                     predictionsByRound {
                         roundNumber
                         modelPredictions { modelName, cumulativeCorrectCount }
+                        matches { predictionSet { isCorrect } }
                     }
                 }
             }
@@ -124,16 +125,36 @@ class TestSchema(TestCase):
 
         self.assertLessEqual(earlier_round["roundNumber"], later_round["roundNumber"])
 
-        earlier_round_counts = [
+        earlier_round_cum_counts = [
             prediction["cumulativeCorrectCount"]
             for prediction in earlier_round["modelPredictions"]
         ]
-        later_round_counts = [
+        earlier_round_correct = [
+            prediction["isCorrect"]
+            for match in earlier_round["matches"]
+            for prediction in match["predictionSet"]
+        ]
+
+        # Regression test to make sure cumulative counts are being calculated correctly
+        self.assertEqual(sum(earlier_round_cum_counts), sum(earlier_round_correct))
+
+        later_round_cum_counts = [
             prediction["cumulativeCorrectCount"]
             for prediction in later_round["modelPredictions"]
         ]
+        later_round_correct = [
+            prediction["isCorrect"]
+            for match in later_round["matches"]
+            for prediction in match["predictionSet"]
+        ]
 
-        self.assertLessEqual(sum(earlier_round_counts), sum(later_round_counts))
+        # Regression test to make sure cumulative counts are being calculated correctly
+        self.assertEqual(
+            sum(earlier_round_correct + later_round_correct),
+            sum(later_round_cum_counts),
+        )
+
+        self.assertLessEqual(sum(earlier_round_cum_counts), sum(later_round_cum_counts))
 
     def test_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())

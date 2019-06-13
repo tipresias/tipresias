@@ -18,7 +18,7 @@ bs4
 html5lib
 
 # App packages
-django
+django>=2.2
 whitenoise
 graphene>=2.1.5
 graphene-django>=2.0

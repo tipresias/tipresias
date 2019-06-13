@@ -24,7 +24,9 @@ urlpatterns = [  # pylint: disable=C0103
     path("admin/", admin.site.urls),
     re_path(
         "^graphql",
-        csrf_exempt(GraphQLView.as_view(graphiql=os.getenv("GRAPHIQL", default=False))),
+        csrf_exempt(GraphQLView.as_view(graphiql=(os.getenv("GRAPHIQL") or False))),
     ),
-    re_path(".*", TemplateView.as_view(template_name="index.html")),
 ]
+
+if os.getenv("DJANGO_SETTINGS_MODULE") == "project.settings.production":
+    urlpatterns.append(re_path(".*", TemplateView.as_view(template_name="index.html")))

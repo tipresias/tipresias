@@ -139,3 +139,6 @@ dask-worker-space
 # Cypress artifacts
 browser/cypress/screenshots/
 browser/cypress/videos/
+
+# DB dumps
+*.sql

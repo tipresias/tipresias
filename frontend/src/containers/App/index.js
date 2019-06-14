@@ -3,8 +3,11 @@ import React, { Component } from 'react';
 import type { Node } from 'react';
 import { Query } from 'react-apollo';
 import styled from 'styled-components/macro';
-import { GET_PREDICTIONS_QUERY, GET_PREDICTION_YEARS_QUERY, GET_YEARLY_PREDICTIONS_QUERY } from '../../graphql';
-import createTableDataRows from './utils/CreateTableDataRows';
+import {
+  FETCH_PREDICTION_YEARS_QUERY,
+  FETCH_YEARLY_PREDICTIONS_QUERY,
+  FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
+} from '../../graphql';
 import PageHeader from '../../components/PageHeader';
 import PageFooter from '../../components/PageFooter';
 import BarChartMain from '../../components/BarChartMain';
@@ -26,60 +29,10 @@ type Props = {};
 
 const Widget = styled.div`${WidgetStyles}`;
 
-const BarChartMainQueryChildren = ({ loading, error, data }): Node => {
-  const nonNullData = data || {};
-  const dataWithAllPredictions = { yearlyPredictions: {}, ...nonNullData };
-  const { yearlyPredictions } = dataWithAllPredictions;
-
-  if (loading) return <BarChartLoading text="Loading predictions..." />;
-  if (error) return <StatusBar text={error.message} error />;
-  if (yearlyPredictions.length === 0) return <StatusBar text="No data found" empty />;
-
-  return <BarChartMain data={yearlyPredictions.predictionsByRound} />;
-};
-
-const PredictionListQueryChildren = ({ loading, error, data }): Node => {
-  const nonNullData = data || {};
-  const dataWithAllPredictions = { predictions: [], ...nonNullData };
-  const { predictions } = dataWithAllPredictions;
-
-  if (loading) return <p>Loading predictions...</p>;
-  if (error) return <StatusBar text={error.message} error />;
-  if (predictions.length === 0) return <StatusBar text="No data found" empty />;
-
-  const rows = createTableDataRows(predictions);
-  return (
-    <Table
-      caption="Tipresias predictions for matches of round X, season 2019"
-      headers={['Date', 'Winner', 'Predicted margin', 'Loser']}
-      rows={rows}
-    />
-  );
-};
-
-
 class App extends Component<Props, State> {
   state = {
     year: 2018,
   };
-
-  PERFORMANCE_ITEMS = [
-    {
-      id: 1,
-      key: 'Total Points',
-      value: 'wip',
-    },
-    {
-      id: 2,
-      key: 'Total Margin',
-      value: 'wip',
-    },
-    {
-      id: 3,
-      key: 'MAE',
-      value: 'wip',
-    },
-  ];
 
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
@@ -88,42 +41,71 @@ class App extends Component<Props, State> {
   render() {
     const { year } = this.state;
 
-    const PredictionYearsQueryChildren = ({ loading, error, data }): Node => {
-      const nonNullData = data || {};
-      const dataWithAllPredictionYears = { predictionYears: [], ...nonNullData };
-      const { predictionYears } = dataWithAllPredictionYears;
-
-      if (loading) return <p>Loading predictions...</p>;
-      if (error) return <StatusBar text={error.message} error />;
-      return (
-        <Select
-          name="year"
-          value={year}
-          onChange={this.onChangeYear}
-          options={predictionYears}
-        />
-      );
-    };
-
 
     return (
       <AppContainer>
         <PageHeader />
         <Widget gridColumn="2 / -2">
           <WidgetHeading>Cumulative points per round</WidgetHeading>
-          <Query query={GET_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
-            {BarChartMainQueryChildren}
+          <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
+            {({ loading, error, data }): Node => {
+              // TODO: Remove (this is for now to avoid the flow error when doing data.fetchYearlyPredictions)
+              const nonNullData = data || {};
+              const dataWithResponse = { fetchYearlyPredictions: {}, ...nonNullData };
+              const { fetchYearlyPredictions } = dataWithResponse;
+              const results = fetchYearlyPredictions;
+
+              if (loading) return <BarChartLoading text="Loading predictions..." />;
+              if (error) return <StatusBar text={error.message} error />;
+              if (results.length === 0) return <StatusBar text="No data found" empty />;
+              return <BarChartMain data={results.predictionsByRound} />;
+            }}
           </Query>
           <WidgetFooter>
-            <Query query={GET_PREDICTION_YEARS_QUERY}>
-              {PredictionYearsQueryChildren}
+            <Query query={FETCH_PREDICTION_YEARS_QUERY}>
+              {({ loading, error, data }): Node => {
+                // TODO: Remove (this is for now to avoid the flow error when doing data.fetchPredictionYears)
+                const nonNullData = data || {};
+                const newData = { fetchPredictionYears: [], ...nonNullData };
+                const { fetchPredictionYears } = newData;
+                const results = fetchPredictionYears;
+                if (loading) return <p>Loading predictions...</p>;
+                if (error) return <StatusBar text={error.message} error />;
+                return (
+                  <Select
+                    name="year"
+                    value={year}
+                    onChange={this.onChangeYear}
+                    options={results}
+                  />
+                );
+              }}
             </Query>
           </WidgetFooter>
         </Widget>
 
         <Widget gridColumn="2 / -2">
-          <Query query={GET_PREDICTIONS_QUERY} variables={{ year: 2018 }}>
-            {PredictionListQueryChildren}
+          <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
+            {({ loading, error, data }): Node => {
+              // TODO: Remove (this is for now to avoid the flow error when doing data.fetchLatestRoundPredictions)
+              const nonNullData = data || {};
+              const newData = { fetchLatestRoundPredictions: [], ...nonNullData };
+              const { fetchLatestRoundPredictions } = newData;
+              const results = fetchLatestRoundPredictions;
+
+              if (loading) return <p>Loading predictions...</p>;
+              if (error) return <StatusBar text={error.message} error />;
+              if (results.length === 0) return <StatusBar text="No data found" empty />;
+              // TODO: return table, but for now return a placeholder.
+              // return (
+              //   <Table
+              //     caption="Tipresias predictions for matches of round X, season X"
+              //     headers={['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?']}
+              //     rows={rows}
+              //   />
+              // );
+              return <div>Table placeholder</div>;
+            }}
           </Query>
         </Widget>
 
@@ -131,7 +113,24 @@ class App extends Component<Props, State> {
           <WidgetHeading>
             Tipresias performance metrics for last round in current season (year: 2019)
           </WidgetHeading>
-          <DefinitionList items={this.PERFORMANCE_ITEMS} />
+          <DefinitionList items={[
+            {
+              id: 1,
+              key: 'Total Points',
+              value: 'wip',
+            },
+            {
+              id: 2,
+              key: 'Total Margin',
+              value: 'wip',
+            },
+            {
+              id: 3,
+              key: 'MAE',
+              value: 'wip',
+            },
+          ]}
+          />
         </Widget>
 
         <PageFooter />

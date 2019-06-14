@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
-from server.types import RawFixtureData, MatchData
+from server.types import RawFixtureData, MatchData, PredictionData
 from project.settings.common import MELBOURNE_TIMEZONE
 
 FIRST = 1
@@ -171,3 +171,26 @@ def fake_footywire_betting_data(
     reduced_data = list(itertools.chain.from_iterable(data))
 
     return pd.DataFrame(list(reduced_data))
+
+
+def fake_prediction_data(match_data: RawFixtureData) -> List[PredictionData]:
+    return [
+        {
+            "team": match_data["home_team"],
+            "year": match_data["season"],
+            "round_number": match_data["round"],
+            "at_home": 1,
+            "oppo_team": match_data["away_team"],
+            "ml_model": "test_estimator",
+            "predicted_margin": np.random.randint(1, 50),
+        },
+        {
+            "team": match_data["away_team"],
+            "year": match_data["season"],
+            "round_number": match_data["round"],
+            "at_home": 0,
+            "oppo_team": match_data["home_team"],
+            "ml_model": "test_estimator",
+            "predicted_margin": np.random.randint(1, 50),
+        },
+    ]

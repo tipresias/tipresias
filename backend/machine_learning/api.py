@@ -38,8 +38,10 @@ def _make_model_predictions(
     data: pd.DataFrame,
     ml_model: Dict[str, str],
     round_number: Optional[int] = None,
+    verbose=1,
 ) -> List[pd.DataFrame]:
-    print(f"Making predictions with {ml_model['name']}")
+    if verbose == 1:
+        print(f"Making predictions with {ml_model['name']}")
 
     loaded_model = joblib.load(os.path.join(BASE_DIR, ml_model["filepath"]))
     data.test_years = (year, year)
@@ -69,12 +71,15 @@ def make_predictions(
     data: pd.DataFrame = JoinedMLData(
         fetch_data=True, start_date=PREDICTION_DATA_START_DATE
     ),
+    verbose=1,
 ) -> List[PredictionData]:
     if not any(ml_models):
         raise ValueError("Could not find any ML models in to make predictions.\n")
 
+    data.verbose = verbose
+
     partial_make_model_predictions = partial(
-        _make_model_predictions, year, data, round_number=round_number
+        _make_model_predictions, year, data, round_number=round_number, verbose=verbose
     )
 
     return (

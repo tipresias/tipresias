@@ -6,7 +6,9 @@ from server.types import PredictionData
 from machine_learning import api
 
 
-def fetch_prediction_data(year: int, round_number: int) -> List[PredictionData]:
+def fetch_prediction_data(
+    year: int, round_number: int, verbose=1
+) -> List[PredictionData]:
     """Fetch prediction data from machine_learning module"""
 
-    return api.make_predictions(year, round_number=round_number)
+    return api.make_predictions(year, round_number=round_number, verbose=verbose)

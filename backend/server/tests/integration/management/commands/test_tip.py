@@ -6,10 +6,12 @@ from freezegun import freeze_time
 
 from server.models import Match, TeamMatch, Prediction
 from server.management.commands import tip
-from server.tests.fixtures.data_factories import fake_fixture_data
+from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
+from server import data_import
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import BettingMLData
+
 
 ROW_COUNT = 5
 
@@ -33,16 +35,24 @@ class TestTip(TestCase):
             side_effect=self.__pred_bulk_create(pred_bulk_create)
         )
 
-        MLModelFactory()
+        MLModelFactory(name="test_estimator")
 
-        # Can't use TeamFactory, because team names need to match fixture data
+        prediction_data = []
+
         for match_data in fixture_data.to_dict("records"):
             TeamFactory(name=match_data["home_team"])
             TeamFactory(name=match_data["away_team"])
 
+            prediction_data.extend(fake_prediction_data(match_data))
+
+        data_import.fetch_prediction_data = Mock(return_value=prediction_data)
+
         # Not fetching data, because it takes forever
         self.tip_command = tip.Command(
-            data_reader=fitzroy, fetch_data=False, data=BettingMLData()
+            data_reader=fitzroy,
+            fetch_data=False,
+            data=BettingMLData(),
+            prediction_data=data_import,
         )
 
     def test_handle(self):

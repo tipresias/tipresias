@@ -1,19 +1,17 @@
 """Module for 'tip' command that updates predictions for upcoming AFL matches"""
 
-import os
-from functools import partial, reduce
+from functools import reduce
 from datetime import datetime, date
 from typing import List, Optional
 from django.core.management.base import BaseCommand
 from django import utils
 import pandas as pd
 import numpy as np
-from sklearn.externals import joblib
 from mypy_extensions import TypedDict
 
-from project.settings.common import BASE_DIR, MELBOURNE_TIMEZONE
+from project.settings.common import MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.types import CleanedFixtureData, PredictionData
+from server.types import CleanedFixtureData
 from server import data_import
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import JoinedMLData
@@ -57,6 +55,7 @@ class Command(BaseCommand):
         data_reader=FitzroyDataImporter(),
         fetch_data=True,
         data=JoinedMLData(fetch_data=True, start_date=PREDICTION_DATA_START_DATE),
+        prediction_data=data_import,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -66,6 +65,7 @@ class Command(BaseCommand):
         self.current_year = self.right_now.year
         self.fetch_data = fetch_data
         self.data = data
+        self.prediction_data = prediction_data
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
         """Run 'tip' command"""
@@ -208,7 +208,9 @@ class Command(BaseCommand):
         return self.__build_team_match(match, match_data)
 
     def __make_predictions(self, year: int, round_number: int) -> None:
-        predictions = data_import.fetch_prediction_data(year, round_number)
+        predictions = self.prediction_data.fetch_prediction_data(
+            year, round_number, verbose=self.verbose
+        )
         predictions_df = pd.DataFrame(predictions)
 
         home_df = (
@@ -217,7 +219,7 @@ class Command(BaseCommand):
                 columns={
                     "team": "home_team",
                     "oppo_team": "away_team",
-                    "margin": "home_margin",
+                    "predicted_margin": "home_margin",
                 }
             )
             .drop("at_home", axis=1)
@@ -228,7 +230,7 @@ class Command(BaseCommand):
                 columns={
                     "team": "away_team",
                     "oppo_team": "home_team",
-                    "margin": "away_margin",
+                    "predicted_margin": "away_margin",
                 }
             )
             .drop("at_home", axis=1)
@@ -254,7 +256,7 @@ class Command(BaseCommand):
     @staticmethod
     def __build_match_prediction(
         prediction_data: CleanPredictionData
-    ) -> List[Optional[Prediction]]:
+    ) -> Optional[Prediction]:
         home_team = prediction_data["home_team"]
         away_team = prediction_data["away_team"]
 
@@ -265,9 +267,9 @@ class Command(BaseCommand):
         predicted_margin = np.mean(np.abs([home_margin, away_margin]))
 
         if predicted_margin > away_margin:
-            predicted_winner = home_team
+            predicted_winner = Team.objects.get(name=home_team)
         elif away_margin > predicted_margin:
-            predicted_winner = away_team
+            predicted_winner = Team.objects.get(name=away_team)
         else:
             raise ValueError(
                 "Predicted home and away margins are equal, which is basically "
@@ -275,7 +277,7 @@ class Command(BaseCommand):
                 f"{prediction_data}"
             )
 
-        matches = Match.objects.get(
+        matches = Match.objects.filter(
             start_date_time__year=prediction_data["year"],
             round_number=prediction_data["round_number"],
             teammatch__team__name__in=[home_team, away_team],

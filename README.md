@@ -55,9 +55,14 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 
 - `docker-compose run --rm afl_data Rscript -e "devtools::test()"`
 
+#### Run end-to-end browser tests
+
+- `docker-compose run --rm browser npx cypress run`
+
 ### Deploy
 
 - Via Travis CI (recommended):
+
   - In the Travis dashboard, navigate to the tipresias repository.
   - Under 'More Options', trigger a build on `master`.
   - This will build the image, run tests, and deploy to DigitalOcean.

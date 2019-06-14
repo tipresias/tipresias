@@ -135,3 +135,7 @@ backend/data
 # Folders added via dask
 dask-worker-space
 .Rproj.user
+
+# Cypress artifacts
+browser/cypress/screenshots/
+browser/cypress/videos/

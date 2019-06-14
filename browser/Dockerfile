@@ -1,4 +1,4 @@
-FROM cypress/browsers:node10.2.1-chrome74
+FROM cypress/browsers:node10.2.1-chrome74@sha256:21d6232541c3d99409edcdd2b581784a93cb0ffe43bb845f07f62c8d693a9b1c
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -14,4 +14,3 @@ RUN npm install
 RUN npx cypress verify
 
 COPY wait-for-it.sh .
-RUN chmod +x ./wait-for-it.sh

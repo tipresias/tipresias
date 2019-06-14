@@ -96,15 +96,18 @@ class App extends Component<Props, State> {
               if (loading) return <p>Loading predictions...</p>;
               if (error) return <StatusBar text={error.message} error />;
               if (results.length === 0) return <StatusBar text="No data found" empty />;
-              // TODO: return table, but for now return a placeholder.
-              // return (
-              //   <Table
-              //     caption="Tipresias predictions for matches of round X, season X"
-              //     headers={['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?']}
-              //     rows={rows}
-              //   />
-              // );
-              return <div>Table placeholder</div>;
+
+              // TODO: get this value from the query response
+              const season = '2018';
+              const round = results.roundNumber;
+
+              return (
+                <Table
+                  caption={`Tipresias predictions for matches of round ${round}, season ${season}`}
+                  headers={['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?']}
+                  data={results}
+                />
+              );
             }}
           </Query>
         </Widget>

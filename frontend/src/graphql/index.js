@@ -1,10 +1,75 @@
+import { gql } from 'apollo-boost';
+// eslint-disable-next-line import/prefer-default-export
 
-import { GET_PREDICTIONS_QUERY } from './getPredictions';
-import { GET_PREDICTION_YEARS_QUERY } from './getPredictionYears';
-import { GET_YEARLY_PREDICTIONS_QUERY } from './getYearlyPredictions';
+export const FETCH_PREDICTIONS_QUERY = gql`
+  query fetchPredictions($year: Int){
+    fetchPredictions(year: $year) {
+      id
+      match {
+        startDateTime
+        roundNumber
+        year
+        teammatchSet {
+          atHome
+          team {
+            name
+          }
+          score
+        }
+      }
+      mlModel {
+        name
+      }
+      predictedWinner {
+        name
+      }
+      predictedMargin
+      isCorrect
+    }
+  }`;
 
-export {
-  GET_PREDICTIONS_QUERY,
-  GET_PREDICTION_YEARS_QUERY,
-  GET_YEARLY_PREDICTIONS_QUERY,
-};
+export const FETCH_LATEST_ROUND_PREDICTIONS_QUERY = gql`
+query {
+  fetchLatestRoundPredictions {
+    roundNumber
+    matches {
+      startDateTime
+      homeTeam{
+        name
+      }
+      awayTeam{
+        name
+      }
+      predictions(mlModelName: "tipresias"){
+        mlModel{
+          name
+        }
+        predictedWinner{
+          name
+        }
+        predictedMargin
+        isCorrect
+      }
+
+    }
+  }
+}`;
+
+export const FETCH_PREDICTION_YEARS_QUERY = gql`
+  query {
+    fetchPredictionYears
+  }`;
+
+export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
+  query fetchYearlyPredictions($year: Int){
+    fetchYearlyPredictions(year: $year){
+      predictionModelNames
+       predictionsByRound{
+        roundNumber
+        modelPredictions{
+          modelName
+          cumulativeCorrectCount
+        }
+      }
+   }
+  }`;

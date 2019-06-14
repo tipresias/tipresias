@@ -7,29 +7,15 @@ from django.core.management.base import BaseCommand
 from django import utils
 import pandas as pd
 import numpy as np
-from mypy_extensions import TypedDict
 
 from project.settings.common import MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.types import CleanedFixtureData
+from server.types import CleanedFixtureData, CleanPredictionData
 from server import data_import
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import JoinedMLData
 from machine_learning.data_transformation.data_cleaning import clean_fixture_data
 
-
-CleanPredictionData = TypedDict(
-    "CleanPredictionData",
-    {
-        "home_team": str,
-        "year": int,
-        "round_number": int,
-        "away_team": str,
-        "ml_model": str,
-        "home_margin": float,
-        "away_margin": float,
-    },
-)
 
 NO_SCORE = 0
 # We calculate rolling sums/means for some features that can span over 5 seasons
@@ -242,79 +228,11 @@ class Command(BaseCommand):
             how="inner",
         )
 
-        predictions_to_save = [
-            self.__build_match_prediction(pred)
-            for pred in home_away_df.to_dict("records")
-        ]
-        predictions_to_save = [pred for pred in predictions_to_save if pred is not None]
-
-        Prediction.objects.bulk_create(predictions_to_save)
+        for pred in home_away_df.to_dict("records"):
+            Prediction.update_or_create_from_data(pred)
 
         if self.verbose == 1:
             print("Predictions saved!\n")
-
-    @staticmethod
-    def __build_match_prediction(
-        prediction_data: CleanPredictionData
-    ) -> Optional[Prediction]:
-        home_team = prediction_data["home_team"]
-        away_team = prediction_data["away_team"]
-
-        home_margin = prediction_data["home_margin"]
-        away_margin = prediction_data["away_margin"]
-
-        # predicted_margin is always positive as its always associated with predicted_winner
-        predicted_margin = np.mean(np.abs([home_margin, away_margin]))
-
-        if predicted_margin > away_margin:
-            predicted_winner = Team.objects.get(name=home_team)
-        elif away_margin > predicted_margin:
-            predicted_winner = Team.objects.get(name=away_team)
-        else:
-            raise ValueError(
-                "Predicted home and away margins are equal, which is basically "
-                "impossible, so figure out what's going on:\n"
-                f"{prediction_data}"
-            )
-
-        matches = Match.objects.filter(
-            start_date_time__year=prediction_data["year"],
-            round_number=prediction_data["round_number"],
-            teammatch__team__name__in=[home_team, away_team],
-        )
-
-        if len(matches) != 2 or matches[0] != matches[1]:
-            raise ValueError(
-                "Prediction data should have yielded a unique match, with duplicates "
-                "returned from the DB, but we got the following instead:\n"
-                f"{matches.values('round_number', 'start_date_time')}\n\n"
-                f"{prediction_data}"
-            )
-
-        match = matches.first()
-        ml_model = MLModel.objects.get(name=prediction_data["ml_model"])
-
-        prediction_attributes = {"match": match, "ml_model": ml_model}
-
-        try:
-            prediction = Prediction.objects.get(**prediction_attributes)
-
-            prediction.predicted_margin = predicted_margin
-            prediction.predicted_winner = predicted_winner
-
-            prediction.clean_fields()
-            prediction.clean()
-            prediction.save()
-
-            return None
-        except Prediction.DoesNotExist:
-            prediction = Prediction(
-                predicted_margin=predicted_margin,
-                predicted_winner=predicted_winner,
-                **prediction_attributes,
-            )
-
-            return prediction
 
     @staticmethod
     def __build_team_match(

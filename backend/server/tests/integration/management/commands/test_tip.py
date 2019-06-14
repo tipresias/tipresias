@@ -29,10 +29,10 @@ class TestTip(TestCase):
         fitzroy = FitzroyDataImporter()
         fitzroy.fetch_fixtures = Mock(return_value=fixture_data)
 
-        # Mock bulk_create to make assertions on calls
-        pred_bulk_create = copy.copy(Prediction.objects.bulk_create)
-        Prediction.objects.bulk_create = Mock(
-            side_effect=self.__pred_bulk_create(pred_bulk_create)
+        # Mock update_or_create_from_data to make assertions on calls
+        update_or_create_from_data = copy.copy(Prediction.update_or_create_from_data)
+        Prediction.update_or_create_from_data = Mock(
+            side_effect=self.__update_or_create_from_data(update_or_create_from_data)
         )
 
         MLModelFactory(name="test_estimator")
@@ -43,7 +43,11 @@ class TestTip(TestCase):
             TeamFactory(name=match_data["home_team"])
             TeamFactory(name=match_data["away_team"])
 
-            prediction_data.extend(fake_prediction_data(match_data))
+            prediction_data.extend(
+                fake_prediction_data(
+                    match_data=match_data, ml_model_name="test_estimator"
+                )
+            )
 
         data_import.fetch_prediction_data = Mock(return_value=prediction_data)
 
@@ -74,11 +78,11 @@ class TestTip(TestCase):
 
             self.tip_command.handle(verbose=0)
 
-            Prediction.objects.bulk_create.assert_called()
+            Prediction.update_or_create_from_data.assert_called()
 
             self.assertEqual(Match.objects.count(), ROW_COUNT)
             self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
     @staticmethod
-    def __pred_bulk_create(pred_bulk_create):
-        return pred_bulk_create
+    def __update_or_create_from_data(update_or_create_from_data):
+        return update_or_create_from_data

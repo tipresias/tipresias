@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Union
 from datetime import datetime
 import itertools
 from faker import Faker
@@ -7,6 +7,7 @@ import pandas as pd
 
 from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
 from server.types import RawFixtureData, MatchData, PredictionData
+from server.models import Match
 from project.settings.common import MELBOURNE_TIMEZONE
 
 FIRST = 1
@@ -173,24 +174,39 @@ def fake_footywire_betting_data(
     return pd.DataFrame(list(reduced_data))
 
 
-def fake_prediction_data(match_data: RawFixtureData) -> List[PredictionData]:
+def fake_prediction_data(
+    match_data: Union[RawFixtureData, Match, None] = None,
+    ml_model_name="test_estimator",
+) -> List[PredictionData]:
+    if match_data is None:
+        match_data_for_pred = fake_fixture_data(1, (2018, 2019)).iloc[0, :]
+    elif isinstance(match_data, Match):
+        match_data_for_pred = {
+            "home_team": match_data.teammatch_set.get(at_home=1).team.name,
+            "away_team": match_data.teammatch_set.get(at_home=0).team.name,
+            "season": match_data.start_date_time.year,
+            "round": match_data.round_number,
+        }
+    else:
+        match_data_for_pred = match_data
+
     return [
         {
-            "team": match_data["home_team"],
-            "year": match_data["season"],
-            "round_number": match_data["round"],
+            "team": match_data_for_pred["home_team"],
+            "year": match_data_for_pred["season"],
+            "round_number": match_data_for_pred["round"],
             "at_home": 1,
-            "oppo_team": match_data["away_team"],
-            "ml_model": "test_estimator",
+            "oppo_team": match_data_for_pred["away_team"],
+            "ml_model": ml_model_name,
             "predicted_margin": np.random.randint(1, 50),
         },
         {
-            "team": match_data["away_team"],
-            "year": match_data["season"],
-            "round_number": match_data["round"],
+            "team": match_data_for_pred["away_team"],
+            "year": match_data_for_pred["season"],
+            "round_number": match_data_for_pred["round"],
             "at_home": 0,
-            "oppo_team": match_data["home_team"],
-            "ml_model": "test_estimator",
+            "oppo_team": match_data_for_pred["home_team"],
+            "ml_model": ml_model_name,
             "predicted_margin": np.random.randint(1, 50),
         },
     ]

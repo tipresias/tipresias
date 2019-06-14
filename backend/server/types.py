@@ -43,7 +43,6 @@ MatchData = TypedDict(
     },
 )
 
-
 PredictionData = TypedDict(
     "PredictionData",
     {
@@ -54,5 +53,18 @@ PredictionData = TypedDict(
         "oppo_team": str,
         "ml_model": str,
         "predicted_margin": float,
+    },
+)
+
+CleanPredictionData = TypedDict(
+    "CleanPredictionData",
+    {
+        "home_team": str,
+        "year": int,
+        "round_number": int,
+        "away_team": str,
+        "ml_model": str,
+        "home_margin": float,
+        "away_margin": float,
     },
 )

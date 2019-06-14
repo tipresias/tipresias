@@ -40,3 +40,13 @@ services:
     image: postgres
     environment:
       - POSTGRES_DB=tipresias
+  browser:
+    build: ./browser
+    depends_on:
+      - frontend
+    volumes:
+      - ./browser/cypress:/app/cypress
+      - ./browser/cypress.json:/app/cypress.json
+    # Need to use 'host' network mode to avoid cross-host errors
+    # from Webpack server
+    network_mode: "host"

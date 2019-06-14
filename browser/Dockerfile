@@ -12,3 +12,6 @@ RUN npm install
 # running this command separately from "cypress run" will also cache its result
 # to avoid verifying again when running the tests
 RUN npx cypress verify
+
+COPY wait-for-it.sh .
+RUN chmod +x ./wait-for-it.sh

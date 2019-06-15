@@ -14,15 +14,12 @@ const getWrapperShallow = props => shallow(<Table {...props} />);
 describe('Table', () => {
   beforeEach(() => {
     mockedProps = {
-      data: {
-        roundNumber: 1,
-        matches: [{
-          startDateTime: 'mock data',
-          homeTeam: {},
-          awayTeam: {},
-          predictions: [],
-        }],
-      },
+      rows: [{
+        startDateTime: 'mock data',
+        homeTeam: {},
+        awayTeam: {},
+        predictions: [],
+      }],
       caption: 'mocked table caption',
       headers: ['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?'],
     };
@@ -36,7 +33,7 @@ describe('Table', () => {
 
   it('renders no table when data prop is not passed ', () => {
     // overwriting a prop value to null
-    mockedProps.data = null;
+    mockedProps.rows = null;
 
     // act
     wrapper = getWrapperShallow(mockedProps);

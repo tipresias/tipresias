@@ -25,9 +25,4 @@ export type MatchType = {
   predictions: Array<Object>
 }
 
-export type LatestRoundPredictionsType = {
-  roundNumber: number,
-  matches: Array<MatchType>
-};
-
-export type Row = Array<string>;
+export type MatchesType = Array<MatchType>;

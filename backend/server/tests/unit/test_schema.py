@@ -1,6 +1,6 @@
 from datetime import date
-from dateutil import parser
 import itertools
+from dateutil import parser
 
 from django.test import TestCase
 from graphene.test import Client

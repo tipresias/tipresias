@@ -23,12 +23,17 @@ RoundPrediction = TypedDict(
     },
 )
 
-TIPRESIAS = "tipresias"
-
 
 class TeamType(DjangoObjectType):
     class Meta:
         model = Team
+
+
+class PredictionType(DjangoObjectType):
+    """Basic prediction type based on Prediction data model"""
+
+    class Meta:
+        model = Prediction
 
 
 class MatchType(DjangoObjectType):
@@ -39,6 +44,16 @@ class MatchType(DjangoObjectType):
     year = graphene.Int()
     home_team = graphene.Field(TeamType)
     away_team = graphene.Field(TeamType)
+    predictions = graphene.List(
+        PredictionType, ml_model_name=graphene.String(default_value=None)
+    )
+
+    @staticmethod
+    def resolve_predictions(root, _info, ml_model_name=None):
+        if ml_model_name is None:
+            return root.prediction_set.all()
+
+        return root.prediction_set.filter(ml_model__name=ml_model_name)
 
     @staticmethod
     def resolve_home_team(root, _info):
@@ -57,13 +72,6 @@ class TeamMatchType(DjangoObjectType):
 class MLModelType(DjangoObjectType):
     class Meta:
         model = MLModel
-
-
-class PredictionType(DjangoObjectType):
-    """Basic prediction type based on Prediction data model"""
-
-    class Meta:
-        model = Prediction
 
 
 class CumulativePredictionsByRoundType(graphene.ObjectType):
@@ -166,20 +174,21 @@ class SeasonType(graphene.ObjectType):
 
 
 class Query(graphene.ObjectType):
-    predictions = graphene.List(PredictionType, year=graphene.Int(default_value=None))
+    fetch_predictions = graphene.List(
+        PredictionType, year=graphene.Int(default_value=None)
+    )
 
-    prediction_years = graphene.List(
+    fetch_prediction_years = graphene.List(
         graphene.Int,
         description="All years for which model predictions exist in the database",
     )
 
-    yearly_predictions = graphene.Field(
+    fetch_yearly_predictions = graphene.Field(
         SeasonType, year=graphene.Int(default_value=date.today().year)
     )
 
-    latest_round_predictions = graphene.Field(
+    fetch_latest_round_predictions = graphene.Field(
         RoundType,
-        ml_model_name=graphene.String(default_value=TIPRESIAS),
         description=(
             "Match info and predictions for the latest round for which data "
             "is available"
@@ -187,14 +196,14 @@ class Query(graphene.ObjectType):
     )
 
     @staticmethod
-    def resolve_predictions(_root, _info, year=None) -> QuerySet:
+    def resolve_fetch_predictions(_root, _info, year=None) -> QuerySet:
         if year is None:
             return Prediction.objects.all()
 
         return Prediction.objects.filter(match__start_date_time__year=year)
 
     @staticmethod
-    def resolve_prediction_years(_root, _info) -> List[int]:
+    def resolve_fetch_prediction_years(_root, _info) -> List[int]:
         return (
             Prediction.objects.select_related("match")
             .distinct("match__start_date_time__year")
@@ -203,29 +212,29 @@ class Query(graphene.ObjectType):
         )
 
     @staticmethod
-    def resolve_yearly_predictions(_root, _info, year) -> QuerySet:
+    def resolve_fetch_yearly_predictions(_root, _info, year) -> QuerySet:
         return Prediction.objects.filter(
             match__start_date_time__year=year
         ).select_related("ml_model", "match")
 
     @staticmethod
-    def resolve_latest_round_predictions(
-        _root, _info, ml_model_name
-    ) -> RoundPrediction:
-        current_season = date.today().year
-        current_season_matches = Match.objects.filter(
-            start_date_time__year=current_season
+    def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPrediction:
+        max_year = (
+            Match.objects.aggregate(Max("start_date_time"))
+            .get("start_date_time__max")
+            .year
+            or 0
         )
         max_round_number = (
-            current_season_matches.aggregate(Max("round_number")).get(
-                "round_number__max"
-            )
+            Match.objects.filter(start_date_time__year=max_year)
+            .aggregate(Max("round_number"))
+            .get("round_number__max")
             or 0
         )
 
         matches = (
-            current_season_matches.filter(
-                round_number=max_round_number, prediction__ml_model__name=ml_model_name
+            Match.objects.filter(
+                start_date_time__year=max_year, round_number=max_round_number
             )
             .prefetch_related("prediction_set", "teammatch_set")
             .order_by("start_date_time")

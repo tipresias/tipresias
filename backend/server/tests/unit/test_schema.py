@@ -1,4 +1,5 @@
 from datetime import date
+import itertools
 from dateutil import parser
 
 from django.test import TestCase
@@ -32,7 +33,7 @@ class TestSchema(TestCase):
             for _ in range(ROUND_COUNT)
         ]
 
-    def test_predictions(self):
+    def test_fetch_predictions(self):
         expected_predictions = [
             {
                 "match": {
@@ -49,7 +50,7 @@ class TestSchema(TestCase):
         executed = self.client.execute(
             """
             query QueryType {
-                predictions {
+                fetchPredictions {
                     match { roundNumber, year },
                     mlModel { name },
                     isCorrect
@@ -59,14 +60,14 @@ class TestSchema(TestCase):
         )
 
         self._assert_correct_prediction_results(
-            executed["data"]["predictions"], expected_predictions
+            executed["data"]["fetchPredictions"], expected_predictions
         )
 
         with self.subTest("when year is 2015"):
             executed = self.client.execute(
                 """
                 query QueryType {
-                    predictions(year: 2015) {
+                    fetchPredictions(year: 2015) {
                         match { roundNumber, year },
                         mlModel { name },
                         isCorrect
@@ -80,21 +81,21 @@ class TestSchema(TestCase):
             ]
 
             self._assert_correct_prediction_results(
-                executed["data"]["predictions"], expected_predictions
+                executed["data"]["fetchPredictions"], expected_predictions
             )
 
-    def test_prediction_years(self):
+    def test_fetch_prediction_years(self):
         expected_years = list({match.start_date_time.year for match in self.matches})
 
         executed = self.client.execute(
             """
-            query QueryType { predictionYears }
+            query QueryType { fetchPredictionYears }
             """
         )
 
-        self.assertEqual(expected_years, executed["data"]["predictionYears"])
+        self.assertEqual(expected_years, executed["data"]["fetchPredictionYears"])
 
-    def test_yearly_predictions(self):
+    def test_fetch_yearly_predictions(self):
         ml_model_names = (
             Match.objects.filter(start_date_time__year=2015)
             .distinct("prediction__ml_model__name")
@@ -104,19 +105,19 @@ class TestSchema(TestCase):
         executed = self.client.execute(
             """
             query QueryType {
-                yearlyPredictions(year: 2015) {
+                fetchYearlyPredictions(year: 2015) {
                     predictionModelNames
                     predictionsByRound {
                         roundNumber
                         modelPredictions { modelName, cumulativeCorrectCount }
-                        matches { predictionSet { isCorrect } }
+                        matches { predictions { isCorrect } }
                     }
                 }
             }
             """
         )
 
-        data = executed["data"]["yearlyPredictions"]
+        data = executed["data"]["fetchYearlyPredictions"]
 
         self.assertEqual(set(data["predictionModelNames"]), set(ml_model_names))
 
@@ -134,7 +135,7 @@ class TestSchema(TestCase):
         earlier_round_correct = [
             prediction["isCorrect"]
             for match in earlier_round["matches"]
-            for prediction in match["predictionSet"]
+            for prediction in match["predictions"]
         ]
 
         # Regression test to make sure cumulative counts are being calculated correctly
@@ -147,7 +148,7 @@ class TestSchema(TestCase):
         later_round_correct = [
             prediction["isCorrect"]
             for match in later_round["matches"]
-            for prediction in match["predictionSet"]
+            for prediction in match["predictions"]
         ]
 
         # Regression test to make sure cumulative counts are being calculated correctly
@@ -158,7 +159,7 @@ class TestSchema(TestCase):
 
         self.assertLessEqual(sum(earlier_round_cum_counts), sum(later_round_cum_counts))
 
-    def test_latest_round_predictions(self):
+    def test_fetch_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
         year = date.today().year
 
@@ -174,11 +175,11 @@ class TestSchema(TestCase):
         executed = self.client.execute(
             """
             query QueryType {
-                latestRoundPredictions(mlModelName: "accurate_af") {
+                fetchLatestRoundPredictions {
                     roundNumber
                     matches {
                         startDateTime
-                        predictionSet { predictedWinner { name } predictedMargin }
+                        predictions { predictedWinner { name } predictedMargin }
                         winner { name }
                         homeTeam { name }
                         awayTeam { name }
@@ -188,7 +189,7 @@ class TestSchema(TestCase):
             """
         )
 
-        data = executed["data"]["latestRoundPredictions"]
+        data = executed["data"]["fetchLatestRoundPredictions"]
         max_match_round = max([match.round_number for match in latest_matches])
 
         self.assertEqual(data["roundNumber"], max_match_round)
@@ -198,6 +199,31 @@ class TestSchema(TestCase):
         ]
 
         self.assertEqual(np.mean(match_years), year)
+
+        with self.subTest("with an mlModelName argument"):
+            executed_ml_name = self.client.execute(
+                """
+                query QueryType {
+                    fetchLatestRoundPredictions {
+                        roundNumber
+                        matches {
+                            startDateTime
+                            predictions(mlModelName: "accurate_af") {
+                                mlModel { name }
+                            }
+                        }
+                    }
+                }
+                """
+            )
+
+            data = executed_ml_name["data"]["fetchLatestRoundPredictions"]
+            predictions = itertools.chain.from_iterable(
+                [match["predictions"] for match in data["matches"]]
+            )
+            ml_model_names = [pred["mlModel"]["name"] for pred in predictions]
+
+            self.assertEqual(ml_model_names, ["accurate_af"])
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

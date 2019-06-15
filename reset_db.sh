@@ -2,9 +2,9 @@
 
 DB_FILE=dump_`date +%d-%m-%Y"_"%H_%M_%S`.sql
 
-ssh ${PROD_USER}@${IP_ADDRESS} "docker exec -t -u postgres tipresias_db_1 pg_dumpall -c > ~/backups/${DB_FILE}"
-scp ${PROD_USER}@${IP_ADDRESS}:~/backups/${DB_FILE} $PWD
-ssh ${PROD_USER}@${IP_ADDRESS} "rm ~/backups/${DB_FILE}"
+ssh ${PROD_USER}@${IP_ADDRESS} "docker exec -t -u postgres tipresias_db_1 pg_dumpall -c > ~/${DB_FILE}"
+scp ${PROD_USER}@${IP_ADDRESS}:~/${DB_FILE} $PWD
+ssh ${PROD_USER}@${IP_ADDRESS} "rm ~/${DB_FILE}"
 
 docker-compose rm -s -v db
 docker-compose up -d db

@@ -18,4 +18,11 @@ export type BarChartDataType = {
   modelPredictions: Array<BarDataType>
 }
 
-export type Row = Array<string>;
+export type MatchType = {
+  startDateTime: string,
+  homeTeam: Object,
+  awayTeam: Object,
+  predictions: Array<Object>
+}
+
+export type MatchesType = Array<MatchType>;

@@ -33,6 +33,7 @@ query {
   fetchLatestRoundPredictions {
     roundNumber
     matches {
+      year
       startDateTime
       homeTeam{
         name

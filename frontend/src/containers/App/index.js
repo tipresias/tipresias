@@ -82,13 +82,12 @@ class App extends Component<Props, State> {
               if (error) return <StatusBar text={error.message} error />;
               if (data.fetchLatestRoundPredictions.matches.length === 0) return <StatusBar text="No data found" empty />;
 
-              // TODO: get this value from the query response
-              const season = '2018';
-              const round = data.fetchLatestRoundPredictions.roundNumber;
+              const seasonYear = data.fetchLatestRoundPredictions.matches[0].year;
+              const { roundNumber } = data.fetchLatestRoundPredictions;
 
               return (
                 <Table
-                  caption={`Tipresias predictions for matches of round ${round}, season ${season}`}
+                  caption={`Tipresias predictions for matches of round ${roundNumber}, season ${seasonYear}`}
                   headers={['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?']}
                   rows={data.fetchLatestRoundPredictions.matches}
                 />

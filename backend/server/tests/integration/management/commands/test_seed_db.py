@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from datetime import datetime
 
 from django.test import TestCase
@@ -9,8 +9,9 @@ from server.management.commands import seed_db
 from server.tests.fixtures.data_factories import (
     fake_match_results_data,
     fake_footywire_betting_data,
+    fake_prediction_data,
 )
-from machine_learning.ml_data import BettingMLData
+from server import data_import
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.tests.fixtures import TestEstimator
 from project.settings.common import MELBOURNE_TIMEZONE
@@ -37,29 +38,40 @@ class TestSeedDb(TestCase):
         self.match_results_data_frame = fake_match_results_data(
             MATCH_COUNT_PER_YEAR, data_years
         )
-        self.betting_data_frame = fake_footywire_betting_data(
-            MATCH_COUNT_PER_YEAR, data_years
-        )
+
+        prediction_data = []
+
+        for match_result in self.match_results_data_frame.query(
+            # Only returning prediction data for matches in seed_db year range
+            "season >= @min_seed_year"
+        ).to_dict("records"):
+            match_data = {
+                "home_team": match_result["home_team"],
+                "away_team": match_result["away_team"],
+                "season": match_result["season"],
+                "round": match_result["round_number"],
+            }
+
+            prediction_data.extend(
+                fake_prediction_data(
+                    match_data=match_data, ml_model_name="test_estimator"
+                )
+            )
 
         fitzroy = FitzroyDataImporter(verbose=0)
-
         fitzroy.match_results = Mock(side_effect=self.__match_results_side_effect)
+        data_import.fetch_prediction_data = Mock(return_value=prediction_data)
 
         self.seed_command = seed_db.Command(
-            estimators=[TestEstimator()], data_reader=fitzroy, data=BettingMLData()
+            estimators=[TestEstimator()],
+            data_reader=fitzroy,
+            prediction_data=data_import,
         )
 
     def test_handle(self):
-        with patch(
-            "machine_learning.ml_data.betting_ml_data.FootywireDataImporter"
-        ) as MockDataReader:
-            MockDataReader.return_value.get_betting_odds = Mock(
-                side_effect=self.__betting_side_effect
-            )
-
-            self.seed_command.handle(
-                year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
-            )
+        self.seed_command.handle(
+            year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
+        )
 
         self.assertGreater(Team.objects.count(), 0)
         self.assertEqual(MLModel.objects.count(), 1)
@@ -103,23 +115,6 @@ class TestSeedDb(TestCase):
         ).replace(tzinfo=MELBOURNE_TIMEZONE)
 
         return self.match_results_data_frame.query(
-            "date >= @tz_start_date & date <= @tz_end_date"
-        )
-
-    def __betting_side_effect(
-        self, start_date=None, end_date=None, fetch_data=False
-    ):  # pylint: disable=W0613
-        if start_date is None and end_date is None:
-            return self.betting_data_frame
-
-        tz_start_date = datetime.strptime(  # pylint: disable=W0612
-            start_date, "%Y-%m-%d"
-        ).replace(tzinfo=MELBOURNE_TIMEZONE)
-        tz_end_date = datetime.strptime(  # pylint: disable=W0612
-            end_date, "%Y-%m-%d"
-        ).replace(tzinfo=MELBOURNE_TIMEZONE)
-
-        return self.betting_data_frame.query(
             "date >= @tz_start_date & date <= @tz_end_date"
         )
 

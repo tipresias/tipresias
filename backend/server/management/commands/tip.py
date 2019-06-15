@@ -6,11 +6,10 @@ from typing import List, Optional
 from django.core.management.base import BaseCommand
 from django import utils
 import pandas as pd
-import numpy as np
 
 from project.settings.common import MELBOURNE_TIMEZONE
-from server.models import Match, TeamMatch, Team, MLModel, Prediction
-from server.types import CleanedFixtureData, CleanPredictionData
+from server.models import Match, TeamMatch, Team, Prediction
+from server.types import CleanedFixtureData
 from server import data_import
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import JoinedMLData
@@ -195,7 +194,7 @@ class Command(BaseCommand):
 
     def __make_predictions(self, year: int, round_number: int) -> None:
         predictions = self.prediction_data.fetch_prediction_data(
-            year, round_number, verbose=self.verbose
+            (year, year), round_number=round_number, verbose=self.verbose
         )
         predictions_df = pd.DataFrame(predictions)
 

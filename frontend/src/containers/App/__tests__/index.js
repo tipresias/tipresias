@@ -2,7 +2,7 @@ import React from 'react';
 import { MockedProvider } from 'react-apollo/test-utils';
 import { shallow, mount } from 'enzyme';
 import MockComponent from '../../../test-support/MockComponent';
-import GET_PREDICTIONS_QUERY from '../../../graphql/getPredictions';
+import FETCH_PREDICTIONS_QUERY from '../../../graphql';
 import App from '../index';
 import Select from '../../../components/Select';
 
@@ -13,7 +13,7 @@ const waitForData = () => new Promise(resolve => setTimeout(resolve, 0));
 const mocks = [
   {
     request: {
-      query: GET_PREDICTIONS_QUERY,
+      query: FETCH_PREDICTIONS_QUERY,
       variables: {
         year: 2014,
       },
@@ -58,7 +58,7 @@ const mocks = [
 const mocksWithError = [
   {
     request: {
-      query: GET_PREDICTIONS_QUERY,
+      query: FETCH_PREDICTIONS_QUERY,
       variables: {
         year: 2014,
       },
@@ -82,8 +82,6 @@ describe('App container', () => {
 
   it.skip('always renders a Select', () => {
     const select = app().find(Select);
-    console.log(app().debug());
-
     expect(select.length).toBe(1);
   });
 

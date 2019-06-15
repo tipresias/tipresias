@@ -67,7 +67,7 @@ const mocksWithError = [
   },
 ];
 
-describe('App container', () => {
+describe.skip('App container', () => {
   let shallowMountedApp;
   const app = () => {
     if (!shallowMountedApp) {
@@ -90,8 +90,8 @@ describe('App container', () => {
     expect(select.props().name).toBe('year');
   });
 
-  describe('when app\'s method `onChangeYear` is called', () => {
-    it.skip('Sets the rendered Select\'s `value` prop with updated `year` from state', () => {
+  describe.skip('when app\'s method `onChangeYear` is called', () => {
+    it('Sets the rendered Select\'s `value` prop with updated `year` from state', () => {
       const event = {
         currentTarget: { value: '2015' },
       };
@@ -104,7 +104,7 @@ describe('App container', () => {
   });
 });
 
-describe('App with apollo', () => {
+describe.skip('App with apollo', () => {
   let props;
   let mountedAppWithApollo;
 

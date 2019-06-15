@@ -2,22 +2,19 @@
 import React from 'react';
 import type { Node } from 'react';
 import { dataTransformer } from './dataTransformer';
-
-import type { LatestRoundPredictionsType } from '../../types';
-
+import type { MatchesType } from '../../types';
 
 type Props = {
   caption: string,
   headers: Array<string>,
-  data: LatestRoundPredictionsType
+  rows: MatchesType
 }
 
-
-const Table = ({ caption, headers, data }: Props): Node => {
-  if (!data) {
+const Table = ({ caption, headers, rows }: Props): Node => {
+  if (!rows || rows.length === 0) {
     return <div>Data not found</div>;
   }
-  const rows = dataTransformer(data);
+  const rowsArray = dataTransformer(rows);
 
   return (
     <table>
@@ -31,7 +28,7 @@ const Table = ({ caption, headers, data }: Props): Node => {
           }
         </tr>
         {
-          rows && rows.length > 0 && rows.map(row => (
+          rowsArray && rowsArray.length > 0 && rowsArray.map(row => (
             <tr key={Math.random()}>
               {row.map(value => (
                 <td key={value}>{value}</td>

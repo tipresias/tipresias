@@ -1,12 +1,12 @@
 // @flow
-import type { LatestRoundPredictionsType, Row } from '../../types';
+import type { MatchesType } from '../../types';
 
-type PreviousDataSet = LatestRoundPredictionsType;
-type NewDataSet = Array<Row>;
+type NewDataSet = Array<Array<string>>;
+
 
 // eslint-disable-next-line import/prefer-default-export
-export const dataTransformer = (previousDataSet: PreviousDataSet): NewDataSet => {
-  const newDataSet = previousDataSet.matches.reduce((acc, currentitem, currentIndex) => {
+export const dataTransformer = (previousDataSet: MatchesType): NewDataSet => {
+  const newDataSet = previousDataSet.reduce((acc, currentitem, currentIndex) => {
     acc[currentIndex] = acc[currentIndex] || [];
 
     const homeTeam = currentitem.homeTeam.name;

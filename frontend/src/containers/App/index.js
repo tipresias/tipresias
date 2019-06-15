@@ -24,7 +24,6 @@ import {
 type State = {
   year: number
 };
-
 type Props = {};
 
 const Widget = styled.div`${WidgetStyles}`;
@@ -48,29 +47,20 @@ class App extends Component<Props, State> {
         <Widget gridColumn="2 / -2">
           <WidgetHeading>Cumulative points per round</WidgetHeading>
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
-            {({ loading, error, data }): Node => {
-              // TODO: Remove (this is for now to avoid the flow error when
-              // doing data.fetchYearlyPredictions)
-              const nonNullData = data || {};
-              const dataWithResponse = { fetchYearlyPredictions: {}, ...nonNullData };
-              const { fetchYearlyPredictions } = dataWithResponse;
-              const results = fetchYearlyPredictions;
-
+            {(response: any): Node => {
+              const {
+                loading, error, data: { fetchYearlyPredictions: { predictionsByRound } },
+              } = response;
               if (loading) return <BarChartLoading text="Loading predictions..." />;
               if (error) return <StatusBar text={error.message} error />;
-              if (results.length === 0) return <StatusBar text="No data found" empty />;
-              return <BarChartMain data={results.predictionsByRound} />;
+              if (predictionsByRound.length === 0) return <StatusBar text="No data found" empty />;
+              return <BarChartMain data={predictionsByRound} />;
             }}
           </Query>
           <WidgetFooter>
             <Query query={FETCH_PREDICTION_YEARS_QUERY}>
-              {({ loading, error, data }): Node => {
-                // TODO: Remove (this is for now to avoid the flow error
-                // when doing data.fetchPredictionYears)
-                const nonNullData = data || {};
-                const newData = { fetchPredictionYears: [], ...nonNullData };
-                const { fetchPredictionYears } = newData;
-                const results = fetchPredictionYears;
+              {(response: any): Node => {
+                const { loading, error, data } = response;
                 if (loading) return <p>Loading predictions...</p>;
                 if (error) return <StatusBar text={error.message} error />;
                 return (
@@ -78,7 +68,7 @@ class App extends Component<Props, State> {
                     name="year"
                     value={year}
                     onChange={this.onChangeYear}
-                    options={results}
+                    options={data}
                   />
                 );
               }}
@@ -88,27 +78,21 @@ class App extends Component<Props, State> {
 
         <Widget gridColumn="2 / -2">
           <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
-            {({ loading, error, data }): Node => {
-              // TODO: Remove (this is for now to avoid the flow error when
-              // doing data.fetchLatestRoundPredictions)
-              const nonNullData = data || {};
-              const newData = { fetchLatestRoundPredictions: [], ...nonNullData };
-              const { fetchLatestRoundPredictions } = newData;
-              const results = fetchLatestRoundPredictions;
-
+            {(response: any): Node => {
+              const { loading, error, data } = response;
               if (loading) return <p>Loading predictions...</p>;
               if (error) return <StatusBar text={error.message} error />;
-              if (results.length === 0) return <StatusBar text="No data found" empty />;
+              if (data.matches.length === 0) return <StatusBar text="No data found" empty />;
 
               // TODO: get this value from the query response
               const season = '2018';
-              const round = results.roundNumber;
+              const round = data.roundNumber;
 
               return (
                 <Table
                   caption={`Tipresias predictions for matches of round ${round}, season ${season}`}
                   headers={['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?']}
-                  data={results}
+                  rows={data.matches}
                 />
               );
             }}

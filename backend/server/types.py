@@ -64,7 +64,7 @@ CleanPredictionData = TypedDict(
         "round_number": int,
         "away_team": str,
         "ml_model": str,
-        "home_margin": float,
-        "away_margin": float,
+        "home_predicted_margin": float,
+        "away_predicted_margin": float,
     },
 )

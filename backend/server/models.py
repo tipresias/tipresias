@@ -156,8 +156,8 @@ class Prediction(models.Model):
         home_team = prediction_data["home_team"]
         away_team = prediction_data["away_team"]
 
-        home_margin = prediction_data["home_margin"]
-        away_margin = prediction_data["away_margin"]
+        home_margin = prediction_data["home_predicted_margin"]
+        away_margin = prediction_data["away_predicted_margin"]
 
         # predicted_margin is always positive as its always associated with predicted_winner
         predicted_margin = np.mean(np.abs([home_margin, away_margin]))

@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 import pandas as pd
 
 from server.models import Match, MLModel, Team, Prediction
-
+from server.helpers import pivot_team_matches_to_matches
 from server.tests.fixtures.data_factories import fake_prediction_data
 
 
@@ -68,36 +68,7 @@ class TestPrediction(TestCase):
 
     def test_convert_data_to_record(self):
         data = fake_prediction_data(self.match, ml_model_name=self.ml_model.name)
-        predictions_df = pd.DataFrame(data)
-
-        home_df = (
-            predictions_df.query("at_home == 1")
-            .rename(
-                columns={
-                    "team": "home_team",
-                    "oppo_team": "away_team",
-                    "predicted_margin": "home_margin",
-                }
-            )
-            .drop("at_home", axis=1)
-        )
-        away_df = (
-            predictions_df.query("at_home == 0")
-            .rename(
-                columns={
-                    "team": "away_team",
-                    "oppo_team": "home_team",
-                    "predicted_margin": "away_margin",
-                }
-            )
-            .drop("at_home", axis=1)
-        )
-
-        home_away_df = home_df.merge(
-            away_df,
-            on=["home_team", "away_team", "year", "round_number", "ml_model"],
-            how="inner",
-        )
+        home_away_df = pivot_team_matches_to_matches(pd.DataFrame(data))
 
         self.assertEqual(Prediction.objects.count(), 0)
         Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
@@ -105,8 +76,8 @@ class TestPrediction(TestCase):
 
         with self.subTest("when prediction record already exists"):
             predicted_margin = 100
-            home_away_df.loc[:, "home_margin"] = predicted_margin
-            home_away_df.loc[:, "away_margin"] = -predicted_margin
+            home_away_df.loc[:, "home_predicted_margin"] = predicted_margin
+            home_away_df.loc[:, "away_predicted_margin"] = -predicted_margin
 
             Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
             self.assertEqual(Prediction.objects.count(), 1)

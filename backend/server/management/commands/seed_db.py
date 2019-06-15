@@ -11,6 +11,7 @@ from django.core.management.base import BaseCommand
 
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
 from server import data_import
+from server.helpers import pivot_team_matches_to_matches
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_estimators import BaseMLEstimator
 from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
@@ -178,37 +179,7 @@ class Command(BaseCommand):
         predictions = self.prediction_data.fetch_prediction_data(
             year_range, verbose=self.verbose
         )
-
-        predictions_df = pd.DataFrame(predictions)
-
-        home_df = (
-            predictions_df.query("at_home == 1")
-            .rename(
-                columns={
-                    "team": "home_team",
-                    "oppo_team": "away_team",
-                    "predicted_margin": "home_margin",
-                }
-            )
-            .drop("at_home", axis=1)
-        )
-        away_df = (
-            predictions_df.query("at_home == 0")
-            .rename(
-                columns={
-                    "team": "away_team",
-                    "oppo_team": "home_team",
-                    "predicted_margin": "away_margin",
-                }
-            )
-            .drop("at_home", axis=1)
-        )
-
-        home_away_df = home_df.merge(
-            away_df,
-            on=["home_team", "away_team", "year", "round_number", "ml_model"],
-            how="inner",
-        )
+        home_away_df = pivot_team_matches_to_matches(pd.DataFrame(predictions))
 
         for pred in home_away_df.to_dict("records"):
             Prediction.update_or_create_from_data(pred)

@@ -48,13 +48,11 @@ class App extends Component<Props, State> {
           <WidgetHeading>Cumulative points per round</WidgetHeading>
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
             {(response: any): Node => {
-              const {
-                loading, error, data: { fetchYearlyPredictions: { predictionsByRound } },
-              } = response;
+              const { loading, error, data } = response;
               if (loading) return <BarChartLoading text="Loading predictions..." />;
               if (error) return <StatusBar text={error.message} error />;
-              if (predictionsByRound.length === 0) return <StatusBar text="No data found" empty />;
-              return <BarChartMain data={predictionsByRound} />;
+              if (data.fetchYearlyPredictions.predictionsByRound.length === 0) return <StatusBar text="No data found" empty />;
+              return <BarChartMain data={data.fetchYearlyPredictions.predictionsByRound} />;
             }}
           </Query>
           <WidgetFooter>
@@ -68,7 +66,7 @@ class App extends Component<Props, State> {
                     name="year"
                     value={year}
                     onChange={this.onChangeYear}
-                    options={data}
+                    options={data.fetchPredictionYears}
                   />
                 );
               }}
@@ -82,17 +80,17 @@ class App extends Component<Props, State> {
               const { loading, error, data } = response;
               if (loading) return <p>Loading predictions...</p>;
               if (error) return <StatusBar text={error.message} error />;
-              if (data.matches.length === 0) return <StatusBar text="No data found" empty />;
+              if (data.fetchLatestRoundPredictions.matches.length === 0) return <StatusBar text="No data found" empty />;
 
               // TODO: get this value from the query response
               const season = '2018';
-              const round = data.roundNumber;
+              const round = data.fetchLatestRoundPredictions.roundNumber;
 
               return (
                 <Table
                   caption={`Tipresias predictions for matches of round ${round}, season ${season}`}
                   headers={['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?']}
-                  rows={data.matches}
+                  rows={data.fetchLatestRoundPredictions.matches}
                 />
               );
             }}

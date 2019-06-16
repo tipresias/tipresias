@@ -7,7 +7,7 @@ import pandas as pd
 # TODO: These commands need to be refactored, then the refactored classes/functions
 # used in this cron job, but I want to get something working, so I'm gonna be lazy
 from server.management.commands import tip, send_email
-from machine_learning.data_import import FitzroyDataImporter
+from server import data_import
 from project.settings.common import MELBOURNE_TIMEZONE
 
 # Note that Python starts weeks on Monday (index = 0) and ends them on Sunday
@@ -23,12 +23,12 @@ class SendTips(CronJobBase):
     schedule = Schedule(run_every_mins=MINS_PER_12_HOURS)
     code = "tipresias.send_tips"
 
-    def __init__(self, verbose=1, data_reader=FitzroyDataImporter()):
+    def __init__(self, verbose=1, data_importer=data_import):
         super().__init__()
 
         self.verbose = verbose
         self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
-        self.data_reader = data_reader
+        self.data_importer = data_importer
 
     def do(self):
         fixture_data_frame = self.__fetch_fixture_data(self.right_now.year)
@@ -64,7 +64,7 @@ class SendTips(CronJobBase):
         return None
 
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
-        fixture_data_frame = self.data_reader.fetch_fixtures(
+        fixture_data_frame = self.data_importer.fetch_fixture_data(
             start_date=f"{year}-01-01", end_date=f"{year}-12-31"
         ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
 
@@ -77,7 +77,7 @@ class SendTips(CronJobBase):
                     f"We will try to fetch fixture for {year + 1}.\n"
                 )
 
-            fixture_data_frame = self.data_reader.fetch_fixtures(
+            fixture_data_frame = self.data_importer.fetch_fixture_data(
                 start_date=f"{year}-01-01", end_date=f"{year}-12-31"
             ).assign(date=lambda df: df["date"].dt.tz_localize(MELBOURNE_TIMEZONE))
 

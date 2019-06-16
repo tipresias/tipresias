@@ -1,69 +1,34 @@
 """Django command for seeding the DB with match & prediction data"""
 
 import itertools
-from functools import partial
-from typing import Tuple, List, Optional, Union
+from typing import Tuple, List
 from datetime import datetime
-from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
 from django import utils
 from django.core.management.base import BaseCommand
 
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
-from machine_learning.data_import import FitzroyDataImporter
-from machine_learning.ml_estimators import BaseMLEstimator
-from machine_learning.ml_data import BaseMLData, JoinedMLData
-from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
-from machine_learning.data_transformation.data_cleaning import clean_match_data
-
-MatchData = TypedDict(
-    "MatchData",
-    {
-        "date": Union[datetime, pd.Timestamp],
-        "season": int,
-        "round_number": int,
-        "round": str,
-        "crowd": int,
-        "home_team": str,
-        "away_team": str,
-        "home_score": int,
-        "away_score": int,
-        "venue": str,
-    },
-)
+from server import data_import
+from server.helpers import pivot_team_matches_to_matches
+from server.types import MlModel, MatchData
 
 YEAR_RANGE = "2014-2019"
-ESTIMATORS: List[BaseMLEstimator] = [
-    BenchmarkEstimator(name="benchmark_estimator"),
-    BaggingEstimator(name="tipresias"),
-]
-NO_SCORE = 0
 JAN = 1
 
 
 class Command(BaseCommand):
     help = "Seed the database with team, match, and prediction data."
 
-    def __init__(
-        self,
-        *args,
-        data_reader=FitzroyDataImporter(),
-        estimators: List[BaseMLEstimator] = ESTIMATORS,
-        data=JoinedMLData(fetch_data=True),
-        **kwargs,
-    ) -> None:
+    def __init__(self, *args, data_importer=data_import, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.data_reader = data_reader
-        self.estimators = estimators
-        self.data = data
+        self.data_importer = data_importer
 
     def handle(  # pylint: disable=W0221
         self, *_args, year_range: str = YEAR_RANGE, verbose: int = 1, **_kwargs
     ) -> None:  # pylint: disable=W0613
         self.verbose = verbose  # pylint: disable=W0201
-        self.data_reader.verbose = verbose
 
         if self.verbose == 1:
             print("\nSeeding DB...\n")
@@ -82,17 +47,17 @@ class Command(BaseCommand):
         # which is open-ended, then try to use a restricted tuple type
         year_range_tuple = (years_list[0], years_list[1])
 
-        match_data_frame = self.data_reader.match_results(
+        match_data_frame = self.data_importer.fetch_match_results_data(
             start_date=f"{years_list[0]}-01-01", end_date=f"{years_list[1] - 1}-12-31"
-        ).pipe(clean_match_data)
+        )
 
         # Putting saving records in a try block, so we can go back and delete everything
         # if an error is raised
         try:
             self.__create_teams(match_data_frame)
-            ml_models = self.__create_ml_models()
+            self.__create_ml_models()
             self.__create_matches(match_data_frame.to_dict("records"))
-            self.__make_predictions(year_range_tuple, ml_models=ml_models)
+            self.__make_predictions(year_range_tuple)
 
             if self.verbose == 1:
                 print("\n...DB seeded!\n")
@@ -122,7 +87,10 @@ class Command(BaseCommand):
             print("Teams seeded!")
 
     def __create_ml_models(self) -> List[MLModel]:
-        ml_models = [self.__build_ml_model(estimator) for estimator in self.estimators]
+        ml_models = [
+            self.__build_ml_model(ml_model)
+            for ml_model in self.data_importer.fetch_ml_model_info()
+        ]
 
         if not any(ml_models):
             raise ValueError("Something went wrong and no ML models were saved.")
@@ -175,135 +143,21 @@ class Command(BaseCommand):
 
         return self.__build_team_match(match, match_data)
 
-    def __make_predictions(
-        self,
-        year_range: Tuple[int, int],
-        ml_models: Optional[List[MLModel]] = None,
-        round_number: Optional[int] = None,
-    ) -> None:
-        ml_models = ml_models or MLModel.objects.all()
-
-        if ml_models is None or not any(ml_models):
-            if self.verbose == 1:
-                raise ValueError(
-                    "\tCould not find any ML models in DB to make predictions."
-                )
-
-        # Loading the data here, because it makes for a weird set of messages to do it
-        # in the middle of loading models & making predictions
-        self.data.data  # pylint: disable=W0104
-
-        make_model_predictions = partial(
-            self.__make_model_predictions, year_range, round_number=round_number
+    def __make_predictions(self, year_range: Tuple[int, int]) -> None:
+        predictions = self.data_importer.fetch_prediction_data(
+            year_range, verbose=self.verbose
         )
-        model_predictions_list = [
-            make_model_predictions(ml_model_record) for ml_model_record in ml_models
-        ]
-        model_predictions = list(itertools.chain.from_iterable(model_predictions_list))
+        home_away_df = pivot_team_matches_to_matches(predictions)
 
-        if not any(model_predictions):
-            raise ValueError("Could not find any predictions to save to the DB.")
-
-        Prediction.objects.bulk_create(model_predictions)
+        for pred in home_away_df.to_dict("records"):
+            Prediction.update_or_create_from_data(pred)
 
         if self.verbose == 1:
             print("\nPredictions saved!")
 
-    def __make_model_predictions(
-        self,
-        year_range: Tuple[int, int],
-        ml_model_record: MLModel,
-        round_number: Optional[int] = None,
-    ) -> List[Prediction]:
-        if self.verbose == 1:
-            print(f"\nMaking predictions with {ml_model_record.name}...")
-
-        estimator = ml_model_record.load_estimator()
-
-        make_year_predictions = partial(
-            self.__make_year_predictions,
-            ml_model_record,
-            estimator,
-            round_number=round_number,
-        )
-
-        year_prediction_lists = [
-            make_year_predictions(year) for year in range(*year_range)
-        ]
-
-        return list(itertools.chain.from_iterable(year_prediction_lists))
-
-    # TODO: Got the following error when trying to implement multiprocessing:
-    # TypeError: cannot serialize '_io.TextIOWrapper' object
-    # Not too sure on the cause, but it works okay for now (it's just slow).
-    def __make_year_predictions(
-        self,
-        ml_model_record: MLModel,
-        estimator: BaseMLEstimator,
-        year: int,
-        round_number: Optional[int] = None,
-    ) -> List[Prediction]:
-        if self.verbose == 1:
-            print(f"\tMaking predictions for {year}...")
-
-        matches_to_predict = Match.objects.filter(start_date_time__year=year)
-
-        if matches_to_predict is None or not any(matches_to_predict):
-            if self.verbose == 1:
-                print(
-                    f"\tCould not find any matches from season {year} to make predictions for."
-                )
-
-            return []
-
-        self.data.train_years = (None, year - 1)
-        self.data.test_years = (year, year)
-        data_row_slice = (slice(None), year, slice(round_number, round_number))
-        prediction_data = self.__predict(estimator, self.data, data_row_slice)
-
-        if prediction_data is None:
-            return []
-
-        build_match_prediction = partial(
-            self.__build_match_prediction, ml_model_record, prediction_data
-        )
-
-        return [build_match_prediction(match) for match in matches_to_predict]
-
-    def __predict(
-        self,
-        estimator: BaseMLEstimator,
-        data: BaseMLData,
-        data_row_slice: Tuple[slice, int, slice],
-    ) -> Optional[pd.DataFrame]:
-        X_train, y_train = data.train_data()
-        X_test, _ = data.test_data()
-
-        # On the off chance that we try to run predictions for years that have no relevant
-        # prediction data
-        if X_train.empty or y_train.empty or X_test.empty:
-            if self.verbose == 1:
-                print(
-                    "Some required data was missing for predicting for season "
-                    f"{data.test_years[0]}.\n"
-                    f"{'X_train is empty' if X_train.empty else ''}"
-                    f"{', y_train is empty' if y_train.empty else ''}"
-                    f"{', and y_test is empty.' if X_train.empty else ''}"
-                )
-
-            return None
-
-        estimator.fit(X_train, y_train)
-
-        y_pred = estimator.predict(X_test)
-
-        return data.data.loc[data_row_slice, :].assign(predicted_margin=y_pred)
-
     @staticmethod
-    def __build_ml_model(estimator: BaseMLEstimator) -> MLModel:
-        ml_model_record = MLModel(
-            name=estimator.name, filepath=estimator.pickle_filepath()
-        )
+    def __build_ml_model(ml_model: MlModel) -> MLModel:
+        ml_model_record = MLModel(name=ml_model["name"], filepath=ml_model["filepath"])
         ml_model_record.full_clean()
 
         return ml_model_record

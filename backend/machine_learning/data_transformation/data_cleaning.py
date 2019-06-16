@@ -136,9 +136,6 @@ def _map_round_type(year: int, round_number: int) -> str:
     )
 
     if year <= 1994:
-        import pdb
-
-        pdb.set_trace()
         raise ValueError(
             f"Tried to get fixtures for {year}, but fixture data is meant for "
             "upcoming matches, not historical match data. Try getting fixture data "

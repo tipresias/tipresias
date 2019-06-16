@@ -1,9 +1,13 @@
 from datetime import datetime
+
 from django.test import TestCase
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+import pandas as pd
 
 from server.models import Match, MLModel, Team, Prediction
+from server.helpers import pivot_team_matches_to_matches
+from server.tests.fixtures.data_factories import fake_prediction_data
 
 
 class TestPrediction(TestCase):
@@ -61,6 +65,25 @@ class TestPrediction(TestCase):
                     self.match, prediction.predicted_winner
                 )
             )
+
+    def test_convert_data_to_record(self):
+        data = fake_prediction_data(self.match, ml_model_name=self.ml_model.name)
+        home_away_df = pivot_team_matches_to_matches(pd.DataFrame(data))
+
+        self.assertEqual(Prediction.objects.count(), 0)
+        Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+        self.assertEqual(Prediction.objects.count(), 1)
+
+        with self.subTest("when prediction record already exists"):
+            predicted_margin = 100
+            home_away_df.loc[:, "home_predicted_margin"] = predicted_margin
+            home_away_df.loc[:, "away_predicted_margin"] = -predicted_margin
+
+            Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+            self.assertEqual(Prediction.objects.count(), 1)
+
+            prediction = Prediction.objects.first()
+            self.assertEqual(prediction.predicted_margin, predicted_margin)
 
     def test_clean(self):
         with self.subTest("when predicted margin rounds to 0"):

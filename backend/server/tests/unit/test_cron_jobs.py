@@ -6,7 +6,7 @@ from freezegun import freeze_time
 
 from server.cron_jobs import SendTips
 from server.tests.fixtures.data_factories import fake_fixture_data
-from machine_learning.data_import import FitzroyDataImporter
+from server import data_import
 
 THURSDAY = "2019-3-28"
 FRIDAY = "2019-3-29"
@@ -36,8 +36,8 @@ class TestSendTips(TestCase):
         for idx, day in enumerate(days):
             fixture_data.loc[idx, "date"] = day
 
-        self.data_reader = FitzroyDataImporter()
-        self.data_reader.fetch_fixtures = Mock(return_value=fixture_data)
+        self.data_importer = data_import
+        self.data_importer.fetch_fixture_data = Mock(return_value=fixture_data)
 
     def test_do(self):
         with patch("server.management.commands.tip.Command") as MockTipCommand:
@@ -51,7 +51,7 @@ class TestSendTips(TestCase):
                 # because the datetime is set in __init__
                 with freeze_time(FRIDAY, tz_offset=MELBOURNE_TIMEZONE_OFFSET):
                     with self.subTest("on Friday with a match"):
-                        SendTips(verbose=0, data_reader=self.data_reader).do()
+                        SendTips(verbose=0, data_importer=self.data_importer).do()
 
                         MockTipCommand().handle.assert_called()
                         MockSendCommand().handle.assert_called()
@@ -61,14 +61,14 @@ class TestSendTips(TestCase):
 
                 with freeze_time(THURSDAY, tz_offset=MELBOURNE_TIMEZONE_OFFSET):
                     with self.subTest("on Thursday without a match"):
-                        SendTips(verbose=0, data_reader=self.data_reader).do()
+                        SendTips(verbose=0, data_importer=self.data_importer).do()
 
                         MockTipCommand().handle.assert_not_called()
                         MockSendCommand().handle.assert_not_called()
 
                 with freeze_time(SATURDAY, tz_offset=MELBOURNE_TIMEZONE_OFFSET):
                     with self.subTest("on Saturday with a match"):
-                        SendTips(verbose=0, data_reader=self.data_reader).do()
+                        SendTips(verbose=0, data_importer=self.data_importer).do()
 
                         MockTipCommand().handle.assert_not_called()
                         MockSendCommand().handle.assert_not_called()

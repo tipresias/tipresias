@@ -12,7 +12,6 @@ from server.tests.fixtures.data_factories import (
     fake_prediction_data,
 )
 from server import data_import
-from machine_learning.tests.fixtures import TestEstimator
 from project.settings.common import MELBOURNE_TIMEZONE
 
 
@@ -48,8 +47,8 @@ class TestSeedDb(TestCase):
             match_data = {
                 "home_team": match_result["home_team"],
                 "away_team": match_result["away_team"],
-                "season": match_result["year"],
-                "round": match_result["round_number"],
+                "year": match_result["year"],
+                "round_number": match_result["round_number"],
             }
 
             prediction_data.append(
@@ -64,10 +63,13 @@ class TestSeedDb(TestCase):
         data_import.fetch_match_results_data = Mock(
             side_effect=self.__match_results_side_effect
         )
-
-        self.seed_command = seed_db.Command(
-            estimators=[TestEstimator()], data_importer=data_import
+        data_import.fetch_ml_model_info = Mock(
+            return_value=[
+                {"name": "test_estimator", "filepath": "some/filepath/model.pkl"}
+            ]
         )
+
+        self.seed_command = seed_db.Command(data_importer=data_import)
 
     def test_handle(self):
         self.seed_command.handle(

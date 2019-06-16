@@ -8,11 +8,10 @@ from faker import Faker
 import numpy as np
 import pandas as pd
 
-from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
 from server.types import CleanFixtureData, MatchData
 from server.models import Match
 from project.settings.common import MELBOURNE_TIMEZONE
-
+from project.settings.data import TEAM_NAMES, DEFUNCT_TEAM_NAMES
 
 FIRST = 1
 SECOND = 2
@@ -61,6 +60,7 @@ def _raw_match_data(year: int, team_names: Tuple[str, str]) -> MatchData:
         "home_score": np.random.randint(50, 150),
         "away_score": np.random.randint(50, 150),
         "match_id": FAKE.ean(),
+        "crowd": np.random.randint(10000, 30000),
     }
 
 

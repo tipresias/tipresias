@@ -16,6 +16,7 @@ from machine_learning.data_transformation.data_cleaning import (
     clean_fixture_data,
 )
 from machine_learning.settings import ML_MODELS, BASE_DIR
+from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES, VENUES
 
 
 PredictionData = TypedDict(
@@ -32,6 +33,11 @@ PredictionData = TypedDict(
 )
 
 MlModel = TypedDict("MlModel", {"name": str, "filepath": str})
+
+DataConfig = TypedDict(
+    "DataConfig",
+    {"team_names": List[str], "defunct_team_names": List[str], "venues": List[str]},
+)
 
 # We calculate rolling sums/means for some features that can span over 5 seasons
 # of data, so we're setting it to 10 to be on the safe side.
@@ -221,3 +227,11 @@ def fetch_ml_model_info() -> List[MlModel]:
     """Fetch general info about all saved ML models"""
 
     return ML_MODELS
+
+
+def fetch_data_config() -> DataConfig:
+    return {
+        "team_names": TEAM_NAMES,
+        "defunct_team_names": DEFUNCT_TEAM_NAMES,
+        "venues": VENUES,
+    }

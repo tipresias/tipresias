@@ -1,9 +1,8 @@
 """Django command for seeding the DB with match & prediction data"""
 
 import itertools
-from typing import Tuple, List, Union
+from typing import Tuple, List
 from datetime import datetime
-from mypy_extensions import TypedDict
 import pandas as pd
 import numpy as np
 from django import utils

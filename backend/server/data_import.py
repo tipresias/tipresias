@@ -3,9 +3,16 @@
 from typing import Tuple, Optional, List
 
 import pandas as pd
+from mypy_extensions import TypedDict
 
 from machine_learning import api
 from server.types import MlModel
+
+
+DataConfig = TypedDict(
+    "DataConfig",
+    {"team_names": List[str], "defunct_team_names": List[str], "venues": List[str]},
+)
 
 
 def fetch_prediction_data(
@@ -75,3 +82,9 @@ def fetch_ml_model_info() -> List[MlModel]:
     """Fetch general info about all saved ML models"""
 
     return api.fetch_ml_model_info()
+
+
+def fetch_data_config() -> DataConfig:
+    """Fetch general data config info"""
+
+    return api.fetch_data_config()

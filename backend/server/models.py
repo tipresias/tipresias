@@ -4,12 +4,10 @@ from datetime import datetime, timedelta
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from sklearn.externals import joblib
 import numpy as np
 
-from machine_learning.ml_estimators import BaseMLEstimator
-from machine_learning.data_config import TEAM_NAMES
 from project.settings.common import MELBOURNE_TIMEZONE
+from project.settings.data import TEAM_NAMES
 from server.types import CleanPredictionData
 
 # Rough estimate, but exactitude isn't necessary here
@@ -100,9 +98,6 @@ class MLModel(models.Model):
     data_class_path = models.CharField(
         max_length=500, null=True, blank=True, validators=[validate_module_path]
     )
-
-    def load_estimator(self) -> BaseMLEstimator:
-        return joblib.load(self.filepath)
 
 
 class Prediction(models.Model):

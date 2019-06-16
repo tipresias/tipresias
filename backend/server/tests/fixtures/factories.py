@@ -5,9 +5,8 @@ from factory.django import DjangoModelFactory
 from faker import Faker
 
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
-from machine_learning.data_config import TEAM_NAMES, VENUES
-from machine_learning.tests.fixtures import TestEstimator
 from project.settings.common import MELBOURNE_TIMEZONE
+from project.settings.data import TEAM_NAMES, VENUES
 
 FAKE = Faker()
 THIS_YEAR = date.today().year
@@ -59,7 +58,7 @@ class MLModelFactory(DjangoModelFactory):
 
     name = factory.Faker("company")
     description = factory.Faker("paragraph", nb_sentences=4)
-    filepath = TestEstimator().pickle_filepath()
+    filepath = "some/filepath/to/model.pkl"
     data_class_path = ""
 
 

@@ -12,7 +12,6 @@ from server.models import Match, TeamMatch, Team, Prediction
 from server.types import CleanedFixtureData
 from server import data_import
 from server.helpers import pivot_team_matches_to_matches
-from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import JoinedMLData
 from machine_learning.data_transformation.data_cleaning import clean_fixture_data
 
@@ -38,26 +37,24 @@ class Command(BaseCommand):
     def __init__(
         self,
         *args,
-        data_reader=FitzroyDataImporter(),
         fetch_data=True,
         data=JoinedMLData(fetch_data=True, start_date=PREDICTION_DATA_START_DATE),
-        prediction_data=data_import,
+        data_importer=data_import,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
-        self.data_reader = data_reader
         self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.current_year = self.right_now.year
         self.fetch_data = fetch_data
         self.data = data
-        self.prediction_data = prediction_data
+        self.data_importer = data_importer
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
         """Run 'tip' command"""
 
         self.verbose = verbose  # pylint: disable=W0201
-        self.data_reader.verbose = verbose
+        self.data_importer.verbose = verbose
 
         fixture_data_frame = self.__fetch_fixture_data(self.current_year).pipe(
             clean_fixture_data
@@ -104,7 +101,7 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print(f"Fetching fixture for {year}...\n")
 
-        fixture_data_frame = self.data_reader.fetch_fixtures(
+        fixture_data_frame = self.data_importer.fetch_fixture_data(
             start_date=f"{year}-01-01", end_date=f"{year}-12-31"
         )
 
@@ -116,7 +113,7 @@ class Command(BaseCommand):
                 f"fixture for {year + 1}.\n"
             )
 
-            fixture_data_frame = self.data_reader.fetch_fixtures(
+            fixture_data_frame = self.data_importer.fetch_fixture_data(
                 start_date=f"{year}-01-01", end_date=f"{year}-12-31"
             )
 
@@ -194,7 +191,7 @@ class Command(BaseCommand):
         return self.__build_team_match(match, match_data)
 
     def __make_predictions(self, year: int, round_number: int) -> None:
-        predictions = self.prediction_data.fetch_prediction_data(
+        predictions = self.data_importer.fetch_prediction_data(
             (year, year), round_number=round_number, verbose=self.verbose
         )
         home_away_df = pivot_team_matches_to_matches(pd.DataFrame(predictions))

@@ -10,6 +10,7 @@ from mypy_extensions import TypedDict
 
 from machine_learning.ml_data import JoinedMLData, BaseMLData
 from machine_learning.ml_estimators import BaseMLEstimator
+from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.settings import ML_MODELS, BASE_DIR
 
 
@@ -146,5 +147,29 @@ def make_predictions(
     ]
 
     return pd.concat(list(itertools.chain.from_iterable(predictions))).to_dict(
+        "records"
+    )
+
+
+def fetch_fixture_data(
+    start_date: str, end_date: str, data_import=FitzroyDataImporter(), verbose: int = 1
+) -> pd.DataFrame:
+    """
+    Fetch fixture data (doesn't include match results)
+
+    Args:
+        start_date (str): Stringified date of form yyy-mm-dd that determines
+            the earliest date for which to fetch data.
+        end_date (str): Stringified date of form yyy-mm-dd that determines
+            the latest date for which to fetch data.
+        verbose (0 or 1): Whether to print info messages while fetching data.
+
+    Returns:
+        List of fixture data dictionaries.
+    """
+
+    data_import.verbose = verbose
+
+    return data_import.fetch_fixtures(start_date=start_date, end_date=end_date).to_dict(
         "records"
     )

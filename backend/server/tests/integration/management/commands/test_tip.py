@@ -9,7 +9,6 @@ from server.management.commands import tip
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
 from server import data_import
-from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import BettingMLData
 
 
@@ -25,9 +24,6 @@ class TestTip(TestCase):
 
         # Mock footywire fixture data
         fixture_data = fake_fixture_data(ROW_COUNT, (year, year + 1))
-
-        fitzroy = FitzroyDataImporter()
-        fitzroy.fetch_fixtures = Mock(return_value=fixture_data)
 
         # Mock update_or_create_from_data to make assertions on calls
         update_or_create_from_data = copy.copy(Prediction.update_or_create_from_data)
@@ -50,13 +46,11 @@ class TestTip(TestCase):
             )
 
         data_import.fetch_prediction_data = Mock(return_value=prediction_data)
+        data_import.fetch_fixture_data = Mock(return_value=fixture_data)
 
         # Not fetching data, because it takes forever
         self.tip_command = tip.Command(
-            data_reader=fitzroy,
-            fetch_data=False,
-            data=BettingMLData(),
-            prediction_data=data_import,
+            fetch_data=False, data=BettingMLData(), data_importer=data_import
         )
 
     def test_handle(self):

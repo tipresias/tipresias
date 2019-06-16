@@ -11,6 +11,7 @@ from mypy_extensions import TypedDict
 from machine_learning.ml_data import JoinedMLData, BaseMLData
 from machine_learning.ml_estimators import BaseMLEstimator
 from machine_learning.data_import import FitzroyDataImporter
+from machine_learning.data_transformation.data_cleaning import clean_match_data
 from machine_learning.settings import ML_MODELS, BASE_DIR
 
 
@@ -155,7 +156,7 @@ def fetch_fixture_data(
     start_date: str, end_date: str, data_import=FitzroyDataImporter(), verbose: int = 1
 ) -> pd.DataFrame:
     """
-    Fetch fixture data (doesn't include match results)
+    Fetch fixture data (doesn't include match results) from afl_data service.
 
     Args:
         start_date (str): Stringified date of form yyy-mm-dd that determines
@@ -172,4 +173,38 @@ def fetch_fixture_data(
 
     return data_import.fetch_fixtures(start_date=start_date, end_date=end_date).to_dict(
         "records"
+    )
+
+
+def fetch_match_results_data(
+    start_date: str,
+    end_date: str,
+    fetch_data: bool = False,
+    data_import=FitzroyDataImporter(),
+    verbose: int = 1,
+) -> pd.DataFrame:
+    """
+    Fetch results data for past matches from afl_data service.
+
+    Args:
+        start_date (str): Stringified date of form yyy-mm-dd that determines
+            the earliest date for which to fetch data.
+        end_date (str): Stringified date of form yyy-mm-dd that determines
+            the latest date for which to fetch data.
+        fetch_data (bool): Whether to fetch fresh data or use saved data
+            (usually a few weeks old).
+        verbose (0 or 1): Whether to print info messages while fetching data.
+
+    Returns:
+        List of match results data dictionaries.
+    """
+
+    data_import.verbose = verbose
+
+    return (
+        data_import.match_results(
+            start_date=start_date, end_date=end_date, fetch_data=fetch_data
+        )
+        .pipe(clean_match_data)
+        .to_dict("records")
     )

@@ -1,6 +1,9 @@
+"""Module for factory functions that create raw data objects"""
+
 from typing import List, Dict, Any, Tuple, Union
 from datetime import datetime
 import itertools
+
 from faker import Faker
 import numpy as np
 import pandas as pd
@@ -9,6 +12,7 @@ from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
 from server.types import RawFixtureData, MatchData, PredictionData
 from server.models import Match
 from project.settings.common import MELBOURNE_TIMEZONE
+
 
 FIRST = 1
 SECOND = 2
@@ -43,7 +47,7 @@ def _min_max_datetimes_by_year(year: int) -> Dict[str, datetime]:
     }
 
 
-def _match_data(year: int, team_names: Tuple[str, str]) -> MatchData:
+def _raw_match_data(year: int, team_names: Tuple[str, str]) -> MatchData:
     return {
         "date": FAKE.date_time_between_dates(
             **_min_max_datetimes_by_year(year), tzinfo=MELBOURNE_TIMEZONE
@@ -60,28 +64,32 @@ def _match_data(year: int, team_names: Tuple[str, str]) -> MatchData:
     }
 
 
-def _match_by_round(row_count: int, year: int) -> List[MatchData]:
+def _matches_by_round(row_count: int, year: int) -> List[MatchData]:
     team_names = CyclicalTeamNames()
 
     return [
-        _match_data(year, (team_names.next(), team_names.next()))
-        for idx in range(row_count)
+        _raw_match_data(year, (team_names.next(), team_names.next()))
+        for _ in range(row_count)
     ]
 
 
-def _match_by_year(
+def _matches_by_year(
     row_count: int, year_range: Tuple[int, int]
 ) -> List[List[MatchData]]:
-    return [_match_by_round(row_count, year) for year in range(*year_range)]
+    return [_matches_by_round(row_count, year) for year in range(*year_range)]
 
 
 def fake_match_results_data(
-    row_count: int, year_range: Tuple[int, int]
+    row_count: int, year_range: Tuple[int, int], clean=False
 ) -> pd.DataFrame:
-    data = _match_by_year(row_count, year_range)
+    data = _matches_by_year(row_count, year_range)
     reduced_data = list(itertools.chain.from_iterable(data))
+    data_frame = pd.DataFrame(list(reduced_data))
 
-    return pd.DataFrame(list(reduced_data))
+    if clean:
+        return data_frame.rename(columns={"season": "year"})
+
+    return data_frame
 
 
 def _fixture_data(year: int, team_names: Tuple[str, str]) -> RawFixtureData:

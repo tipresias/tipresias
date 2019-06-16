@@ -31,7 +31,7 @@ def fetch_fixture_data(
     start_date: str, end_date: str, verbose: int = 1
 ) -> pd.DataFrame:
     """
-    Fetch fixture data (doesn't include match results)
+    Fetch fixture data (doesn't include match results) from machine_learning module.
 
     Args:
         start_date (str): Stringified date of form yyy-mm-dd that determines
@@ -45,3 +45,25 @@ def fetch_fixture_data(
     """
 
     return pd.DataFrame(api.fetch_fixture_data(start_date, end_date, verbose=verbose))
+
+
+def fetch_match_results_data(
+    start_date: str, end_date: str, verbose: int = 1
+) -> pd.DataFrame:
+    """
+    Fetch results data for past matches from machine_learning module.
+
+    Args:
+        start_date (str): Stringified date of form yyy-mm-dd that determines
+            the earliest date for which to fetch data.
+        end_date (str): Stringified date of form yyy-mm-dd that determines
+            the latest date for which to fetch data.
+        verbose (0 or 1): Whether to print info messages while fetching data.
+
+    Returns:
+        pandas.DataFrame with fixture data.
+    """
+
+    return pd.DataFrame(
+        api.fetch_match_results_data(start_date, end_date, verbose=verbose)
+    )

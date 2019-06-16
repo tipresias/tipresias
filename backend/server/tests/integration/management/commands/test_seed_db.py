@@ -8,11 +8,9 @@ from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import seed_db
 from server.tests.fixtures.data_factories import (
     fake_match_results_data,
-    fake_footywire_betting_data,
     fake_prediction_data,
 )
 from server import data_import
-from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.tests.fixtures import TestEstimator
 from project.settings.common import MELBOURNE_TIMEZONE
 
@@ -36,19 +34,20 @@ class TestSeedDb(TestCase):
         data_years = (self.years[0] - 1, self.years[1])
 
         self.match_results_data_frame = fake_match_results_data(
-            MATCH_COUNT_PER_YEAR, data_years
+            MATCH_COUNT_PER_YEAR, data_years, clean=True
         )
 
         prediction_data = []
 
         for match_result in self.match_results_data_frame.query(
             # Only returning prediction data for matches in seed_db year range
-            "season >= @min_seed_year"
+            "year >= @min_seed_year"
         ).to_dict("records"):
+
             match_data = {
                 "home_team": match_result["home_team"],
                 "away_team": match_result["away_team"],
-                "season": match_result["season"],
+                "season": match_result["year"],
                 "round": match_result["round_number"],
             }
 
@@ -58,14 +57,13 @@ class TestSeedDb(TestCase):
                 )
             )
 
-        fitzroy = FitzroyDataImporter(verbose=0)
-        fitzroy.match_results = Mock(side_effect=self.__match_results_side_effect)
         data_import.fetch_prediction_data = Mock(return_value=prediction_data)
+        data_import.fetch_match_results_data = Mock(
+            side_effect=self.__match_results_side_effect
+        )
 
         self.seed_command = seed_db.Command(
-            estimators=[TestEstimator()],
-            data_reader=fitzroy,
-            prediction_data=data_import,
+            estimators=[TestEstimator()], data_importer=data_import
         )
 
     def test_handle(self):

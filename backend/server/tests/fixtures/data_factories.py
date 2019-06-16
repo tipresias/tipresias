@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
-from server.types import RawFixtureData, MatchData, PredictionData
+from server.types import CleanFixtureData, MatchData
 from server.models import Match
 from project.settings.common import MELBOURNE_TIMEZONE
 
@@ -92,20 +92,20 @@ def fake_match_results_data(
     return data_frame
 
 
-def _fixture_data(year: int, team_names: Tuple[str, str]) -> RawFixtureData:
+def _fixture_data(year: int, team_names: Tuple[str, str]) -> CleanFixtureData:
     return {
         "date": FAKE.date_time_between_dates(
             **_min_max_datetimes_by_year(year), tzinfo=MELBOURNE_TIMEZONE
         ),
-        "season": year,
-        "round": 1,
+        "year": year,
+        "round_number": 1,
         "home_team": team_names[0],
         "away_team": team_names[1],
         "venue": FAKE.city(),
     }
 
 
-def _fixture_by_round(row_count: int, year: int) -> List[RawFixtureData]:
+def _fixture_by_round(row_count: int, year: int) -> List[CleanFixtureData]:
     team_names = CyclicalTeamNames()
 
     return [
@@ -116,7 +116,7 @@ def _fixture_by_round(row_count: int, year: int) -> List[RawFixtureData]:
 
 def _fixture_by_year(
     row_count: int, year_range: Tuple[int, int]
-) -> List[List[RawFixtureData]]:
+) -> List[List[CleanFixtureData]]:
     return [_fixture_by_round(row_count, year) for year in range(*year_range)]
 
 
@@ -183,26 +183,26 @@ def fake_footywire_betting_data(
 
 
 def fake_prediction_data(
-    match_data: Union[RawFixtureData, Match, None] = None,
+    match_data: Union[CleanFixtureData, Match, None] = None,
     ml_model_name="test_estimator",
-) -> List[PredictionData]:
+) -> pd.DataFrame:
     if match_data is None:
         match_data_for_pred = fake_fixture_data(1, (2018, 2019)).iloc[0, :]
     elif isinstance(match_data, Match):
         match_data_for_pred = {
             "home_team": match_data.teammatch_set.get(at_home=1).team.name,
             "away_team": match_data.teammatch_set.get(at_home=0).team.name,
-            "season": match_data.start_date_time.year,
-            "round": match_data.round_number,
+            "year": match_data.start_date_time.year,
+            "round_number": match_data.round_number,
         }
     else:
         match_data_for_pred = match_data
 
-    return [
+    predictions = [
         {
             "team": match_data_for_pred["home_team"],
-            "year": match_data_for_pred["season"],
-            "round_number": match_data_for_pred["round"],
+            "year": match_data_for_pred["year"],
+            "round_number": match_data_for_pred["round_number"],
             "at_home": 1,
             "oppo_team": match_data_for_pred["away_team"],
             "ml_model": ml_model_name,
@@ -210,11 +210,13 @@ def fake_prediction_data(
         },
         {
             "team": match_data_for_pred["away_team"],
-            "year": match_data_for_pred["season"],
-            "round_number": match_data_for_pred["round"],
+            "year": match_data_for_pred["year"],
+            "round_number": match_data_for_pred["round_number"],
             "at_home": 0,
             "oppo_team": match_data_for_pred["home_team"],
             "ml_model": ml_model_name,
             "predicted_margin": np.random.randint(1, 50),
         },
     ]
+
+    return pd.DataFrame(predictions)

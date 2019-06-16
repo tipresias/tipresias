@@ -3,6 +3,7 @@ from datetime import datetime
 
 from django.test import TestCase
 from sklearn.externals import joblib
+import pandas as pd
 
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import seed_db
@@ -51,13 +52,15 @@ class TestSeedDb(TestCase):
                 "round": match_result["round_number"],
             }
 
-            prediction_data.extend(
+            prediction_data.append(
                 fake_prediction_data(
                     match_data=match_data, ml_model_name="test_estimator"
                 )
             )
 
-        data_import.fetch_prediction_data = Mock(return_value=prediction_data)
+        data_import.fetch_prediction_data = Mock(
+            return_value=pd.concat(prediction_data).reset_index()
+        )
         data_import.fetch_match_results_data = Mock(
             side_effect=self.__match_results_side_effect
         )

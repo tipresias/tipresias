@@ -1,15 +1,16 @@
 import copy
 from datetime import datetime, timedelta
 from unittest.mock import Mock
+
 from django.test import TestCase
 from freezegun import freeze_time
+import pandas as pd
 
 from server.models import Match, TeamMatch, Prediction
 from server.management.commands import tip
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
 from server import data_import
-from machine_learning.ml_data import BettingMLData
 
 
 ROW_COUNT = 5
@@ -39,19 +40,19 @@ class TestTip(TestCase):
             TeamFactory(name=match_data["home_team"])
             TeamFactory(name=match_data["away_team"])
 
-            prediction_data.extend(
+            prediction_data.append(
                 fake_prediction_data(
                     match_data=match_data, ml_model_name="test_estimator"
                 )
             )
 
-        data_import.fetch_prediction_data = Mock(return_value=prediction_data)
+        data_import.fetch_prediction_data = Mock(
+            return_value=pd.concat(prediction_data)
+        )
         data_import.fetch_fixture_data = Mock(return_value=fixture_data)
 
         # Not fetching data, because it takes forever
-        self.tip_command = tip.Command(
-            fetch_data=False, data=BettingMLData(), data_importer=data_import
-        )
+        self.tip_command = tip.Command(fetch_data=False, data_importer=data_import)
 
     def test_handle(self):
         with self.subTest("with no existing match records in DB"):

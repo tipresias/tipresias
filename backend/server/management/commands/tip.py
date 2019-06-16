@@ -9,11 +9,9 @@ import pandas as pd
 
 from project.settings.common import MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, Prediction
-from server.types import CleanedFixtureData
+from server.types import CleanFixtureData
 from server import data_import
 from server.helpers import pivot_team_matches_to_matches
-from machine_learning.ml_data import JoinedMLData
-from machine_learning.data_transformation.data_cleaning import clean_fixture_data
 
 
 NO_SCORE = 0
@@ -35,19 +33,13 @@ class Command(BaseCommand):
     """
 
     def __init__(
-        self,
-        *args,
-        fetch_data=True,
-        data=JoinedMLData(fetch_data=True, start_date=PREDICTION_DATA_START_DATE),
-        data_importer=data_import,
-        **kwargs,
+        self, *args, fetch_data=True, data_importer=data_import, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
 
         self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
         self.current_year = self.right_now.year
         self.fetch_data = fetch_data
-        self.data = data
         self.data_importer = data_importer
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
@@ -56,9 +48,7 @@ class Command(BaseCommand):
         self.verbose = verbose  # pylint: disable=W0201
         self.data_importer.verbose = verbose
 
-        fixture_data_frame = self.__fetch_fixture_data(self.current_year).pipe(
-            clean_fixture_data
-        )
+        fixture_data_frame = self.__fetch_fixture_data(self.current_year)
         upcoming_round = fixture_data_frame["round_number"].min()
 
         if fixture_data_frame is None:
@@ -127,7 +117,7 @@ class Command(BaseCommand):
 
         return fixture_data_frame
 
-    def __create_matches(self, fixture_data: List[CleanedFixtureData]) -> None:
+    def __create_matches(self, fixture_data: List[CleanFixtureData]) -> None:
         if not any(fixture_data):
             raise ValueError("No fixture data found.")
 
@@ -162,9 +152,7 @@ class Command(BaseCommand):
         if self.verbose == 1:
             print("Match data saved!\n")
 
-    def __build_match(
-        self, match_data: CleanedFixtureData
-    ) -> Optional[List[TeamMatch]]:
+    def __build_match(self, match_data: CleanFixtureData) -> Optional[List[TeamMatch]]:
         raw_date = (
             match_data["date"].to_pydatetime()
             if isinstance(match_data["date"], pd.Timestamp)
@@ -204,7 +192,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def __build_team_match(
-        match: Match, match_data: CleanedFixtureData
+        match: Match, match_data: CleanFixtureData
     ) -> Optional[List[TeamMatch]]:
         team_match_count = match.teammatch_set.count()
 

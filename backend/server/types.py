@@ -15,8 +15,8 @@ RawFixtureData = TypedDict(
     },
 )
 
-CleanedFixtureData = TypedDict(
-    "CleanedFixtureData",
+CleanFixtureData = TypedDict(
+    "CleanFixtureData",
     {
         "date": Union[datetime],
         "year": int,

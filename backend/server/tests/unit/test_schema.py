@@ -118,6 +118,7 @@ class TestSchema(TestCase):
             """
             query QueryType {
                 fetchYearlyPredictions(year: 2015) {
+                    seasonYear
                     predictionModelNames
                     predictionsByRound {
                         roundNumber
@@ -132,6 +133,7 @@ class TestSchema(TestCase):
         data = executed["data"]["fetchYearlyPredictions"]
 
         self.assertEqual(set(data["predictionModelNames"]), set(ml_model_names))
+        self.assertEqual(data["seasonYear"], 2015)
 
         predictions = data["predictionsByRound"]
 

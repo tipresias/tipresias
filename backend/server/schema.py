@@ -1,4 +1,4 @@
-from typing import List, cast
+from typing import List, cast, Optional
 from datetime import date
 
 import graphene
@@ -127,7 +127,12 @@ class SeasonType(graphene.ObjectType):
         graphene.String, description="All model names available for the given year"
     )
     predictions_by_round = graphene.List(
-        RoundType, description="Match and prediction data grouped by round"
+        RoundType,
+        description="Match and prediction data grouped by round",
+        round_number=graphene.Int(
+            default_value=None,
+            description="Optional filter when only one round of data is required",
+        ),
     )
 
     @staticmethod
@@ -143,7 +148,9 @@ class SeasonType(graphene.ObjectType):
         return root.distinct("ml_model__name").values_list("ml_model__name", flat=True)
 
     @staticmethod
-    def resolve_predictions_by_round(root, _info) -> List[RoundPrediction]:
+    def resolve_predictions_by_round(
+        root, _info, round_number: Optional[int] = None
+    ) -> List[RoundPrediction]:
         query_set = (
             root.values("match__round_number", "ml_model__name")
             .order_by("match__round_number")
@@ -161,7 +168,7 @@ class SeasonType(graphene.ObjectType):
             .rename("cumulative_correct_count")
         )
 
-        round_predictions = lambda df: [
+        collect_round_predictions = lambda df: [
             {
                 df.index.names[0]: value,
                 "model_predictions": df.xs(value, level=0),
@@ -174,13 +181,19 @@ class SeasonType(graphene.ObjectType):
             for value in df.index.levels[0]
         ]
 
-        return (
+        round_predictions = (
             pd.DataFrame(list(query_set))
             .assign(cumulative_correct_count=calculate_cumulative_correct)
             .groupby(["match__round_number", "ml_model__name"])
             .mean()
-            .pipe(round_predictions)
         )
+
+        if round_number is not None:
+            round_predictions = round_predictions.query(
+                "match__round_number == @round_number"
+            )
+
+        return round_predictions.pipe(collect_round_predictions)
 
 
 class Query(graphene.ObjectType):

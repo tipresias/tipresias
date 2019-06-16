@@ -174,7 +174,7 @@ class Command(BaseCommand):
         predictions = self.data_importer.fetch_prediction_data(
             year_range, verbose=self.verbose
         )
-        home_away_df = pivot_team_matches_to_matches(pd.DataFrame(predictions))
+        home_away_df = pivot_team_matches_to_matches(predictions)
 
         for pred in home_away_df.to_dict("records"):
             Prediction.update_or_create_from_data(pred)

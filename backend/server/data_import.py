@@ -1,16 +1,15 @@
 """Module for functions that fetch data"""
 
-from typing import List, Tuple, Optional
+from typing import Tuple, Optional
 
 import pandas as pd
 
-from server.types import PredictionData
 from machine_learning import api
 
 
 def fetch_prediction_data(
     year_range: Tuple[int, int], round_number: Optional[int] = None, verbose=1
-) -> List[PredictionData]:
+) -> pd.DataFrame:
     """
     Fetch prediction data from machine_learning module
 
@@ -24,7 +23,9 @@ def fetch_prediction_data(
         List of prediction data dictionaries
     """
 
-    return api.make_predictions(year_range, round_number=round_number, verbose=verbose)
+    return pd.DataFrame(
+        api.make_predictions(year_range, round_number=round_number, verbose=verbose)
+    )
 
 
 def fetch_fixture_data(

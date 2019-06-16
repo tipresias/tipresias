@@ -33,13 +33,38 @@ class App extends Component<Props, State> {
     year: 2018,
   };
 
+  componentDidMount() {
+    console.log('componentDidMount', this.state);
+  }
+
+
+  static getDerivedStateFromProps(props: any, state: any) {
+    console.log('getDerivedStateFromProps', props, state);
+    return null;
+  }
+
+  shouldComponentUpdate(nextProps: any, nextState: any) {
+    console.log('shouldComponentUpdate ', nextProps, nextState);
+    return true;
+  }
+
+  componentDidUpdate(prevProps: any, prevState: any, snapshot: any) {
+    console.log('componentDidUpdate', prevState, snapshot, this.state);
+  }
+
+  getSnapshotBeforeUpdate(prevProps: any, prevState: any) {
+    const themeValues = { color: 'red', size: 'small' };
+    console.log('getSnapshotBeforeUpdate', prevProps, prevState, themeValues);
+    return themeValues;
+  }
+
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
     this.setState({ year: parseInt(event.currentTarget.value, 10) });
   };
 
   render() {
     const { year } = this.state;
-
+    console.log('render', this.state);
 
     return (
       <AppContainer>

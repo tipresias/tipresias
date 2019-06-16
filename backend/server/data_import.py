@@ -1,10 +1,11 @@
 """Module for functions that fetch data"""
 
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 import pandas as pd
 
 from machine_learning import api
+from server.types import MlModel
 
 
 def fetch_prediction_data(
@@ -68,3 +69,9 @@ def fetch_match_results_data(
     return pd.DataFrame(
         api.fetch_match_results_data(start_date, end_date, verbose=verbose)
     )
+
+
+def fetch_ml_model_info() -> List[MlModel]:
+    """Fetch general info about all saved ML models"""
+
+    return api.fetch_ml_model_info()

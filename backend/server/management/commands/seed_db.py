@@ -12,47 +12,18 @@ from django.core.management.base import BaseCommand
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
 from server import data_import
 from server.helpers import pivot_team_matches_to_matches
-from machine_learning.ml_estimators import BaseMLEstimator
-from machine_learning.ml_estimators import BenchmarkEstimator, BaggingEstimator
-
-MatchData = TypedDict(
-    "MatchData",
-    {
-        "date": Union[datetime, pd.Timestamp],
-        "season": int,
-        "round_number": int,
-        "round": str,
-        "crowd": int,
-        "home_team": str,
-        "away_team": str,
-        "home_score": int,
-        "away_score": int,
-        "venue": str,
-    },
-)
+from server.types import MlModel, MatchData
 
 YEAR_RANGE = "2014-2019"
-ESTIMATORS: List[BaseMLEstimator] = [
-    BenchmarkEstimator(name="benchmark_estimator"),
-    BaggingEstimator(name="tipresias"),
-]
-NO_SCORE = 0
 JAN = 1
 
 
 class Command(BaseCommand):
     help = "Seed the database with team, match, and prediction data."
 
-    def __init__(
-        self,
-        *args,
-        estimators: List[BaseMLEstimator] = ESTIMATORS,
-        data_importer=data_import,
-        **kwargs,
-    ) -> None:
+    def __init__(self, *args, data_importer=data_import, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.estimators = estimators
         self.data_importer = data_importer
 
     def handle(  # pylint: disable=W0221
@@ -117,7 +88,10 @@ class Command(BaseCommand):
             print("Teams seeded!")
 
     def __create_ml_models(self) -> List[MLModel]:
-        ml_models = [self.__build_ml_model(estimator) for estimator in self.estimators]
+        ml_models = [
+            self.__build_ml_model(ml_model)
+            for ml_model in self.data_importer.fetch_ml_model_info()
+        ]
 
         if not any(ml_models):
             raise ValueError("Something went wrong and no ML models were saved.")
@@ -183,10 +157,8 @@ class Command(BaseCommand):
             print("\nPredictions saved!")
 
     @staticmethod
-    def __build_ml_model(estimator: BaseMLEstimator) -> MLModel:
-        ml_model_record = MLModel(
-            name=estimator.name, filepath=estimator.pickle_filepath()
-        )
+    def __build_ml_model(ml_model: MlModel) -> MLModel:
+        ml_model_record = MLModel(name=ml_model["name"], filepath=ml_model["filepath"])
         ml_model_record.full_clean()
 
         return ml_model_record

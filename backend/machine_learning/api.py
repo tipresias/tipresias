@@ -31,6 +31,8 @@ PredictionData = TypedDict(
     },
 )
 
+MlModel = TypedDict("MlModel", {"name": str, "filepath": str})
+
 # We calculate rolling sums/means for some features that can span over 5 seasons
 # of data, so we're setting it to 10 to be on the safe side.
 N_SEASONS_FOR_PREDICTION = 10
@@ -213,3 +215,9 @@ def fetch_match_results_data(
         .pipe(clean_match_data)
         .to_dict("records")
     )
+
+
+def fetch_ml_model_info() -> List[MlModel]:
+    """Fetch general info about all saved ML models"""
+
+    return ML_MODELS

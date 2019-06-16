@@ -40,6 +40,7 @@ MatchData = TypedDict(
         "home_score": int,
         "away_score": int,
         "match_id": int,
+        "crowd": int,
     },
 )
 
@@ -68,3 +69,5 @@ CleanPredictionData = TypedDict(
         "away_predicted_margin": float,
     },
 )
+
+MlModel = TypedDict("MlModel", {"name": str, "filepath": str})

@@ -3,7 +3,7 @@ from datetime import date
 
 import graphene
 from graphene_django.types import DjangoObjectType
-from django.db.models import Count, Q, QuerySet, Max
+from django.db.models import Count, Q, QuerySet
 import pandas as pd
 from mypy_extensions import TypedDict
 
@@ -11,7 +11,18 @@ from server.models import Prediction, MLModel, TeamMatch, Match, Team
 
 
 ModelPrediction = TypedDict(
-    "ModelPrediction", {"ml_model__name": str, "cumulative_correct_count": int}
+    "ModelPrediction",
+    {
+        "ml_model__name": str,
+        "cumulative_correct_count": int,
+        "cumulative_mean_absolute_error": float,
+        "cumulative_sum_absolute_error": int,
+    },
+)
+
+ModelStats = TypedDict(
+    "ModelStats",
+    {"model_stats": ModelPrediction, "round_number": int, "season_year": int},
 )
 
 RoundPrediction = TypedDict(
@@ -87,6 +98,25 @@ class CumulativePredictionsByRoundType(graphene.ObjectType):
         ),
         default_value=0,
     )
+    cumulative_mean_absolute_error = graphene.Float(
+        description="Cumulative mean absolute error for the given season",
+        default_value=0,
+    )
+    cumulative_sum_absolute_error = graphene.Int(
+        description=(
+            "Cumulative difference between predicted margin and actual margin "
+            "for the given season."
+        ),
+        default_value=0,
+    )
+
+
+class RoundStatsType(graphene.ObjectType):
+    """Cumulative model stats for a given season up to a given round"""
+
+    season_year = graphene.Int()
+    round_number = graphene.Int()
+    model_stats = graphene.Field(CumulativePredictionsByRoundType)
 
 
 class RoundType(graphene.ObjectType):
@@ -218,6 +248,12 @@ class Query(graphene.ObjectType):
         ),
     )
 
+    fetch_latest_round_stats = graphene.Field(
+        RoundStatsType,
+        description="Cumulative model prediction stats for the latest season.",
+        ml_model_name=graphene.String(default_value="tipresias"),
+    )
+
     @staticmethod
     def resolve_fetch_predictions(_root, _info, year=None) -> QuerySet:
         if year is None:
@@ -257,6 +293,89 @@ class Query(graphene.ObjectType):
             "match__round_number": max_match.round_number,
             "model_predictions": pd.DataFrame(),
             "matches": matches,
+        }
+
+    @staticmethod
+    def resolve_fetch_latest_round_stats(_root, _info, ml_model_name) -> ModelStats:
+        max_match = Match.objects.order_by("-start_date_time").first()
+
+        query_set = (
+            Prediction.objects.filter(
+                match__start_date_time__year=max_match.start_date_time.year,
+                ml_model__name=ml_model_name,
+            )
+            .select_related("match", "ml_model")
+            .order_by("match__start_date_time")
+            .annotate(correct_count=Count("is_correct", filter=Q(is_correct=True)))
+        )
+
+        prediction_data = []
+
+        for prediction in query_set:
+            match = prediction.match
+
+            if match.winner is None:
+                continue
+
+            prediction_data.append(
+                {
+                    "match__round_number": match.round_number,
+                    "ml_model__name": prediction.ml_model.name,
+                    "predicted_margin": prediction.predicted_margin,
+                    "predicted_winner__name": prediction.predicted_winner.name,
+                    "correct_count": prediction.correct_count,
+                    "match__winner__name": match.winner.name,
+                    "match__margin": match.margin,
+                }
+            )
+
+        calculate_margin_diff = lambda df: (
+            df["predicted_margin"]
+            + (
+                df["match__margin"]
+                # We want to subtract margins if correct winner was predicted,
+                # add margins otherwise
+                * (df["predicted_winner__name"] == df["match__winner__name"]).apply(
+                    lambda x: -1 if x else 1
+                )
+            )
+        ).abs()
+
+        # TODO: There's definitely a way to do these calculations via SQL, but chained
+        # GROUP BYs and calculations based on calculations is a bit much for me
+        # right now, so I'll come back and figure it out later
+        calculate_cumulative_correct = (
+            lambda df: df.expanding()["correct_count"]
+            .sum()
+            .rename("cumulative_correct_count")
+        )
+
+        calculate_sae = (
+            lambda df: df.expanding()["absolute_margin_diff"]
+            .sum()
+            .rename("cumulative_sum_absolute_error")
+        )
+
+        calculate_mae = (
+            lambda df: df.expanding()["absolute_margin_diff"]
+            .mean()
+            .rename("cumulative_mean_absolute_error")
+        )
+
+        round_predictions = (
+            pd.DataFrame(prediction_data)
+            .assign(
+                cumulative_correct_count=calculate_cumulative_correct,
+                absolute_margin_diff=calculate_margin_diff,
+            )
+            .assign(cumulative_sum_absolute_error=calculate_sae)
+            .assign(cumulative_mean_absolute_error=calculate_mae)
+        )
+
+        return {
+            "season_year": max_match.start_date_time.year,
+            "round_number": max_match.round_number,
+            "model_stats": round_predictions.iloc[-1, :].to_dict(),
         }
 
 

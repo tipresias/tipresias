@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 import itertools
 from dateutil import parser
 
@@ -10,6 +10,8 @@ from server.schema import schema
 from server.tests.fixtures.factories import FullMatchFactory
 from server.models import Match, MLModel
 from server.tests.fixtures.factories import MLModelFactory
+from project.settings.common import MELBOURNE_TIMEZONE
+
 
 ROUND_COUNT = 2
 YEAR_RANGE = (2014, 2016)
@@ -26,11 +28,15 @@ class TestSchema(TestCase):
         self.matches = [
             FullMatchFactory(
                 year=year,
+                round_number=(idx + 1),
+                start_date_time=datetime(
+                    year, 6, (idx % 30) + 1, tzinfo=MELBOURNE_TIMEZONE
+                ),
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
             for year in range(*YEAR_RANGE)
-            for _ in range(ROUND_COUNT)
+            for idx in range(ROUND_COUNT)
         ]
 
     def test_fetch_predictions(self):

@@ -242,29 +242,19 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPrediction:
-        max_year = (
-            Match.objects.aggregate(Max("start_date_time"))
-            .get("start_date_time__max")
-            .year
-            or 0
-        )
-        max_round_number = (
-            Match.objects.filter(start_date_time__year=max_year)
-            .aggregate(Max("round_number"))
-            .get("round_number__max")
-            or 0
-        )
+        max_match = Match.objects.order_by("-start_date_time").first()
 
         matches = (
             Match.objects.filter(
-                start_date_time__year=max_year, round_number=max_round_number
+                start_date_time__year=max_match.start_date_time.year,
+                round_number=max_match.round_number,
             )
             .prefetch_related("prediction_set", "teammatch_set")
             .order_by("start_date_time")
         )
 
         return {
-            "match__round_number": max_round_number,
+            "match__round_number": max_match.round_number,
             "model_predictions": pd.DataFrame(),
             "matches": matches,
         }

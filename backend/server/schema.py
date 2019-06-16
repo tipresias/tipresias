@@ -121,12 +121,22 @@ class RoundType(graphene.ObjectType):
 class SeasonType(graphene.ObjectType):
     """Match and prediction data grouped by season"""
 
+    season_year = graphene.Int()
+
     prediction_model_names = graphene.List(
         graphene.String, description="All model names available for the given year"
     )
     predictions_by_round = graphene.List(
         RoundType, description="Match and prediction data grouped by round"
     )
+
+    @staticmethod
+    def resolve_season_year(root, _info) -> int:
+        # Have to use list indexing to get first instead of .first(),
+        # because the latter raises a weird SQL error
+        return root.distinct("match__start_date_time__year")[
+            0
+        ].match.start_date_time.year
 
     @staticmethod
     def resolve_prediction_model_names(root, _info) -> List[str]:

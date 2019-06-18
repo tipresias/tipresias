@@ -34,7 +34,10 @@ export const HeaderLinks = styled.div`
   }
 `;
 
-const links = [{ url: 'https://github.com/tipresias', text: 'About' }];
+const links = [
+  { url: 'https://github.com/tipresias', text: 'About' },
+  { url: '/glossary', text: 'Glossary' },
+];
 
 const PageHeader = (): Node => (
   <Header>

@@ -116,9 +116,9 @@ def _make_model_predictions(
 
 
 def _make_predictions_by_year(
-    year: int,
     data: BaseMLData,
     ml_models: List[Dict[str, str]],
+    year: int,
     round_number: Optional[int] = None,
     verbose=1,
     train=False,

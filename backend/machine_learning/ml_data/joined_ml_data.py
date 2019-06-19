@@ -57,7 +57,7 @@ DATA_READERS: Dict[str, BaseMLData] = {
     # Defaulting to start_date as the 1965 season, because earlier seasons don't
     # have much in the way of player stats, just goals and behinds, which we
     # already have at the team level.
-    "player": PlayerMLData(),
+    "player": PlayerMLData(start_date="1965-01-01"),
     "match": MatchMLData(),
     "betting": BettingMLData(),
 }
@@ -94,6 +94,9 @@ class JoinedMLData(BaseMLData, DataTransformerMixin):
     def data(self) -> pd.DataFrame:
         if self._data is None:
             self.data_readers["player"].fetch_data = self.fetch_data
+            # TODO: We don't wan to overwrite player data start date when training,
+            # because the original model was trained on data starting in 1965
+            # Allow for MLData to pass params to data readers to remedy this
             self.data_readers["player"].start_date = self.start_date
             self.data_readers["player"].end_date = self.end_date
             player_data = self.data_readers["player"].data

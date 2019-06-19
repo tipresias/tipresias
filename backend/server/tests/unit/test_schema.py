@@ -16,6 +16,7 @@ from project.settings.common import MELBOURNE_TIMEZONE
 ROUND_COUNT = 2
 YEAR_RANGE = (2014, 2016)
 MODEL_NAMES = ["predictanator", "accurate_af"]
+TWENTY_SEVENTEEN = 2017
 
 
 class TestSchema(TestCase):
@@ -169,7 +170,7 @@ class TestSchema(TestCase):
 
     def test_fetch_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
-        year = 2017
+        year = TWENTY_SEVENTEEN
 
         latest_matches = [
             FullMatchFactory(
@@ -239,7 +240,7 @@ class TestSchema(TestCase):
 
     def test_fetch_latest_round_stats(self):
         ml_models = list(MLModel.objects.all())
-        year = 2017
+        year = TWENTY_SEVENTEEN
 
         latest_matches = [
             FullMatchFactory(

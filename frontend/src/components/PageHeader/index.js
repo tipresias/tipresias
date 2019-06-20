@@ -17,29 +17,24 @@ const Header = styled.header`
   @media (min-width: 768px) {
     grid-column: 2 / -2;
     align-items: center;
-    flex-direction: column;
+    justify-content: space-between;
   }
 `;
 
 const Logo = styled.img`
   height: auto;
-  width: 90px;
-  @media (min-width: 768px){
-    width: 160px;
-  }
+  width: 120px;
 `;
 
 const NavStyled = styled.nav`
   position: absolute;
   left: 0;
   right: 0;
-  top: 33px;
+  top: 40px;
   @media (min-width: 768px){
     position: initial;
-    top: initial;
-    margin-left: 0;
-    position: absolute;
-  }`;
+  }
+  `;
 
 const ListStyled = styled.ul`
   display: table;
@@ -52,9 +47,6 @@ const ListStyled = styled.ul`
 const ListItem = styled.li`
   display: table-cell;
   text-align: center;
-  @media (min-width: 768px){
-    display: inline-block;
-  }
 `;
 
 const TextLink = styled.a`
@@ -81,7 +73,13 @@ const PageHeader = (): Node => (
     <NavStyled>
       <ListStyled>
         {
-          links.map(link => <ListItem key={link.url}><TextLink href={link.url}>{link.text}</TextLink></ListItem>)
+          links.map(
+            link => (
+              <ListItem key={link.url}>
+                <TextLink href={link.url}>{link.text}</TextLink>
+              </ListItem>
+            )
+          )
         }
       </ListStyled>
     </NavStyled>

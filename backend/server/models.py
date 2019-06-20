@@ -157,9 +157,9 @@ class Prediction(models.Model):
         # predicted_margin is always positive as its always associated with predicted_winner
         predicted_margin = np.mean(np.abs([home_margin, away_margin]))
 
-        if predicted_margin > away_margin:
+        if home_margin > away_margin:
             predicted_winner = Team.objects.get(name=home_team)
-        elif away_margin > predicted_margin:
+        elif away_margin > home_margin:
             predicted_winner = Team.objects.get(name=away_team)
         else:
             raise ValueError(

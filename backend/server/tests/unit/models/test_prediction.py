@@ -85,6 +85,39 @@ class TestPrediction(TestCase):
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, predicted_margin)
 
+        # Regression tests for bug that caused update_or_create_from_data
+        # to select wrong team as predicted_winner when predicted margin
+        # was greater than away team's predicted winning margin
+        with self.subTest(
+            "when predicted margins are skewed with large home losing margin"
+        ):
+            predicted_winning_margin = 100
+            predicted_losing_margin = -200
+            home_away_df.loc[:, "home_predicted_margin"] = predicted_losing_margin
+            home_away_df.loc[:, "away_predicted_margin"] = predicted_winning_margin
+
+            Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+            prediction = Prediction.objects.first()
+            self.assertEqual(prediction.predicted_margin, 150)
+            self.assertEqual(
+                home_away_df["away_team"].iloc[0], prediction.predicted_winner.name
+            )
+
+        with self.subTest(
+            "when predicted margins are skewed with large away losing margin"
+        ):
+            predicted_winning_margin = 100
+            predicted_losing_margin = -200
+            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+
+            Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+            prediction = Prediction.objects.first()
+            self.assertEqual(prediction.predicted_margin, 150)
+            self.assertEqual(
+                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+            )
+
     def test_clean(self):
         with self.subTest("when predicted margin rounds to 0"):
             prediction = Prediction(

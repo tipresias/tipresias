@@ -18,7 +18,6 @@ import {
   WidgetStyles, WidgetHeading, WidgetFooter, DashboardContainerStyled,
 } from './style';
 
-
 type State = {
   year: number
 };
@@ -39,7 +38,7 @@ class Dashboard extends Component<Props, State> {
     const { year } = this.state;
     return (
       <DashboardContainerStyled>
-        <Widget gridColumn="2 / -2">
+        <Widget gridColumn="1 / -1">
           <WidgetHeading>Cumulative points per round</WidgetHeading>
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
             {(response: any): Node => {
@@ -69,7 +68,7 @@ class Dashboard extends Component<Props, State> {
           </WidgetFooter>
         </Widget>
 
-        <Widget gridColumn="2 / -2">
+        <Widget gridColumn="1 / -1">
           <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
             {(response: any): Node => {
               const { loading, error, data } = response;
@@ -91,7 +90,7 @@ class Dashboard extends Component<Props, State> {
           </Query>
         </Widget>
 
-        <Widget gridColumn="2 / -4">
+        <Widget gridColumn="1 / -2">
           <WidgetHeading>
             Tipresias performance metrics for last round in current season (year: 2019)
           </WidgetHeading>

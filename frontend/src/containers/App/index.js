@@ -5,18 +5,20 @@ import PageHeader from '../../components/PageHeader';
 import PageFooter from '../../components/PageFooter';
 import Dashboard from '../Dashboard';
 import Glossary from '../Glossary';
+import About from '../About';
 import { AppContainerStyled, MainStyled } from './style';
 
 const App = () => (
   <AppContainerStyled>
-    <PageHeader />
-    <MainStyled>
-      <Router>
+    <Router>
+      <PageHeader />
+      <MainStyled>
         <Route exact path="/" component={Dashboard} />
-        <Route exact path="/glossary/:id" component={Glossary} />
-      </Router>
-    </MainStyled>
-    <PageFooter />
+        <Route exact path="/glossary" component={Glossary} />
+        <Route exact path="/about" component={About} />
+      </MainStyled>
+      <PageFooter />
+    </Router>
   </AppContainerStyled>
 );
 

@@ -6,7 +6,6 @@ import styled from 'styled-components/macro';
 // todo: add a barchart empty animation
 const BarChartLoadingStyled = styled.div`
   border: 1px solid green;
-  color: green;
   background: white;
   height: 300px;
 `;

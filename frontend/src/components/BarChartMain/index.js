@@ -35,7 +35,7 @@ const dataTransformer = (previousDataSet: PreviousDataSet): NewDataSet => {
 const BarChartMain = ({ data }: Props): Node => {
   const dataTransformed = dataTransformer(data);
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={451}>
       <BarChart
         width={800}
         height={300}

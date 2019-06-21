@@ -27,7 +27,6 @@ ALLOWED_HOSTS: List = []
 
 INSTALLED_APPS = [
     "server.apps.ServerConfig",
-    "machine_learning.apps.MachineLearningConfig",
     "graphene_django",
     "django.contrib.admin",
     "django.contrib.auth",

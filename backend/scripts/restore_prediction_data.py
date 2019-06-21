@@ -3,6 +3,8 @@ One-off script for restoring 2019 predictions data from a saved data file after
 resetting the production database
 """
 
+# pylint: disable=import-error
+
 import os
 import sys
 
@@ -18,6 +20,10 @@ if PROJECT_PATH not in sys.path:
 django.setup()
 
 from project.settings.common import DATA_DIR
+
+# NOTE: These imports are no longer valid with the refactoring of machine_learning
+# into a separate service, so this code will have to be updated if we want to use it
+# again.
 from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.data_transformation.data_cleaning import clean_match_data
 from server.models import Match, TeamMatch, Prediction, Team, MLModel

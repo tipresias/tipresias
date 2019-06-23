@@ -36,6 +36,7 @@ services:
       - ./data_science:/app
       - ./data:/app/data
       - ./.gcloud:/app/.gcloud
+      - /app/node_modules
     ports:
       - "8008:8008"
     stdin_open: true

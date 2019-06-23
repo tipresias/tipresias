@@ -15,6 +15,7 @@ before_script:
   - docker pull cfranklin11/tipresias_server:master
   - docker pull cfranklin11/tipresias_client:master
   - docker pull cfranklin11/tipresias_afl_data:latest
+  - docker pull cfranklin11/tipresias_browser_test:latest
 script:
   - docker build --cache-from cfranklin11/tipresias_afl_data:latest -t cfranklin11/tipresias_afl_data:latest -f ./afl_data/ci.Dockerfile ./afl_data
   - docker run cfranklin11/tipresias_afl_data:latest Rscript -e "devtools::test()"
@@ -22,11 +23,12 @@ script:
   - docker run cfranklin11/tipresias_server:master pylint --disable=R server project scripts machine_learning
   - docker run cfranklin11/tipresias_server:master mypy server project scripts machine_learning
   - docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
-  - docker build --cache-from cfranklin11/tipresias_client:master -t cfranklin11/tipresias_client:master ./frontend
-  - docker run cfranklin11/tipresias_client:master yarn run eslint src
-  - docker run cfranklin11/tipresias_client:master yarn run flow
-  - docker run -e CI=true cfranklin11/tipresias_client:master yarn run test:unit
-  - docker-compose -f docker-compose.ci.yml run browser ./wait-for-it.sh localhost:3000 -- npx cypress run
+  - docker build --cache-from cfranklin11/tipresias_frontend:latest -t cfranklin11/tipresias_frontend:latest ./frontend
+  - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
+  - docker run cfranklin11/tipresias_frontend:latest yarn run flow
+  - docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
+  - docker build --cache-from cfranklin11/tipresias_browser_test:latest -t cfranklin11/tipresias_browser_test:latest ./browser_test
+  - docker-compose -f docker-compose.ci.yml run browser_test ./wait-for-it.sh localhost:3000 -- npx cypress run
 
 deploy:
   provider: script

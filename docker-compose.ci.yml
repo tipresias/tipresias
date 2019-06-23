@@ -3,7 +3,6 @@ services:
   backend:
     image: cfranklin11/tipresias_server:master
     volumes:
-      - ./backend:/app/backend
       - ./data:/app/data
     ports:
       - "8000:8000"
@@ -18,16 +17,11 @@ services:
     command: python3 manage.py runserver 0.0.0.0:8000
   afl_data:
     image: cfranklin11/tipresias_afl_data:latest
-    volumes:
-      - ./afl_data:/app/afl_data
     ports:
       - "8080:8080"
     command: Rscript app.R
   frontend:
     image: cfranklin11/tipresias_client:master
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     ports:
       - "3000:3000"
     environment:
@@ -44,9 +38,6 @@ services:
     image: cfranklin11/tipresias_browser_test:latest
     depends_on:
       - frontend
-    volumes:
-      - ./browser/cypress:/app/cypress
-      - ./browser/cypress.json:/app/cypress.json
     # Need to use 'host' network mode to avoid cross-host errors
     # from Webpack server
     network_mode: "host"

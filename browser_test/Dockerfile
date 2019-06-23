@@ -13,4 +13,4 @@ RUN npm install
 # to avoid verifying again when running the tests
 RUN npx cypress verify
 
-COPY wait-for-it.sh .
+COPY . .

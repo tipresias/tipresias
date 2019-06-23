@@ -23,8 +23,7 @@ COPY ./frontend/package.json ./frontend/yarn.lock /app/frontend/
 RUN $HOME/.yarn/bin/yarn install
 
 # Add the rest of the code, ignoring files not needed in prod
-ENV STR=$'notebooks'
-RUN echo "$STR" >> .dockerignore
+RUN echo -e "notebooks\nbrowser_test\nafl_data" >> .dockerignore
 COPY . /app/
 
 # Build static files
@@ -44,7 +43,7 @@ RUN mkdir staticfiles
 WORKDIR /app
 
 # SECRET_KEY is only included here to avoid raising an error when generating static files.
-# Be sure to add a real SECRET_KEY config variable in Heroku.
+# Be sure to add a real SECRET_KEY config/env variable in prod.
 RUN DJANGO_SETTINGS_MODULE=project.settings.production \
   SECRET_KEY=somethingsupersecret \
   python3 backend/manage.py collectstatic --noinput

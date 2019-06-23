@@ -21,6 +21,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+.mypy_cache/
 
 # Translations
 *.mo
@@ -71,9 +72,6 @@ venv.bak/
 
 # mkdocs documentation
 /site
-
-# mypy
-.mypy_cache/
 
 # JS stuff
 node_modules

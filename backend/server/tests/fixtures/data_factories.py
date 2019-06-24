@@ -206,7 +206,7 @@ def fake_prediction_data(
             "at_home": 1,
             "oppo_team": match_data_for_pred["away_team"],
             "ml_model": ml_model_name,
-            "predicted_margin": np.random.randint(1, 50),
+            "predicted_margin": np.random.rand() * 50,
         },
         {
             "team": match_data_for_pred["away_team"],
@@ -215,7 +215,7 @@ def fake_prediction_data(
             "at_home": 0,
             "oppo_team": match_data_for_pred["home_team"],
             "ml_model": ml_model_name,
-            "predicted_margin": np.random.randint(1, 50),
+            "predicted_margin": np.random.rand() * 50,
         },
     ]
 

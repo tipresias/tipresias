@@ -1,11 +1,13 @@
 """Module for functions that fetch data"""
 
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict, Any, cast
+import os
+from urllib.parse import urljoin
 
 import pandas as pd
 from mypy_extensions import TypedDict
+import requests
 
-from machine_learning import api
 from server.types import MlModel
 
 
@@ -15,8 +17,39 @@ DataConfig = TypedDict(
 )
 
 
+LOCAL_DATA_SCIENCE_SERVICE = "http://data_science:8008"
+DATA_SCIENCE_SERVICE = os.getenv(
+    "DATA_SCIENCE_SERVICE", default=LOCAL_DATA_SCIENCE_SERVICE
+)
+
+
+def _make_request(url: str, params: Dict[str, Any] = {}) -> requests.Response:
+    response = requests.get(url, params=params)
+
+    if response.status_code != 200:
+        raise Exception(
+            "Bad response from application: "
+            f"{response.status_code} / {response.headers} / {response.text}"
+        )
+
+    return response
+
+
+def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
+    service_host = (
+        DATA_SCIENCE_SERVICE
+        if os.getenv("PYTHON_ENV") == "production"
+        else LOCAL_DATA_SCIENCE_SERVICE
+    )
+    service_url = urljoin(service_host, path)
+
+    response = _make_request(service_url, params)
+
+    return response.json()
+
+
 def fetch_prediction_data(
-    year_range: Tuple[int, int], round_number: Optional[int] = None, verbose=1
+    year_range: Tuple[int, int], round_number: Optional[int] = None
 ) -> pd.DataFrame:
     """
     Fetch prediction data from machine_learning module
@@ -31,14 +64,18 @@ def fetch_prediction_data(
         List of prediction data dictionaries
     """
 
+    min_year, max_year = year_range
+    year_range_param = "-".join((str(min_year), str(max_year)))
+
     return pd.DataFrame(
-        api.make_predictions(year_range, round_number=round_number, verbose=verbose)
+        _fetch_data(
+            "predictions",
+            {"year_range": year_range_param, "round_number": round_number},
+        )
     )
 
 
-def fetch_fixture_data(
-    start_date: str, end_date: str, verbose: int = 1
-) -> pd.DataFrame:
+def fetch_fixture_data(start_date: str, end_date: str) -> pd.DataFrame:
     """
     Fetch fixture data (doesn't include match results) from machine_learning module.
 
@@ -53,12 +90,12 @@ def fetch_fixture_data(
         pandas.DataFrame with fixture data.
     """
 
-    return pd.DataFrame(api.fetch_fixture_data(start_date, end_date, verbose=verbose))
+    return pd.DataFrame(
+        _fetch_data("fixtures", {"start_date": start_date, "end_date": end_date})
+    )
 
 
-def fetch_match_results_data(
-    start_date: str, end_date: str, verbose: int = 1
-) -> pd.DataFrame:
+def fetch_match_results_data(start_date: str, end_date: str) -> pd.DataFrame:
     """
     Fetch results data for past matches from machine_learning module.
 
@@ -74,17 +111,17 @@ def fetch_match_results_data(
     """
 
     return pd.DataFrame(
-        api.fetch_match_results_data(start_date, end_date, verbose=verbose)
+        _fetch_data("match_results", {"start_date": start_date, "end_date": end_date})
     )
 
 
 def fetch_ml_model_info() -> List[MlModel]:
     """Fetch general info about all saved ML models"""
 
-    return api.fetch_ml_model_info()
+    return [cast(MlModel, ml_model) for ml_model in _fetch_data("ml_models")]
 
 
 def fetch_data_config() -> DataConfig:
     """Fetch general data config info"""
 
-    return api.fetch_data_config()
+    return cast(DataConfig, _fetch_data("data_config"))

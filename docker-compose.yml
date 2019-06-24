@@ -11,7 +11,7 @@ services:
     tty: true
     depends_on:
       - db
-      - afl_data
+      - data_science
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development

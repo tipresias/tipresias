@@ -49,7 +49,9 @@ def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
 
 
 def fetch_prediction_data(
-    year_range: Tuple[int, int], round_number: Optional[int] = None
+    year_range: Tuple[int, int],
+    round_number: Optional[int] = None,
+    ml_models: str = None,
 ) -> pd.DataFrame:
     """
     Fetch prediction data from machine_learning module
@@ -58,6 +60,8 @@ def fetch_prediction_data(
         year_range (Tuple(int, int)): Min (inclusive) and max (exclusive) years
             for which to fetch data.
         round_number (int): Specify a particular round for which to fetch data.
+        ml_models (str): Comma-separated list of ML model names to use for making
+            predictions.
         verbose (0 or 1): Whether to print info messages while fetching data.
 
     Returns:
@@ -70,7 +74,11 @@ def fetch_prediction_data(
     return pd.DataFrame(
         _fetch_data(
             "predictions",
-            {"year_range": year_range_param, "round_number": round_number},
+            {
+                "year_range": year_range_param,
+                "round_number": round_number,
+                "ml_models": ml_models,
+            },
         )
     )
 

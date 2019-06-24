@@ -30,6 +30,8 @@ def predictions():
             Default = current year only.
         round_number (int, optional): Round number for which you want prediction data.
             Default = All rounds for given year.
+        ml_models (str, optional): Name of the ML model to use for making predictions.
+            Default = All available models except 'test_estimator'
     Returns:
         flask.Response with a body that has a JSON of prediction data.
     """
@@ -39,11 +41,16 @@ def predictions():
     year_range = tuple([int(year) for year in year_range_param.split("-")])
 
     round_number = request.query.round_number
+    round_number = int(round_number) if round_number is not None else None
 
-    if round_number is not None:
-        round_number = int(round_number)
+    ml_models_param = request.query.ml_models
+    ml_models_param = (
+        ml_models_param.split(",") if ml_models_param is not None else None
+    )
 
-    return api.make_predictions(year_range, round_number=round_number)
+    return api.make_predictions(
+        year_range, round_number=round_number, ml_models=request.query.ml_model
+    )
 
 
 @app.route("/fixtures")

@@ -33,7 +33,12 @@ class Command(BaseCommand):
     """
 
     def __init__(
-        self, *args, fetch_data=True, data_importer=data_import, **kwargs
+        self,
+        *args,
+        fetch_data=True,
+        data_importer=data_import,
+        ml_models=None,
+        **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
@@ -41,6 +46,7 @@ class Command(BaseCommand):
         self.current_year = self.right_now.year
         self.fetch_data = fetch_data
         self.data_importer = data_importer
+        self.ml_models = ml_models
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
         """Run 'tip' command"""
@@ -84,8 +90,6 @@ class Command(BaseCommand):
             print("Saving prediction records...")
 
         self.__make_predictions(upcoming_round_year, upcoming_round)
-
-        return None
 
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
         if self.verbose == 1:
@@ -180,7 +184,10 @@ class Command(BaseCommand):
 
     def __make_predictions(self, year: int, round_number: int) -> None:
         predictions = self.data_importer.fetch_prediction_data(
-            (year, year + 1), round_number=round_number, verbose=self.verbose
+            (year, year + 1),
+            round_number=round_number,
+            verbose=self.verbose,
+            ml_models=self.ml_models,
         )
         home_away_df = pivot_team_matches_to_matches(predictions)
 

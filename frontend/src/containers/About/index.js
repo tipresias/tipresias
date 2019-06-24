@@ -4,8 +4,11 @@ import AboutStyled from './style';
 const About = () => (
   <AboutStyled>
     <h2>About Tipresias</h2>
-    <p>A machine-learning model for predicting AFL match results through accessible Data visualizations.</p>
     <p>
+      A machine-learning model for predicting AFL match results
+      through accessible Data visualizations.
+    </p>
+    <div>
       Team:
       <ul>
         <li>
@@ -17,7 +20,7 @@ const About = () => (
           (Frontend developer)
         </li>
       </ul>
-    </p>
+    </div>
   </AboutStyled>
 );
 

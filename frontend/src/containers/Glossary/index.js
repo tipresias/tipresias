@@ -5,7 +5,7 @@ import GlossaryStyled from './style';
 const Topic = ({ match }) => (
   <div>
     <h3>
-      Topic:
+      Definition:
       {match.params.id}
     </h3>
   </div>
@@ -13,16 +13,19 @@ const Topic = ({ match }) => (
 
 const Glossary = ({ match }) => (
   <GlossaryStyled>
-    <h2>Topics</h2>
+    <h2>Terms used in Tipresias:</h2>
     <ul>
       <li>
-        <Link to={`${match.url}/1`}>Tip point</Link>
+        <Link to={`${match.url}/1`}>Tip Point</Link>
       </li>
       <li>
-        <Link to={`${match.url}/2`}>another term</Link>
+        <Link to={`${match.url}/2`}>Predicted margin</Link>
       </li>
       <li>
-        <Link to={`${match.url}/3`}>another term</Link>
+        <Link to={`${match.url}/3`}>Winner / Predicted winner</Link>
+      </li>
+      <li>
+        <Link to={`${match.url}/3`}>Cumulative tip points bar chart</Link>
       </li>
     </ul>
 

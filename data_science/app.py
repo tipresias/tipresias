@@ -49,7 +49,7 @@ def predictions():
     )
 
     return api.make_predictions(
-        year_range, round_number=round_number, ml_models=request.query.ml_model
+        year_range, round_number=round_number, ml_model_names=ml_models_param
     )
 
 

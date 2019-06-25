@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Union, Any
 import os
 from datetime import date
 from functools import partial
@@ -39,6 +39,10 @@ DataConfig = TypedDict(
     {"team_names": List[str], "defunct_team_names": List[str], "venues": List[str]},
 )
 
+ApiResponse = TypedDict(
+    "ApiResponse", {"data": Union[List[Dict[str, Any]], Dict[str, Any]]}
+)
+
 # We calculate rolling sums/means for some features that can span over 5 seasons
 # of data, so we're setting it to 10 to be on the safe side.
 N_SEASONS_FOR_PREDICTION = 10
@@ -46,6 +50,16 @@ N_SEASONS_FOR_PREDICTION = 10
 # because we only need the full data set for model training and data analysis,
 # and we want to limit memory usage and speed up data processing for tipping
 PREDICTION_DATA_START_DATE = f"{date.today().year - N_SEASONS_FOR_PREDICTION}-01-01"
+
+
+def _api_response(data: Union[pd.DataFrame, Dict[str, Any]]) -> ApiResponse:
+    response_data = (
+        data.astype({"date": str}).to_dict("records")
+        if isinstance(data, pd.DataFrame)
+        else data
+    )
+
+    return {"data": response_data}
 
 
 def _train_model(ml_model: BaseMLEstimator, data: BaseMLData) -> BaseMLEstimator:
@@ -117,7 +131,7 @@ def _make_model_predictions(
 
 def _make_predictions_by_year(
     data: BaseMLData,
-    ml_models: List[Dict[str, str]],
+    ml_model_names: Optional[List[str]],
     year: int,
     round_number: Optional[int] = None,
     verbose=1,
@@ -132,6 +146,13 @@ def _make_predictions_by_year(
         train=train,
     )
 
+    if ml_model_names is None:
+        ml_models = ML_MODELS
+    else:
+        ml_models = [
+            ml_model for ml_model in ML_MODELS if ml_model["name"] in ml_model_names
+        ]
+
     return [partial_make_model_predictions(ml_model) for ml_model in ml_models]
 
 
@@ -141,14 +162,14 @@ def make_predictions(
     data: BaseMLData = JoinedMLData(
         fetch_data=True, start_date=PREDICTION_DATA_START_DATE
     ),
-    ml_models: List[Dict[str, str]] = ML_MODELS,
+    ml_model_names: Optional[List[str]] = None,
     verbose=1,
     train=False,
-) -> List[PredictionData]:
+) -> ApiResponse:
     partial_make_predictions_by_year = partial(
         _make_predictions_by_year,
         data,
-        ml_models,
+        ml_model_names,
         round_number=round_number,
         verbose=verbose,
         train=train,
@@ -158,14 +179,12 @@ def make_predictions(
         partial_make_predictions_by_year(year) for year in range(*year_range)
     ]
 
-    return pd.concat(list(itertools.chain.from_iterable(predictions))).to_dict(
-        "records"
-    )
+    return _api_response(pd.concat(list(itertools.chain.from_iterable(predictions))))
 
 
 def fetch_fixture_data(
     start_date: str, end_date: str, data_import=FitzroyDataImporter(), verbose: int = 1
-) -> pd.DataFrame:
+) -> ApiResponse:
     """
     Fetch fixture data (doesn't include match results) from afl_data service.
 
@@ -182,10 +201,10 @@ def fetch_fixture_data(
 
     data_import.verbose = verbose
 
-    return (
-        data_import.fetch_fixtures(start_date=start_date, end_date=end_date)
-        .pipe(clean_fixture_data)
-        .to_dict("records")
+    return _api_response(
+        data_import.fetch_fixtures(start_date=start_date, end_date=end_date).pipe(
+            clean_fixture_data
+        )
     )
 
 
@@ -195,7 +214,7 @@ def fetch_match_results_data(
     fetch_data: bool = False,
     data_import=FitzroyDataImporter(),
     verbose: int = 1,
-) -> pd.DataFrame:
+) -> ApiResponse:
     """
     Fetch results data for past matches from afl_data service.
 
@@ -214,24 +233,24 @@ def fetch_match_results_data(
 
     data_import.verbose = verbose
 
-    return (
+    return _api_response(
         data_import.match_results(
             start_date=start_date, end_date=end_date, fetch_data=fetch_data
-        )
-        .pipe(clean_match_data)
-        .to_dict("records")
+        ).pipe(clean_match_data)
     )
 
 
-def fetch_ml_model_info() -> List[MlModel]:
+def fetch_ml_model_info() -> ApiResponse:
     """Fetch general info about all saved ML models"""
 
-    return ML_MODELS
+    return _api_response(ML_MODELS)
 
 
-def fetch_data_config() -> DataConfig:
-    return {
-        "team_names": TEAM_NAMES,
-        "defunct_team_names": DEFUNCT_TEAM_NAMES,
-        "venues": VENUES,
-    }
+def fetch_data_config() -> ApiResponse:
+    return _api_response(
+        {
+            "team_names": TEAM_NAMES,
+            "defunct_team_names": DEFUNCT_TEAM_NAMES,
+            "venues": VENUES,
+        }
+    )

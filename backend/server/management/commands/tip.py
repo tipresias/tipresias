@@ -184,10 +184,7 @@ class Command(BaseCommand):
 
     def __make_predictions(self, year: int, round_number: int) -> None:
         predictions = self.data_importer.fetch_prediction_data(
-            (year, year + 1),
-            round_number=round_number,
-            verbose=self.verbose,
-            ml_models=self.ml_models,
+            (year, year + 1), round_number=round_number, ml_models=self.ml_models
         )
         home_away_df = pivot_team_matches_to_matches(predictions)
 

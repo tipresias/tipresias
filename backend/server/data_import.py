@@ -3,6 +3,7 @@
 from typing import Tuple, Optional, List, Dict, Any, cast
 import os
 from urllib.parse import urljoin
+from dateutil import parser
 
 import pandas as pd
 from mypy_extensions import TypedDict
@@ -21,6 +22,12 @@ LOCAL_DATA_SCIENCE_SERVICE = "http://data_science:8008"
 DATA_SCIENCE_SERVICE = os.getenv(
     "DATA_SCIENCE_SERVICE", default=LOCAL_DATA_SCIENCE_SERVICE
 )
+
+
+def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
+    # We have to use dateutil.parser instead of a pandas datetime parser,
+    # because the former doesn't maintain the timezone offset
+    return data_frame["date"].map(lambda dt: parser.parse(dt))
 
 
 def _make_request(url: str, params: Dict[str, Any] = {}) -> requests.Response:
@@ -45,7 +52,7 @@ def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
 
     response = _make_request(service_url, params)
 
-    return response.json()
+    return response.json().get("data")
 
 
 def fetch_prediction_data(
@@ -80,7 +87,7 @@ def fetch_prediction_data(
                 "ml_models": ml_models,
             },
         )
-    )
+    ).assign(date=_parse_dates)
 
 
 def fetch_fixture_data(start_date: str, end_date: str) -> pd.DataFrame:
@@ -100,7 +107,7 @@ def fetch_fixture_data(start_date: str, end_date: str) -> pd.DataFrame:
 
     return pd.DataFrame(
         _fetch_data("fixtures", {"start_date": start_date, "end_date": end_date})
-    )
+    ).assign(date=_parse_dates)
 
 
 def fetch_match_results_data(start_date: str, end_date: str) -> pd.DataFrame:
@@ -120,7 +127,7 @@ def fetch_match_results_data(start_date: str, end_date: str) -> pd.DataFrame:
 
     return pd.DataFrame(
         _fetch_data("match_results", {"start_date": start_date, "end_date": end_date})
-    )
+    ).assign(date=_parse_dates)
 
 
 def fetch_ml_model_info() -> List[MlModel]:

@@ -27,7 +27,7 @@ DATA_SCIENCE_SERVICE = os.getenv(
 def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
     # We have to use dateutil.parser instead of a pandas datetime parser,
     # because the former doesn't maintain the timezone offset
-    return data_frame["date"].map(lambda dt: parser.parse(dt))
+    return data_frame["date"].map(parser.parse)
 
 
 def _make_request(url: str, params: Dict[str, Any] = {}) -> requests.Response:
@@ -87,7 +87,7 @@ def fetch_prediction_data(
                 "ml_models": ml_models,
             },
         )
-    ).assign(date=_parse_dates)
+    )
 
 
 def fetch_fixture_data(start_date: str, end_date: str) -> pd.DataFrame:

@@ -52,11 +52,19 @@ N_SEASONS_FOR_PREDICTION = 10
 PREDICTION_DATA_START_DATE = f"{date.today().year - N_SEASONS_FOR_PREDICTION}-01-01"
 
 
+def _clean_data_frame_for_json(data_frame: pd.DataFrame) -> List[Dict[str, Any]]:
+    clean_data_frame = (
+        data_frame.astype({"date": str})
+        if "date" in data_frame.columns
+        else data_frame.copy()
+    )
+
+    return clean_data_frame.to_dict("records")
+
+
 def _api_response(data: Union[pd.DataFrame, Dict[str, Any]]) -> ApiResponse:
     response_data = (
-        data.astype({"date": str}).to_dict("records")
-        if isinstance(data, pd.DataFrame)
-        else data
+        _clean_data_frame_for_json(data) if isinstance(data, pd.DataFrame) else data
     )
 
     return {"data": response_data}

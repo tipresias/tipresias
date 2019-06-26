@@ -13,21 +13,31 @@ install:
   - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in deploy_rsa.enc -out ~/.ssh/deploy_rsa -d
 before_script:
   - docker pull cfranklin11/tipresias_backend:latest
+  - docker pull cfranklin11/tipresias_data_science:latest
   - docker pull cfranklin11/tipresias_frontend:latest
   - docker pull cfranklin11/tipresias_afl_data:latest
   - docker pull cfranklin11/tipresias_browser_test:latest
-script:
+
   - docker build --cache-from cfranklin11/tipresias_afl_data:latest -t cfranklin11/tipresias_afl_data:latest -f ./afl_data/ci.Dockerfile ./afl_data
-  - docker run cfranklin11/tipresias_afl_data:latest Rscript -e "devtools::test()"
   - docker build --cache-from cfranklin11/tipresias_backend:latest -t cfranklin11/tipresias_backend:latest ./backend
-  - docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts machine_learning
-  - docker run cfranklin11/tipresias_backend:latest mypy server project scripts machine_learning
-  - docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
+  - docker build --cache-from cfranklin11/tipresias_data_science:latest -t cfranklin11/tipresias_data_science:latest ./data_science
   - docker build --cache-from cfranklin11/tipresias_frontend:latest -t cfranklin11/tipresias_frontend:latest ./frontend
+  - docker build --cache-from cfranklin11/tipresias_browser_test:latest -t cfranklin11/tipresias_browser_test:latest ./browser_test
+script:
+  - docker run cfranklin11/tipresias_afl_data:latest Rscript -e "devtools::test()"
+
+  - docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
+  - docker run cfranklin11/tipresias_backend:latest mypy server project scripts
+  - docker-compose -f docker-compose.ci.yml run backend ./scripts/wait-for-it.sh data_science:8008 -- python3 -Wi manage.py test
+
+  - docker run cfranklin11/tipresias_data_science:latest pylint --disable=R machine_learning
+  - docker run cfranklin11/tipresias_data_science:latest mypy machine_learning
+  - docker-compose -f docker-compose.ci.yml run data_science pytest
+
   - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
   - docker run cfranklin11/tipresias_frontend:latest yarn run flow
   - docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
-  - docker build --cache-from cfranklin11/tipresias_browser_test:latest -t cfranklin11/tipresias_browser_test:latest ./browser_test
+
   - docker-compose -f docker-compose.ci.yml run browser_test ./wait-for-it.sh localhost:3000 -- npx cypress run
 
 deploy:

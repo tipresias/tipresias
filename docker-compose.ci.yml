@@ -1,27 +1,38 @@
 version: "3.2"
 services:
   backend:
-    image: cfranklin11/tipresias_server:master
+    image: cfranklin11/tipresias_backend:latest
     volumes:
       - ./data:/app/data
     ports:
       - "8000:8000"
     depends_on:
       - db
-      - afl_data
+      - data_science
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
       - EMAIL_RECIPIENT=test@test.com
       - SENDGRID_API_KEY=test
-    command: python3 manage.py runserver 0.0.0.0:8000
+    command: ./scripts/wait-for-it.sh data_science:8008 -- python3 manage.py runserver 0.0.0.0:8000
+  data_science:
+    image: cfranklin11/tipresias_data_science:latest
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8008:8008"
+    depends_on:
+      - afl_data
+    environment:
+      - PYTHON_ENV=development
+    command: python3 app.py
   afl_data:
     image: cfranklin11/tipresias_afl_data:latest
     ports:
       - "8080:8080"
     command: Rscript app.R
   frontend:
-    image: cfranklin11/tipresias_client:master
+    image: cfranklin11/tipresias_frontend:latest
     ports:
       - "3000:3000"
     environment:

@@ -1,5 +1,6 @@
 echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
 docker push cfranklin11/tipresias_backend:latest
+docker push cfranklin11/tipresias_data_science:latest
 docker push cfranklin11/tipresias_frontend:latest
 docker push cfranklin11/tipresias_afl_data:latest
 docker push cfranklin11/tipresias_browser_test:latest

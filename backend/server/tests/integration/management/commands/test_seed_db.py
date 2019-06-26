@@ -2,7 +2,7 @@ from unittest.mock import Mock
 from datetime import datetime
 
 from django.test import TestCase
-from sklearn.externals import joblib
+import joblib
 import pandas as pd
 
 from server.models import Match, TeamMatch, Team, MLModel, Prediction

@@ -12,6 +12,7 @@ dj-database-url
 sendgrid>=6.0,<6.99
 django_cron
 requests
+joblib
 
 # Testing/Linting
 pylint==1.9.2 # Necessary for open bug (as of 2-10-18): https://github.com/PyCQA/pylint/issues/2315

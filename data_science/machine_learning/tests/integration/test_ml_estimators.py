@@ -1,4 +1,4 @@
-from django.test import TestCase
+from unittest import TestCase
 from sklearn.externals import joblib
 
 from machine_learning.ml_estimators.base_ml_estimator import BaseMLEstimator

@@ -6,16 +6,9 @@ from urllib.parse import urljoin
 from dateutil import parser
 
 import pandas as pd
-from mypy_extensions import TypedDict
 import requests
 
 from server.types import MlModel
-
-
-DataConfig = TypedDict(
-    "DataConfig",
-    {"team_names": List[str], "defunct_team_names": List[str], "venues": List[str]},
-)
 
 
 LOCAL_DATA_SCIENCE_SERVICE = "http://data_science:8008"
@@ -140,9 +133,3 @@ def fetch_ml_model_info() -> List[MlModel]:
     """Fetch general info about all saved ML models"""
 
     return [cast(MlModel, ml_model) for ml_model in _fetch_data("ml_models")]
-
-
-def fetch_data_config() -> DataConfig:
-    """Fetch general data config info"""
-
-    return cast(DataConfig, _fetch_data("data_config"))

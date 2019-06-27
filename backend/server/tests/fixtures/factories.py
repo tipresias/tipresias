@@ -6,7 +6,7 @@ from faker import Faker
 
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
 from project.settings.common import MELBOURNE_TIMEZONE
-from project.settings.data import TEAM_NAMES, VENUES
+from project.settings.data_config import TEAM_NAMES, VENUES
 
 FAKE = Faker()
 THIS_YEAR = date.today().year

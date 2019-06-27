@@ -11,7 +11,7 @@ import pandas as pd
 from server.types import CleanFixtureData, MatchData
 from server.models import Match
 from project.settings.common import MELBOURNE_TIMEZONE
-from project.settings.data import TEAM_NAMES, DEFUNCT_TEAM_NAMES
+from project.settings.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
 
 FIRST = 1
 SECOND = 2

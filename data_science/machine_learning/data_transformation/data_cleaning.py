@@ -8,7 +8,7 @@ from functools import partial
 import pandas as pd
 
 from machine_learning.data_config import TEAM_TRANSLATIONS, FOOTYWIRE_VENUE_TRANSLATIONS
-from settings import MELBOURNE_TIMEZONE
+from machine_learning.settings import MELBOURNE_TIMEZONE
 
 MATCH_COL_TRANSLATIONS = {
     "home_points": "home_score",

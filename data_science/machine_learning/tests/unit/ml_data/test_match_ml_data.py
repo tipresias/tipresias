@@ -4,7 +4,7 @@ from datetime import date
 import pandas as pd
 from faker import Faker
 
-from settings import BASE_DIR, MELBOURNE_TIMEZONE
+from machine_learning.settings import BASE_DIR, MELBOURNE_TIMEZONE
 
 from machine_learning.ml_data import MatchMLData
 

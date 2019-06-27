@@ -2,7 +2,7 @@ import re
 import pandas as pd
 import numpy as np
 
-from settings import DATA_DIR
+from machine_learning.settings import DATA_DIR
 
 
 def raw_betting_df(path=f"{DATA_DIR}/afl_betting.csv"):

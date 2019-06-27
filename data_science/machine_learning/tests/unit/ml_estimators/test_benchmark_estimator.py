@@ -9,7 +9,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.externals import joblib
 from faker import Faker
 
-from settings import BASE_DIR
+from machine_learning.settings import BASE_DIR
 from machine_learning.ml_estimators import BenchmarkEstimator
 
 FAKE = Faker()

@@ -34,7 +34,7 @@ from machine_learning.data_import import FitzroyDataImporter
 from machine_learning.ml_data import BaseMLData
 from machine_learning.data_config import INDEX_COLS
 from machine_learning.utils import DataTransformerMixin
-from settings import MELBOURNE_TIMEZONE
+from machine_learning.settings import MELBOURNE_TIMEZONE
 
 
 FEATURE_FUNCS: List[DataFrameTransformer] = [

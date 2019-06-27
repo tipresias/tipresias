@@ -10,7 +10,7 @@ from sklearn.externals import joblib
 import pandas as pd
 import numpy as np
 
-from settings import BASE_DIR
+from machine_learning.settings import BASE_DIR
 from machine_learning.types import R
 
 

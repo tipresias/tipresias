@@ -10,7 +10,7 @@ from machine_learning.data_transformation.data_cleaning import (
     clean_player_data,
     clean_joined_data,
 )
-from settings import MELBOURNE_TIMEZONE
+from machine_learning.settings import MELBOURNE_TIMEZONE
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../fixtures"))
 N_PLAYERS = 20

@@ -10,9 +10,11 @@ from server.models import Match, TeamMatch, Prediction
 from server.management.commands import tip
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
+from server import data_import
 
 
 ROW_COUNT = 5
+
 
 # Freezing time to make sure there is viable data, which is easier
 # than mocking viable data
@@ -81,3 +83,26 @@ class TestTip(TestCase):
     @staticmethod
     def __update_or_create_from_data(update_or_create_from_data):
         return update_or_create_from_data
+
+
+class TestTipEndToEnd(TestCase):
+    def setUp(self):
+        MLModelFactory(name="tipresias")
+
+        for team_name in data_import.fetch_data_config().get("team_names"):
+            TeamFactory(name=team_name)
+
+        self.tip_command = tip.Command(ml_models="tipresias")
+
+    def test_handle(self):
+        self.assertEqual(Match.objects.count(), 0)
+        self.assertEqual(TeamMatch.objects.count(), 0)
+        self.assertEqual(Prediction.objects.count(), 0)
+
+        self.tip_command.handle(verbose=0)
+
+        match_count = Match.objects.count()
+
+        self.assertGreater(match_count, 0)
+        self.assertEqual(TeamMatch.objects.count(), match_count * 2)
+        self.assertEqual(Prediction.objects.count(), match_count)

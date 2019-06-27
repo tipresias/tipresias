@@ -110,7 +110,9 @@ def fetch_fixture_data(start_date: str, end_date: str) -> pd.DataFrame:
     ).assign(date=_parse_dates)
 
 
-def fetch_match_results_data(start_date: str, end_date: str) -> pd.DataFrame:
+def fetch_match_results_data(
+    start_date: str, end_date: str, fetch_data: bool = False
+) -> pd.DataFrame:
     """
     Fetch results data for past matches from machine_learning module.
 
@@ -119,14 +121,18 @@ def fetch_match_results_data(start_date: str, end_date: str) -> pd.DataFrame:
             the earliest date for which to fetch data.
         end_date (str): Stringified date of form yyy-mm-dd that determines
             the latest date for which to fetch data.
-        verbose (0 or 1): Whether to print info messages while fetching data.
+        fetch_data (bool): Whether to fetch fresh data. Non-fresh data goes up to end
+            of 2016 season.
 
     Returns:
         pandas.DataFrame with fixture data.
     """
 
     return pd.DataFrame(
-        _fetch_data("match_results", {"start_date": start_date, "end_date": end_date})
+        _fetch_data(
+            "match_results",
+            {"start_date": start_date, "end_date": end_date, "fetch_data": fetch_data},
+        )
     ).assign(date=_parse_dates)
 
 

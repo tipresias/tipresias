@@ -93,8 +93,7 @@ def match_results():
 
     start_date = request.query.start_date
     end_date = request.query.end_date
-    fetch_data_param = (request.query.fetch_data or FALSE).lower()
-    fetch_data = fetch_data_param == TRUE
+    fetch_data = (request.query.fetch_data or FALSE).lower() == TRUE
 
     return api.fetch_match_results_data(start_date, end_date, fetch_data=fetch_data)
 

@@ -69,7 +69,9 @@ class TestSeedDb(TestCase):
             ]
         )
 
-        self.seed_command = seed_db.Command(data_importer=mock_data_import)
+        self.seed_command = seed_db.Command(
+            data_importer=mock_data_import, fetch_data=False
+        )
 
     def test_handle(self):
         self.seed_command.handle(
@@ -106,7 +108,12 @@ class TestSeedDb(TestCase):
                         year_range=f"{self.years[0]}{symbol}{self.years[1]}", verbose=0
                     )
 
-    def __match_results_side_effect(self, start_date=None, end_date=None):
+    def __match_results_side_effect(
+        self,
+        start_date=None,
+        end_date=None,
+        fetch_data=False,  # pylint: disable=unused-argument
+    ):
         if start_date is None or end_date is None:
             return self.match_results_data_frame
 

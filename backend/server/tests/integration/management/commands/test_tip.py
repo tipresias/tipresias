@@ -1,6 +1,6 @@
 import copy
 from datetime import datetime, timedelta
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from django.test import TestCase
 from freezegun import freeze_time
@@ -10,7 +10,6 @@ from server.models import Match, TeamMatch, Prediction
 from server.management.commands import tip
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
-from server import data_import
 
 
 ROW_COUNT = 5
@@ -19,7 +18,8 @@ ROW_COUNT = 5
 # than mocking viable data
 @freeze_time("2016-01-01")
 class TestTip(TestCase):
-    def setUp(self):
+    @patch("server.data_import")
+    def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         tomorrow = datetime.now() + timedelta(days=1)
         year = tomorrow.year
 
@@ -46,13 +46,13 @@ class TestTip(TestCase):
                 )
             )
 
-        data_import.fetch_prediction_data = Mock(
+        mock_data_import.fetch_prediction_data = Mock(
             return_value=pd.concat(prediction_data)
         )
-        data_import.fetch_fixture_data = Mock(return_value=fixture_data)
+        mock_data_import.fetch_fixture_data = Mock(return_value=fixture_data)
 
         # Not fetching data, because it takes forever
-        self.tip_command = tip.Command(fetch_data=False, data_importer=data_import)
+        self.tip_command = tip.Command(fetch_data=False, data_importer=mock_data_import)
 
     def test_handle(self):
         with self.subTest("with no existing match records in DB"):

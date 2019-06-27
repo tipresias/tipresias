@@ -3,8 +3,6 @@
 # pylint: disable=C0103
 
 from typing import Callable, Tuple, Optional, TypeVar, Dict, Any, List, Sequence, Union
-from datetime import datetime
-from mypy_extensions import TypedDict
 import pandas as pd
 from sklearn.base import BaseEstimator, RegressorMixin, TransformerMixin
 
@@ -18,16 +16,3 @@ CalculatorPair = Tuple[Calculator, List[Sequence[str]]]
 
 R = TypeVar("R", BaseEstimator, RegressorMixin)
 T = TypeVar("T", BaseEstimator, TransformerMixin)
-
-CleanedMatchData = TypedDict(
-    "CleanedMatchData",
-    {
-        "date": datetime,
-        "year": int,
-        "round_number": int,
-        "team": str,
-        "oppo_team": str,
-        "score": int,
-        "oppo_score": int,
-    },
-)

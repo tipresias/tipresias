@@ -1,6 +1,6 @@
 """Module for factory functions that create raw data objects"""
 
-from typing import List, Dict, Any, Tuple, Union
+from typing import List, Dict, Tuple, Union
 from datetime import datetime
 import itertools
 
@@ -122,61 +122,6 @@ def _fixture_by_year(
 
 def fake_fixture_data(row_count: int, year_range: Tuple[int, int]) -> pd.DataFrame:
     data = _fixture_by_year(row_count, year_range)
-    reduced_data = list(itertools.chain.from_iterable(data))
-
-    return pd.DataFrame(list(reduced_data))
-
-
-def _betting_data(year: int, team_names: Tuple[str, str]) -> Dict[str, Any]:
-    home_score, away_score = np.random.randint(50, 150), np.random.randint(50, 150)
-    home_line_odds = np.random.randint(-50, 50)
-    win_odds_diff = round((np.random.rand() * 0.8), 2)
-    home_win_odds_diff = win_odds_diff if home_line_odds > 0 else -1 * win_odds_diff
-    home_win_odds = BASELINE_BET_PAYOUT + home_win_odds_diff
-    away_win_odds = BASELINE_BET_PAYOUT - home_win_odds_diff
-
-    return {
-        "date": FAKE.date_time_between_dates(
-            **_min_max_datetimes_by_year(year), tzinfo=MELBOURNE_TIMEZONE
-        ),
-        "season": year,
-        "round_number": 1,
-        "round": f"{year} Round 1",
-        "home_team": team_names[0],
-        "away_team": team_names[1],
-        "home_score": home_score,
-        "away_score": away_score,
-        "home_margin": home_score - away_score,
-        "away_margin": away_score - home_score,
-        "home_win_odds": home_win_odds,
-        "away_win_odds": away_win_odds,
-        "home_win_paid": home_win_odds * int(home_score > away_score),
-        "away_win_paid": away_win_odds * int(away_score > home_score),
-        "home_line_odds": home_line_odds,
-        "away_line_odds": -1 * home_line_odds,
-        "home_line_paid": BASELINE_BET_PAYOUT * int(home_score > away_score),
-        "away_line_paid": BASELINE_BET_PAYOUT * int(away_score > home_score),
-        "venue": FAKE.city(),
-    }
-
-
-def _betting_by_round(row_count: int, year: int):
-    team_names = CyclicalTeamNames()
-
-    return [
-        _betting_data(year, (team_names.next(), team_names.next()))
-        for idx in range(row_count)
-    ]
-
-
-def _betting_by_year(row_count: int, year_range: Tuple[int, int]):
-    return [_betting_by_round(row_count, year) for year in range(*year_range)]
-
-
-def fake_footywire_betting_data(
-    row_count: int, year_range: Tuple[int, int]
-) -> pd.DataFrame:
-    data = _betting_by_year(row_count, year_range)
     reduced_data = list(itertools.chain.from_iterable(data))
 
     return pd.DataFrame(list(reduced_data))

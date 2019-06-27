@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "term": "Tip Point",
+    "description": "description wip"
+  },
+  {
+    "id": 2,
+    "term": "Predicted Margin",
+    "description": "description wip"
+  },
+  {
+    "id": 3,
+    "term": "Predicted Winner",
+    "description": "description wip"
+  },
+  {
+    "id": 4,
+    "term": "Cumulative tip points bar chart",
+    "description": "description wip"
+  }
+]

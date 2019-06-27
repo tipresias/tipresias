@@ -1,37 +1,40 @@
-import React from 'react';
-import { Route, Link } from 'react-router-dom';
-import GlossaryStyled from './style';
+import React, { Fragment } from 'react';
+import { GlossaryStyled, DescriptionStyled } from './style';
+import allTerms from './index.json';
 
-const Topic = ({ match }) => (
-  <div>
-    <h3>
-      Definition:
-      {match.params.id}
-    </h3>
-  </div>
-);
+class Glossary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      items: [],
+    };
+  }
 
-const Glossary = ({ match }) => (
-  <GlossaryStyled>
-    <h2>Terms used in Tipresias:</h2>
-    <ul>
-      <li>
-        <Link to={`${match.url}/1`}>Tip Point</Link>
-      </li>
-      <li>
-        <Link to={`${match.url}/2`}>Predicted margin</Link>
-      </li>
-      <li>
-        <Link to={`${match.url}/3`}>Winner / Predicted winner</Link>
-      </li>
-      <li>
-        <Link to={`${match.url}/3`}>Cumulative tip points bar chart</Link>
-      </li>
-    </ul>
+  componentDidMount() {
+    this.setState({ items: allTerms });
+  }
 
-    <Route path="/glossary/:id" component={Topic} />
-  </GlossaryStyled>
-);
+  render() {
+    const { items } = this.state;
+    return (
+      <GlossaryStyled>
+        <h2>Terms used in Tipresias:</h2>
+        <dl>
+          {
+            items.length > 0 && items.map(
+              item => (
+                <Fragment key={item.id}>
+                  <dt>{item.term}</dt>
+                  <DescriptionStyled>{item.description}</DescriptionStyled>
+                </Fragment>
+              ),
+            )
+          }
+        </dl>
+      </GlossaryStyled>
+    );
+  }
+}
 
 
 export default Glossary;

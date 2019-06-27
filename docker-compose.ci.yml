@@ -14,6 +14,7 @@ services:
       - DATABASE_HOST=db
       - EMAIL_RECIPIENT=test@test.com
       - SENDGRID_API_KEY=test
+      - CI=true
     command: ./scripts/wait-for-it.sh data_science:8008 -- python3 manage.py runserver 0.0.0.0:8000
   data_science:
     image: cfranklin11/tipresias_data_science:latest

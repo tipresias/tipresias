@@ -1,6 +1,8 @@
 import copy
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
+from unittest import skipIf
+import os
 
 from django.test import TestCase
 from freezegun import freeze_time
@@ -85,6 +87,11 @@ class TestTip(TestCase):
         return update_or_create_from_data
 
 
+@skipIf(
+    os.getenv("CI") == "true",
+    "Useful test for subtle, breaking changes, but way too long to run in CI. "
+    "Run manually on your machine to be safe",
+)
 class TestTipEndToEnd(TestCase):
     def setUp(self):
         MLModelFactory(name="tipresias")

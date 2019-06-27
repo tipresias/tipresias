@@ -102,22 +102,10 @@ class Command(BaseCommand):
         latest_match = fixture_data_frame["date"].max()
 
         if self.right_now > latest_match:
-            print(
-                f"No unplayed matches found in {year}. We will try to fetch "
-                f"fixture for {year + 1}.\n"
+            raise ValueError(
+                f"No matches found after {self.right_now}. The latest match found is "
+                f"at {latest_match}\n"
             )
-
-            fixture_data_frame = self.data_importer.fetch_fixture_data(
-                start_date=f"{year}-01-01", end_date=f"{year}-12-31"
-            )
-
-            latest_match = fixture_data_frame["date"].max()
-
-            if self.right_now > latest_match:
-                raise ValueError(
-                    f"No unplayed matches found in {year + 1}, and we're not going "
-                    "to keep trying. Please try a season that hasn't been completed.\n"
-                )
 
         return fixture_data_frame
 

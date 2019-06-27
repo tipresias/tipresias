@@ -1,0 +1,53 @@
+service: machine-learning
+
+custom: ${file(./env.js):env}
+
+provider:
+  name: google
+  stage: dev
+  runtime: python37
+  region: asia-east2
+  memorySize: 1024
+  timeout: "540s"
+  project: ${self:custom.project}
+  credentials: ${self:custom.credentials}
+  environment:
+    AFL_DATA_SERVICE: ${self:custom.afl_data_service}
+    PYTHON_ENV: production
+    GCPF_TOKEN: ${self:custom.gcpf_token}
+
+plugins:
+  - serverless-google-cloudfunctions
+
+package:
+  exclude:
+    - node_modules/**
+    - .gitignore
+    - .git/**
+    - notebooks/**
+    - data/**
+    - .gcloud/**
+    - .mypy_cache
+    - machine_learning/tests/**
+
+functions:
+  predictions:
+    handler: predictions
+    events:
+      - http: path
+  fixtures:
+    handler: fixtures
+    events:
+      - http: path
+  match_results:
+    handler: match_results
+    events:
+      - http: path
+  ml_models:
+    handler: ml_models
+    events:
+      - http: path
+  data_config:
+    handler: data_config
+    events:
+      - http: path

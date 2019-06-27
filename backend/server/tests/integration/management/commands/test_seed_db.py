@@ -1,8 +1,8 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from datetime import datetime
 
 from django.test import TestCase
-from sklearn.externals import joblib
+import joblib
 import pandas as pd
 
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
@@ -11,7 +11,6 @@ from server.tests.fixtures.data_factories import (
     fake_match_results_data,
     fake_prediction_data,
 )
-from server import data_import
 from project.settings.common import MELBOURNE_TIMEZONE
 
 
@@ -19,7 +18,8 @@ MATCH_COUNT_PER_YEAR = 5
 
 
 class TestSeedDb(TestCase):
-    def setUp(self):
+    @patch("server.data_import")
+    def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         joblib.dump = Mock()
 
         min_seed_year = int(seed_db.YEAR_RANGE.split("-")[0])
@@ -57,19 +57,21 @@ class TestSeedDb(TestCase):
                 )
             )
 
-        data_import.fetch_prediction_data = Mock(
+        mock_data_import.fetch_prediction_data = Mock(
             return_value=pd.concat(prediction_data).reset_index()
         )
-        data_import.fetch_match_results_data = Mock(
+        mock_data_import.fetch_match_results_data = Mock(
             side_effect=self.__match_results_side_effect
         )
-        data_import.fetch_ml_model_info = Mock(
+        mock_data_import.fetch_ml_model_info = Mock(
             return_value=[
                 {"name": "test_estimator", "filepath": "some/filepath/model.pkl"}
             ]
         )
 
-        self.seed_command = seed_db.Command(data_importer=data_import)
+        self.seed_command = seed_db.Command(
+            data_importer=mock_data_import, fetch_data=False
+        )
 
     def test_handle(self):
         self.seed_command.handle(
@@ -106,7 +108,12 @@ class TestSeedDb(TestCase):
                         year_range=f"{self.years[0]}{symbol}{self.years[1]}", verbose=0
                     )
 
-    def __match_results_side_effect(self, start_date=None, end_date=None):
+    def __match_results_side_effect(
+        self,
+        start_date=None,
+        end_date=None,
+        fetch_data=False,  # pylint: disable=unused-argument
+    ):
         if start_date is None or end_date is None:
             return self.match_results_data_frame
 

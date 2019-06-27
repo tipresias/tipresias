@@ -26,7 +26,7 @@ def _home_away_data_frame(data_frame: pd.DataFrame, team_type: str) -> pd.DataFr
     )
 
 
-def pivot_team_matches_to_matches(team_match_df: pd.DataFrame):
+def pivot_team_matches_to_matches(team_match_df: pd.DataFrame) -> pd.DataFrame:
     """
     Pivots per at_home column to change team-match rows with team and oppo_ columns
     to match rows with home_ and away_ columns. Due to how columns are renamed,

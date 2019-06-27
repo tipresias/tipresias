@@ -44,7 +44,8 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 #### Run Python tests
 
 - `docker-compose run --rm backend python3 -Wi manage.py test`
-- Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
+- `docker-compose run --rm data_science pytest`
+- Linting: `docker-compose run --rm <python service> pylint --disable=R <python modules you want to lint>`
   - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 
 #### Run Javascript tests
@@ -64,15 +65,21 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 
 ### Deploy
 
-- Via Travis CI (recommended):
+- Deploy app to DigitalOcean:
 
-  - In the Travis dashboard, navigate to the tipresias repository.
-  - Under 'More Options', trigger a build on `master`.
-  - This will build the image, run tests, and deploy to DigitalOcean.
+  - Merge a pull request into `master`
+  - Manually trigger a deploy:
+    - In the Travis dashboard, navigate to the tipresias repository.
+    - Under 'More Options', trigger a build on `master`.
+    - This will build the image, run tests, and deploy to DigitalOcean.
 
 - Deploy `afl_data` to Google Cloud:
+
   - `gcloud builds submit --config cloudbuild.yaml ./afl_data`
   - `gcloud beta run deploy $SERVICE_NAME --image gcr.io/$PROJECT_ID/afl_data --memory 2Gi`
+
+- Deploy `machine_learning` to Google Cloud:
+  - `docker-compose run --rm data_science sls deploy`
 
 ## Pro-Tips
 

@@ -20,9 +20,12 @@ JAN = 1
 class Command(BaseCommand):
     help = "Seed the database with team, match, and prediction data."
 
-    def __init__(self, *args, data_importer=data_import, **kwargs) -> None:
+    def __init__(
+        self, *args, fetch_data=True, data_importer=data_import, **kwargs
+    ) -> None:
         super().__init__(*args, **kwargs)
 
+        self.fetch_data = fetch_data
         self.data_importer = data_importer
 
     def handle(  # pylint: disable=W0221
@@ -48,7 +51,9 @@ class Command(BaseCommand):
         year_range_tuple = (years_list[0], years_list[1])
 
         match_data_frame = self.data_importer.fetch_match_results_data(
-            start_date=f"{years_list[0]}-01-01", end_date=f"{years_list[1] - 1}-12-31"
+            start_date=f"{years_list[0]}-01-01",
+            end_date=f"{years_list[1] - 1}-12-31",
+            fetch_data=self.fetch_data,
         )
 
         # Putting saving records in a try block, so we can go back and delete everything

@@ -1,6 +1,8 @@
 import copy
 from datetime import datetime, timedelta
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+from unittest import skipIf
+import os
 
 from django.test import TestCase
 from freezegun import freeze_time
@@ -15,11 +17,13 @@ from server import data_import
 
 ROW_COUNT = 5
 
+
 # Freezing time to make sure there is viable data, which is easier
 # than mocking viable data
 @freeze_time("2016-01-01")
 class TestTip(TestCase):
-    def setUp(self):
+    @patch("server.data_import")
+    def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         tomorrow = datetime.now() + timedelta(days=1)
         year = tomorrow.year
 
@@ -46,13 +50,13 @@ class TestTip(TestCase):
                 )
             )
 
-        data_import.fetch_prediction_data = Mock(
+        mock_data_import.fetch_prediction_data = Mock(
             return_value=pd.concat(prediction_data)
         )
-        data_import.fetch_fixture_data = Mock(return_value=fixture_data)
+        mock_data_import.fetch_fixture_data = Mock(return_value=fixture_data)
 
         # Not fetching data, because it takes forever
-        self.tip_command = tip.Command(fetch_data=False, data_importer=data_import)
+        self.tip_command = tip.Command(fetch_data=False, data_importer=mock_data_import)
 
     def test_handle(self):
         with self.subTest("with no existing match records in DB"):
@@ -81,3 +85,31 @@ class TestTip(TestCase):
     @staticmethod
     def __update_or_create_from_data(update_or_create_from_data):
         return update_or_create_from_data
+
+
+@skipIf(
+    os.getenv("CI") == "true",
+    "Useful test for subtle, breaking changes, but way too long to run in CI. "
+    "Run manually on your machine to be safe",
+)
+class TestTipEndToEnd(TestCase):
+    def setUp(self):
+        MLModelFactory(name="tipresias")
+
+        for team_name in data_import.fetch_data_config().get("team_names"):
+            TeamFactory(name=team_name)
+
+        self.tip_command = tip.Command(ml_models="tipresias")
+
+    def test_handle(self):
+        self.assertEqual(Match.objects.count(), 0)
+        self.assertEqual(TeamMatch.objects.count(), 0)
+        self.assertEqual(Prediction.objects.count(), 0)
+
+        self.tip_command.handle(verbose=0)
+
+        match_count = Match.objects.count()
+
+        self.assertGreater(match_count, 0)
+        self.assertEqual(TeamMatch.objects.count(), match_count * 2)
+        self.assertEqual(Prediction.objects.count(), match_count)

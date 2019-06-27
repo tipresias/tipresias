@@ -1,0 +1,14 @@
+[MESSAGES CONTROL]
+disable=
+    W0102, # Dangerous default value (list)
+    R0903, # Too few public methods
+    E1101, # Instance of generator has no <something> method (needed for Flake)
+    W0511, # No TODOs
+    R0913, # Too many arguments
+    C0330, # Wrong indentation (indentation handled by black),
+    C0103, # Wrong case naming style
+    C0111, # TODO: Fix docstrings and reenable this rule
+    C0413, # Imports at the top (sometimes need to add project to sys.path)
+
+[MASTER]
+ignore=migrations

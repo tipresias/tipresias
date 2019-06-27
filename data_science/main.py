@@ -15,6 +15,19 @@ TRUE = "true"
 FALSE = "false"
 
 
+def _unauthorized_response():
+    return ("Not authorized", 401)
+
+
+def _request_is_authorized(request) -> bool:
+    auth_token = request.headers.get("Authorization")
+
+    if auth_token == f"Bearer {os.environ.get('GCPF_TOKEN')}":
+        return True
+
+    return False
+
+
 def predictions(request):
     """
     Generates predictions for the given year and round number, and returns the data
@@ -34,6 +47,9 @@ def predictions(request):
     Returns:
         flask.Response with a body that has a JSON of prediction data.
     """
+
+    if not _request_is_authorized(request):
+        return _unauthorized_response()
 
     this_year = date.today().year
     year_range_param = request.args.get("year_range", f"{this_year}-{this_year + 1}")
@@ -70,6 +86,9 @@ def fixtures(request):
         flask.Response with a body that has a JSON of fixture data.
     """
 
+    if not _request_is_authorized(request):
+        return _unauthorized_response()
+
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
 
@@ -94,6 +113,9 @@ def match_results(request):
         flask.Response with a body that has a JSON of match results data.
     """
 
+    if not _request_is_authorized(request):
+        return _unauthorized_response()
+
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
     fetch_data = request.args.get("fetch_data", FALSE).lower() == TRUE
@@ -103,7 +125,7 @@ def match_results(request):
     )
 
 
-def ml_models(_request):
+def ml_models(request):
     """
     Fetches info for all available ML models and returns the data as an HTTP response.
 
@@ -113,10 +135,13 @@ def ml_models(_request):
         flask.Response with a body that has a JSON of ML model data.
     """
 
+    if not _request_is_authorized(request):
+        return _unauthorized_response()
+
     return json.dumps(api.fetch_ml_model_info())
 
 
-def data_config(_request):
+def data_config(request):
     """
     Fetches info about hard-coded data configuration and returns the data
     as an HTTP response.
@@ -126,5 +151,8 @@ def data_config(_request):
     Returns:
         flask.Response with a body that has a JSON of data config data.
     """
+
+    if not _request_is_authorized(request):
+        return _unauthorized_response()
 
     return json.dumps(api.fetch_data_config())

@@ -78,7 +78,7 @@ const PageHeader = (): Node => (
               <ListItem key={link.url}>
                 <TextLink href={link.url}>{link.text}</TextLink>
               </ListItem>
-            )
+            ),
           )
         }
       </ListStyled>

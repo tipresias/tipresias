@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 import numpy as np
 
 from project.settings.common import MELBOURNE_TIMEZONE
-from project.settings.data import TEAM_NAMES
+from project.settings.data_config import TEAM_NAMES
 from server.types import CleanPredictionData
 
 # Rough estimate, but exactitude isn't necessary here

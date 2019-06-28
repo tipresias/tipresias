@@ -12,7 +12,7 @@ from server.models import Match, TeamMatch, Prediction
 from server.management.commands import tip
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
-from server import data_import
+from project.settings.data_config import TEAM_NAMES
 
 
 ROW_COUNT = 5
@@ -96,7 +96,7 @@ class TestTipEndToEnd(TestCase):
     def setUp(self):
         MLModelFactory(name="tipresias")
 
-        for team_name in data_import.fetch_data_config().get("team_names"):
+        for team_name in TEAM_NAMES:
             TeamFactory(name=team_name)
 
         self.tip_command = tip.Command(ml_models="tipresias")

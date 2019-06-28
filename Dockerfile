@@ -22,8 +22,8 @@ WORKDIR /app/frontend
 COPY ./frontend/package.json ./frontend/yarn.lock /app/frontend/
 RUN $HOME/.yarn/bin/yarn install
 
-# Add the rest of the app code
-COPY ./backend ./frontend /app/
+# Add frontend code
+COPY ./frontend /app/frontend/
 
 # Build static files
 RUN $HOME/.yarn/bin/yarn build
@@ -34,10 +34,11 @@ WORKDIR /app/frontend/build
 
 RUN mkdir root && mv *.ico *.js *.json root
 
-WORKDIR /app/backend
+# Add backend code
+COPY ./backend /app/backend/
 
 # Build static files
-RUN mkdir staticfiles
+RUN mkdir /app/backend/staticfiles
 
 WORKDIR /app
 

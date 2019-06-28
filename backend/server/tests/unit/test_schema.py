@@ -96,10 +96,22 @@ class TestSchema(TestCase):
         self.assertEqual(expected_years, executed["data"]["fetchPredictionYears"])
 
     def test_fetch_yearly_predictions(self):
+        year = 2015
         ml_model_names = (
-            Match.objects.filter(start_date_time__year=2015)
+            Match.objects.filter(start_date_time__year=year)
             .distinct("prediction__ml_model__name")
             .values_list("prediction__ml_model__name", flat=True)
+        )
+
+        ml_models = list(MLModel.objects.filter(name__in=ml_model_names))
+
+        # Have to make sure at least one match has a different round_number to compare
+        # later rounds to earlier ones
+        FullMatchFactory(
+            year=year,
+            round_number=50,
+            prediction__ml_model=ml_models[0],
+            prediction_two__ml_model=ml_models[1],
         )
 
         executed = self.client.execute(

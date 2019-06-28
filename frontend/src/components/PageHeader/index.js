@@ -10,7 +10,6 @@ const { logo } = images;
 const Header = styled.header`
   grid-column: 1 / -1;
   position relative;
-  background-color: white;
   border-bottom: 1px solid rgba(0,0,0,.125);
   display: flex;
   justify-content: space-around;
@@ -53,7 +52,6 @@ const TextLink = styled.a`
   line-height: 48px;
   display: inline-block;
   font-size: 1rem;
-  color: rgba(0, 0, 0, 0.3);
   @media (min-width: 768px){
     line-height: 72px;
     padding: 0 16px;

@@ -74,3 +74,9 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
       }
    }
   }`;
+
+export const GET_THEME = gql`
+  query fetchTheme {
+      themeName @client
+  }
+`;

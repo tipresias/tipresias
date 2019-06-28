@@ -1,20 +1,27 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ApolloClient from 'apollo-boost';
-import { ApolloProvider } from 'react-apollo';
+import { ApolloProvider, withApollo } from 'react-apollo';
+import { defaults, resolvers } from './graphql/resolvers';
+import typeDefs from './graphql/schema';
 import App from './containers/App';
 import registerServiceWorker from './registerServiceWorker';
 
 const client = new ApolloClient({
-  resolvers: {},
+  clientState: {
+    defaults,
+    resolvers,
+    typeDefs,
+  },
 });
 
-const withApollo = Component => (
-  <ApolloProvider client={client}>
-    <Component />
-  </ApolloProvider>
-);
-const AppWithApollo = withApollo(App);
+const AppWithClient = withApollo(App);
 
-ReactDOM.render(AppWithApollo, document.getElementById('root'));
+ReactDOM.render(
+  <ApolloProvider client={client}>
+    <AppWithClient />
+  </ApolloProvider>,
+  document.getElementById('root'),
+);
+
 registerServiceWorker();

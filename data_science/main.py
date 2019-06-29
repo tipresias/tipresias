@@ -22,7 +22,7 @@ def _unauthorized_response():
 def _request_is_authorized(request) -> bool:
     auth_token = request.headers.get("Authorization")
 
-    if auth_token == f"Bearer {os.environ.get('GCPF_TOKEN')}":
+    if auth_token == f"Bearer {os.getenv('GCPF_TOKEN')}":
         return True
 
     return False

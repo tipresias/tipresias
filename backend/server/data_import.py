@@ -23,8 +23,10 @@ def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
     return data_frame["date"].map(parser.parse)
 
 
-def _make_request(url: str, params: Dict[str, Any] = {}) -> requests.Response:
-    response = requests.get(url, params=params)
+def _make_request(
+    url: str, params: Dict[str, Any] = {}, headers: Dict[str, str] = {}
+) -> requests.Response:
+    response = requests.get(url, params=params, headers=headers)
 
     if response.status_code != 200:
         raise Exception(
@@ -36,14 +38,16 @@ def _make_request(url: str, params: Dict[str, Any] = {}) -> requests.Response:
 
 
 def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
-    service_host = (
-        DATA_SCIENCE_SERVICE
-        if os.getenv("PYTHON_ENV") == "production"
-        else LOCAL_DATA_SCIENCE_SERVICE
-    )
+    if os.getenv("PYTHON_ENV") == "production":
+        service_host = DATA_SCIENCE_SERVICE
+        headers = {"Authorization": f'Bearer {os.getenv("GCPF_TOKEN")}'}
+    else:
+        service_host = LOCAL_DATA_SCIENCE_SERVICE
+        headers = {}
+
     service_url = urljoin(service_host, path)
 
-    response = _make_request(service_url, params)
+    response = _make_request(service_url, params=params, headers=headers)
 
     return response.json().get("data")
 

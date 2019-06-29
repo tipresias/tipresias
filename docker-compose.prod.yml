@@ -17,6 +17,7 @@ services:
       - DATABASE_HOST=db
       - NODE_ENV=production
       - PRODUCTION_HOST=104.248.155.53
+      - PYTHON_ENV=production
     networks:
       - webnet
     restart: unless-stopped

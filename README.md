@@ -12,11 +12,15 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ### Setup
 
+- To manage environemnt variables:
+    - Install [`direnv`](https://direnv.net/)
+    - Add `eval "$(direnv hook bash)"` to the bottom of `~/.bashrc`
+    - Run `direnv allow .` inside the project directory
 - Create the `node_modules` volume: `docker volume create --name=node_modules`
 - To build and run the app: `docker-compose up --build`
 - Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
 - Seed the DB: `docker-compose run --rm backend python3 manage.py seed_db`
-- Reset the DB to match production: `./reset_db.sh`
+- Reset the DB to match production: `./script/reset_db.sh`
   - This requires ability to `ssh` into the prod server
   - `PROD_USER` and `IP_ADDRESS` environment variables have to be set in the current bash session, and their values have to be applicable to the relevant server
 

@@ -16,7 +16,7 @@ services:
       - DJANGO_SETTINGS_MODULE=project.settings.production
       - DATABASE_HOST=db
       - NODE_ENV=production
-      - PRODUCTION_HOST=104.248.155.53
+      - PRODUCTION_HOST=68.183.185.155
       - PYTHON_ENV=production
     networks:
       - webnet

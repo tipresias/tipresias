@@ -3,7 +3,7 @@ services:
   - docker
 env:
   DOCKER_COMPOSE_VERSION: 1.22.0
-  IP_ADDRESS: 104.248.155.53
+  IP_ADDRESS: 68.183.185.155
 before_install:
   - sudo rm /usr/local/bin/docker-compose
   - sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose

@@ -12,6 +12,10 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ### Setup
 
+- To manage environemnt variables:
+    - Install [`direnv`](https://direnv.net/)
+    - Add `eval "$(direnv hook bash)"` to the bottom of `~/.bashrc`
+    - Run `direnv allow .` inside the project directory
 - Create the `node_modules` volume: `docker volume create --name=node_modules`
 - To build and run the app: `docker-compose up --build`
 - Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`

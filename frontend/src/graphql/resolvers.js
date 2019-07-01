@@ -1,14 +1,19 @@
+import { FETCH_THEME } from './index';
+
 export const defaults = {
-  themeName: 'light',
+  fetchTheme: { name: 'light', __typename: 'Theme' },
 };
 
 export const resolvers = {
   Mutation: {
-    setTheme: (_, { themeName }, { cache }) => {
-      const newThemeName = { themeName, __typeName: 'Theme' };
-      const data = { themeName: newThemeName };
-      cache.writeData({ data });
-      return newThemeName;
+    setTheme: (_, { name }, { cache }) => {
+      const newFetchTheme = { name, __typename: 'Theme' };
+      const data = { fetchTheme: newFetchTheme };
+      cache.writeData({
+        query: FETCH_THEME,
+        data,
+      });
+      return newFetchTheme;
     },
   },
 };

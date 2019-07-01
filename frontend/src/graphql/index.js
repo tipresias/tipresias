@@ -29,7 +29,7 @@ export const FETCH_PREDICTIONS_QUERY = gql`
   }`;
 
 export const FETCH_LATEST_ROUND_PREDICTIONS_QUERY = gql`
-query {
+query fetchLatestRoundPredictions{
   fetchLatestRoundPredictions {
     roundNumber
     matches {
@@ -57,7 +57,7 @@ query {
 }`;
 
 export const FETCH_PREDICTION_YEARS_QUERY = gql`
-  query {
+  query fetchPredictionYears {
     fetchPredictionYears
   }`;
 
@@ -75,8 +75,18 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
    }
   }`;
 
-export const GET_THEME = gql`
+export const FETCH_THEME = gql`
   query fetchTheme {
-      themeName @client
+    fetchTheme @client {
+      name
+    }
+  }
+`;
+
+export const SET_THEME_MUTATION = gql`
+  mutation SetTheme($name: String){
+    setTheme(name: $name) @client {
+      name
+    }
   }
 `;

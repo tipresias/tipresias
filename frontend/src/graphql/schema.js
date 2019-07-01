@@ -1,18 +1,17 @@
 // https://www.apollographql.com/docs/react/essentials/local-state/#client-side-schema
 // following  https://codesandbox.io/s/r5qp83z0yq
 
-const typeDefs = `
-  type Theme {
-    themeName: String
+// eslint-disable-next-line import/prefer-default-export
+export const typeDefs = `
+  extend type Theme {
+    name: String
   }
 
-  type Query {
+  extend type Query {
     fetchTheme: Theme
   }
 
-  type Mutation {
-    setTheme(themeName: String!): String
+  extend type Mutation {
+    setTheme(name: String!): Theme
   }
 `;
-
-export default typeDefs;

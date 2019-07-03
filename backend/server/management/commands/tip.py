@@ -191,55 +191,63 @@ class Command(BaseCommand):
         if matches_without_results.count() == 0:
             return None
 
+        match_results = self.__fetch_match_results_to_fill(matches_without_results)
+
+        for match in matches_without_results:
+            self.__update_played_match_scores(match_results, match)
+            self.__update_predictions_correctness(match)
+
+        return None
+
+    def __fetch_match_results_to_fill(self, matches_without_results) -> pd.DataFrame:
         earliest_match_date = matches_without_results.earliest(
             "start_date_time"
         ).start_date_time
 
-        match_results = self.data_importer.fetch_match_results_data(
+        return self.data_importer.fetch_match_results_data(
             str(earliest_match_date.date()),
             str(self.right_now.date()),
             fetch_data=self.fetch_data,
         )
 
-        for match in matches_without_results:
-            home_team_match = match.teammatch_set.get(at_home=True)
-            away_team_match = match.teammatch_set.get(at_home=False)
+    @staticmethod
+    def __update_played_match_scores(match_results: pd.DataFrame, match: Match) -> None:
+        home_team_match = match.teammatch_set.get(at_home=True)
+        away_team_match = match.teammatch_set.get(at_home=False)
 
-            match_result = match_results.query(
-                "year == @match.start_date_time.year & "
-                "round_number == @match.round_number & "
-                "home_team == @home_team_match.team.name & "
-                "away_team == @away_team_match.team.name"
+        match_result = match_results.query(
+            "year == @match.start_date_time.year & "
+            "round_number == @match.round_number & "
+            "home_team == @home_team_match.team.name & "
+            "away_team == @away_team_match.team.name"
+        )
+
+        if len(match_result) != 1:
+            raise ValueError(
+                "Filtering match results by year, round_number and team name "
+                "should result in a single row, but instead the following was "
+                "returned:\n"
+                f"{match_result}"
             )
 
-            if len(match_result) != 1:
-                raise ValueError(
-                    "Filtering match results by year, round_number and team name "
-                    "should result in a single row, but instead the following was "
-                    "returned:\n"
-                    f"{match_result}"
-                )
+        match_result = match_result.iloc[0, :]
 
-            match_result = match_result.iloc[0, :]
+        home_team_match.score = match_result["home_score"]
+        home_team_match.clean()
+        home_team_match.save()
 
-            home_team_match.score = match_result["home_score"]
-            home_team_match.clean()
-            home_team_match.save()
+        away_team_match.score = match_result["away_score"]
+        away_team_match.clean()
+        away_team_match.save()
 
-            away_team_match.score = match_result["away_score"]
-            away_team_match.clean()
-            away_team_match.save()
-
-            predictions = match.prediction_set
-
-            for prediction in predictions.all():
-                prediction.is_correct = Prediction.calculate_whether_correct(
-                    match, prediction.predicted_winner
-                )
-                prediction.clean()
-                prediction.save()
-
-        return None
+    @staticmethod
+    def __update_predictions_correctness(match: Match) -> None:
+        for prediction in match.prediction_set.all():
+            prediction.is_correct = Prediction.calculate_whether_correct(
+                match, prediction.predicted_winner
+            )
+            prediction.clean()
+            prediction.save()
 
     @staticmethod
     def __build_team_match(

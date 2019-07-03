@@ -22,99 +22,33 @@ TIP_DATES = ["2016-01-01", "2017-01-01"]
 
 
 class TestTip(TestCase):
-    # Freezing time to make sure there is viable data, which is easier
-    # than mocking viable data
-    @freeze_time("2016-01-01")
     @patch("server.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         MLModelFactory(name="test_estimator")
 
-        fixture_return_values = []
-        prediction_return_values = []
-        match_results_return_values = []
-
-        for tip_date in TIP_DATES:
-            with freeze_time(tip_date):
-                tomorrow = datetime.now() + timedelta(days=1)
-                year = tomorrow.year
-
-                # Mock footywire fixture data
-                fixture_data = fake_fixture_data(ROW_COUNT, (year, year + 1))
-
-                # Mock update_or_create_from_data to make assertions on calls
-                update_or_create_from_data = copy.copy(
-                    Prediction.update_or_create_from_data
-                )
-                Prediction.update_or_create_from_data = Mock(
-                    side_effect=self.__update_or_create_from_data(
-                        update_or_create_from_data
-                    )
-                )
-
-                prediction_data = []
-                match_results = []
-
-                for idx, match_data in enumerate(fixture_data.to_dict("records")):
-                    TeamFactory(name=match_data["home_team"])
-                    TeamFactory(name=match_data["away_team"])
-
-                    match_predictions = fake_prediction_data(
-                        match_data=match_data, ml_model_name="test_estimator"
-                    )
-
-                    prediction_data.append(match_predictions)
-                    home_team_prediction = (
-                        match_predictions.query("at_home == 1").iloc[0, :].to_dict()
-                    )
-                    away_team_prediction = (
-                        match_predictions.query("at_home == 0").iloc[0, :].to_dict()
-                    )
-
-                    is_correct = idx % 2 == 0
-
-                    home_score = np.random.randint(50, 150)
-                    predicted_winner = (
-                        home_team_prediction["team"]
-                        if home_team_prediction["predicted_margin"]
-                        > away_team_prediction["predicted_margin"]
-                        else away_team_prediction["team"]
-                    )
-                    away_score = (
-                        home_score + 25
-                        if predicted_winner == match_data["away_team"] and is_correct
-                        else home_score - 25
-                    )
-
-                    match_results.append(
-                        {
-                            "year": match_data["year"],
-                            "round_number": match_data["round_number"],
-                            "home_team": match_data["home_team"],
-                            "away_team": match_data["away_team"],
-                            "home_score": home_score,
-                            "away_score": away_score,
-                        }
-                    )
-
-            # We have 2 subtests in 2016 and 1 in 2017, which requires 3 fixture
-            # and prediction data imports, but only 1 match results data import
-            if tip_date == TIP_DATES[0]:
-                fixture_return_values.extend([fixture_data] * 2)
-                prediction_return_values.extend([pd.concat(prediction_data)] * 2)
-            else:
-                fixture_return_values.append(fixture_data)
-                prediction_return_values.append(pd.concat(prediction_data))
-
-            match_results_return_values.append(pd.DataFrame(match_results))
-
-        mock_data_import.fetch_prediction_data = Mock(
-            side_effect=prediction_return_values
+        # Mock update_or_create_from_data to make assertions on calls
+        update_or_create_from_data = copy.copy(Prediction.update_or_create_from_data)
+        Prediction.update_or_create_from_data = Mock(
+            side_effect=self.__update_or_create_from_data(update_or_create_from_data)
         )
-        mock_data_import.fetch_fixture_data = Mock(side_effect=fixture_return_values)
-        # First two runs represent pre-match predictions, third run represents
-        # calling 'tip' after those matches were played
+
+        (
+            fixture_return_values,
+            prediction_return_values,
+            match_results_return_values,
+        ) = zip(*[self.__build_imported_data_mocks(tip_date) for tip_date in TIP_DATES])
+
+        # We have 2 subtests in 2016 and 1 in 2017, which requires 3 fixture
+        # and prediction data imports, but only 1 match results data import,
+        # because it doesn't get called until 2017
+        mock_data_import.fetch_prediction_data = Mock(
+            side_effect=prediction_return_values[:1] + prediction_return_values
+        )
+        mock_data_import.fetch_fixture_data = Mock(
+            side_effect=fixture_return_values[:1] + fixture_return_values
+        )
         mock_data_import.fetch_match_results_data = Mock(
-            side_effect=match_results_return_values
+            return_value=match_results_return_values[0]
         )
 
         # Not fetching data, because it takes forever
@@ -122,6 +56,9 @@ class TestTip(TestCase):
 
     def test_handle(self):
         with freeze_time("2016-01-01"):
+            right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
+            self.tip_command.right_now = right_now
+
             with self.subTest("with no existing match records in DB"):
                 self.assertEqual(Match.objects.count(), 0)
                 self.assertEqual(TeamMatch.objects.count(), 0)
@@ -171,6 +108,82 @@ class TestTip(TestCase):
     @staticmethod
     def __update_or_create_from_data(update_or_create_from_data):
         return update_or_create_from_data
+
+    def __build_imported_data_mocks(self, tip_date):
+        with freeze_time(tip_date):
+            tomorrow = datetime.now() + timedelta(days=1)
+            year = tomorrow.year
+
+            # Mock footywire fixture data
+            fixture_data = fake_fixture_data(ROW_COUNT, (year, year + 1))
+
+            prediction_match_data, _ = zip(
+                *[
+                    (
+                        self.__build_prediction_and_match_results_data(idx, match_data),
+                        self.__build_teams(match_data),
+                    )
+                    for idx, match_data in enumerate(fixture_data.to_dict("records"))
+                ]
+            )
+
+            prediction_data, match_results_data = zip(*prediction_match_data)
+
+        return (
+            fixture_data,
+            pd.concat(prediction_data),
+            pd.DataFrame(list(match_results_data)),
+        )
+
+    def __build_prediction_and_match_results_data(self, idx, match_data):
+        match_predictions = fake_prediction_data(
+            match_data=match_data, ml_model_name="test_estimator"
+        )
+
+        return (
+            match_predictions,
+            self.__build_match_results_data(idx, match_data, match_predictions),
+        )
+
+    @staticmethod
+    def __build_match_results_data(idx, match_data, match_predictions):
+        home_team_prediction = (
+            match_predictions.query("at_home == 1").iloc[0, :].to_dict()
+        )
+        away_team_prediction = (
+            match_predictions.query("at_home == 0").iloc[0, :].to_dict()
+        )
+
+        # Make sure at least some predictions are correct to make assertions
+        # more meaningful
+        is_correct = idx % 2 == 0
+
+        home_score = np.random.randint(50, 150)
+        predicted_winner = (
+            home_team_prediction["team"]
+            if home_team_prediction["predicted_margin"]
+            > away_team_prediction["predicted_margin"]
+            else away_team_prediction["team"]
+        )
+        away_score = (
+            home_score + 25
+            if predicted_winner == match_data["away_team"] and is_correct
+            else home_score - 25
+        )
+
+        return {
+            "year": match_data["year"],
+            "round_number": match_data["round_number"],
+            "home_team": match_data["home_team"],
+            "away_team": match_data["away_team"],
+            "home_score": home_score,
+            "away_score": away_score,
+        }
+
+    @staticmethod
+    def __build_teams(match_data):
+        TeamFactory(name=match_data["home_team"])
+        TeamFactory(name=match_data["away_team"])
 
 
 @skipIf(

@@ -1,3 +1,4 @@
+from typing import Optional
 from functools import reduce
 from datetime import datetime, timedelta
 
@@ -62,6 +63,12 @@ class Match(models.Model):
     @property
     def year(self):
         return self.start_date_time.year
+
+    def team(self, at_home: Optional[bool] = None) -> Team:
+        if at_home is None:
+            raise ValueError("Must pass a boolean value for at_home")
+
+        return self.teammatch_set.get(at_home=at_home).team
 
     @property
     def has_been_played(self):

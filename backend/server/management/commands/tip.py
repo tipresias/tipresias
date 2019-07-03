@@ -90,6 +90,7 @@ class Command(BaseCommand):
             print("Saving prediction records...")
 
         self.__make_predictions(upcoming_round_year, upcoming_round)
+        self.__backfill_match_results()
 
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
         if self.verbose == 1:
@@ -181,6 +182,64 @@ class Command(BaseCommand):
 
         if self.verbose == 1:
             print("Predictions saved!\n")
+
+    def __backfill_match_results(self) -> None:
+        matches_without_results = Match.objects.prefetch_related(
+            "teammatch_set", "prediction_set"
+        ).filter(start_date_time__lt=self.right_now, teammatch__score=0)
+
+        if matches_without_results.count() == 0:
+            return None
+
+        earliest_match_date = matches_without_results.earliest(
+            "start_date_time"
+        ).start_date_time
+
+        match_results = self.data_importer.fetch_match_results_data(
+            str(earliest_match_date.date()),
+            str(self.right_now.date()),
+            fetch_data=self.fetch_data,
+        )
+
+        for match in matches_without_results:
+            home_team_match = match.teammatch_set.get(at_home=True)
+            away_team_match = match.teammatch_set.get(at_home=False)
+
+            match_result = match_results.query(
+                "year == @match.start_date_time.year & "
+                "round_number == @match.round_number & "
+                "home_team == @home_team_match.team.name & "
+                "away_team == @away_team_match.team.name"
+            )
+
+            if len(match_result) != 1:
+                raise ValueError(
+                    "Filtering match results by year, round_number and team name "
+                    "should result in a single row, but instead the following was "
+                    "returned:\n"
+                    f"{match_result}"
+                )
+
+            match_result = match_result.iloc[0, :]
+
+            home_team_match.score = match_result["home_score"]
+            home_team_match.clean()
+            home_team_match.save()
+
+            away_team_match.score = match_result["away_score"]
+            away_team_match.clean()
+            away_team_match.save()
+
+            predictions = match.prediction_set
+
+            for prediction in predictions.all():
+                prediction.is_correct = Prediction.calculate_whether_correct(
+                    match, prediction.predicted_winner
+                )
+                prediction.clean()
+                prediction.save()
+
+        return None
 
     @staticmethod
     def __build_team_match(

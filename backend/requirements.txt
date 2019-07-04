@@ -10,7 +10,6 @@ graphene-django==2.2.0 # Can't upgrade to 2.3.x, due to weird graphiql.js bug
 psycopg2-binary
 dj-database-url
 sendgrid>=6.0,<6.99
-django_cron
 requests
 joblib
 

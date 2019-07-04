@@ -110,17 +110,4 @@ def ml_models():
     return api.fetch_ml_model_info()
 
 
-@app.route("/data_config")
-def data_config():
-    """
-    Fetches info about hard-coded data configuration and returns the data
-    as an HTTP response.
-
-    Returns:
-        flask.Response with a body that has a JSON of data config data.
-    """
-
-    return api.fetch_data_config()
-
-
 run(app, host="0.0.0.0", port=8008, reloader=True)

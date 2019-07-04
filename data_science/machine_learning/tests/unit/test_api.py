@@ -146,11 +146,3 @@ class TestApi(TestCase):
         models = response["data"]
 
         self.assertEqual(models, settings.ML_MODELS)
-
-    def test_fetch_data_config(self):
-        response = api.fetch_data_config()
-
-        self.assertEqual(
-            set(response["data"].keys()),
-            set(["team_names", "defunct_team_names", "venues"]),
-        )

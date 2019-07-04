@@ -14,60 +14,53 @@ from machine_learning import settings
 
 YEAR_RANGE = (2019, 2020)
 N_MATCHES = 5
+FAKE_ML_MODELS = [
+    {
+        "name": "fake_estimator",
+        "filepath": "machine_learning/tests/fixtures/fake_estimator.pkl",
+    }
+]
 
 
 class TestApi(TestCase):
+    @patch("machine_learning.api.ML_MODELS", FAKE_ML_MODELS)
     def test_make_predictions(self):
-        with patch(
-            "machine_learning.api.ML_MODELS",
-            [
-                {
-                    "name": "test_estimator",
-                    "filepath": "machine_learning/tests/fixtures/test_estimator.pkl",
-                }
-            ],
-        ):
+        data_importer = FootywireDataImporter()
+        data_importer.get_betting_odds = Mock(
+            return_value=fake_footywire_betting_data(N_MATCHES, YEAR_RANGE)
+        )
 
-            data_importer = FootywireDataImporter()
-            data_importer.get_betting_odds = Mock(
-                return_value=fake_footywire_betting_data(N_MATCHES, YEAR_RANGE)
-            )
+        betting_data = BettingMLData(
+            data_readers={"betting": (data_importer.get_betting_odds, {})}
+        )
 
-            betting_data = BettingMLData(
-                data_readers={"betting": (data_importer.get_betting_odds, {})}
-            )
+        response = api.make_predictions(
+            YEAR_RANGE, 1, data=betting_data, ml_model_names="fake_estimator", verbose=0
+        )
 
-            response = api.make_predictions(
-                YEAR_RANGE,
-                1,
-                data=betting_data,
-                ml_model_names="test_estimator",
-                verbose=0,
-            )
+        predictions = response["data"]
+        # Two predictions per match per model: one for each team playing
+        self.assertEqual(len(predictions), N_MATCHES * 2)
 
-            predictions = response["data"]
-            # Two predictions per match per model: one for each team playing
-            self.assertEqual(len(predictions), N_MATCHES * 2)
+        first_prediction = predictions[0]
 
-            first_prediction = predictions[0]
+        self.assertEqual(
+            set(first_prediction.keys()),
+            set(
+                [
+                    "team",
+                    "year",
+                    "round_number",
+                    "at_home",
+                    "oppo_team",
+                    "ml_model",
+                    "predicted_margin",
+                ]
+            ),
+        )
 
-            self.assertEqual(
-                set(first_prediction.keys()),
-                set(
-                    [
-                        "team",
-                        "year",
-                        "round_number",
-                        "at_home",
-                        "oppo_team",
-                        "ml_model",
-                        "predicted_margin",
-                    ]
-                ),
-            )
-
-            prediction_years = list({pred["year"] for pred in predictions})
-            self.assertEqual(prediction_years, [YEAR_RANGE[0]])
+        prediction_years = list({pred["year"] for pred in predictions})
+        self.assertEqual(prediction_years, [YEAR_RANGE[0]])
 
     def test_fetch_fixture_data(self):
         data_importer = FitzroyDataImporter()

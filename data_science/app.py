@@ -31,7 +31,7 @@ def predictions():
         round_number (int, optional): Round number for which you want prediction data.
             Default = All rounds for given year.
         ml_models (str, optional): Name of the ML model to use for making predictions.
-            Default = All available models except 'test_estimator'
+            Default = All available models
     Returns:
         flask.Response with a body that has a JSON of prediction data.
     """

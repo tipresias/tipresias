@@ -139,20 +139,3 @@ def ml_models(request):
         return _unauthorized_response()
 
     return json.dumps(api.fetch_ml_model_info())
-
-
-def data_config(request):
-    """
-    Fetches info about hard-coded data configuration and returns the data
-    as an HTTP response.
-
-    Args:
-        request (flask.Request): HTTP request object.
-    Returns:
-        flask.Response with a body that has a JSON of data config data.
-    """
-
-    if not _request_is_authorized(request):
-        return _unauthorized_response()
-
-    return json.dumps(api.fetch_data_config())

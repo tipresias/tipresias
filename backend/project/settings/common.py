@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "django_cron",
 ]
 
 GRAPHENE = {"SCHEMA": "server.schema.schema"}
@@ -47,8 +46,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-CRON_CLASSES = ["server.cron_jobs.SendTips"]
 
 ROOT_URLCONF = "project.urls"
 

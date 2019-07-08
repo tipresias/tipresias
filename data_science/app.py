@@ -31,7 +31,7 @@ def predictions():
         round_number (int, optional): Round number for which you want prediction data.
             Default = All rounds for given year.
         ml_models (str, optional): Name of the ML model to use for making predictions.
-            Default = All available models except 'test_estimator'
+            Default = All available models
     Returns:
         flask.Response with a body that has a JSON of prediction data.
     """
@@ -108,19 +108,6 @@ def ml_models():
     """
 
     return api.fetch_ml_model_info()
-
-
-@app.route("/data_config")
-def data_config():
-    """
-    Fetches info about hard-coded data configuration and returns the data
-    as an HTTP response.
-
-    Returns:
-        flask.Response with a body that has a JSON of data config data.
-    """
-
-    return api.fetch_data_config()
 
 
 run(app, host="0.0.0.0", port=8008, reloader=True)

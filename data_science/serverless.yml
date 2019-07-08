@@ -47,7 +47,3 @@ functions:
     handler: ml_models
     events:
       - http: path
-  data_config:
-    handler: data_config
-    events:
-      - http: path

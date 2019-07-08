@@ -27,15 +27,15 @@ PIPELINE = make_pipeline(
 )
 
 
-class TestEstimator(BaseMLEstimator):
+class FakeEstimator(BaseMLEstimator):
     """Create test MLModel for use in integration tests"""
 
-    def __init__(self, pipeline=PIPELINE, name="test_estimator"):
+    def __init__(self, pipeline=PIPELINE, name="fake_estimator"):
         super().__init__(pipeline=pipeline, name=name)
 
 
-def pickle_test_estimator():
-    estimator = TestEstimator()
+def pickle_fake_estimator():
+    estimator = FakeEstimator()
     data = BettingMLData()
 
     estimator.fit(*data.train_data())

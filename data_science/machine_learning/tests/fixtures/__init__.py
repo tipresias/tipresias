@@ -1,1 +1,1 @@
-from .test_estimator import TestEstimator
+from .fake_estimator import FakeEstimator

@@ -16,7 +16,6 @@ from machine_learning.data_transformation.data_cleaning import (
     clean_fixture_data,
 )
 from machine_learning.settings import ML_MODELS, BASE_DIR
-from machine_learning.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES, VENUES
 
 
 PredictionData = TypedDict(
@@ -252,13 +251,3 @@ def fetch_ml_model_info() -> ApiResponse:
     """Fetch general info about all saved ML models"""
 
     return _api_response(ML_MODELS)
-
-
-def fetch_data_config() -> ApiResponse:
-    return _api_response(
-        {
-            "team_names": TEAM_NAMES,
-            "defunct_team_names": DEFUNCT_TEAM_NAMES,
-            "venues": VENUES,
-        }
-    )

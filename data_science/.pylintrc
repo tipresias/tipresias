@@ -9,6 +9,3 @@ disable=
     C0103, # Wrong case naming style
     C0111, # TODO: Fix docstrings and reenable this rule
     C0413, # Imports at the top (sometimes need to add project to sys.path)
-
-[MASTER]
-ignore=migrations

@@ -5,9 +5,12 @@ from datetime import date
 from bottle import Bottle, run, request
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+SRC_PATH = os.path.join(BASE_DIR, "src")
 
-if BASE_DIR not in sys.path:
-    sys.path.append(BASE_DIR)
+if SRC_PATH not in sys.path:
+    sys.path.append(SRC_PATH)
+
+os.environ["PYTHONPATH"] = SRC_PATH + os.pathsep + os.environ.get("PYTHONPATH", "")
 
 from machine_learning import api
 

@@ -4,7 +4,6 @@ services:
     build: ./backend
     volumes:
       - ./backend:/app/backend
-      - ./data:/app/data
     ports:
       - "8000:8000"
     stdin_open: true
@@ -34,7 +33,6 @@ services:
     build: ./data_science
     volumes:
       - ./data_science:/app
-      - ./data:/app/data
       - ./.gcloud:/app/.gcloud
       - /app/node_modules
     ports:
@@ -60,7 +58,6 @@ services:
     image: tipresias_data_science:latest
     volumes:
       - ./data_science:/app
-      - ./data:/app/data
     ports:
       - "8888:8888"
     depends_on:

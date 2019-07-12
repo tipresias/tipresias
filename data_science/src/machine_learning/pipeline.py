@@ -48,7 +48,7 @@ from .nodes.example import predict, report_accuracy, split_data, train_model
 #
 
 
-def create_pipeline(**kwargs):
+def create_pipeline(**_kwargs):
     """Create the project's pipeline.
 
     Args:
@@ -58,7 +58,6 @@ def create_pipeline(**kwargs):
         Pipeline: The resulting pipeline.
 
     """
-
 
     ###########################################################################
     # Here you can find an example pipeline with 4 nodes.

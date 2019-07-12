@@ -66,7 +66,7 @@ def __kedro_context__():
     }
 
 
-def get_config(project_path: str, env: str = None, **kwargs) -> ConfigLoader:
+def get_config(project_path: str, env: str = None, **_kwargs) -> ConfigLoader:
     """Loads Kedro's configuration at the root of the project.
 
     Args:
@@ -78,16 +78,16 @@ def get_config(project_path: str, env: str = None, **kwargs) -> ConfigLoader:
         ConfigLoader which can be queried to access the project config.
 
     """
-    project_path = Path(project_path)
+    project_path_obj = Path(project_path)
     env = env or DEFAULT_RUN_ENV
     conf_paths = [
-        str(project_path / CONF_ROOT / "base"),
-        str(project_path / CONF_ROOT / env),
+        str(project_path_obj / CONF_ROOT / "base"),
+        str(project_path_obj / CONF_ROOT / env),
     ]
     return ConfigLoader(conf_paths)
 
 
-def create_catalog(config: ConfigLoader, **kwargs) -> DataCatalog:
+def create_catalog(config: ConfigLoader, **_kwargs) -> DataCatalog:
     """Loads Kedro's ``DataCatalog``.
 
     Args:
@@ -115,11 +115,7 @@ def create_catalog(config: ConfigLoader, **kwargs) -> DataCatalog:
     return catalog
 
 
-def main(
-    tags: Iterable[str] = None,
-    env: str = None,
-    runner: str = None,
-):
+def main(tags: Iterable[str] = None, env: str = None, runner: str = None):
     """Application main entry point.
 
     Args:
@@ -152,10 +148,10 @@ def main(
 
     # Load the runner
     # When either --parallel or --runner is used, class_obj is assigned to runner
-    runner = load_obj(runner, "kedro.runner") if runner else SequentialRunner
+    runner_func = load_obj(runner, "kedro.runner") if runner else SequentialRunner
 
     # Run the runner
-    runner().run(pipeline, catalog)
+    runner_func().run(pipeline, catalog)
 
 
 if __name__ == "__main__":

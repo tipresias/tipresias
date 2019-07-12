@@ -27,8 +27,8 @@ script:
   - docker run cfranklin11/tipresias_backend:latest mypy server project scripts
   - docker-compose -f docker-compose.ci.yml run backend ./scripts/wait-for-it.sh data_science:8008 -- python3 -Wi manage.py test
 
-  - docker run cfranklin11/tipresias_data_science:latest pylint --disable=R machine_learning
-  - docker run cfranklin11/tipresias_data_science:latest mypy machine_learning
+  - docker run cfranklin11/tipresias_data_science:latest pylint --disable=R src
+  - docker run cfranklin11/tipresias_data_science:latest mypy src
   - docker-compose -f docker-compose.ci.yml run data_science kedro test --no-cov
 
   - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src

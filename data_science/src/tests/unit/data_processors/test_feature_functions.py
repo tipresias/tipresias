@@ -19,8 +19,8 @@ from machine_learning.data_processors.feature_functions import (
     add_elo_pred_win,
     add_shifted_team_features,
 )
-from tests.fixtures.data_factories import fake_cleaned_match_data
 from machine_learning.data_config import VENUES
+from tests.fixtures.data_factories import fake_cleaned_match_data
 
 FAKE = Faker()
 MATCH_COUNT_PER_YEAR = 10

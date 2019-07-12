@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 # Copyright 2018-2019 QuantumBlack Visual Analytics Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

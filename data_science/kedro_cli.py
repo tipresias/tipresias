@@ -117,7 +117,7 @@ def run(tag, env, parallel, runner):
 def test(args):
     """Run the test suite."""
     try:
-        import pytest  # pylint: disable=unused-import
+        import pytest  # pylint: disable=unused-import,unused-variable
     except ImportError:
         raise KedroCliError(NO_PYTEST_MESSAGE)
     else:
@@ -153,7 +153,9 @@ def build_docs():
     python_call("ipykernel", ["install", "--user", "--name=machine_learning"])
     if Path("docs/build").exists():
         shutil.rmtree("docs/build")
-    call(["sphinx-apidoc", "--module-first", "-o", "docs/source", "src/machine_learning"])
+    call(
+        ["sphinx-apidoc", "--module-first", "-o", "docs/source", "src/machine_learning"]
+    )
     call(["sphinx-build", "-M", "html", "docs/source", "docs/build", "-a"])
 
 
@@ -169,7 +171,7 @@ def activate_nbstripout():
     )
 
     try:
-        import nbstripout  # pylint: disable=unused-import
+        import nbstripout  # pylint: disable=unused-import,unused-variable
     except ImportError:
         raise KedroCliError(NO_NBSTRIPOUT_MESSAGE)
 

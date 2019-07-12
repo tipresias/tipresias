@@ -48,7 +48,8 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
 #### Run Python tests
 
 - `docker-compose run --rm backend python3 -Wi manage.py test`
-- `docker-compose run --rm data_science pytest`
+- `docker-compose run --rm data_science kedro test --no-cov`
+  - Note: Remove `--no-cov` to generate a test-coverage report in the terminal.
 - Linting: `docker-compose run --rm <python service> pylint --disable=R <python modules you want to lint>`
   - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 

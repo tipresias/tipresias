@@ -29,7 +29,7 @@ script:
 
   - docker run cfranklin11/tipresias_data_science:latest pylint --disable=R machine_learning
   - docker run cfranklin11/tipresias_data_science:latest mypy machine_learning
-  - docker-compose -f docker-compose.ci.yml run data_science pytest
+  - docker-compose -f docker-compose.ci.yml run data_science kedro test --no-cov
 
   - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
   - docker run cfranklin11/tipresias_frontend:latest yarn run flow

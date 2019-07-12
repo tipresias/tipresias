@@ -34,7 +34,6 @@ services:
     build: ./data_science
     volumes:
       - ./data_science:/app
-      - ./data:/app/data
       - ./.gcloud:/app/.gcloud
       - /app/node_modules
     ports:

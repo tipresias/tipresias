@@ -7,10 +7,18 @@ pandas<0.24,>=0.23.0 # Required version for featuretools
 scikit-learn==0.20.1
 scipy
 xgboost==0.80
-jupyter
-ipykernel<5.0.0 # Necessary for a Jupyter bug (as of 30-9-18): https://github.com/jupyter/notebook/issues/4050
 dask[complete]
-kedro
+
+# Kedro packages
+kedro==0.14.3
+ipython>=7.0.0, <8.0
+jupyter>=1.0.0, <2.0
+jupyterlab==0.31.1
+nbstripout==0.3.3
+pytest>=3.4, <4.0
+pytest-cov>=2.5, <3.0
+pytest-mock>=1.7.1,<2.0
+wheel==0.32.2
 
 # Data vis packages
 seaborn
@@ -19,8 +27,6 @@ matplotlib
 # Testing/Linting
 pylint==1.9.2 # Necessary for open bug (as of 2-10-18): https://github.com/PyCQA/pylint/issues/2315
 black
-pytest
-pytest-env
 faker
 mypy>=0.70
 freezegun

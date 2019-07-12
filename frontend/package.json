@@ -5,14 +5,12 @@
   "dependencies": {
     "@babel/core": "^7.0.0-0",
     "apollo-boost": "^0.3.1",
-    "apollo-client": "^2.5.1",
     "d3": "^5.7.0",
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.6.0",
     "flow-typed": "^2.5.1",
     "graphql": "^14.2.1",
     "graphql-tag": "^2.10.1",
-    "nock": "^10.0.6",
     "react": "^16.5.2",
     "react-apollo": "^2.5.4",
     "react-dom": "^16.5.2",
@@ -26,7 +24,8 @@
     "build": "react-scripts build",
     "test:eslint": "yarn run eslint 'src/**/*.js' --ext .jsx --ext .js",
     "test:flow": "yarn flow",
-    "test:unit": "react-scripts test --env=jsdom"
+    "test:unit": "react-scripts test --env=jsdom",
+    "apollo:download": "apollo client:download-schema --endpoint=http://localhost:8000/graphql schema.json"
   },
   "devDependencies": {
     "@babel/plugin-proposal-class-properties": "^7.4.4",
@@ -34,6 +33,7 @@
     "@babel/preset-env": "^7.4.4",
     "@babel/preset-flow": "^7.0.0",
     "@babel/preset-react": "^7.0.0",
+    "apollo": "^2.15.0",
     "babel-cli": "^6.26.0",
     "eslint": "^5.16.0",
     "eslint-config-airbnb": "^17.1.0",

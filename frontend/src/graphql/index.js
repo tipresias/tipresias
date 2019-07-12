@@ -1,5 +1,4 @@
 import { gql } from 'apollo-boost';
-// eslint-disable-next-line import/prefer-default-export
 
 export const FETCH_PREDICTIONS_QUERY = gql`
   query fetchPredictions($year: Int){
@@ -74,19 +73,3 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
       }
    }
   }`;
-
-export const FETCH_THEME = gql`
-  query fetchTheme {
-    fetchTheme @client {
-      name
-    }
-  }
-`;
-
-export const SET_THEME_MUTATION = gql`
-  mutation SetTheme($name: String){
-    setTheme(name: $name) @client {
-      name
-    }
-  }
-`;

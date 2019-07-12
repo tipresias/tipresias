@@ -46,9 +46,7 @@ services:
       - PYTHON_ENV=development
     command: python3 app.py
   afl_data:
-    build: ./afl_data
-    volumes:
-      - ./afl_data:/app/afl_data
+    image: cfranklin11/tipresias_afl_data:latest
     ports:
       - "8080:8080"
     stdin_open: true

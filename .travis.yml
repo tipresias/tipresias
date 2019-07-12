@@ -18,14 +18,11 @@ before_script:
   - docker pull cfranklin11/tipresias_afl_data:latest
   - docker pull cfranklin11/tipresias_browser_test:latest
 
-  - docker build --cache-from cfranklin11/tipresias_afl_data:latest -t cfranklin11/tipresias_afl_data:latest -f ./afl_data/ci.Dockerfile ./afl_data
   - docker build --cache-from cfranklin11/tipresias_backend:latest -t cfranklin11/tipresias_backend:latest ./backend
   - docker build --cache-from cfranklin11/tipresias_data_science:latest -t cfranklin11/tipresias_data_science:latest ./data_science
   - docker build --cache-from cfranklin11/tipresias_frontend:latest -t cfranklin11/tipresias_frontend:latest ./frontend
   - docker build --cache-from cfranklin11/tipresias_browser_test:latest -t cfranklin11/tipresias_browser_test:latest ./browser_test
 script:
-  - docker run cfranklin11/tipresias_afl_data:latest Rscript -e "devtools::test()"
-
   - docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
   - docker run cfranklin11/tipresias_backend:latest mypy server project scripts
   - docker-compose -f docker-compose.ci.yml run backend ./scripts/wait-for-it.sh data_science:8008 -- python3 -Wi manage.py test

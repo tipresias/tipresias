@@ -1,5 +1,6 @@
 from unittest import TestCase
 from unittest.mock import Mock
+import os
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import Ridge
@@ -16,10 +17,10 @@ FAKE = Faker()
 N_ROWS = 10
 
 get_afltables_stats_df = pd.read_csv(
-    f"{BASE_DIR}/src/tests/fixtures/fitzroy_get_afltables_stats.csv"
+    os.path.join(BASE_DIR, "src/tests/fixtures/fitzroy_get_afltables_stats.csv")
 )
 match_results_df = pd.read_csv(
-    f"{BASE_DIR}/src/tests/fixtures/fitzroy_match_results.csv"
+    os.path.join(BASE_DIR, "src/tests/fixtures/fitzroy_match_results.csv")
 )
 get_afltables_stats_mock = Mock(return_value=get_afltables_stats_df)
 match_results_mock = Mock(return_value=match_results_df)

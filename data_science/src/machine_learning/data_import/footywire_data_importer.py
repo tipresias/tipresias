@@ -1,6 +1,7 @@
 """Module for FootywireDataImporter, which scrapes footywire.com.au for betting & match data"""
 
 from typing import Optional, Tuple
+import os
 import warnings
 from datetime import date
 from urllib3.exceptions import SystemTimeWarning
@@ -80,7 +81,9 @@ class FootywireDataImporter(BaseDataImporter):
         self, filename: str, year_range: Optional[Tuple[int, int]]
     ) -> pd.DataFrame:
         csv_data_frame = (
-            pd.read_csv(f"{self.csv_dir}/{filename}.csv", parse_dates=["date"])
+            pd.read_csv(
+                os.path.join(self.csv_dir, f"{filename}.csv"), parse_dates=["date"]
+            )
             .assign(date=self._parse_dates)
             .rename(columns={"round": "round_number", "round_label": "round"})
         )

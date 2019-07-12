@@ -1,5 +1,6 @@
 from unittest import TestCase
 from unittest.mock import Mock
+import os
 import pandas as pd
 from faker import Faker
 
@@ -9,10 +10,10 @@ from machine_learning.ml_data import PlayerMLData
 FAKE = Faker()
 
 get_afltables_stats_df = pd.read_csv(
-    f"{BASE_DIR}/src/tests/fixtures/fitzroy_get_afltables_stats.csv"
+    os.path.join(BASE_DIR, "src/tests/fixtures/fitzroy_get_afltables_stats.csv")
 ).assign(date=lambda df: pd.to_datetime(df["date"]).dt.tz_localize(MELBOURNE_TIMEZONE))
 match_results_df = pd.read_csv(
-    f"{BASE_DIR}/src/tests/fixtures/fitzroy_match_results.csv"
+    os.path.join(BASE_DIR, "src/tests/fixtures/fitzroy_match_results.csv")
 ).assign(date=lambda df: pd.to_datetime(df["date"]).dt.tz_localize(MELBOURNE_TIMEZONE))
 
 get_afltables_stats_mock = Mock(return_value=get_afltables_stats_df)

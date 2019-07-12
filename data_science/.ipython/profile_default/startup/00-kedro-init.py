@@ -34,19 +34,19 @@ def reload_kedro(line=None):
         if "create_catalog" in str(err):
             message = (
                 "The function `create_catalog` is missing from "
-                "augury/src/"
-                "augury/run.py."
+                "machine_learning/src/"
+                "machine_learning/run.py."
                 "\nEither restore this function, or update "
-                "augury/"
+                "machine_learning/"
                 ".ipython/profile_default/startup/00-kedro-init.py."
             )
         elif "get_config" in str(err):
             message = (
                 "The function `get_config` is missing from "
-                "augury/src/"
-                "augury/run.py."
+                "machine_learning/src/"
+                "machine_learning/run.py."
                 "\nEither restore this function, or update "
-                "augury/"
+                "machine_learning/"
                 ".ipython/profile_default/startup/00-kedro-init.py."
             )
         logging.error(message)

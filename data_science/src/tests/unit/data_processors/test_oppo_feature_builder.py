@@ -5,7 +5,7 @@ import numpy as np
 
 from machine_learning.data_processors import OppoFeatureBuilder
 from machine_learning.data_processors.oppo_feature_builder import REQUIRED_COLS
-from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
+from tests.fixtures.data_factories import fake_cleaned_match_data
 
 FAKE = Faker()
 N_ROWS_PER_YEAR = 10

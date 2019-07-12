@@ -19,7 +19,7 @@ from machine_learning.data_processors.feature_functions import (
     add_elo_pred_win,
     add_shifted_team_features,
 )
-from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
+from tests.fixtures.data_factories import fake_cleaned_match_data
 from machine_learning.data_config import VENUES
 
 FAKE = Faker()

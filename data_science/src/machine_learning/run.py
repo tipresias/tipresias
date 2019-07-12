@@ -39,7 +39,7 @@ from kedro.io import DataCatalog
 from kedro.runner import SequentialRunner
 from kedro.utils import load_obj
 
-from augury.pipeline import create_pipeline
+from machine_learning.pipeline import create_pipeline
 
 # Name of root directory containing project configuration.
 CONF_ROOT = "conf"

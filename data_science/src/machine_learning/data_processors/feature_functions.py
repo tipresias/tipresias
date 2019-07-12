@@ -477,8 +477,10 @@ def add_elo_rating(data_frame: pd.DataFrame) -> pd.DataFrame:
     time_sorted_data_frame = data_frame.sort_values("date")
 
     elo_matrix = (
-        time_sorted_data_frame.eval("home_team = @le.transform(home_team)")
-        .eval("away_team = @le.transform(away_team)")
+        time_sorted_data_frame.assign(
+            home_team=lambda df: le.transform(df["home_team"]),
+            away_team=lambda df: le.transform(df["away_team"]),
+        )
         .eval("home_margin = home_score - away_score")
         .loc[:, ["year", "home_team", "away_team", "home_margin"]]
     ).values

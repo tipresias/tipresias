@@ -10,7 +10,7 @@ from machine_learning.data_processors.feature_calculation import (
     calculate_rolling_mean_by_dimension,
     calculate_addition,
 )
-from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
+from tests.fixtures.data_factories import fake_cleaned_match_data
 
 FAKE = Faker()
 ROW_COUNT = 10

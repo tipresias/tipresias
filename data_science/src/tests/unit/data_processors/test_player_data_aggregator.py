@@ -8,7 +8,7 @@ from machine_learning.data_processors.player_data_aggregator import (
     REQUIRED_COLS,
     STATS_COLS,
 )
-from machine_learning.tests.fixtures.data_factories import fake_cleaned_player_data
+from tests.fixtures.data_factories import fake_cleaned_player_data
 
 FAKE = Faker()
 N_MATCHES_PER_YEAR = 10

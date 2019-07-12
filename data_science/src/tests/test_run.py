@@ -42,7 +42,7 @@ import pytest
 from kedro.config import ConfigLoader
 from kedro.io import DataCatalog
 
-from augury.run import (
+from machine_learning.run import (
     CONF_ROOT,
     DEFAULT_RUN_ENV,
     create_catalog,

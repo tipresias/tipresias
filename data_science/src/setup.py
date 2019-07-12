@@ -26,18 +26,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from setuptools import find_packages, setup
+from machine_learning.settings import BASE_DIR
 
-entry_point = (
-    "augury = augury.run:main"
-)
+entry_point = "machine_learning = machine_learning.run:main"
 
 # get the dependencies and installs
-with open("requirements.txt", "r", encoding="utf-8") as f:
+with open(os.path.join(BASE_DIR, "requirements.txt"), "r", encoding="utf-8") as f:
     requires = [x.strip() for x in f if x.strip()]
 
 setup(
-    name="augury",
+    name="machine_learning",
     version="0.1",
     packages=find_packages(exclude=["tests"]),
     entry_points={"console_scripts": [entry_point]},

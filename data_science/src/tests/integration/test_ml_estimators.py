@@ -4,8 +4,8 @@ from sklearn.externals import joblib
 from machine_learning.ml_estimators.base_ml_estimator import BaseMLEstimator
 
 PICKLE_FILEPATHS = [
-    "machine_learning/ml_estimators/bagging_estimator/tipresias.pkl",
-    "machine_learning/ml_estimators/benchmark_estimator/benchmark_estimator.pkl",
+    "src/machine_learning/ml_estimators/bagging_estimator/tipresias.pkl",
+    "src/machine_learning/ml_estimators/benchmark_estimator/benchmark_estimator.pkl",
 ]
 
 

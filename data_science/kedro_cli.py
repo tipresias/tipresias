@@ -53,13 +53,13 @@ os.environ["IPYTHONDIR"] = str(PROJ_PATH / ".ipython")
 
 NO_PYTEST_MESSAGE = """
 pytest is not installed. Please make sure pytest is in
-src/requirements.txt and run `kedro install`.
+requirements.txt and run `kedro install`.
 """
 
 
 NO_NBSTRIPOUT_MESSAGE = """
 nbstripout is not installed. Please make sure nbstripout is in
-`src/requirements.txt` and run `kedro install`.
+`requirements.txt` and run `kedro install`.
 """
 
 
@@ -82,7 +82,8 @@ This option cannot be used together with --parallel."""
 
 def __get_kedro_context__():
     """Used to provide this project's context to plugins."""
-    from augury.run import __kedro_context__
+    from machine_learning.run import __kedro_context__
+
     return __kedro_context__()
 
 
@@ -92,13 +93,16 @@ def cli():
 
 
 @cli.command()
-@click.option("--runner", "-r", type=str, default=None, multiple=False, help=RUNNER_ARG_HELP)
+@click.option(
+    "--runner", "-r", type=str, default=None, multiple=False, help=RUNNER_ARG_HELP
+)
 @click.option("--parallel", "-p", is_flag=True, multiple=False, help=PARALLEL_ARG_HELP)
 @click.option("--env", "-e", type=str, default=None, multiple=False, help=ENV_ARG_HELP)
 @click.option("--tag", "-t", type=str, default=None, multiple=True, help=TAG_ARG_HELP)
 def run(tag, env, parallel, runner):
     """Run the pipeline."""
-    from augury.run import main
+    from machine_learning.run import main
+
     if parallel and runner:
         raise KedroCliError(
             "Both --parallel and --runner options cannot be used together. "
@@ -123,7 +127,7 @@ def test(args):
 @cli.command()
 def install():
     """Install project dependencies from requirements.txt."""
-    python_call("pip", ["install", "-U", "-r", "src/requirements.txt"])
+    python_call("pip", ["install", "-U", "-r", "requirements.txt"])
 
 
 @forward_command(cli, forward_help=True)
@@ -145,21 +149,11 @@ def package():
 def build_docs():
     """Build the project documentation."""
     python_call("pip", ["install", "src/[docs]"])
-    python_call("pip", ["install", "-r", "src/requirements.txt"])
-    python_call(
-        "ipykernel", ["install", "--user", "--name=augury"]
-    )
+    python_call("pip", ["install", "-r", "requirements.txt"])
+    python_call("ipykernel", ["install", "--user", "--name=machine_learning"])
     if Path("docs/build").exists():
         shutil.rmtree("docs/build")
-    call(
-        [
-            "sphinx-apidoc",
-            "--module-first",
-            "-o",
-            "docs/source",
-            "src/augury",
-        ]
-    )
+    call(["sphinx-apidoc", "--module-first", "-o", "docs/source", "src/machine_learning"])
     call(["sphinx-build", "-M", "html", "docs/source", "docs/build", "-a"])
 
 

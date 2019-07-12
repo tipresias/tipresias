@@ -3,7 +3,7 @@ from faker import Faker
 import pandas as pd
 
 from machine_learning.data_processors import TeamDataStacker
-from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
+from tests.fixtures.data_factories import fake_cleaned_match_data
 
 FAKE = Faker()
 N_ROWS_PER_YEAR = 10

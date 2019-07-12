@@ -3,22 +3,19 @@ from unittest.mock import Mock, patch
 
 from machine_learning.ml_data import BettingMLData
 from machine_learning.data_import import FootywireDataImporter, FitzroyDataImporter
-from machine_learning.tests.fixtures.data_factories import (
+from machine_learning import api
+from machine_learning import settings
+from tests.fixtures.data_factories import (
     fake_footywire_betting_data,
     fake_fixture_data,
     fake_raw_match_results_data,
 )
-from machine_learning import api
-from machine_learning import settings
 
 
 YEAR_RANGE = (2019, 2020)
 N_MATCHES = 5
 FAKE_ML_MODELS = [
-    {
-        "name": "fake_estimator",
-        "filepath": "machine_learning/tests/fixtures/fake_estimator.pkl",
-    }
+    {"name": "fake_estimator", "filepath": "src/tests/fixtures/fake_estimator.pkl"}
 ]
 
 

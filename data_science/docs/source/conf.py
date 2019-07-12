@@ -29,7 +29,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# augury documentation build
+# machine_learning documentation build
 # configuration file, created by sphinx-quickstart.
 #
 # This file is execfile()d with the current directory set to its
@@ -47,11 +47,11 @@
 #
 import re
 
-from augury import __version__ as release
+from machine_learning import __version__ as release
 
 # -- Project information -----------------------------------------------------
 
-project = "augury"
+project = "machine_learning"
 copyright = "2018-2019, QuantumBlack Visual Analytics Limited"
 author = "QuantumBlack"
 
@@ -141,7 +141,7 @@ html_show_sourcelink = False
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "augurydoc"
+htmlhelp_basename = "machine_learningdoc"
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -169,8 +169,8 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "augury.tex",
-        "augury Documentation",
+        "machine_learning.tex",
+        "machine_learning Documentation",
         "QuantumBlack",
         "manual",
     )
@@ -183,8 +183,8 @@ latex_documents = [
 man_pages = [
     (
         master_doc,
-        "augury",
-        "augury Documentation",
+        "machine_learning",
+        "machine_learning Documentation",
         [author],
         1,
     )
@@ -198,11 +198,11 @@ man_pages = [
 texinfo_documents = [
     (
         master_doc,
-        "augury",
-        "augury Documentation",
+        "machine_learning",
+        "machine_learning Documentation",
         author,
-        "augury",
-        "Project augury codebase.",
+        "machine_learning",
+        "Project machine_learning codebase.",
         "Data-Science",
     )
 ]

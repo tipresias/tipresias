@@ -2,7 +2,7 @@ from unittest import TestCase
 from faker import Faker
 
 from machine_learning.data_processors import FeatureBuilder
-from machine_learning.tests.fixtures.data_factories import fake_cleaned_match_data
+from tests.fixtures.data_factories import fake_cleaned_match_data
 
 FAKE = Faker()
 MATCH_COUNT_PER_YEAR = 10

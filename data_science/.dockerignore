@@ -78,6 +78,9 @@ node_modules
 
 # Data files
 /data
+# keep legacy datasets until we can automate generating them or decide
+# that we don't need them anymore
+!data/01_raw/**
 
 # Dev stuff
 .git

@@ -52,8 +52,9 @@ results/**
 # also keep all .gitkeep files
 !.gitkeep
 
-# keep also the example dataset
-!data/01_raw/iris.csv
+# keep legacy datasets until we can automate generating them or decide
+# that we don't need them anymore
+!data/01_raw/**
 
 
 ##########################

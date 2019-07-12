@@ -1,0 +1,361 @@
+match__round_number,match__start_date_time__year,match__teammatch__team__name,ml_model__name,predicted_margin,predicted_winner__name
+1,2019,Carlton,tipresias,34,Richmond
+1,2019,Carlton,benchmark_estimator,40,Richmond
+1,2019,Richmond,tipresias,34,Richmond
+1,2019,Richmond,benchmark_estimator,40,Richmond
+1,2019,Collingwood,tipresias,1,Collingwood
+1,2019,Collingwood,benchmark_estimator,7,Collingwood
+1,2019,Geelong,tipresias,1,Collingwood
+1,2019,Geelong,benchmark_estimator,7,Collingwood
+1,2019,Melbourne,tipresias,15,Melbourne
+1,2019,Melbourne,benchmark_estimator,17,Melbourne
+1,2019,Port Adelaide,tipresias,15,Melbourne
+1,2019,Port Adelaide,benchmark_estimator,17,Melbourne
+1,2019,Adelaide,tipresias,18,Adelaide
+1,2019,Adelaide,benchmark_estimator,13,Adelaide
+1,2019,Hawthorn,tipresias,18,Adelaide
+1,2019,Hawthorn,benchmark_estimator,13,Adelaide
+1,2019,Brisbane,tipresias,8,West Coast
+1,2019,Brisbane,benchmark_estimator,17,West Coast
+1,2019,West Coast,tipresias,8,West Coast
+1,2019,West Coast,benchmark_estimator,17,West Coast
+1,2019,Western Bulldogs,tipresias,2,Sydney
+1,2019,Western Bulldogs,benchmark_estimator,6,Sydney
+1,2019,Sydney,tipresias,2,Sydney
+1,2019,Sydney,benchmark_estimator,6,Sydney
+1,2019,St Kilda,tipresias,36,St Kilda
+1,2019,St Kilda,benchmark_estimator,18,St Kilda
+1,2019,Gold Coast,tipresias,36,St Kilda
+1,2019,Gold Coast,benchmark_estimator,18,St Kilda
+1,2019,GWS,tipresias,11,GWS
+1,2019,GWS,benchmark_estimator,11,GWS
+1,2019,Essendon,tipresias,11,GWS
+1,2019,Essendon,benchmark_estimator,11,GWS
+1,2019,Fremantle,tipresias,10,North Melbourne
+1,2019,Fremantle,benchmark_estimator,18,North Melbourne
+1,2019,North Melbourne,tipresias,10,North Melbourne
+1,2019,North Melbourne,benchmark_estimator,18,North Melbourne
+2,2019,Richmond,tipresias,7,Richmond
+2,2019,Richmond,benchmark_estimator,12,Richmond
+2,2019,Collingwood,tipresias,7,Richmond
+2,2019,Collingwood,benchmark_estimator,12,Richmond
+2,2019,Sydney,tipresias,5,Sydney
+2,2019,Sydney,benchmark_estimator,7,Sydney
+2,2019,Adelaide,tipresias,5,Sydney
+2,2019,Adelaide,benchmark_estimator,7,Sydney
+2,2019,Essendon,tipresias,12,Essendon
+2,2019,Essendon,benchmark_estimator,19,Essendon
+2,2019,St Kilda,tipresias,12,Essendon
+2,2019,St Kilda,benchmark_estimator,19,Essendon
+2,2019,Port Adelaide,tipresias,46,Port Adelaide
+2,2019,Port Adelaide,benchmark_estimator,44,Port Adelaide
+2,2019,Carlton,tipresias,46,Port Adelaide
+2,2019,Carlton,benchmark_estimator,44,Port Adelaide
+2,2019,West Coast,tipresias,8,West Coast
+2,2019,West Coast,benchmark_estimator,14,West Coast
+2,2019,GWS,tipresias,8,West Coast
+2,2019,GWS,benchmark_estimator,14,West Coast
+2,2019,Geelong,tipresias,24,Geelong
+2,2019,Geelong,benchmark_estimator,19,Geelong
+2,2019,Melbourne,tipresias,24,Geelong
+2,2019,Melbourne,benchmark_estimator,19,Geelong
+2,2019,North Melbourne,tipresias,2,Brisbane
+2,2019,North Melbourne,benchmark_estimator,1,North Melbourne
+2,2019,Brisbane,tipresias,2,Brisbane
+2,2019,Brisbane,benchmark_estimator,1,North Melbourne
+2,2019,Hawthorn,tipresias,16,Hawthorn
+2,2019,Hawthorn,benchmark_estimator,18,Hawthorn
+2,2019,Western Bulldogs,tipresias,16,Hawthorn
+2,2019,Western Bulldogs,benchmark_estimator,18,Hawthorn
+2,2019,Gold Coast,tipresias,13,Fremantle
+2,2019,Gold Coast,benchmark_estimator,16,Fremantle
+2,2019,Fremantle,tipresias,13,Fremantle
+2,2019,Fremantle,benchmark_estimator,16,Fremantle
+3,2019,Adelaide,tipresias,2,Geelong
+3,2019,Adelaide,benchmark_estimator,0,Adelaide
+3,2019,Geelong,tipresias,2,Geelong
+3,2019,Geelong,benchmark_estimator,0,Adelaide
+3,2019,Melbourne,tipresias,2,Melbourne
+3,2019,Melbourne,benchmark_estimator,11,Melbourne
+3,2019,Essendon,tipresias,2,Melbourne
+3,2019,Essendon,benchmark_estimator,11,Melbourne
+3,2019,Carlton,tipresias,26,Sydney
+3,2019,Carlton,benchmark_estimator,27,Sydney
+3,2019,Sydney,tipresias,26,Sydney
+3,2019,Sydney,benchmark_estimator,27,Sydney
+3,2019,GWS,tipresias,10,GWS
+3,2019,GWS,benchmark_estimator,4,GWS
+3,2019,Richmond,tipresias,10,GWS
+3,2019,Richmond,benchmark_estimator,4,GWS
+3,2019,Brisbane,tipresias,8,Brisbane
+3,2019,Brisbane,benchmark_estimator,1,Port Adelaide
+3,2019,Port Adelaide,tipresias,8,Brisbane
+3,2019,Port Adelaide,benchmark_estimator,1,Port Adelaide
+3,2019,Collingwood,tipresias,21,Collingwood
+3,2019,Collingwood,benchmark_estimator,10,Collingwood
+3,2019,West Coast,tipresias,21,Collingwood
+3,2019,West Coast,benchmark_estimator,10,Collingwood
+3,2019,Western Bulldogs,tipresias,35,Western Bulldogs
+3,2019,Western Bulldogs,benchmark_estimator,28,Western Bulldogs
+3,2019,Gold Coast,tipresias,35,Western Bulldogs
+3,2019,Gold Coast,benchmark_estimator,28,Western Bulldogs
+3,2019,Hawthorn,tipresias,15,Hawthorn
+3,2019,Hawthorn,benchmark_estimator,14,Hawthorn
+3,2019,North Melbourne,tipresias,15,Hawthorn
+3,2019,North Melbourne,benchmark_estimator,14,Hawthorn
+3,2019,Fremantle,tipresias,10,Fremantle
+3,2019,Fremantle,benchmark_estimator,1,Fremantle
+3,2019,St Kilda,tipresias,10,Fremantle
+3,2019,St Kilda,benchmark_estimator,1,Fremantle
+4,2019,Sydney,tipresias,5,Sydney
+4,2019,Sydney,benchmark_estimator,12,Sydney
+4,2019,Melbourne,tipresias,5,Sydney
+4,2019,Melbourne,benchmark_estimator,12,Sydney
+4,2019,Collingwood,tipresias,20,Collingwood
+4,2019,Collingwood,benchmark_estimator,9,Collingwood
+4,2019,Western Bulldogs,tipresias,20,Collingwood
+4,2019,Western Bulldogs,benchmark_estimator,9,Collingwood
+4,2019,Geelong,tipresias,27,Geelong
+4,2019,Geelong,benchmark_estimator,36,Geelong
+4,2019,GWS,tipresias,27,Geelong
+4,2019,GWS,benchmark_estimator,36,Geelong
+4,2019,Essendon,tipresias,10,Essendon
+4,2019,Essendon,benchmark_estimator,1,Essendon
+4,2019,Brisbane,tipresias,10,Essendon
+4,2019,Brisbane,benchmark_estimator,1,Essendon
+4,2019,Port Adelaide,tipresias,16,Port Adelaide
+4,2019,Port Adelaide,benchmark_estimator,15,Port Adelaide
+4,2019,Richmond,tipresias,16,Port Adelaide
+4,2019,Richmond,benchmark_estimator,15,Port Adelaide
+4,2019,West Coast,tipresias,37,West Coast
+4,2019,West Coast,benchmark_estimator,30,West Coast
+4,2019,Fremantle,tipresias,37,West Coast
+4,2019,Fremantle,benchmark_estimator,30,West Coast
+4,2019,North Melbourne,tipresias,7,Adelaide
+4,2019,North Melbourne,benchmark_estimator,7,Adelaide
+4,2019,Adelaide,tipresias,7,Adelaide
+4,2019,Adelaide,benchmark_estimator,7,Adelaide
+4,2019,Gold Coast,tipresias,21,Gold Coast
+4,2019,Gold Coast,benchmark_estimator,21,Gold Coast
+4,2019,Carlton,tipresias,21,Gold Coast
+4,2019,Carlton,benchmark_estimator,21,Gold Coast
+4,2019,St Kilda,tipresias,5,Hawthorn
+4,2019,St Kilda,benchmark_estimator,8,Hawthorn
+4,2019,Hawthorn,tipresias,5,Hawthorn
+4,2019,Hawthorn,benchmark_estimator,8,Hawthorn
+5,2019,Brisbane,tipresias,5,Collingwood
+5,2019,Brisbane,benchmark_estimator,0,Collingwood
+5,2019,Collingwood,tipresias,5,Collingwood
+5,2019,Collingwood,benchmark_estimator,0,Collingwood
+5,2019,North Melbourne,tipresias,7,Essendon
+5,2019,North Melbourne,benchmark_estimator,1,North Melbourne
+5,2019,Essendon,tipresias,7,Essendon
+5,2019,Essendon,benchmark_estimator,1,North Melbourne
+5,2019,West Coast,tipresias,23,West Coast
+5,2019,West Coast,benchmark_estimator,10,West Coast
+5,2019,Port Adelaide,tipresias,23,West Coast
+5,2019,Port Adelaide,benchmark_estimator,10,West Coast
+5,2019,GWS,tipresias,35,GWS
+5,2019,GWS,benchmark_estimator,24,GWS
+5,2019,Fremantle,tipresias,35,GWS
+5,2019,Fremantle,benchmark_estimator,24,GWS
+5,2019,Melbourne,tipresias,9,Melbourne
+5,2019,Melbourne,benchmark_estimator,12,Melbourne
+5,2019,St Kilda,tipresias,9,Melbourne
+5,2019,St Kilda,benchmark_estimator,12,Melbourne
+5,2019,Richmond,tipresias,7,Richmond
+5,2019,Richmond,benchmark_estimator,10,Richmond
+5,2019,Sydney,tipresias,7,Richmond
+5,2019,Sydney,benchmark_estimator,10,Richmond
+5,2019,Western Bulldogs,tipresias,25,Western Bulldogs
+5,2019,Western Bulldogs,benchmark_estimator,27,Western Bulldogs
+5,2019,Carlton,tipresias,25,Western Bulldogs
+5,2019,Carlton,benchmark_estimator,27,Western Bulldogs
+5,2019,Adelaide,tipresias,29,Adelaide
+5,2019,Adelaide,benchmark_estimator,39,Adelaide
+5,2019,Gold Coast,tipresias,29,Adelaide
+5,2019,Gold Coast,benchmark_estimator,39,Adelaide
+5,2019,Hawthorn,tipresias,10,Geelong
+5,2019,Hawthorn,benchmark_estimator,2,Geelong
+5,2019,Geelong,tipresias,10,Geelong
+5,2019,Geelong,benchmark_estimator,2,Geelong
+6,2019,Richmond,tipresias,9,Richmond
+6,2019,Richmond,benchmark_estimator,11,Richmond
+6,2019,Melbourne,tipresias,9,Richmond
+6,2019,Melbourne,benchmark_estimator,11,Richmond
+6,2019,Essendon,tipresias,8,Collingwood
+6,2019,Essendon,benchmark_estimator,4,Collingwood
+6,2019,Collingwood,tipresias,8,Collingwood
+6,2019,Collingwood,benchmark_estimator,4,Collingwood
+6,2019,Port Adelaide,tipresias,19,Port Adelaide
+6,2019,Port Adelaide,benchmark_estimator,24,Port Adelaide
+6,2019,North Melbourne,tipresias,19,Port Adelaide
+6,2019,North Melbourne,benchmark_estimator,24,Port Adelaide
+6,2019,Gold Coast,tipresias,10,Brisbane
+6,2019,Gold Coast,benchmark_estimator,9,Brisbane
+6,2019,Brisbane,tipresias,10,Brisbane
+6,2019,Brisbane,benchmark_estimator,9,Brisbane
+6,2019,St Kilda,tipresias,3,Adelaide
+6,2019,St Kilda,benchmark_estimator,9,Adelaide
+6,2019,Adelaide,tipresias,3,Adelaide
+6,2019,Adelaide,benchmark_estimator,9,Adelaide
+6,2019,Fremantle,tipresias,16,Fremantle
+6,2019,Fremantle,benchmark_estimator,13,Fremantle
+6,2019,Western Bulldogs,tipresias,16,Fremantle
+6,2019,Western Bulldogs,benchmark_estimator,13,Fremantle
+6,2019,Sydney,tipresias,6,GWS
+6,2019,Sydney,benchmark_estimator,9,GWS
+6,2019,GWS,tipresias,6,GWS
+6,2019,GWS,benchmark_estimator,9,GWS
+6,2019,Hawthorn,tipresias,24,Hawthorn
+6,2019,Hawthorn,benchmark_estimator,30,Hawthorn
+6,2019,Carlton,tipresias,24,Hawthorn
+6,2019,Carlton,benchmark_estimator,30,Hawthorn
+6,2019,Geelong,tipresias,26,Geelong
+6,2019,Geelong,benchmark_estimator,23,Geelong
+6,2019,West Coast,tipresias,26,Geelong
+6,2019,West Coast,benchmark_estimator,23,Geelong
+7,2019,Collingwood,tipresias,27,Collingwood
+7,2019,Collingwood,benchmark_estimator,10,Collingwood
+7,2019,Port Adelaide,tipresias,27,Collingwood
+7,2019,Port Adelaide,benchmark_estimator,10,Collingwood
+7,2019,Melbourne,tipresias,4,Hawthorn
+7,2019,Melbourne,benchmark_estimator,3,Hawthorn
+7,2019,Hawthorn,tipresias,4,Hawthorn
+7,2019,Hawthorn,benchmark_estimator,3,Hawthorn
+7,2019,GWS,tipresias,31,GWS
+7,2019,GWS,benchmark_estimator,33,GWS
+7,2019,St Kilda,tipresias,31,GWS
+7,2019,St Kilda,benchmark_estimator,33,GWS
+7,2019,Brisbane,tipresias,17,Brisbane
+7,2019,Brisbane,benchmark_estimator,19,Brisbane
+7,2019,Sydney,tipresias,17,Brisbane
+7,2019,Sydney,benchmark_estimator,19,Brisbane
+7,2019,West Coast,tipresias,42,West Coast
+7,2019,West Coast,benchmark_estimator,42,West Coast
+7,2019,Gold Coast,tipresias,42,West Coast
+7,2019,Gold Coast,benchmark_estimator,42,West Coast
+7,2019,Western Bulldogs,tipresias,9,Richmond
+7,2019,Western Bulldogs,benchmark_estimator,11,Richmond
+7,2019,Richmond,tipresias,9,Richmond
+7,2019,Richmond,benchmark_estimator,11,Richmond
+7,2019,Carlton,tipresias,9,North Melbourne
+7,2019,Carlton,benchmark_estimator,7,North Melbourne
+7,2019,North Melbourne,tipresias,9,North Melbourne
+7,2019,North Melbourne,benchmark_estimator,7,North Melbourne
+7,2019,Geelong,tipresias,12,Geelong
+7,2019,Geelong,benchmark_estimator,17,Geelong
+7,2019,Essendon,tipresias,12,Geelong
+7,2019,Essendon,benchmark_estimator,17,Geelong
+7,2019,Adelaide,tipresias,27,Adelaide
+7,2019,Adelaide,benchmark_estimator,28,Adelaide
+7,2019,Fremantle,tipresias,27,Adelaide
+7,2019,Fremantle,benchmark_estimator,28,Adelaide
+8,2019,Sydney,tipresias,8,Essendon
+8,2019,Sydney,benchmark_estimator,14,Essendon
+8,2019,Essendon,tipresias,8,Essendon
+8,2019,Essendon,benchmark_estimator,14,Essendon
+8,2019,Western Bulldogs,tipresias,4,Western Bulldogs
+8,2019,Western Bulldogs,benchmark_estimator,4,Brisbane
+8,2019,Brisbane,tipresias,4,Western Bulldogs
+8,2019,Brisbane,benchmark_estimator,4,Brisbane
+8,2019,Carlton,tipresias,41,Collingwood
+8,2019,Carlton,benchmark_estimator,48,Collingwood
+8,2019,Collingwood,tipresias,41,Collingwood
+8,2019,Collingwood,benchmark_estimator,48,Collingwood
+8,2019,Gold Coast,tipresias,21,Melbourne
+8,2019,Gold Coast,benchmark_estimator,11,Melbourne
+8,2019,Melbourne,tipresias,21,Melbourne
+8,2019,Melbourne,benchmark_estimator,11,Melbourne
+8,2019,Port Adelaide,tipresias,6,Adelaide
+8,2019,Port Adelaide,benchmark_estimator,2,Port Adelaide
+8,2019,Adelaide,tipresias,6,Adelaide
+8,2019,Adelaide,benchmark_estimator,2,Port Adelaide
+8,2019,St Kilda,tipresias,4,West Coast
+8,2019,St Kilda,benchmark_estimator,9,West Coast
+8,2019,West Coast,tipresias,4,West Coast
+8,2019,West Coast,benchmark_estimator,9,West Coast
+8,2019,North Melbourne,tipresias,27,Geelong
+8,2019,North Melbourne,benchmark_estimator,1,North Melbourne
+8,2019,Geelong,tipresias,27,Geelong
+8,2019,Geelong,benchmark_estimator,1,North Melbourne
+8,2019,Fremantle,tipresias,7,Fremantle
+8,2019,Fremantle,benchmark_estimator,18,Fremantle
+8,2019,Richmond,tipresias,7,Fremantle
+8,2019,Richmond,benchmark_estimator,18,Fremantle
+8,2019,Hawthorn,tipresias,2,GWS
+8,2019,Hawthorn,benchmark_estimator,10,Hawthorn
+8,2019,GWS,tipresias,2,GWS
+8,2019,GWS,benchmark_estimator,10,Hawthorn
+9,2019,West Coast,tipresias,26,West Coast
+9,2019,West Coast,benchmark_estimator,15,West Coast
+9,2019,Melbourne,tipresias,26,West Coast
+9,2019,Melbourne,benchmark_estimator,15,West Coast
+9,2019,Collingwood,tipresias,34,Collingwood
+9,2019,Collingwood,benchmark_estimator,43,Collingwood
+9,2019,St Kilda,tipresias,34,Collingwood
+9,2019,St Kilda,benchmark_estimator,43,Collingwood
+9,2019,Brisbane,tipresias,1,Adelaide
+9,2019,Brisbane,benchmark_estimator,14,Brisbane
+9,2019,Adelaide,tipresias,1,Adelaide
+9,2019,Adelaide,benchmark_estimator,14,Brisbane
+9,2019,Geelong,tipresias,34,Geelong
+9,2019,Geelong,benchmark_estimator,31,Geelong
+9,2019,Western Bulldogs,tipresias,34,Geelong
+9,2019,Western Bulldogs,benchmark_estimator,31,Geelong
+9,2019,Essendon,tipresias,25,Essendon
+9,2019,Essendon,benchmark_estimator,12,Essendon
+9,2019,Fremantle,tipresias,25,Essendon
+9,2019,Fremantle,benchmark_estimator,12,Essendon
+9,2019,North Melbourne,tipresias,5,North Melbourne
+9,2019,North Melbourne,benchmark_estimator,4,North Melbourne
+9,2019,Sydney,tipresias,5,North Melbourne
+9,2019,Sydney,benchmark_estimator,4,North Melbourne
+9,2019,Port Adelaide,tipresias,45,Port Adelaide
+9,2019,Port Adelaide,benchmark_estimator,33,Port Adelaide
+9,2019,Gold Coast,tipresias,45,Port Adelaide
+9,2019,Gold Coast,benchmark_estimator,33,Port Adelaide
+9,2019,Richmond,tipresias,6,Richmond
+9,2019,Richmond,benchmark_estimator,2,Richmond
+9,2019,Hawthorn,tipresias,6,Richmond
+9,2019,Hawthorn,benchmark_estimator,2,Richmond
+9,2019,GWS,tipresias,43,GWS
+9,2019,GWS,benchmark_estimator,37,GWS
+9,2019,Carlton,tipresias,43,GWS
+9,2019,Carlton,benchmark_estimator,37,GWS
+10,2019,Sydney,tipresias,1,Collingwood
+10,2019,Sydney,benchmark_estimator,2,Sydney
+10,2019,Collingwood,tipresias,1,Collingwood
+10,2019,Collingwood,benchmark_estimator,2,Sydney
+10,2019,Hawthorn,tipresias,11,Hawthorn
+10,2019,Hawthorn,benchmark_estimator,21,Hawthorn
+10,2019,Port Adelaide,tipresias,11,Hawthorn
+10,2019,Port Adelaide,benchmark_estimator,21,Hawthorn
+10,2019,Western Bulldogs,tipresias,5,Western Bulldogs
+10,2019,Western Bulldogs,benchmark_estimator,11,Western Bulldogs
+10,2019,North Melbourne,tipresias,5,Western Bulldogs
+10,2019,North Melbourne,benchmark_estimator,11,Western Bulldogs
+10,2019,Adelaide,tipresias,24,Adelaide
+10,2019,Adelaide,benchmark_estimator,14,Adelaide
+10,2019,West Coast,tipresias,24,Adelaide
+10,2019,West Coast,benchmark_estimator,14,Adelaide
+10,2019,Gold Coast,tipresias,38,Geelong
+10,2019,Gold Coast,benchmark_estimator,18,Geelong
+10,2019,Geelong,tipresias,38,Geelong
+10,2019,Geelong,benchmark_estimator,18,Geelong
+10,2019,Richmond,tipresias,9,Richmond
+10,2019,Richmond,benchmark_estimator,8,Richmond
+10,2019,Essendon,tipresias,9,Richmond
+10,2019,Essendon,benchmark_estimator,8,Richmond
+10,2019,Melbourne,tipresias,6,GWS
+10,2019,Melbourne,benchmark_estimator,7,Melbourne
+10,2019,GWS,tipresias,6,GWS
+10,2019,GWS,benchmark_estimator,7,Melbourne
+10,2019,St Kilda,tipresias,26,St Kilda
+10,2019,St Kilda,benchmark_estimator,11,St Kilda
+10,2019,Carlton,tipresias,26,St Kilda
+10,2019,Carlton,benchmark_estimator,11,St Kilda
+10,2019,Fremantle,tipresias,3,Fremantle
+10,2019,Fremantle,benchmark_estimator,2,Brisbane
+10,2019,Brisbane,tipresias,3,Fremantle
+10,2019,Brisbane,benchmark_estimator,2,Brisbane

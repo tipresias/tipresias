@@ -8,6 +8,7 @@ import {
   FETCH_YEARLY_PREDICTIONS_QUERY,
   FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
 } from '../../graphql';
+import type { fetchYearlyPredictions } from '../../graphql/__generated__/fetchYearlyPredictions';
 import BarChartMain from '../../components/BarChartMain';
 import Select from '../../components/Select';
 import BarChartLoading from '../../components/BarChartLoading';
@@ -22,6 +23,12 @@ type State = {
   year: number
 };
 type Props = {};
+type LoadingType = boolean;
+type ErrorType = any;
+type ResponseType = Object;
+// type FetchYearlyPredictionsType = fetchYearlyPredictions;
+type DataType = { fetchYearlyPredictions: fetchYearlyPredictions }
+
 
 const Widget = styled.div`${WidgetStyles}`;
 
@@ -41,8 +48,10 @@ class Dashboard extends Component<Props, State> {
         <Widget gridColumn="1 / -1">
           <WidgetHeading>Cumulative points per round</WidgetHeading>
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
-            {(response: any): Node => {
-              const { loading, error, data } = response;
+            {(response: ResponseType): Node => {
+              const { loading, error, data }: { loading: LoadingType, error: ErrorType, data: DataType } = response;
+              console.log(data);
+
               if (loading) return <BarChartLoading text="Loading predictions..." />;
               if (error) return <StatusBar text={error.message} error />;
               if (data.fetchYearlyPredictions.predictionsByRound.length === 0) return <StatusBar text="No data found" empty />;

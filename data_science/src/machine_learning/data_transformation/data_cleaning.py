@@ -229,21 +229,24 @@ def _filter_out_dodgy_data(duplicate_subset=None) -> Callable:
 def clean_match_data(
     past_match_data: pd.DataFrame, fixture_data: Optional[pd.DataFrame] = None
 ) -> pd.DataFrame:
-    match_data = (
-        past_match_data.rename(columns=MATCH_COL_TRANSLATIONS)
-        .astype({"year": int, "round_number": int})
-        .pipe(
-            _filter_out_dodgy_data(
-                duplicate_subset=["year", "round_number", "home_team", "away_team"]
+    if any(past_match_data):
+        match_data = (
+            past_match_data.rename(columns=MATCH_COL_TRANSLATIONS)
+            .astype({"year": int, "round_number": int})
+            .pipe(
+                _filter_out_dodgy_data(
+                    duplicate_subset=["year", "round_number", "home_team", "away_team"]
+                )
             )
+            .assign(
+                match_id=_convert_id_to_string("match_id"),
+                home_team=_translate_team_column("home_team"),
+                away_team=_translate_team_column("away_team"),
+            )
+            .drop(["round"], axis=1)
         )
-        .assign(
-            match_id=_convert_id_to_string("match_id"),
-            home_team=_translate_team_column("home_team"),
-            away_team=_translate_team_column("away_team"),
-        )
-        .drop(["round"], axis=1)
-    )
+    else:
+        match_data = pd.DataFrame()
 
     cleaned_fixture_data = clean_fixture_data(fixture_data)
 

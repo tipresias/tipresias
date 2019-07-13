@@ -125,12 +125,17 @@ def fetch_match_results_data(
         pandas.DataFrame with fixture data.
     """
 
-    return pd.DataFrame(
+    match_results = pd.DataFrame(
         _fetch_data(
             "match_results",
             {"start_date": start_date, "end_date": end_date, "fetch_data": fetch_data},
         )
-    ).assign(date=_parse_dates)
+    )
+
+    if any(match_results):
+        return match_results.assign(date=_parse_dates)
+
+    return match_results
 
 
 def fetch_ml_model_info() -> List[MlModel]:

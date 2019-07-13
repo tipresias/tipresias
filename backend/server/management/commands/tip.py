@@ -193,6 +193,9 @@ class Command(BaseCommand):
 
         match_results = self.__fetch_match_results_to_fill(matches_without_results)
 
+        if not any(match_results):
+            return None
+
         for match in matches_without_results:
             self.__update_played_match_scores(match_results, match)
             self.__update_predictions_correctness(match)

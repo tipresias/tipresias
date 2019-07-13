@@ -54,6 +54,15 @@ class FitzroyDataImporter(BaseDataImporter):
         if self.verbose == 1:
             print("Match data received!")
 
+        if not any(data):
+            if self.verbose == 1:
+                print(
+                    f"No match results data found for {start_date} to {end_date}, "
+                    "returning empty data frame"
+                )
+
+            return pd.DataFrame()
+
         return pd.DataFrame(data).assign(date=self._parse_dates)
 
     def get_afltables_stats(

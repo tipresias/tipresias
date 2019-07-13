@@ -36,9 +36,18 @@ script:
   - docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
 
   - docker-compose -f docker-compose.ci.yml run browser_test ./wait-for-it.sh localhost:3000 -- npx cypress run
+before_deploy:
+  - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
+  - docker push cfranklin11/tipresias_backend:latest
+  - docker push cfranklin11/tipresias_data_science:latest
+  - docker push cfranklin11/tipresias_frontend:latest
+  - docker push cfranklin11/tipresias_browser_test:latest
 
+  - docker pull cfranklin11/tipresias_app:latest
+  - docker build --cache-from cfranklin11/tipresias_app:latest -t cfranklin11/tipresias_app:latest .
+  - docker push cfranklin11/tipresias_app:latest
 deploy:
   provider: script
-  script: bash ./scripts/deploy.sh
+  script: ./scripts/deploy.sh
   on:
     branch: master

@@ -60,10 +60,6 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
   - Note: The ESLint rule `"import/no-unresolved"` is disabled, because code editors can't find the `node_modules` inside the docker container, and it made everything red. Also, basic testing should catch erroneous imports anyway.
 - Flow: `docker-compose run --rm frontend yarn run flow`
 
-#### Run R tests
-
-- `docker-compose run --rm afl_data Rscript -e "devtools::test()"`
-
 #### Run end-to-end browser tests
 
 - `docker-compose run --rm browser npx cypress run`
@@ -77,11 +73,6 @@ notebook_1  | [I 03:01:38.909 NotebookApp] Use Control-C to stop this server and
     - In the Travis dashboard, navigate to the tipresias repository.
     - Under 'More Options', trigger a build on `master`.
     - This will build the image, run tests, and deploy to DigitalOcean.
-
-- Deploy `afl_data` to Google Cloud:
-
-  - `gcloud builds submit --config cloudbuild.yaml ./afl_data`
-  - `gcloud beta run deploy $SERVICE_NAME --image gcr.io/$PROJECT_ID/afl_data --memory 2Gi`
 
 - Deploy `machine_learning` to Google Cloud:
   - `docker-compose run --rm data_science sls deploy`

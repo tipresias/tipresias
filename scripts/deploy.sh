@@ -1,12 +1,6 @@
-echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
-docker push cfranklin11/tipresias_backend:latest
-docker push cfranklin11/tipresias_data_science:latest
-docker push cfranklin11/tipresias_frontend:latest
-docker push cfranklin11/tipresias_browser_test:latest
+#!/bin/bash
 
-docker pull cfranklin11/tipresias_app:latest
-docker build --cache-from cfranklin11/tipresias_app:latest -t cfranklin11/tipresias_app:latest .
-docker push cfranklin11/tipresias_app:latest
+set -euo pipefail
 
 sudo chmod 600 ~/.ssh/deploy_rsa
 sudo chmod 755 ~/.ssh

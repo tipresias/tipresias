@@ -6,7 +6,6 @@ services:
       - "8000:8000"
     depends_on:
       - db
-      - data_science
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
@@ -14,20 +13,6 @@ services:
       - SENDGRID_API_KEY=test
       - CI=true
     command: ./scripts/wait-for-it.sh data_science:8008 -- python3 manage.py runserver 0.0.0.0:8000
-  data_science:
-    image: cfranklin11/tipresias_data_science:latest
-    ports:
-      - "8008:8008"
-    depends_on:
-      - afl_data
-    environment:
-      - PYTHON_ENV=development
-    command: python3 app.py
-  afl_data:
-    image: cfranklin11/tipresias_afl_data:latest
-    ports:
-      - "8080:8080"
-    command: Rscript app.R
   frontend:
     image: cfranklin11/tipresias_frontend:latest
     ports:

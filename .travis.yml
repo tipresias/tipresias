@@ -8,28 +8,18 @@ before_install:
   - sudo rm /usr/local/bin/docker-compose
   - sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   - sudo chmod +x /usr/local/bin/docker-compose
-install:
-  - echo "$PUBLIC_KEY" >> $HOME/.ssh/known_hosts
-  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in deploy_rsa.enc -out ~/.ssh/deploy_rsa -d
 before_script:
   - docker pull cfranklin11/tipresias_backend:latest
-  - docker pull cfranklin11/tipresias_data_science:latest
   - docker pull cfranklin11/tipresias_frontend:latest
-  - docker pull cfranklin11/tipresias_afl_data:latest
   - docker pull cfranklin11/tipresias_browser_test:latest
 
   - docker build --cache-from cfranklin11/tipresias_backend:latest -t cfranklin11/tipresias_backend:latest ./backend
-  - docker build --cache-from cfranklin11/tipresias_data_science:latest -t cfranklin11/tipresias_data_science:latest ./data_science
   - docker build --cache-from cfranklin11/tipresias_frontend:latest -t cfranklin11/tipresias_frontend:latest ./frontend
   - docker build --cache-from cfranklin11/tipresias_browser_test:latest -t cfranklin11/tipresias_browser_test:latest ./browser_test
 script:
   - docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
   - docker run cfranklin11/tipresias_backend:latest mypy server project scripts
-  - docker-compose -f docker-compose.ci.yml run backend ./scripts/wait-for-it.sh data_science:8008 -- python3 -Wi manage.py test
-
-  - docker run cfranklin11/tipresias_data_science:latest pylint --disable=R src
-  - docker run cfranklin11/tipresias_data_science:latest mypy src
-  - docker-compose -f docker-compose.ci.yml run data_science kedro test --no-cov
+  - docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
 
   - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
   - docker run cfranklin11/tipresias_frontend:latest yarn run flow
@@ -39,13 +29,15 @@ script:
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_backend:latest
-  - docker push cfranklin11/tipresias_data_science:latest
   - docker push cfranklin11/tipresias_frontend:latest
   - docker push cfranklin11/tipresias_browser_test:latest
 
   - docker pull cfranklin11/tipresias_app:latest
   - docker build --cache-from cfranklin11/tipresias_app:latest -t cfranklin11/tipresias_app:latest .
   - docker push cfranklin11/tipresias_app:latest
+
+  - echo "$PUBLIC_KEY" >> $HOME/.ssh/known_hosts
+  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in deploy_rsa.enc -out ~/.ssh/deploy_rsa -d
 deploy:
   provider: script
   script: ./scripts/deploy.sh

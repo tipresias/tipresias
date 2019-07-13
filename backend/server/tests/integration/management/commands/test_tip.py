@@ -187,7 +187,7 @@ class TestTip(TestCase):
 
 
 @skipIf(
-    os.getenv("CI") == "true",
+    os.getenv("CI", "").lower() == "true",
     "Useful test for subtle, breaking changes, but way too long to run in CI. "
     "Run manually on your machine to be safe",
 )

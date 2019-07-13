@@ -30,11 +30,7 @@ services:
       - backend
     command: yarn start
   data_science:
-    build: ./data_science
-    volumes:
-      - ./data_science:/app
-      - ./.gcloud:/app/.gcloud
-      - /app/node_modules
+    image: cfranklin11/tipresias_data_science:latest
     ports:
       - "8008:8008"
     stdin_open: true
@@ -52,15 +48,6 @@ services:
     stdin_open: true
     tty: true
     command: Rscript app.R
-  notebook:
-    image: tipresias_data_science:latest
-    volumes:
-      - ./data_science:/app
-    ports:
-      - "8888:8888"
-    depends_on:
-      - data_science
-    command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
   db:
     image: postgres
     environment:

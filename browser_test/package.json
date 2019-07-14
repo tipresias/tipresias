@@ -1,5 +1,8 @@
 {
-  "devDependencies": {
-    "cypress": "3.2.0"
-  }
+	"name": "tipresias-browser-test",
+	"version": "0.1.0",
+	"private": true,
+	"devDependencies": {
+		"cypress": "3.2.0"
+	}
 }

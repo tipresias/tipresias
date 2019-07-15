@@ -80,8 +80,9 @@ VENUE_CITIES = {
     "Blacktown": "Sydney",
     "Jiangwan Stadium": "Shanghai",
     "Albury": "Albury",
+    "Riverway Stadium": "Townsville",
     # Footywire venues
-    "AAMI Stadium": "Melbourne",
+    "AAMI Stadium": "Adelaide",
     "ANZ Stadium": "Sydney",
     "UTAS Stadium": "Launceston",
     "Blacktown International": "Sydney",
@@ -99,7 +100,7 @@ VENUE_CITIES = {
     "Westpac Stadium": "Wellington",
     "Marvel Stadium": "Melbourne",
     "Canberra Oval": "Canberra",
-    "Riverway Stadium": "Townsville",
+    "TIO Traeger Park": "Alice Springs",
 }
 
 DEFUNCT_TEAM_NAMES = ["Fitzroy", "University"]

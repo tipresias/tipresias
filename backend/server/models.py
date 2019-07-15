@@ -61,6 +61,15 @@ class Match(models.Model):
         return max(self.teammatch_set.all(), key=lambda tm: tm.score).team
 
     @property
+    def margin(self):
+        if not self.has_been_played:
+            return 0
+
+        return reduce(
+            lambda score_x, score_y: abs(score_x - score_y), self.__match_scores
+        )
+
+    @property
     def year(self):
         return self.start_date_time.year
 

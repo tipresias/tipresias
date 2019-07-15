@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 import itertools
 from dateutil import parser
 
@@ -10,10 +10,13 @@ from server.schema import schema
 from server.tests.fixtures.factories import FullMatchFactory
 from server.models import Match, MLModel
 from server.tests.fixtures.factories import MLModelFactory
+from project.settings.common import MELBOURNE_TIMEZONE
+
 
 ROUND_COUNT = 2
 YEAR_RANGE = (2014, 2016)
 MODEL_NAMES = ["predictanator", "accurate_af"]
+TWENTY_SEVENTEEN = 2017
 
 
 class TestSchema(TestCase):
@@ -26,11 +29,15 @@ class TestSchema(TestCase):
         self.matches = [
             FullMatchFactory(
                 year=year,
+                round_number=((idx % 23) + 1),
+                start_date_time=datetime(
+                    year, 6, (idx % 29) + 1, tzinfo=MELBOURNE_TIMEZONE
+                ),
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
             for year in range(*YEAR_RANGE)
-            for _ in range(ROUND_COUNT)
+            for idx in range(ROUND_COUNT)
         ]
 
     def test_fetch_predictions(self):
@@ -118,6 +125,7 @@ class TestSchema(TestCase):
             """
             query QueryType {
                 fetchYearlyPredictions(year: 2015) {
+                    seasonYear
                     predictionModelNames
                     predictionsByRound {
                         roundNumber
@@ -132,6 +140,7 @@ class TestSchema(TestCase):
         data = executed["data"]["fetchYearlyPredictions"]
 
         self.assertEqual(set(data["predictionModelNames"]), set(ml_model_names))
+        self.assertEqual(data["seasonYear"], 2015)
 
         predictions = data["predictionsByRound"]
 
@@ -173,15 +182,19 @@ class TestSchema(TestCase):
 
     def test_fetch_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
-        year = date.today().year
+        year = TWENTY_SEVENTEEN
 
         latest_matches = [
             FullMatchFactory(
                 year=year,
+                round_number=((idx % 23) + 1),
+                start_date_time=datetime(
+                    year, 6, (idx % 29) + 1, tzinfo=MELBOURNE_TIMEZONE
+                ),
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
-            for _ in range(ROUND_COUNT)
+            for idx in range(ROUND_COUNT)
         ]
 
         executed = self.client.execute(
@@ -236,6 +249,58 @@ class TestSchema(TestCase):
             ml_model_names = [pred["mlModel"]["name"] for pred in predictions]
 
             self.assertEqual(ml_model_names, ["accurate_af"])
+
+    def test_fetch_latest_round_stats(self):
+        ml_models = list(MLModel.objects.all())
+        year = TWENTY_SEVENTEEN
+
+        latest_matches = [
+            FullMatchFactory(
+                year=year,
+                round_number=5,
+                start_date_time=datetime(
+                    year, 6, (idx % 29) + 1, tzinfo=MELBOURNE_TIMEZONE
+                ),
+                prediction__ml_model=ml_models[0],
+                prediction__is_correct=True,
+                prediction_two__ml_model=ml_models[1],
+                prediction_two__is_correct=True,
+            )
+            for idx in range(ROUND_COUNT)
+        ]
+
+        executed = self.client.execute(
+            """
+            query QueryType {
+                fetchLatestRoundStats(mlModelName: "accurate_af") {
+                    seasonYear
+                    roundNumber
+                    modelStats {
+                        modelName
+                        cumulativeCorrectCount
+                        cumulativeMeanAbsoluteError
+                        cumulativeMarginDifference
+                    }
+                }
+            }
+            """
+        )
+
+        data = executed["data"]["fetchLatestRoundStats"]
+
+        max_match_round = max([match.round_number for match in latest_matches])
+        self.assertEqual(data["roundNumber"], max_match_round)
+
+        max_match_year = max([match.year for match in latest_matches])
+        self.assertEqual(max_match_year, data["seasonYear"])
+
+        model_stats = data["modelStats"]
+
+        self.assertEqual("accurate_af", model_stats["modelName"])
+
+        self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
+        self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
+        self.assertGreater(model_stats["cumulativeMarginDifference"], 0)
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

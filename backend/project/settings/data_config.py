@@ -100,6 +100,7 @@ VENUE_CITIES = {
     "Marvel Stadium": "Melbourne",
     "Canberra Oval": "Canberra",
     "Riverway Stadium": "Townsville",
+    "TIO Traeger Park": "Alice Springs",
 }
 
 DEFUNCT_TEAM_NAMES = ["Fitzroy", "University"]

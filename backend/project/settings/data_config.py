@@ -101,6 +101,9 @@ VENUE_CITIES = {
     "Marvel Stadium": "Melbourne",
     "Canberra Oval": "Canberra",
     "TIO Traeger Park": "Alice Springs",
+    # Correct spelling is 'Traeger', but footywire.com is spelling it 'Traegar' in its
+    # fixtures, so including both in case they eventually fix the misspelling
+    "TIO Traegar Park": "Alice Springs",
 }
 
 DEFUNCT_TEAM_NAMES = ["Fitzroy", "University"]

@@ -118,6 +118,19 @@ class TestPrediction(TestCase):
                 home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
             )
 
+        with self.subTest("when predicted margins are less than 0.5"):
+            predicted_winning_margin = 0.4
+            predicted_losing_margin = -0.4
+            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+
+            Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+            prediction = Prediction.objects.first()
+            self.assertEqual(prediction.predicted_margin, 1)
+            self.assertEqual(
+                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+            )
+
     def test_clean(self):
         with self.subTest("when predicted margin rounds to 0"):
             prediction = Prediction(

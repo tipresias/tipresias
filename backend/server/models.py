@@ -213,6 +213,10 @@ class Prediction(models.Model):
 
             if was_created:
                 prediction.full_clean()
+            else:
+                prediction.clean()
+
+            prediction.save()
 
     def clean(self):
         # Judgement call, but I want to avoid 0 predicted margin values for the cases

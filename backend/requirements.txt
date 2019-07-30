@@ -6,7 +6,7 @@ pandas<0.24,>=0.23.0 # Required version for featuretools
 django>=2.2,<2.99
 whitenoise
 graphene>=2.1.5,<2.1.99
-graphene-django==2.2.0 # Can't upgrade to 2.3.x, due to weird graphiql.js bug
+graphene-django==2.4.0 # Can't upgrade to 2.3.x, due to weird graphiql.js bug
 psycopg2-binary
 dj-database-url
 sendgrid>=6.0,<6.99

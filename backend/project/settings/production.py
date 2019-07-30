@@ -9,9 +9,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 ALLOWED_HOSTS = ["tipresias.herokuapp.com", os.environ.get("PRODUCTION_HOST")]
 
-INSTALLED_APPS.extend(
-    ["whitenoise.runserver_nostatic", "django.contrib.staticfiles"]
-)
+INSTALLED_APPS.append("whitenoise.runserver_nostatic")
 
 # Must insert after SecurityMiddleware, which is first in settings/common.py
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
@@ -41,7 +39,5 @@ if os.environ.get("DATABASE_URL"):
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "../", "frontend", "build", "static")]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-STATIC_URL = "/static/"
 WHITENOISE_ROOT = os.path.join(BASE_DIR, "../", "frontend", "build", "root")

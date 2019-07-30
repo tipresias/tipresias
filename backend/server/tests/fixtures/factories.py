@@ -38,8 +38,8 @@ class MatchFactory(DjangoModelFactory):
             tzinfo=MELBOURNE_TIMEZONE,
         )
     )
-    round_number = factory.Faker("pyint", min=1, max=24)
-    venue = VENUES[FAKE.pyint(min=0, max=(len(VENUES) - 1))]
+    round_number = factory.Faker("pyint", min_value=1, max_value=24)
+    venue = VENUES[FAKE.pyint(min_value=0, max_value=(len(VENUES) - 1))]
 
 
 class TeamMatchFactory(DjangoModelFactory):
@@ -49,7 +49,7 @@ class TeamMatchFactory(DjangoModelFactory):
     team = factory.SubFactory(TeamFactory)
     match = factory.SubFactory(MatchFactory)
     at_home = factory.Faker("pybool")
-    score = factory.Faker("pyint", min=50, max=150)
+    score = factory.Faker("pyint", min_value=50, max_value=150)
 
 
 class MLModelFactory(DjangoModelFactory):
@@ -69,7 +69,7 @@ class PredictionFactory(DjangoModelFactory):
     match = factory.SubFactory(MatchFactory)
     ml_model = factory.SubFactory(MLModelFactory)
     predicted_winner = factory.SubFactory(TeamFactory)
-    predicted_margin = factory.Faker("pyint", min=0, max=50)
+    predicted_margin = factory.Faker("pyint", min_value=0, max_value=50)
     is_correct = factory.Faker("pybool")
 
 

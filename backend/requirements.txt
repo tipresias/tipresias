@@ -1,6 +1,6 @@
 # Data packages
 numpy
-pandas<0.24,>=0.23.0 # Required version for featuretools
+pandas>=0.23.0,<0.26 # Required version for featuretools
 
 # App packages
 django>=2.2,<2.99

@@ -5,15 +5,16 @@ from dateutil import parser
 from django.test import TestCase
 from graphene.test import Client
 import numpy as np
+from freezegun import freeze_time
 
 from server.schema import schema
 from server.tests.fixtures.factories import FullMatchFactory
 from server.models import Match, MLModel
 from server.tests.fixtures.factories import MLModelFactory
-from project.settings.common import MELBOURNE_TIMEZONE
+from project.settings.common import MELBOURNE_TIMEZONE, HOURS_FROM_UTC_TO_MELBOURNE
 
 
-ROUND_COUNT = 2
+ROUND_COUNT = 4
 YEAR_RANGE = (2014, 2016)
 MODEL_NAMES = ["predictanator", "accurate_af"]
 TWENTY_SEVENTEEN = 2017
@@ -252,14 +253,15 @@ class TestSchema(TestCase):
 
     def test_fetch_latest_round_stats(self):
         ml_models = list(MLModel.objects.all())
-        year = TWENTY_SEVENTEEN
+        YEAR = TWENTY_SEVENTEEN
+        MONTH = 6
 
         latest_matches = [
             FullMatchFactory(
-                year=year,
-                round_number=5,
+                year=YEAR,
+                round_number=(idx + 1),
                 start_date_time=datetime(
-                    year, 6, (idx % 29) + 1, tzinfo=MELBOURNE_TIMEZONE
+                    YEAR, MONTH, (idx % 29) + 1, tzinfo=MELBOURNE_TIMEZONE
                 ),
                 prediction__ml_model=ml_models[0],
                 prediction__is_correct=True,
@@ -269,8 +271,7 @@ class TestSchema(TestCase):
             for idx in range(ROUND_COUNT)
         ]
 
-        executed = self.client.execute(
-            """
+        query = """
             query QueryType {
                 fetchLatestRoundStats(mlModelName: "accurate_af") {
                     seasonYear
@@ -284,7 +285,8 @@ class TestSchema(TestCase):
                 }
             }
             """
-        )
+
+        executed = self.client.execute(query)
 
         data = executed["data"]["fetchLatestRoundStats"]
 
@@ -301,6 +303,27 @@ class TestSchema(TestCase):
         self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
         self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
         self.assertGreater(model_stats["cumulativeMarginDifference"], 0)
+
+        with self.subTest("when the last matches haven't been played yet"):
+            DAY = 3
+
+            with freeze_time(
+                f"{YEAR}-0{MONTH}-0{DAY}", tz_offset=-HOURS_FROM_UTC_TO_MELBOURNE
+            ):
+                past_executed = self.client.execute(query)
+
+                data = past_executed["data"]["fetchLatestRoundStats"]
+
+                self.assertLess(data["roundNumber"], max_match_round)
+                # Last played match will be from day before, because "now" and the
+                # start time for "today's match" are equal
+                self.assertEqual(data["roundNumber"], DAY - 1)
+
+                model_stats = data["modelStats"]
+
+                self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
+                self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
+                self.assertGreater(model_stats["cumulativeMarginDifference"], 0)
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

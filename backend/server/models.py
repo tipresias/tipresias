@@ -86,7 +86,7 @@ class Match(models.Model):
         # We need to check the scores in case the data hasn't been updated since the
         # match was played, because as far as the data is concerned it hasn't, even though
         # the date has passed.
-        return self.__has_score and match_end_time < datetime.now(MELBOURNE_TIMEZONE)
+        return self.__has_score and match_end_time < datetime.now(tz=MELBOURNE_TIMEZONE)
 
     @property
     def __has_score(self):

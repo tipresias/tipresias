@@ -1,5 +1,5 @@
 from typing import List, cast, Optional
-from datetime import date
+from datetime import datetime
 
 import graphene
 from graphene_django.types import DjangoObjectType
@@ -8,6 +8,7 @@ import pandas as pd
 from mypy_extensions import TypedDict
 
 from server.models import Prediction, MLModel, TeamMatch, Match, Team
+from project.settings.common import MELBOURNE_TIMEZONE
 
 
 ModelPrediction = TypedDict(
@@ -237,7 +238,8 @@ class Query(graphene.ObjectType):
     )
 
     fetch_yearly_predictions = graphene.Field(
-        SeasonType, year=graphene.Int(default_value=date.today().year)
+        SeasonType,
+        year=graphene.Int(default_value=datetime.now(tz=MELBOURNE_TIMEZONE).year),
     )
 
     fetch_latest_round_predictions = graphene.Field(
@@ -297,17 +299,20 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     def resolve_fetch_latest_round_stats(_root, _info, ml_model_name) -> ModelStats:
-        max_match = (
-            Match.objects.filter(start_date_time__lt=date.today())
+        max_played_match = (
+            Match.objects.filter(
+                start_date_time__lt=datetime.now(tz=MELBOURNE_TIMEZONE)
+            )
             .order_by("-start_date_time")
             .first()
         )
+        max_year = max_played_match.start_date_time.year
 
         query_set = (
             Prediction.objects.filter(
-                match__start_date_time__year=max_match.start_date_time.year,
+                match__start_date_time__year=max_year,
                 ml_model__name=ml_model_name,
-                match__start_date_time__lt=date.today(),
+                match__start_date_time__lt=datetime.now(tz=MELBOURNE_TIMEZONE),
             )
             .select_related("match", "ml_model")
             .order_by("match__start_date_time")
@@ -367,7 +372,7 @@ class Query(graphene.ObjectType):
             .rename("cumulative_mean_absolute_error")
         )
 
-        latest_round_cumulative_stats = (
+        cumulative_stats = (
             pd.DataFrame(prediction_data)
             .assign(
                 cumulative_correct_count=calculate_cumulative_correct,
@@ -375,13 +380,14 @@ class Query(graphene.ObjectType):
             )
             .assign(cumulative_margin_difference=calculate_sae)
             .assign(cumulative_mean_absolute_error=calculate_mae)
-            .query("match__round_number == @max_match.round_number")
         )
 
+        last_cumulative_stats = cumulative_stats.iloc[-1, :]
+
         return {
-            "season_year": max_match.start_date_time.year,
-            "round_number": max_match.round_number,
-            "model_stats": latest_round_cumulative_stats.iloc[-1, :].to_dict(),
+            "season_year": max_year,
+            "round_number": last_cumulative_stats["match__round_number"],
+            "model_stats": last_cumulative_stats.to_dict(),
         }
 
 

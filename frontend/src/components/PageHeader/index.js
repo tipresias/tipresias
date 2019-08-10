@@ -10,7 +10,7 @@ const { logo } = images;
 const Header = styled.header`
   grid-column: 1 / -1;
   position relative;
-  background-color: white;
+  background-color: rgb(250,250,250);
   border-bottom: 1px solid rgba(0,0,0,.125);
   display: flex;
   justify-content: space-around;

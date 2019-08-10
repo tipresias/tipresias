@@ -23,8 +23,7 @@ export const WidgetStyles = css`
 `;
 
 export const WidgetHeading = styled.h3`
-  font-style: bold;
-  font-size: 0.8rem;
+  font-style: normal;
   color: #373a3c;
   letter-spacing: 0;
   text-align: left;

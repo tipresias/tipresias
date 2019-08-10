@@ -1,8 +1,36 @@
 // @flow
 import React from 'react';
 import type { Node } from 'react';
+import styled from 'styled-components/macro';
 import { dataTransformer } from './dataTransformer';
 import type { MatchesType } from '../../types';
+
+const StyledTable = styled.table`
+  border-collapse: collapse;
+  width: 100%;
+`;
+
+const StyledCaption = styled.caption`
+  margin-bottom: .5rem;
+  font-style: italic;
+  text-align: left;
+`;
+
+const StyledTableHeading = styled.th`
+font-weight: 700;
+white-space: nowrap;
+background: #fff;
+color: #000;
+border-bottom: 4px solid black;
+padding: 0.5rem 0.75rem;
+text-align: left;
+`;
+
+const StyledDataCell = styled.td`
+border: 2px solid rgba(0,0,0,0.3);
+padding: 0.75rem;
+text-align: left;
+`;
 
 type Props = {
   caption: string,
@@ -17,13 +45,13 @@ const Table = ({ caption, headers, rows }: Props): Node => {
   const rowsArray = dataTransformer(rows);
 
   return (
-    <table>
-      {caption && <caption>{caption}</caption>}
+    <StyledTable>
+      {caption && <StyledCaption>{caption}</StyledCaption>}
       <tbody>
         <tr>
           {
             headers && headers.length > 0 && headers.map(item => (
-              <th scope="col" key={item}>{item}</th>
+              <StyledTableHeading scope="col" key={item}>{item}</StyledTableHeading>
             ))
           }
         </tr>
@@ -31,13 +59,13 @@ const Table = ({ caption, headers, rows }: Props): Node => {
           rowsArray && rowsArray.length > 0 && rowsArray.map(row => (
             <tr key={Math.random()}>
               {row.map(value => (
-                <td key={value}>{value}</td>
+                <StyledDataCell key={value}>{value}</StyledDataCell>
               ))}
             </tr>
           ))
         }
       </tbody>
-    </table>
+    </StyledTable>
   );
 };
 

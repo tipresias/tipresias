@@ -7,7 +7,6 @@ export const AppContainerStyled = styled.div`
   grid-template-rows: 80px auto 80px;
   grid-gap: 5px;
   grid-auto-flow: column;
-  font-family: sans-serif;
   @media (min-width: 768px) {
     grid-template-columns: 40px auto 40px;
     grid-gap: 0.5rem;

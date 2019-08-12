@@ -5,7 +5,7 @@
   "dependencies": {
     "@babel/core": "^7.0.0-0",
     "apollo-boost": "^0.3.1",
-    "apollo-client": "^2.5.1",
+    "apollo-client": "^2.6.4",
     "d3": "^5.7.0",
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.6.0",

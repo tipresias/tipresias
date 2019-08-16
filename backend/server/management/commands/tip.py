@@ -55,13 +55,17 @@ class Command(BaseCommand):
         self.data_importer.verbose = verbose
 
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
-        upcoming_round = fixture_data_frame["round_number"].min()
+        upcoming_round = (
+            fixture_data_frame.query("date > @self.right_now")
+            .loc[:, "round_number"]
+            .min()
+        )
 
         if fixture_data_frame is None:
             raise ValueError("Could not fetch data.")
 
         saved_match_count = Match.objects.filter(
-            start_date_time__gt=self.right_now
+            start_date_time__gt=self.right_now, round_number=upcoming_round
         ).count()
 
         if saved_match_count == 0:
@@ -100,12 +104,12 @@ class Command(BaseCommand):
             start_date=f"{year}-01-01", end_date=f"{year}-12-31"
         )
 
-        latest_match = fixture_data_frame["date"].max()
+        latest_match_date = fixture_data_frame["date"].max()
 
-        if self.right_now > latest_match:
+        if self.right_now > latest_match_date:
             raise ValueError(
                 f"No matches found after {self.right_now}. The latest match found is "
-                f"at {latest_match}\n"
+                f"at {latest_match_date}\n"
             )
 
         return fixture_data_frame

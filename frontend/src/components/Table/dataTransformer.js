@@ -7,6 +7,8 @@ type NewDataSet = Array<Array<string>>;
 // eslint-disable-next-line import/prefer-default-export
 export const dataTransformer = (previousDataSet: MatchesType): NewDataSet => {
   const newDataSet = previousDataSet.reduce((acc, currentitem, currentIndex) => {
+    if (currentitem.predictions.length === 0) throw new Error();
+
     acc[currentIndex] = acc[currentIndex] || [];
 
     const homeTeam = currentitem.homeTeam.name;

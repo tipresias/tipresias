@@ -73,4 +73,18 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
         }
       }
    }
-  }`;
+}`;
+
+export const FETCH_LATEST_ROUND_STATS = gql`
+  query {
+  fetchLatestRoundStats{
+    seasonYear
+    roundNumber
+    modelStats{
+      modelName
+      cumulativeCorrectCount
+      cumulativeMeanAbsoluteError
+      cumulativeMarginDifference
+    }
+   }
+}`;

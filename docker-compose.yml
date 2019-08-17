@@ -31,6 +31,8 @@ services:
     command: yarn start
   data_science:
     image: cfranklin11/tipresias_data_science:latest
+    volumes:
+      - ./data:/app/data
     ports:
       - "8008:8008"
     stdin_open: true

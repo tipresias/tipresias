@@ -77,7 +77,7 @@ venv.bak/
 node_modules
 
 # Data files
-/data
+data
 
 # Dev stuff
 .git

@@ -39,17 +39,20 @@ class Command(BaseCommand):
     def handle(self, *_args, **_kwargs):
         """Run 'send_email' command"""
 
-        latest_match = Match.objects.latest("start_date_time")
-        latest_year = latest_match.start_date_time.year
-        latest_round = latest_match.round_number
+        right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
+        upcoming_match = Match.objects.filter(start_date_time__gt=right_now).earliest(
+            "start_date_time"
+        )
+        upcoming_match_year = upcoming_match.start_date_time.year
+        upcoming_round = upcoming_match.round_number
 
-        latest_round_predictions = (
+        upcoming_round_predictions = (
             Prediction.objects.filter(
                 ml_model__name="tipresias",
                 match__start_date_time__gt=datetime(
-                    latest_year, JAN, FIRST, tzinfo=MELBOURNE_TIMEZONE
+                    upcoming_match_year, JAN, FIRST, tzinfo=MELBOURNE_TIMEZONE
                 ),
-                match__round_number=latest_round,
+                match__round_number=upcoming_round,
             )
             .select_related("match")
             .prefetch_related("match__teammatch_set")
@@ -58,10 +61,10 @@ class Command(BaseCommand):
 
         prediction_rows = [
             self.__map_prediction_to_row(prediction)
-            for prediction in latest_round_predictions
+            for prediction in upcoming_round_predictions
         ]
 
-        self.__send_tips_email(prediction_rows, latest_round)
+        self.__send_tips_email(prediction_rows, upcoming_round)
 
     @staticmethod
     def __map_prediction_to_row(prediction: Prediction) -> List[Union[str, int]]:

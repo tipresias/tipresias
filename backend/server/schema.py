@@ -99,7 +99,7 @@ class CumulativePredictionsByRoundType(graphene.ObjectType):
         ),
         default_value=0,
     )
-    cumulative_mean_absolute_error = graphene.Int(
+    cumulative_mean_absolute_error = graphene.Float(
         description="Cumulative mean absolute error for the given season",
         default_value=0,
     )
@@ -370,8 +370,9 @@ class Query(graphene.ObjectType):
         )
 
         calculate_mae = (
-            lambda df: df.expanding()["cumulative_margin_difference"]
+            lambda df: df.expanding()["margin_diff"]
             .mean()
+            .round(2)
             .rename("cumulative_mean_absolute_error")
         )
 

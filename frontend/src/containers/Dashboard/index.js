@@ -118,7 +118,7 @@ class Dashboard extends Component<Props, State> {
                         value: modelStats.cumulativeMeanAbsoluteError,
                       },
                       {
-                        id: 1,
+                        id: 3,
                         key: 'Cumulative Margin Difference',
                         value: modelStats.cumulativeMarginDifference,
                       },

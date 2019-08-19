@@ -13,7 +13,7 @@ export const DashboardContainerStyled = styled.div`
 
 export const WidgetStyles = css`
   margin-top: 2rem;
-  background-color: #fff;
+  // background-color: #fff;
   border-radius: 0.25rem;
   box-shadow: 0 0.3rem 0.25rem rgba(0,0,0,0.05);
   @media (min-width: 768px) {
@@ -24,7 +24,7 @@ export const WidgetStyles = css`
 
 export const WidgetHeading = styled.h3`
   font-style: normal;
-  color: #373a3c;
+  // color: #373a3c;
   letter-spacing: 0;
   text-align: left;
 `;

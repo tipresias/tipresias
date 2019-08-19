@@ -10,7 +10,7 @@ const { logo } = images;
 const Header = styled.header`
   grid-column: 1 / -1;
   position relative;
-  background-color: rgb(250,250,250);
+  // background-color: rgb(250,250,250);
   border-bottom: 1px solid rgba(0,0,0,.125);
   display: flex;
   justify-content: space-around;
@@ -53,6 +53,7 @@ const TextLink = styled.a`
   line-height: 48px;
   display: inline-block;
   font-size: 1rem;
+  color: ${props => props.theme.dark.color};
   @media (min-width: 768px){
     line-height: 72px;
     padding: 0 16px;

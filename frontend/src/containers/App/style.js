@@ -7,6 +7,8 @@ export const AppContainerStyled = styled.div`
   grid-template-rows: 80px auto 80px;
   grid-gap: 5px;
   grid-auto-flow: column;
+  background-color: ${props => props.theme.dark.backgroundColor};
+  color: ${props => props.theme.dark.color};
   @media (min-width: 768px) {
     grid-template-columns: 40px auto 40px;
     grid-gap: 0.5rem;

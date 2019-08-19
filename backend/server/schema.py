@@ -99,7 +99,7 @@ class CumulativePredictionsByRoundType(graphene.ObjectType):
         ),
         default_value=0,
     )
-    cumulative_mean_absolute_error = graphene.Int(
+    cumulative_mean_absolute_error = graphene.Float(
         description="Cumulative mean absolute error for the given season",
         default_value=0,
     )
@@ -212,17 +212,20 @@ class SeasonType(graphene.ObjectType):
             for value in df.index.levels[0]
         ]
 
+        query_set_data_frame = pd.DataFrame(list(query_set))
+
+        if round_number is not None:
+            query_set_data_frame = query_set_data_frame.query(
+                "match__round_number == @round_number"
+            )
+
         round_predictions = (
-            pd.DataFrame(list(query_set))
-            .assign(cumulative_correct_count=calculate_cumulative_correct)
+            query_set_data_frame.assign(
+                cumulative_correct_count=calculate_cumulative_correct
+            )
             .groupby(["match__round_number", "ml_model__name"])
             .mean()
         )
-
-        if round_number is not None:
-            round_predictions = round_predictions.query(
-                "match__round_number == @round_number"
-            )
 
         return round_predictions.pipe(collect_round_predictions)
 
@@ -367,8 +370,9 @@ class Query(graphene.ObjectType):
         )
 
         calculate_mae = (
-            lambda df: df.expanding()["cumulative_margin_difference"]
+            lambda df: df.expanding()["margin_diff"]
             .mean()
+            .round(2)
             .rename("cumulative_mean_absolute_error")
         )
 

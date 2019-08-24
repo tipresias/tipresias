@@ -19,15 +19,14 @@ const StyledCaption = styled.caption`
 const StyledTableHeading = styled.th`
 font-weight: 700;
 white-space: nowrap;
-background: #fff;
-color: #000;
-border-bottom: 4px solid black;
+color: ${props => props.theme.colors.textColor};
+border-bottom: 4px solid ${props => props.theme.colors.tableBorderColor};
 padding: 0.5rem 0.75rem;
 text-align: left;
 `;
 
 const StyledDataCell = styled.td`
-border: 2px solid rgba(0,0,0,0.3);
+border: 2px solid ${props => props.theme.colors.tableBorderColor};
 padding: 0.75rem;
 text-align: left;
 `;

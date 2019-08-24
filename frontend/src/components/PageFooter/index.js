@@ -10,9 +10,9 @@ const Footer = styled.footer`
   grid-column: 1 / -1;
   text-align: center;
   font-size: 1rem;
-  color: #373a3c;
+  color: ${props => props.theme.colors.textColor};
   a {
-    color: #373a3c;
+    color: ${props => props.theme.colors.textColor};
   }
 `;
 
@@ -20,6 +20,7 @@ const Isotype = styled.img`
   height: 18px;
   width: auto;
   margin: 0 5px;
+  filter: ${props => props.theme.colors.logoFilter};
 `;
 
 const PageFooter = (): Node => (

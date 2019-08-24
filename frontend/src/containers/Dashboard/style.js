@@ -13,20 +13,22 @@ export const DashboardContainerStyled = styled.div`
 
 export const WidgetStyles = css`
   margin-top: 2rem;
-  // background-color: #fff;
+  background-color: ${props => props.theme.colors.widgetBackground};
+  border: 1px solid ${props => props.theme.colors.widgetBorderColor};
   border-radius: 0.25rem;
-  box-shadow: 0 0.3rem 0.25rem rgba(0,0,0,0.05);
+  box-shadow: ${props => props.theme.colors.widgetBoxShadow};
   @media (min-width: 768px) {
     grid-column: ${props => props.gridColumn};
-    padding: 1rem;
+    padding: 3rem;
   }
 `;
 
 export const WidgetHeading = styled.h3`
   font-style: normal;
-  // color: #373a3c;
+  color: ${props => props.theme.colors.textColor};
   letter-spacing: 0;
   text-align: left;
+  margin-top: 0;
 `;
 
 export const WidgetFooter = styled.div`

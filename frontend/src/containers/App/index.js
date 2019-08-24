@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Route, BrowserRouter as Router } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
-import styled from 'styled-components/macro';
 import darkTheme from '../../themes/dark';
 import lightTheme from '../../themes/light';
 import PageHeader from '../../components/PageHeader';

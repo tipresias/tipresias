@@ -16,5 +16,6 @@ const withApollo = Component => (
 );
 const AppWithApollo = withApollo(App);
 
+
 ReactDOM.render(AppWithApollo, document.getElementById('root'));
 registerServiceWorker();

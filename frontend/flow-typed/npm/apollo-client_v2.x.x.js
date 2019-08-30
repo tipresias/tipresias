@@ -1,5 +1,5 @@
-// flow-typed signature: 53f207611e7e338f0e1d49829ea1b2ea
-// flow-typed version: 967fda21e4/apollo-client_v2.x.x/flow_>=v0.57.x
+// flow-typed signature: 3bcc4d06dca7d9dbb6d4b9da1ba1fb64
+// flow-typed version: c6154227d1/apollo-client_v2.x.x/flow_>=v0.104.x
 
 declare module "apollo-client" {
   /**
@@ -9,13 +9,14 @@ declare module "apollo-client" {
   declare type DocumentNode = any;
   declare type ExecutionResult<T> = {
     data?: T,
-    extensions?: { [string]: any },
-    errors?: any[]
+    extensions?: { [string]: any, ... },
+    errors?: any[],
+    ...
   };
   declare type GraphQLError = any;
   /** End From graphql */
 
-  declare type OperationVariables = { [key: string]: any };
+  declare type OperationVariables = { [key: string]: any, ... };
 
   declare export function print(ast: any): string;
 
@@ -24,7 +25,7 @@ declare module "apollo-client" {
   > {
     options: WatchQueryOptions;
     queryId: string;
-    variables: { [key: string]: any };
+    variables: { [key: string]: any, ... };
     isCurrentlyPolling: boolean;
     shouldSubscribe: boolean;
     isTornDown: boolean;
@@ -34,12 +35,13 @@ declare module "apollo-client" {
     subscriptionHandles: SubscriptionLINK[];
     lastResult: ApolloQueryResult<T>;
     lastError: ApolloError;
-    lastVariables: { [key: string]: any };
+    lastVariables: { [key: string]: any, ... };
 
     constructor(data: {
       scheduler: QueryScheduler<any>,
       options: WatchQueryOptions,
-      shouldSubscribe?: boolean
+      shouldSubscribe?: boolean,
+      ...
     }): this;
 
     result(): Promise<ApolloQueryResult<T>>;
@@ -79,7 +81,8 @@ declare module "apollo-client" {
       queryDeduplication?: boolean,
       store: DataStore<TStore>,
       onBroadcast?: () => void,
-      ssrMode?: boolean
+      ssrMode?: boolean,
+      ...
     }): this;
 
     mutate<T>(options: MutationOptions<>): Promise<FetchResult<T>>;
@@ -124,7 +127,7 @@ declare module "apollo-client" {
   }
 
   declare class QueryStore {
-    getStore(): { [queryId: string]: QueryStoreValue };
+    getStore(): { [queryId: string]: QueryStoreValue, ... };
     get(queryId: string): QueryStoreValue;
     initQuery(query: {
       queryId: string,
@@ -134,7 +137,8 @@ declare module "apollo-client" {
       isPoll: boolean,
       isRefetch: boolean,
       metadata: any,
-      fetchMoreForQueryId: string | void
+      fetchMoreForQueryId: string | void,
+      ...
     }): void;
     markQueryResult(
       queryId: string,
@@ -152,13 +156,14 @@ declare module "apollo-client" {
   }
 
   declare class QueryScheduler<TCacheShape> {
-    inFlightQueries: { [queryId: string]: WatchQueryOptions };
-    registeredQueries: { [queryId: string]: WatchQueryOptions };
-    intervalQueries: { [interval: number]: string[] };
+    inFlightQueries: { [queryId: string]: WatchQueryOptions, ... };
+    registeredQueries: { [queryId: string]: WatchQueryOptions, ... };
+    intervalQueries: { [interval: number]: string[], ... };
     queryManager: QueryManager<TCacheShape>;
     constructor({
       queryManager: QueryManager<TCacheShape>,
-      ssrMode?: boolean
+      ssrMode?: boolean,
+      ...
     }): this;
     checkInFlight(queryId: string): ?boolean;
     fetchQuery<T>(
@@ -203,21 +208,24 @@ declare module "apollo-client" {
       mutationId: string,
       document: DocumentNode,
       variables: any,
-      updateQueries: { [queryId: string]: QueryWithUpdater },
+      updateQueries: { [queryId: string]: QueryWithUpdater, ... },
       update: ((proxy: DataProxy, mutationResult: Object) => void) | void,
-      optimisticResponse: Object | Function | void
+      optimisticResponse: Object | Function | void,
+      ...
     }): void;
     markMutationResult(mutation: {
       mutationId: string,
       result: ExecutionResult<>,
       document: DocumentNode,
       variables: any,
-      updateQueries: { [queryId: string]: QueryWithUpdater },
-      update: ((proxy: DataProxy, mutationResult: Object) => void) | void
+      updateQueries: { [queryId: string]: QueryWithUpdater, ... },
+      update: ((proxy: DataProxy, mutationResult: Object) => void) | void,
+      ...
     }): void;
     markMutationComplete({
       mutationId: string,
-      optimisticResponse?: any
+      optimisticResponse?: any,
+      ...
     }): void;
     markUpdateQueryResult(
       document: DocumentNode,
@@ -229,7 +237,8 @@ declare module "apollo-client" {
 
   declare type QueryWithUpdater = {
     updater: MutationQueryReducer<Object>,
-    query: QueryStoreValue
+    query: QueryStoreValue,
+    ...
   };
 
   declare interface MutationStoreValue {
@@ -240,7 +249,7 @@ declare module "apollo-client" {
   }
 
   declare class MutationStore {
-    getStore(): { [mutationId: string]: MutationStoreValue };
+    getStore(): { [mutationId: string]: MutationStoreValue, ... };
     get(mutationId: string): MutationStoreValue;
     initMutation(
       mutationId: string,
@@ -254,7 +263,8 @@ declare module "apollo-client" {
       previousQueryResult: TData,
       options: {
         fetchMoreResult?: TData,
-        variables: TVariables
+        variables: TVariables,
+        ...
       }
     ) => TData;
   }
@@ -264,33 +274,36 @@ declare module "apollo-client" {
   }
 
   declare export type ApolloCurrentResult<T> = {
-    data: T | {},
+    data: T | {...},
     errors?: Array<GraphQLError>,
     loading: boolean,
     networkStatus: NetworkStatus,
     error?: ApolloError,
-    partial?: boolean
+    partial?: boolean,
+    ...
   };
 
   declare export type ModifiableWatchQueryOptions = {
-    variables?: { [key: string]: any };
-    pollInterval?: number;
-    fetchPolicy?: FetchPolicy;
-    errorPolicy?: ErrorPolicy;
-    fetchResults?: boolean;
-    notifyOnNetworkStatusChange?: boolean;
+    variables?: { [key: string]: any, ... },
+    pollInterval?: number,
+    fetchPolicy?: FetchPolicy,
+    errorPolicy?: ErrorPolicy,
+    fetchResults?: boolean,
+    notifyOnNetworkStatusChange?: boolean,
+    ...
   }
 
   declare export type WatchQueryOptions = {
     ...$Exact<ModifiableWatchQueryOptions>,
-    query: DocumentNode;
-    metadata?: any;
-    context?: any;
+    query: DocumentNode,
+    metadata?: any,
+    context?: any,
+    ...
   }
 
   declare type RefetchQueryDescription = Array<string | PureQueryOptions>;
 
-  declare interface MutationBaseOptions<T = { [key: string]: any }> {
+  declare interface MutationBaseOptions<T = { [key: string]: any, ... }> {
     optimisticResponse?: Object | Function;
     updateQueries?: MutationQueryReducersMap<T>;
     optimisticResponse?: Object;
@@ -304,7 +317,7 @@ declare module "apollo-client" {
 
   declare export type MutationOperation<T = Object> = (options: MutationBaseOptions<T>) => Promise<FetchResult<T>>
 
-  declare export interface MutationOptions<T = { [key: string]: any }>
+  declare export interface MutationOptions<T = { [key: string]: any, ... }>
     extends MutationBaseOptions<T> {
     mutation: DocumentNode;
     context?: any;
@@ -312,8 +325,9 @@ declare module "apollo-client" {
   }
 
   declare export type SubscriptionOptions = {
-    query: DocumentNode;
-    variables?: { [key: string]: any };
+    query: DocumentNode,
+    variables?: { [key: string]: any, ... },
+    ...
   }
 
   declare export type FetchPolicy =
@@ -340,11 +354,13 @@ declare module "apollo-client" {
     updateQuery?: (
       previousResult: TData,
       result: {
-        subscriptionData: { data?: TSubscriptionData },
-        variables: TSubscriptionVariables
+        subscriptionData: { data?: TSubscriptionData, ... },
+        variables: TSubscriptionVariables,
+        ...
       }
     ) => TData,
-    onError?: (error: Error) => void
+    onError?: (error: Error) => void,
+    ...
   };
 
   declare export type MutationUpdaterFn<T = OperationVariables> = (
@@ -366,12 +382,14 @@ declare module "apollo-client" {
     networkStatus: NetworkStatus,
     networkError: Error | null,
     graphQLErrors: GraphQLError[],
-    metadata: any
+    metadata: any,
+    ...
   };
 
   declare export type PureQueryOptions = {
     query: DocumentNode,
-    variables?: { [key: string ]: any },
+    variables?: { [key: string ]: any, ... },
+    ...
   };
 
   declare export type ApolloQueryResult<T> = {
@@ -379,23 +397,23 @@ declare module "apollo-client" {
     errors?: Array<GraphQLError>,
     loading: boolean,
     networkStatus: NetworkStatus,
-    stale: boolean
+    stale: boolean,
+    ...
   };
 
   declare export type FetchType = 1 | 2 | 3;
 
   declare export type MutationQueryReducer<T> = (
-    previousResult: { [key: string]: any },
+    previousResult: { [key: string]: any, ... },
     options: {
       mutationResult: FetchResult<T>,
       queryName: string | void,
-      queryVariables: { [key: string]: any }
+      queryVariables: { [key: string]: any, ... },
+      ...
     }
-  ) => { [key: string]: any };
+  ) => { [key: string]: any, ... };
 
-  declare export type MutationQueryReducersMap<T = { [key: string]: any }> = {
-    [queryName: string]: MutationQueryReducer<T>
-  };
+  declare export type MutationQueryReducersMap<T = { [key: string]: any, ... }> = { [queryName: string]: MutationQueryReducer<T>, ... };
 
   declare export class ApolloError extends Error {
     message: string;
@@ -425,7 +443,8 @@ declare module "apollo-client" {
     ssrForceFetchDelay?: number,
     connectToDevTools?: boolean,
     queryDeduplication?: boolean,
-    defaultOptions?: DefaultOptions
+    defaultOptions?: DefaultOptions,
+    ...
   };
 
   declare export class ApolloClient<TCacheShape> {
@@ -498,26 +517,30 @@ declare module "apollo-client" {
 
   declare interface GraphQLRequest {
     query: DocumentNode;
-    variables?: { [key: string]: any };
+    variables?: { [key: string]: any, ... };
     operationName?: string;
-    context?: { [key: string]: any };
-    extensions?: { [key: string]: any };
+    context?: { [key: string]: any, ... };
+    extensions?: { [key: string]: any, ... };
   }
 
   declare interface Operation {
     query: DocumentNode;
-    variables: { [key: string]: any };
+    variables: { [key: string]: any, ... };
     operationName: string;
-    extensions: { [key: string]: any };
-    setContext: (context: { [key: string]: any }) => { [key: string]: any };
-    getContext: () => { [key: string]: any };
+    extensions: { [key: string]: any, ... };
+    setContext: (context: { [key: string]: any, ... }) => { [key: string]: any, ... };
+    getContext: () => { [key: string]: any, ... };
     toKey: () => string;
   }
 
   declare export type FetchResult<
-    C = { [key: string]: any },
-    E = { [key: string]: any }
-  > = ExecutionResult<C> & { extension?: E, context?: C };
+    C = { [key: string]: any, ... },
+    E = { [key: string]: any, ... }
+  > = ExecutionResult<C> & {
+    extension?: E,
+    context?: C,
+    ...
+  };
 
   declare type NextLink = (operation: Operation) => Observable<FetchResult<>>;
 
@@ -699,7 +722,8 @@ declare module "apollo-client" {
 
   declare type DataProxyDiffResult<T> = {
     result?: T,
-    complete?: boolean
+    complete?: boolean,
+    ...
   };
 
   declare interface DataProxy {

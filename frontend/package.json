@@ -28,7 +28,8 @@
     "build": "react-scripts build",
     "test:eslint": "yarn run eslint 'src/**/*.js' --ext .jsx --ext .js",
     "test:flow": "yarn flow",
-    "test:unit": "react-scripts test --env=jsdom"
+    "test:unit": "react-scripts test --env=jsdom",
+    "storybook": "start-storybook"
   },
   "devDependencies": {
     "@babel/plugin-proposal-class-properties": "^7.4.4",
@@ -36,6 +37,7 @@
     "@babel/preset-env": "^7.4.4",
     "@babel/preset-flow": "^7.0.0",
     "@babel/preset-react": "^7.0.0",
+    "@storybook/react": "^5.1.11",
     "babel-cli": "^6.26.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-airbnb-base": "^13.1.0",

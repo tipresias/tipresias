@@ -7,6 +7,14 @@ FROM python:3.6@sha256:00110125bd9c23f200cfd2cfa82e68b8ab2006e1358f7a048e005794a
 # Adding backend directory to make absolute filepaths consistent in dev & prod
 WORKDIR /app/backend
 
+# Install firefox & geckodriver for use by selenium
+RUN apt-get update \
+  && apt-get -y install firefox-esr \
+  && wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz \
+  && tar -xvzf geckodriver* \
+  && chmod +x geckodriver \
+  && mv geckodriver /usr/local/bin/
+
 # Install Python dependencies
 COPY requirements.txt /app/backend
 RUN pip3 install --upgrade pip -r requirements.txt

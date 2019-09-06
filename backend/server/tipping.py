@@ -67,13 +67,18 @@ class Tipping:
         self.data_importer.verbose = verbose
 
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
-        upcoming_round = fixture_data_frame["round_number"].min()
 
-        if fixture_data_frame is None:
-            raise ValueError("Could not fetch data.")
+        upcoming_round = (
+            fixture_data_frame.query("date > @self.right_now")
+            .loc[:, "round_number"]
+            .min()
+        )
+        fixture_for_upcoming_round = fixture_data_frame.query(
+            "round_number == @upcoming_round"
+        )
 
         saved_match_count = Match.objects.filter(
-            start_date_time__gt=self.right_now
+            start_date_time__gt=self.right_now, round_number=upcoming_round
         ).count()
 
         if saved_match_count == 0:
@@ -88,7 +93,7 @@ class Tipping:
                     f"Saving Match and TeamMatch records for round {upcoming_round}..."
                 )
 
-            self.__create_matches(fixture_data_frame.to_dict("records"))
+            self.__create_matches(fixture_for_upcoming_round.to_dict("records"))
         else:
             if self.verbose == 1:
                 print(
@@ -96,7 +101,9 @@ class Tipping:
                     "Updating associated prediction records with new model predictions.\n"
                 )
 
-        upcoming_round_year = fixture_data_frame["date"].map(lambda x: x.year).max()
+        upcoming_round_year = (
+            fixture_for_upcoming_round["date"].map(lambda x: x.year).max()
+        )
 
         if self.verbose == 1:
             print("Saving prediction records...")

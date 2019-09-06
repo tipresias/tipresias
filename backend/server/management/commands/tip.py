@@ -1,7 +1,7 @@
 """Module for 'tip' command that updates predictions for upcoming AFL matches"""
 
 from functools import reduce
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import List, Optional
 from warnings import warn
 
@@ -24,6 +24,7 @@ N_SEASONS_FOR_PREDICTION = 10
 # because we only need the full data set for model training and data analysis,
 # and we want to limit memory usage and speed up data processing for tipping
 PREDICTION_DATA_START_DATE = f"{date.today().year - N_SEASONS_FOR_PREDICTION}-01-01"
+WEEK_IN_DAYS = 7
 
 
 class Command(BaseCommand):
@@ -222,8 +223,9 @@ class Command(BaseCommand):
             fetch_data=self.fetch_data,
         )
 
-    @staticmethod
-    def __update_played_match_scores(match_results: pd.DataFrame, match: Match) -> None:
+    def __update_played_match_scores(
+        self, match_results: pd.DataFrame, match: Match
+    ) -> None:
         home_team_match = match.teammatch_set.get(at_home=True)
         away_team_match = match.teammatch_set.get(at_home=False)
 
@@ -234,22 +236,27 @@ class Command(BaseCommand):
             "away_team == @away_team_match.team.name"
         )
 
-        if not match_result.any().any():
+        # AFLTables usually updates match results a few days after the round
+        # is finished. Allowing for the occasional delay, we accept matches without
+        # results data for a week before raising an error.
+        if match.start_date_time > self.right_now - timedelta(
+            days=WEEK_IN_DAYS
+        ) and not match_results.any().any():
             warn(
-                "Filtering match results by year, round_number and team name "
-                "should result in a single row, but instead returned an empty "
-                "data frame. This may be due to running this command while matches "
-                "are being played. The match record that we're trying to update is:\n"
-                f"{match}"
+                f"Unable to update the match between {home_team_match.team.name} "
+                f"and {away_team_match.team.name} from round {match.round_number}. "
+                "This is likely due to AFLTables not having updated the match results "
+                "yet."
             )
 
-        if len(match_result) > 1:
-            raise ValueError(
-                "Filtering match results by year, round_number and team name "
-                "should result in a single row, but instead the following was "
-                "returned:\n"
-                f"{match_result}"
-            )
+            return None
+
+        assert len(match_result) == 1, (
+            "Filtering match results by year, round_number and team name "
+            "should result in a single row, but instead the following was "
+            "returned:\n"
+            f"{match_result}"
+        )
 
         match_result = match_result.iloc[0, :]
 

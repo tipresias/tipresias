@@ -2,13 +2,14 @@
 
 from functools import reduce
 from datetime import datetime, date, timedelta
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 import os
 from warnings import warn
 
 from django import utils
 import pandas as pd
 from splinter import Browser
+from splinter.driver import ElementAPI
 
 from project.settings.common import MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, Prediction
@@ -321,36 +322,17 @@ class Tipping:
 
         return [home_team_match, away_team_match]
 
-    def __submit_tips(self):
-        predictions = self.__get_latest_round_predictions()
-
+    def __submit_tips(self) -> None:
         browser = Browser("firefox", headless=True)
-        browser.visit("https://www.footytips.com.au/tipping/afl/")
+        self.__log_in(browser)
 
-        # Have to use second login form, because the first is some invisible Angular
-        # something something
-        login_form = browser.find_by_name("frmLogin")[1]
-        login_form.find_by_name("userLogin").fill(os.getenv("FOOTY_TIPS_USERNAME", ""))
-        login_form.find_by_name("userPassword").fill(
-            os.getenv("FOOTY_TIPS_PASSWORD", "")
-        )
-        login_form.find_by_id("signin-ft").click()
-
+        predictions = self.__get_latest_round_predictions()
         match_elements = browser.find_by_css(".tipping-container")
 
-        for match_element in match_elements:
-            predicted_winner, predicted_margin = self.__get_match_prediction(
-                predictions, match_element
-            )
-
-            self.__select_predicted_winner(predicted_winner, match_element)
-
-            if match_element.is_element_present_by_name("Margin"):
-                self.__fill_in_predicted_margin(predicted_margin, match_element)
-
+        self.__fill_in_tipping_form(predictions, match_elements)
         browser.find_by_css(".tipform-submit-button").first.click()
 
-    def __get_latest_round_predictions(self):
+    def __get_latest_round_predictions(self) -> Dict[str, int]:
         latest_match = Match.objects.latest("start_date_time")
         latest_year = latest_match.start_date_time.year
         latest_round = latest_match.round_number
@@ -380,22 +362,61 @@ class Tipping:
         }
 
     @staticmethod
-    def __translate_team_name(team_name):
+    def __translate_team_name(team_name: str) -> str:
         if team_name not in FT_TEAM_TRANSLATIONS:
             return team_name
 
         return FT_TEAM_TRANSLATIONS[team_name]
 
     @staticmethod
-    def __get_match_prediction(predictions: Dict[str, int], match_element):
+    def __log_in(browser):
+        browser.visit("https://www.footytips.com.au/tipping/afl/")
+
+        # Have to use second login form, because the first is some invisible Angular
+        # something something
+        login_form = browser.find_by_name("frmLogin")[1]
+        login_form.find_by_name("userLogin").fill(os.getenv("FOOTY_TIPS_USERNAME", ""))
+        login_form.find_by_name("userPassword").fill(
+            os.getenv("FOOTY_TIPS_PASSWORD", "")
+        )
+        login_form.find_by_id("signin-ft").click()
+
+    def __fill_in_tipping_form(
+        self, predictions: Dict[str, int], match_elements: ElementAPI
+    ):
+        for match_element in match_elements:
+            predicted_winner, predicted_margin = self.__get_match_prediction(
+                predictions, match_element
+            )
+
+            if predicted_winner is None or predicted_margin is None:
+                warn(
+                    "No matching prediction was found for a match element. "
+                    "This likely means that the tip submission page has not been "
+                    "updated for the next round yet. Try again tomorrow."
+                )
+
+                return None
+
+            self.__select_predicted_winner(predicted_winner, match_element)
+            self.__fill_in_predicted_margin(predicted_margin, match_element)
+
+            return None
+
+    @staticmethod
+    def __get_match_prediction(
+        predictions: Dict[str, int], match_element: ElementAPI
+    ) -> Tuple[Optional[str], Optional[int]]:
         for team_name in predictions.keys():
             if team_name in match_element.text:
                 return (team_name, predictions[team_name])
 
-        return None
+        return None, None
 
     @staticmethod
-    def __select_predicted_winner(predicted_winner, match_element):
+    def __select_predicted_winner(
+        predicted_winner: str, match_element: ElementAPI
+    ) -> None:
         team_matches = match_element.find_by_css(".tip-selection")
 
         for team_match in team_matches:
@@ -405,5 +426,10 @@ class Tipping:
                 team_match_input.click()
 
     @staticmethod
-    def __fill_in_predicted_margin(predicted_margin, match_element):
-        match_element.find_by_name("Margin").fill(predicted_margin)
+    def __fill_in_predicted_margin(
+        predicted_margin: int, match_element: ElementAPI
+    ) -> None:
+        margin_input = match_element.find_by_name("Margin")
+
+        if any(margin_input):
+            margin_input.fill(predicted_margin)

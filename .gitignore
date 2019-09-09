@@ -130,7 +130,7 @@ yarn-error.log*
 .vscode
 
 # Data folders
-data
+data_science
 
 # Folders added via dask
 dask-worker-space

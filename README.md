@@ -13,15 +13,16 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 ### Setup
 
 - To manage environemnt variables:
-    - Install [`direnv`](https://direnv.net/)
-    - Add `eval "$(direnv hook bash)"` to the bottom of `~/.bashrc`
-    - Run `direnv allow .` inside the project directory
+  - Install [`direnv`](https://direnv.net/)
+  - Add `eval "$(direnv hook bash)"` to the bottom of `~/.bashrc`
+  - Run `direnv allow .` inside the project directory
 - Create the `node_modules` volume: `docker volume create --name=node_modules`
 - To build and run the app: `docker-compose up --build`
 - Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
-- Seed the DB: `docker-compose run --rm backend python3 manage.py seed_db`
+- Generate raw data for `data_science` functionality: `docker-compose run --rm data_science ./scripts/generate_data_sets.sh`
+- Seed the DB: `docker-compose run --rm backend python3 manage.py seed_db` (this takes a very long time, so it's recommended that you reset the DB as described below if possible)
 - Reset the DB to match production: `./scripts/reset_db.sh`
-  - This requires ability to `ssh` into the prod server
+  - This requires ability to `ssh` into the prod server (i.e. you must have been added as a user to the server by an admin)
   - `PROD_USER` and `IP_ADDRESS` environment variables have to be set in the current bash session, and their values have to be applicable to the relevant server
 
 ### Run the app
@@ -31,7 +32,7 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ### A note on architecture
 
-- `tipresias` depends on two micro-services: [`bird-signs`](https://github.com/tipresias/bird-signs) for raw data and [`augury`](https://github.com/tipresias/augury) for machine-learning functionality (i.e. generating model predictions). In the dev environment, this is managed via docker-compose, which uses the images of these services; in production, the app calls relevant Google Cloud functions.
+- `tipresias` depends on two micro-services: [`bird-signs`](https://github.com/tipresias/bird-signs) for raw data and [`augury`](https://github.com/tipresias/augury) for machine-learning functionality (i.e. generating model predictions). In the dev environment, this is managed via docker-compose, which uses the images of these services; in production, the app calls relevant Google Cloud functions. If one of these services isn't working on local, try pulling the latest image, as something might have changed.
 
 ### Testing
 

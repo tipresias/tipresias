@@ -12,6 +12,14 @@ RUN apt-get -y install curl \
 
 WORKDIR /app/backend
 
+# Install firefox & geckodriver for use by selenium
+RUN apt-get update \
+  && apt-get -y install firefox-esr \
+  && wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz \
+  && tar -xvzf geckodriver* \
+  && chmod +x geckodriver \
+  && mv geckodriver /usr/local/bin/
+
 # Install Python dependencies
 COPY ./backend/requirements.txt /app/backend/
 RUN pip3 install --upgrade pip -r requirements.txt

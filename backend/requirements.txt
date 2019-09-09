@@ -1,20 +1,24 @@
 # Data packages
 numpy
-pandas>=0.23.0,<0.26 # Required version for featuretools
+pandas>=0.23.0,<0.26
 
 # App packages
 django>=2.2,<2.99
 whitenoise
 graphene>=2.1.5,<2.1.99
-graphene-django==2.5.0 # Can't upgrade to 2.3.x, due to weird graphiql.js bug
+graphene-django==2.5.0
 psycopg2-binary
 dj-database-url
 sendgrid>=6.0,<6.99
 requests
 joblib
 
+# Browser automation
+splinter
+selenium>=2.0
+
 # Testing/Linting
-pylint==2.3.1 # Necessary for open bug (as of 2-10-18): https://github.com/PyCQA/pylint/issues/2315
+pylint==2.3.1
 black
 pytest
 pytest-env

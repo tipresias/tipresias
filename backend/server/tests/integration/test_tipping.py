@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 
 from server.models import Match, TeamMatch, Prediction
-from server.management.commands import tip
+from server.tipping import Tipping
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
 from project.settings.data_config import TEAM_NAMES
@@ -21,7 +21,7 @@ ROW_COUNT = 5
 TIP_DATES = ["2016-01-01", "2017-01-01"]
 
 
-class TestTip(TestCase):
+class TestTipping(TestCase):
     @patch("server.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         MLModelFactory(name="test_estimator")
@@ -52,19 +52,19 @@ class TestTip(TestCase):
         )
 
         # Not fetching data, because it takes forever
-        self.tip_command = tip.Command(fetch_data=False, data_importer=mock_data_import)
+        self.tipping = Tipping(fetch_data=False, data_importer=mock_data_import, submit_tips=False)
 
-    def test_handle(self):
+    def test_tip(self):
         with freeze_time("2016-01-01"):
             right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
-            self.tip_command.right_now = right_now
+            self.tipping.right_now = right_now
 
             with self.subTest("with no existing match records in DB"):
                 self.assertEqual(Match.objects.count(), 0)
                 self.assertEqual(TeamMatch.objects.count(), 0)
                 self.assertEqual(Prediction.objects.count(), 0)
 
-                self.tip_command.handle(verbose=0)
+                self.tipping.tip(verbose=0)
 
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
@@ -75,7 +75,7 @@ class TestTip(TestCase):
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
                 self.assertEqual(Prediction.objects.count(), ROW_COUNT)
 
-                self.tip_command.handle(verbose=0)
+                self.tipping.tip(verbose=0)
 
                 Prediction.update_or_create_from_data.assert_called()
 
@@ -85,12 +85,12 @@ class TestTip(TestCase):
         with freeze_time("2017-01-01"):
             with self.subTest("with scoreless matches from ealier rounds"):
                 right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
-                self.tip_command.right_now = right_now
+                self.tipping.right_now = right_now
 
                 self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
                 self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)
 
-                self.tip_command.handle(verbose=0)
+                self.tipping.tip(verbose=0)
 
                 self.assertEqual(
                     TeamMatch.objects.filter(
@@ -191,21 +191,21 @@ class TestTip(TestCase):
     "Useful test for subtle, breaking changes, but way too long to run in CI. "
     "Run manually on your machine to be safe",
 )
-class TestTipEndToEnd(TestCase):
+class TestTippingEndToEnd(TestCase):
     def setUp(self):
         MLModelFactory(name="tipresias")
 
         for team_name in TEAM_NAMES:
             TeamFactory(name=team_name)
 
-        self.tip_command = tip.Command(ml_models="tipresias")
+        self.tipping = Tipping(ml_models="tipresias", submit_tips=False)
 
-    def test_handle(self):
+    def test_tip(self):
         self.assertEqual(Match.objects.count(), 0)
         self.assertEqual(TeamMatch.objects.count(), 0)
         self.assertEqual(Prediction.objects.count(), 0)
 
-        self.tip_command.handle(verbose=0)
+        self.tipping.tip(verbose=0)
 
         match_count = Match.objects.count()
 

@@ -323,6 +323,8 @@ class Tipping:
         return [home_team_match, away_team_match]
 
     def __submit_tips(self) -> None:
+        print("Submitting tips to footytips.com.au...")
+
         browser = Browser("firefox", headless=True)
         self.__log_in(browser)
 
@@ -331,6 +333,8 @@ class Tipping:
 
         self.__fill_in_tipping_form(predictions, match_elements)
         browser.find_by_css(".tipform-submit-button").first.click()
+
+        print("Tips submitted!")
 
     def __get_latest_round_predictions(self) -> Dict[str, int]:
         latest_match = Match.objects.latest("start_date_time")

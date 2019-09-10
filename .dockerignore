@@ -87,3 +87,8 @@ README.md
 deploy_rsa.enc
 .travis.yml
 .vscode
+*.sql
+data_science
+
+# GCP files
+.gcloud

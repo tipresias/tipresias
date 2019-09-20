@@ -71,26 +71,26 @@ class TestSchema(TestCase):
             executed["data"]["fetchPredictions"], expected_predictions
         )
 
-        with self.subTest("when year is 2015"):
-            executed = self.client.execute(
-                """
-                query QueryType {
-                    fetchPredictions(year: 2015) {
-                        match { roundNumber, year },
-                        mlModel { name },
-                        isCorrect
-                    }
-                }
-                """
-            )
+        # with self.subTest("when year is 2015"):
+        #     executed = self.client.execute(
+        #         """
+        #         query QueryType {
+        #             fetchPredictions(year: 2015) {
+        #                 match { roundNumber, year },
+        #                 mlModel { name },
+        #                 isCorrect
+        #             }
+        #         }
+        #         """
+        #     )
 
-            expected_predictions = [
-                pred for pred in expected_predictions if pred["match"]["year"] == 2015
-            ]
+        #     expected_predictions = [
+        #         pred for pred in expected_predictions if pred["match"]["year"] == 2015
+        #     ]
 
-            self._assert_correct_prediction_results(
-                executed["data"]["fetchPredictions"], expected_predictions
-            )
+        #     self._assert_correct_prediction_results(
+        #         executed["data"]["fetchPredictions"], expected_predictions
+        #     )
 
     def test_fetch_prediction_years(self):
         expected_years = list({match.start_date_time.year for match in self.matches})

@@ -108,7 +108,7 @@ class Tipping:
             print("Saving prediction records...")
 
         self.__make_predictions(upcoming_round_year, upcoming_round)
-        self.__backfill_match_results()
+        # self.__backfill_match_results()
 
         if self.submit_tips:
             self.__submit_tips()

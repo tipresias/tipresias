@@ -6,7 +6,6 @@ from typing import List, Optional, Dict, Tuple
 import os
 from warnings import warn
 
-from django import utils
 import pandas as pd
 from splinter import Browser
 from splinter.driver import ElementAPI
@@ -174,13 +173,16 @@ class Tipping:
             else match_data["date"]
         )
 
-        # 'make_aware' raises error if datetime already has a timezone
-        if raw_date.tzinfo is None or raw_date.tzinfo.utcoffset(raw_date) is None:
-            match_date = utils.timezone.make_aware(
-                raw_date, timezone=MELBOURNE_TIMEZONE
-            )
-        else:
-            match_date = raw_date
+        # Fiddling with timezones is proving error-prone, so I'm just creating
+        # a new datetime based on the raw one
+        match_date = datetime(
+            raw_date.year,
+            raw_date.month,
+            raw_date.day,
+            raw_date.hour,
+            raw_date.minute,
+            tzinfo=MELBOURNE_TIMEZONE,
+        )
 
         match, was_created = Match.objects.get_or_create(
             start_date_time=match_date,

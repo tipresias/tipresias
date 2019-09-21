@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 from typing import List, Dict, Any
-from datetime import timezone, timedelta
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -99,9 +98,6 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS: List = []
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-
-HOURS_FROM_UTC_TO_MELBOURNE = 11
-MELBOURNE_TIMEZONE = timezone(timedelta(hours=HOURS_FROM_UTC_TO_MELBOURNE))
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/

@@ -1,5 +1,6 @@
 from unittest.mock import Mock, patch
 from datetime import datetime
+import pytz
 
 from django.test import TestCase
 import joblib
@@ -11,7 +12,6 @@ from server.tests.fixtures.data_factories import (
     fake_match_results_data,
     fake_prediction_data,
 )
-from project.settings.common import MELBOURNE_TIMEZONE
 
 
 MATCH_COUNT_PER_YEAR = 5
@@ -119,10 +119,10 @@ class TestSeedDb(TestCase):
 
         tz_start_date = datetime.strptime(  # pylint: disable=W0612
             start_date, "%Y-%m-%d"
-        ).replace(tzinfo=MELBOURNE_TIMEZONE)
+        ).replace(tzinfo=pytz.UTC)
         tz_end_date = datetime.strptime(  # pylint: disable=W0612
             end_date, "%Y-%m-%d"
-        ).replace(tzinfo=MELBOURNE_TIMEZONE)
+        ).replace(tzinfo=pytz.UTC)
 
         return self.match_results_data_frame.query(
             "date >= @tz_start_date & date <= @tz_end_date"

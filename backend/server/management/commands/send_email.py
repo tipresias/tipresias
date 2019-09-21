@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from typing import List, Union
+import pytz
 
 from django.core.management.base import BaseCommand
 from django.template.loader import get_template
@@ -8,7 +9,6 @@ import sendgrid
 from sendgrid.helpers.mail import Mail
 
 from server.models import Match, Prediction
-from project.settings.common import MELBOURNE_TIMEZONE
 
 JAN = 1
 FIRST = 1
@@ -39,7 +39,7 @@ class Command(BaseCommand):
     def handle(self, *_args, **_kwargs):
         """Run 'send_email' command"""
 
-        right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
+        right_now = datetime.now(tz=pytz.UTC)
         upcoming_match = Match.objects.filter(start_date_time__gt=right_now).earliest(
             "start_date_time"
         )
@@ -50,7 +50,7 @@ class Command(BaseCommand):
             Prediction.objects.filter(
                 ml_model__name="tipresias",
                 match__start_date_time__gt=datetime(
-                    upcoming_match_year, JAN, FIRST, tzinfo=MELBOURNE_TIMEZONE
+                    upcoming_match_year, JAN, FIRST, tzinfo=pytz.UTC
                 ),
                 match__round_number=upcoming_round,
             )

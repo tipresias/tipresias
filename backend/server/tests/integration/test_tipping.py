@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 from unittest import skipIf
 import os
+import pytz
 
 from django.test import TestCase
 from freezegun import freeze_time
@@ -14,11 +15,13 @@ from server.tipping import Tipping
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
 from project.settings.data_config import TEAM_NAMES
-from project.settings.common import MELBOURNE_TIMEZONE
 
 
 ROW_COUNT = 5
-TIP_DATES = ["2016-01-01", "2017-01-01"]
+TIP_DATES = [
+    datetime(2016, 1, 1, tzinfo=pytz.UTC),
+    datetime(2017, 1, 1, tzinfo=pytz.UTC),
+]
 
 
 class TestTipping(TestCase):
@@ -57,8 +60,10 @@ class TestTipping(TestCase):
         )
 
     def test_tip(self):
-        with freeze_time("2016-01-01"):
-            right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
+        fake_datetime = datetime(2016, 1, 1, tzinfo=pytz.UTC)
+
+        with freeze_time(fake_datetime):
+            right_now = datetime.now(tz=pytz.UTC)
             self.tipping.right_now = right_now
 
             with self.subTest("with no existing match records in DB"):
@@ -84,9 +89,11 @@ class TestTipping(TestCase):
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
-        with freeze_time("2017-01-01"):
+        fake_datetime = datetime(2017, 1, 1, tzinfo=pytz.UTC)
+
+        with freeze_time(fake_datetime):
             with self.subTest("with scoreless matches from ealier rounds"):
-                right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
+                right_now = datetime.now(tz=pytz.UTC)
                 self.tipping.right_now = right_now
 
                 self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
@@ -211,7 +218,7 @@ class TestTippingEndToEnd(TestCase):
 
         match_count = Match.objects.count()
         future_match_count = Match.objects.filter(
-            start_date_time__gt=datetime.now().replace(tzinfo=MELBOURNE_TIMEZONE)
+            start_date_time__gt=datetime.now(tz=pytz.UTC)
         ).count()
 
         self.assertGreater(match_count, 0)

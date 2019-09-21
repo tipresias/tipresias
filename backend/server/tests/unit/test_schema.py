@@ -1,6 +1,7 @@
 from datetime import datetime
 import itertools
 from dateutil import parser
+import pytz
 
 from django.test import TestCase
 from graphene.test import Client
@@ -11,7 +12,6 @@ from server.schema import schema
 from server.tests.fixtures.factories import FullMatchFactory
 from server.models import Match, MLModel
 from server.tests.fixtures.factories import MLModelFactory
-from project.settings.common import MELBOURNE_TIMEZONE, HOURS_FROM_UTC_TO_MELBOURNE
 
 
 ROUND_COUNT = 4
@@ -31,9 +31,7 @@ class TestSchema(TestCase):
             FullMatchFactory(
                 year=year,
                 round_number=((idx % 23) + 1),
-                start_date_time=datetime(
-                    year, 6, (idx % 29) + 1, tzinfo=MELBOURNE_TIMEZONE
-                ),
+                start_date_time=datetime(year, 6, (idx % 29) + 1, tzinfo=pytz.UTC),
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
@@ -189,9 +187,7 @@ class TestSchema(TestCase):
             FullMatchFactory(
                 year=year,
                 round_number=((idx % 23) + 1),
-                start_date_time=datetime(
-                    year, 6, (idx % 29) + 1, tzinfo=MELBOURNE_TIMEZONE
-                ),
+                start_date_time=datetime(year, 6, (idx % 29) + 1, tzinfo=pytz.UTC),
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
@@ -260,9 +256,7 @@ class TestSchema(TestCase):
             FullMatchFactory(
                 year=YEAR,
                 round_number=(idx + 1),
-                start_date_time=datetime(
-                    YEAR, MONTH, (idx % 29) + 1, tzinfo=MELBOURNE_TIMEZONE
-                ),
+                start_date_time=datetime(YEAR, MONTH, (idx % 29) + 1, tzinfo=pytz.UTC),
                 prediction__ml_model=ml_models[0],
                 prediction__is_correct=True,
                 prediction_two__ml_model=ml_models[1],
@@ -306,10 +300,9 @@ class TestSchema(TestCase):
 
         with self.subTest("when the last matches haven't been played yet"):
             DAY = 3
+            fake_datetime = datetime(YEAR, MONTH, DAY, tzinfo=pytz.UTC)
 
-            with freeze_time(
-                f"{YEAR}-0{MONTH}-0{DAY}", tz_offset=-HOURS_FROM_UTC_TO_MELBOURNE
-            ):
+            with freeze_time(fake_datetime):
                 past_executed = self.client.execute(query)
 
                 data = past_executed["data"]["fetchLatestRoundStats"]

@@ -1,13 +1,13 @@
 from typing import Optional
 from functools import reduce
 from datetime import datetime, timedelta
+import pytz
 
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 import numpy as np
 
-from project.settings.common import MELBOURNE_TIMEZONE
 from project.settings.data_config import TEAM_NAMES
 from server.types import CleanPredictionData
 
@@ -20,6 +20,13 @@ def validate_name(name: str) -> None:
         return None
 
     raise ValidationError(_("%(name)s is not a valid team name"), params={"name": name})
+
+
+def validate_is_utc(start_date_time: datetime) -> None:
+    if datetime.utcoffset(start_date_time) == timedelta(0):
+        return None
+
+    raise ValidationError(_("%(start_date_time)s is not set to the UTC"))
 
 
 def validate_module_path(path: str) -> None:
@@ -40,7 +47,7 @@ class Team(models.Model):
 
 
 class Match(models.Model):
-    start_date_time = models.DateTimeField()
+    start_date_time = models.DateTimeField(validators=[validate_is_utc])
     round_number = models.PositiveSmallIntegerField()
     venue = models.CharField(max_length=100, null=True, blank=True)
 
@@ -86,7 +93,7 @@ class Match(models.Model):
         # We need to check the scores in case the data hasn't been updated since the
         # match was played, because as far as the data is concerned it hasn't, even though
         # the date has passed.
-        return self.__has_score and match_end_time < datetime.now(tz=MELBOURNE_TIMEZONE)
+        return self.__has_score and match_end_time < datetime.now(tz=pytz.UTC)
 
     @property
     def __has_score(self):

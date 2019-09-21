@@ -19,8 +19,10 @@ DATA_SCIENCE_SERVICE = os.getenv(
 
 def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
     # We have to use dateutil.parser instead of a pandas datetime parser,
-    # because the former doesn't maintain the timezone offset
-    return data_frame["date"].map(parser.parse)
+    # because the former doesn't maintain the timezone offset.
+    # We make sure all datetimes are converted to UTC, because that makes things
+    # easier due to Django converting all datetime fields to UTC when saving DB records.
+    return data_frame["date"].map(lambda dt: parser.parse(dt).astimezone(pytz.UTC))
 
 
 def _make_request(
@@ -102,9 +104,14 @@ def fetch_fixture_data(start_date: str, end_date: str) -> pd.DataFrame:
         pandas.DataFrame with fixture data.
     """
 
-    return pd.DataFrame(
+    fixtures = pd.DataFrame(
         _fetch_data("fixtures", {"start_date": start_date, "end_date": end_date})
-    ).assign(date=_parse_dates)
+    )
+
+    if fixtures.any().any():
+        return fixtures.assign(date=_parse_dates)
+
+    return fixtures
 
 
 def fetch_match_results_data(

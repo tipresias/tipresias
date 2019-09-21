@@ -1,15 +1,17 @@
 from datetime import datetime, timedelta
+import pytz
 from django.test import TestCase
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 from server.models import Match, Team
-from project.settings.common import MELBOURNE_TIMEZONE
 
 
 class TestMatch(TestCase):
     def setUp(self):
-        match_datetime = timezone.make_aware(datetime(2018, 5, 5))
+        match_datetime = timezone.make_aware(
+            datetime(2018, 5, 5), timezone=pytz.UTC
+        )
         self.match = Match.objects.create(
             start_date_time=match_datetime, round_number=5, venue="Corporate Stadium"
         )
@@ -48,19 +50,33 @@ class TestMatch(TestCase):
             team_match.score = 100
             team_match.save()
 
-            self.match.start_date_time = datetime.now(MELBOURNE_TIMEZONE) - timedelta(
-                hours=1
-            )
+            self.match.start_date_time = datetime.now(tz=pytz.UTC) - timedelta(hours=1)
             self.match.save()
 
             self.assertFalse(self.match.has_been_played)
 
     def test_validations(self):
-        invalid_match = Match(
-            start_date_time=self.match.start_date_time,
-            venue=self.match.venue,
-            round_number=2,
-        )
+        self.match.full_clean()
 
-        with self.assertRaises(ValidationError):
-            invalid_match.full_clean()
+        with self.subTest("with duplicate start_date_time/venue combination"):
+            invalid_match = Match(
+                start_date_time=self.match.start_date_time,
+                venue=self.match.venue,
+                round_number=2,
+            )
+
+            with self.assertRaises(ValidationError, msg="duplicate"):
+                invalid_match.full_clean()
+
+        with self.subTest("with a timezone-unaware start_date_time"):
+            invalid_start_date_time = datetime.now()
+            invalid_match = Match(
+                start_date_time=invalid_start_date_time,
+                venue="Some Venue",
+                round_number=5,
+            )
+
+            with self.assertRaises(
+                ValidationError, msg=f"{invalid_start_date_time} is not set to the UTC"
+            ):
+                invalid_match.full_clean()

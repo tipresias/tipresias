@@ -108,7 +108,11 @@ class Tipping:
             print("Saving prediction records...")
 
         self.__make_predictions(upcoming_round_year, upcoming_round)
-        # self.__backfill_match_results()
+
+        if self.verbose == 1:
+            print("Filling in results for recent matches...")
+
+        self.__backfill_match_results()
 
         if self.submit_tips:
             self.__submit_tips()
@@ -266,6 +270,18 @@ class Tipping:
 
             return None
 
+        match_values = match.teammatch_set.values(
+            "match__start_date_time",
+            "match__round_number",
+            "match__venue",
+            "team__name",
+            "at_home",
+        )
+        assert match_results.any().any(), (
+            "Didn't find any match data rows that matched match record:\n"
+            f"{match_values}"
+        )
+
         assert len(match_result) == 1, (
             "Filtering match results by year, round_number and team name "
             "should result in a single row, but instead the following was "
@@ -282,6 +298,8 @@ class Tipping:
         away_team_match.score = match_result["away_score"]
         away_team_match.clean()
         away_team_match.save()
+
+        return None
 
     @staticmethod
     def __update_predictions_correctness(match: Match) -> None:

@@ -4,6 +4,7 @@ from typing import Tuple, Optional, List, Dict, Any, cast
 import os
 from urllib.parse import urljoin
 from dateutil import parser
+import pytz
 
 import pandas as pd
 import requests

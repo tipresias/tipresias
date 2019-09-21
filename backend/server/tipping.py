@@ -18,6 +18,7 @@ from server.helpers import pivot_team_matches_to_matches
 
 
 NO_SCORE = 0
+FIRST_ROUND = 1
 # We calculate rolling sums/means for some features that can span over 5 seasons
 # of data, so we're setting it to 10 to be on the safe side.
 N_SEASONS_FOR_PREDICTION = 10
@@ -141,6 +142,16 @@ class Tipping:
 
         round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
         year = {match_data["year"] for match_data in fixture_data}.pop()
+
+        prev_match = Match.objects.order_by("-start_date_time").first()
+
+        if prev_match is not None:
+            assert round_number in (prev_match.round_number + 1, FIRST_ROUND), (
+                "Expected upcoming round number to be 1 greater than previous round "
+                f"or 1, but upcoming round is {round_number} in {year}, "
+                f" and previous round was {prev_match.round_number} "
+                f"in {prev_match.start_date_time.year}"
+            )
 
         team_match_lists = [
             self.__build_match(match_data) for match_data in fixture_data

@@ -211,7 +211,7 @@ class TestTippingEndToEnd(TestCase):
 
         match_count = Match.objects.count()
         future_match_count = Match.objects.filter(
-            start_date_time__gt=datetime.now()
+            start_date_time__gt=datetime.now().replace(tzinfo=MELBOURNE_TIMEZONE)
         ).count()
 
         self.assertGreater(match_count, 0)

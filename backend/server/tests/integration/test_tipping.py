@@ -84,28 +84,28 @@ class TestTipping(TestCase):
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
-        # with freeze_time("2017-01-01"):
-        #     with self.subTest("with scoreless matches from ealier rounds"):
-        #         right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
-        #         self.tipping.right_now = right_now
+        with freeze_time("2017-01-01"):
+            with self.subTest("with scoreless matches from ealier rounds"):
+                right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
+                self.tipping.right_now = right_now
 
-        #         self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
-        #         self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)
+                self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
+                self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)
 
-        #         self.tipping.tip(verbose=0)
+                self.tipping.tip(verbose=0)
 
-        #         self.assertEqual(
-        #             TeamMatch.objects.filter(
-        #                 match__start_date_time__lt=right_now, score=0
-        #             ).count(),
-        #             0,
-        #         )
-        #         self.assertGreater(
-        #             Prediction.objects.filter(
-        #                 match__start_date_time__lt=right_now, is_correct=True
-        #             ).count(),
-        #             0,
-        #         )
+                self.assertEqual(
+                    TeamMatch.objects.filter(
+                        match__start_date_time__lt=right_now, score=0
+                    ).count(),
+                    0,
+                )
+                self.assertGreater(
+                    Prediction.objects.filter(
+                        match__start_date_time__lt=right_now, is_correct=True
+                    ).count(),
+                    0,
+                )
 
     @staticmethod
     def __update_or_create_from_data(update_or_create_from_data):
@@ -210,7 +210,10 @@ class TestTippingEndToEnd(TestCase):
         self.tipping.tip(verbose=0)
 
         match_count = Match.objects.count()
+        future_match_count = Match.objects.filter(
+            start_date_time__gt=datetime.now().replace(tzinfo=MELBOURNE_TIMEZONE)
+        ).count()
 
         self.assertGreater(match_count, 0)
         self.assertEqual(TeamMatch.objects.count(), match_count * 2)
-        self.assertEqual(Prediction.objects.count(), match_count)
+        self.assertEqual(Prediction.objects.count(), future_match_count)

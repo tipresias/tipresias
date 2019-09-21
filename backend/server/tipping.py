@@ -18,6 +18,7 @@ from server.helpers import pivot_team_matches_to_matches
 
 
 NO_SCORE = 0
+FIRST_ROUND = 1
 # We calculate rolling sums/means for some features that can span over 5 seasons
 # of data, so we're setting it to 10 to be on the safe side.
 N_SEASONS_FOR_PREDICTION = 10
@@ -108,7 +109,11 @@ class Tipping:
             print("Saving prediction records...")
 
         self.__make_predictions(upcoming_round_year, upcoming_round)
-        # self.__backfill_match_results()
+
+        if self.verbose == 1:
+            print("Filling in results for recent matches...")
+
+        self.__backfill_match_results()
 
         if self.submit_tips:
             self.__submit_tips()
@@ -137,6 +142,16 @@ class Tipping:
 
         round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
         year = {match_data["year"] for match_data in fixture_data}.pop()
+
+        prev_match = Match.objects.order_by("-start_date_time").first()
+
+        if prev_match is not None:
+            assert round_number in (prev_match.round_number + 1, FIRST_ROUND), (
+                "Expected upcoming round number to be 1 greater than previous round "
+                f"or 1, but upcoming round is {round_number} in {year}, "
+                f" and previous round was {prev_match.round_number} "
+                f"in {prev_match.start_date_time.year}"
+            )
 
         team_match_lists = [
             self.__build_match(match_data) for match_data in fixture_data
@@ -266,6 +281,18 @@ class Tipping:
 
             return None
 
+        match_values = match.teammatch_set.values(
+            "match__start_date_time",
+            "match__round_number",
+            "match__venue",
+            "team__name",
+            "at_home",
+        )
+        assert match_results.any().any(), (
+            "Didn't find any match data rows that matched match record:\n"
+            f"{match_values}"
+        )
+
         assert len(match_result) == 1, (
             "Filtering match results by year, round_number and team name "
             "should result in a single row, but instead the following was "
@@ -282,6 +309,8 @@ class Tipping:
         away_team_match.score = match_result["away_score"]
         away_team_match.clean()
         away_team_match.save()
+
+        return None
 
     @staticmethod
     def __update_predictions_correctness(match: Match) -> None:

@@ -68,6 +68,15 @@ class Tipping:
 
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
 
+        if not fixture_data_frame.any().any():
+            if self.verbose == 1:
+                print(
+                    "Fixture for the upcoming round haven't been posted yet, "
+                    "so there's nothing to tip. Try again later."
+                )
+
+            return None
+
         upcoming_round = (
             fixture_data_frame.query("date > @self.right_now")
             .loc[:, "round_number"]
@@ -118,6 +127,8 @@ class Tipping:
         if self.submit_tips:
             self.__submit_tips()
 
+        return None
+
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
         if self.verbose == 1:
             print(f"Fetching fixture for {year}...\n")
@@ -125,6 +136,9 @@ class Tipping:
         fixture_data_frame = self.data_importer.fetch_fixture_data(
             start_date=f"{year}-01-01", end_date=f"{year}-12-31"
         )
+
+        if not fixture_data_frame.any().any():
+            return fixture_data_frame
 
         latest_match_date = fixture_data_frame["date"].max()
 

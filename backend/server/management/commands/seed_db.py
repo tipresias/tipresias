@@ -5,7 +5,7 @@ from typing import Tuple, List
 from datetime import datetime
 import pandas as pd
 import numpy as np
-from django import utils
+from django.utils import timezone
 from django.core.management.base import BaseCommand
 
 from server.models import Team, Match, TeamMatch, MLModel, Prediction
@@ -51,8 +51,8 @@ class Command(BaseCommand):
         year_range_tuple = (years_list[0], years_list[1])
 
         match_data_frame = self.data_importer.fetch_match_results_data(
-            start_date=f"{years_list[0]}-01-01",
-            end_date=f"{years_list[1] - 1}-12-31",
+            start_date=timezone.make_aware(datetime(years_list[0], 1, 1)),
+            end_date=timezone.make_aware(datetime(years_list[1] - 1, 12, 31)),
             fetch_data=self.fetch_data,
         )
 
@@ -133,7 +133,7 @@ class Command(BaseCommand):
             python_date.tzinfo is None
             or python_date.tzinfo.utcoffset(python_date) is None
         ):
-            match_date = utils.timezone.make_aware(python_date)
+            match_date = timezone.make_aware(python_date)
         else:
             match_date = python_date
 

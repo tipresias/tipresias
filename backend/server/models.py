@@ -6,9 +6,9 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.conf import settings
 import numpy as np
 
-from project.settings.data_config import TEAM_NAMES
 from server.types import CleanPredictionData
 
 # Rough estimate, but exactitude isn't necessary here
@@ -16,7 +16,7 @@ GAME_LENGTH_HRS = 3
 
 
 def validate_name(name: str) -> None:
-    if name in TEAM_NAMES:
+    if name in settings.TEAM_NAMES:
         return None
 
     raise ValidationError(_("%(name)s is not a valid team name"), params={"name": name})

@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 import os
 from typing import List, Dict, Any
 
+from .data_config import *  # pylint: disable=wildcard-import,unused-wildcard-import
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 

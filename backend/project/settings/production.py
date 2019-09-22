@@ -4,6 +4,7 @@ import dj_database_url
 from project.settings.common import *
 
 DEBUG = False
+ENVIRONMENT = "production"
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 

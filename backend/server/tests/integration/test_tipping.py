@@ -6,6 +6,7 @@ import os
 
 from django.test import TestCase
 from django.utils import timezone
+from django.conf import settings
 from freezegun import freeze_time
 import pandas as pd
 import numpy as np
@@ -15,7 +16,6 @@ from server.tipping import Tipping
 from server import data_import
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
-from project.settings.data_config import TEAM_NAMES
 
 
 ROW_COUNT = 5
@@ -205,7 +205,7 @@ class TestTippingEndToEnd(TestCase):
     def setUp(self):
         MLModelFactory(name="tipresias")
 
-        for team_name in TEAM_NAMES:
+        for team_name in settings.TEAM_NAMES:
             TeamFactory(name=team_name)
 
         self.tipping = Tipping(ml_models="tipresias", submit_tips=False)

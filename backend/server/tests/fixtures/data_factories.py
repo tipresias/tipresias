@@ -9,10 +9,10 @@ from faker import Faker
 import numpy as np
 import pandas as pd
 from django.utils import timezone
+from django.conf import settings
 
 from server.types import CleanFixtureData, MatchData
 from server.models import Match
-from project.settings.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
 
 FIRST = 1
 SECOND = 2
@@ -21,7 +21,7 @@ DEC = 12
 THIRTY_FIRST = 31
 FAKE = Faker()
 CONTEMPORARY_TEAM_NAMES = [
-    name for name in TEAM_NAMES if name not in DEFUNCT_TEAM_NAMES
+    name for name in settings.TEAM_NAMES if name not in settings.DEFUNCT_TEAM_NAMES
 ]
 BASELINE_BET_PAYOUT = 1.92
 

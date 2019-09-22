@@ -5,9 +5,9 @@ import factory
 from factory.django import DjangoModelFactory
 from faker import Faker
 from django.utils import timezone
+from django.conf import settings
 
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
-from project.settings.data_config import TEAM_NAMES, VENUES
 
 FAKE = Faker()
 THIS_YEAR = date.today().year
@@ -22,7 +22,7 @@ class TeamFactory(DjangoModelFactory):
         model = Team
         django_get_or_create = ("name",)
 
-    name = factory.Sequence(lambda n: TEAM_NAMES[n % len(TEAM_NAMES)])
+    name = factory.Sequence(lambda n: settings.TEAM_NAMES[n % len(settings.TEAM_NAMES)])
 
 
 class MatchFactory(DjangoModelFactory):
@@ -40,7 +40,9 @@ class MatchFactory(DjangoModelFactory):
         )
     )
     round_number = factory.Faker("pyint", min_value=1, max_value=24)
-    venue = VENUES[FAKE.pyint(min_value=0, max_value=(len(VENUES) - 1))]
+    venue = settings.VENUES[
+        FAKE.pyint(min_value=0, max_value=(len(settings.VENUES) - 1))
+    ]
 
 
 class TeamMatchFactory(DjangoModelFactory):

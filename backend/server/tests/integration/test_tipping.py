@@ -12,6 +12,7 @@ import numpy as np
 
 from server.models import Match, TeamMatch, Prediction
 from server.tipping import Tipping
+from server import data_import
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
 from project.settings.data_config import TEAM_NAMES
@@ -221,6 +222,14 @@ class TestTippingEndToEnd(TestCase):
             start_date_time__gt=timezone.localtime()
         ).count()
 
-        self.assertGreater(match_count, 0)
+        start_date = datetime.today()
+        end_date = datetime(start_date.year, 12, 31)
+        fixture_data = data_import.fetch_fixture_data(str(start_date), str(end_date))
+
+        # Sometimes the fixtures haven't been updated yet. This mostly happens
+        # during finals and the off-season
+        if fixture_data.any().any():
+            self.assertGreater(match_count, 0)
+
         self.assertEqual(TeamMatch.objects.count(), match_count * 2)
         self.assertEqual(Prediction.objects.count(), future_match_count)

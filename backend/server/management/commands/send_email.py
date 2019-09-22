@@ -1,10 +1,10 @@
 import os
 from datetime import datetime
 from typing import List, Union
-import pytz
 
 from django.core.management.base import BaseCommand
 from django.template.loader import get_template
+from django.utils import timezone
 import sendgrid
 from sendgrid.helpers.mail import Mail
 
@@ -39,7 +39,7 @@ class Command(BaseCommand):
     def handle(self, *_args, **_kwargs):
         """Run 'send_email' command"""
 
-        right_now = datetime.now(tz=pytz.UTC)
+        right_now = timezone.localtime()
         upcoming_match = Match.objects.filter(start_date_time__gt=right_now).earliest(
             "start_date_time"
         )
@@ -49,8 +49,8 @@ class Command(BaseCommand):
         upcoming_round_predictions = (
             Prediction.objects.filter(
                 ml_model__name="tipresias",
-                match__start_date_time__gt=datetime(
-                    upcoming_match_year, JAN, FIRST, tzinfo=pytz.UTC
+                match__start_date_time__gt=timezone.make_aware(
+                    datetime(upcoming_match_year, JAN, FIRST)
                 ),
                 match__round_number=upcoming_round,
             )

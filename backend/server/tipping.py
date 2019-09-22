@@ -5,11 +5,11 @@ from datetime import datetime, date, timedelta
 from typing import List, Optional, Dict, Tuple
 import os
 from warnings import warn
-import pytz
 
 import pandas as pd
 from splinter import Browser
 from splinter.driver import ElementAPI
+from django.utils import timezone
 
 from server.models import Match, TeamMatch, Team, Prediction
 from server.types import CleanFixtureData
@@ -53,7 +53,7 @@ class Tipping:
         ml_models=None,
         submit_tips=True,
     ) -> None:
-        self.right_now = datetime.now(tz=pytz.UTC)
+        self.right_now = timezone.localtime()
         self.current_year = self.right_now.year
         self.fetch_data = fetch_data
         self.data_importer = data_importer
@@ -202,16 +202,7 @@ class Tipping:
             else match_data["date"]
         )
 
-        # Fiddling with timezones is proving error-prone, so I'm just creating
-        # a new datetime based on the raw one
-        match_date = datetime(
-            raw_date.year,
-            raw_date.month,
-            raw_date.day,
-            raw_date.hour,
-            raw_date.minute,
-            tzinfo=pytz.UTC,
-        )
+        match_date = timezone.localtime(raw_date)
 
         match, was_created = Match.objects.get_or_create(
             start_date_time=match_date,
@@ -389,8 +380,8 @@ class Tipping:
         latest_round_predictions = (
             Prediction.objects.filter(
                 ml_model__name="tipresias",
-                match__start_date_time__gt=datetime(
-                    latest_year, JAN, FIRST, tzinfo=pytz.UTC
+                match__start_date_time__gt=timezone.make_aware(
+                    datetime(latest_year, JAN, FIRST)
                 ),
                 match__round_number=latest_round,
             )

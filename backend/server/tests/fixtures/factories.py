@@ -4,6 +4,7 @@ import pytz
 import factory
 from factory.django import DjangoModelFactory
 from faker import Faker
+from django.utils import timezone
 
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
 from project.settings.data_config import TEAM_NAMES, VENUES
@@ -33,10 +34,8 @@ class MatchFactory(DjangoModelFactory):
 
     start_date_time = factory.LazyAttribute(
         lambda obj: FAKE.date_time_between_dates(
-            datetime_start=datetime(obj.year, JAN, FIRST, tzinfo=pytz.UTC),
-            datetime_end=datetime(
-                obj.year, DEC, THIRTY_FIRST, tzinfo=pytz.UTC
-            ),
+            datetime_start=timezone.make_aware(datetime(obj.year, JAN, FIRST)),
+            datetime_end=timezone.make_aware(datetime(obj.year, DEC, THIRTY_FIRST)),
             tzinfo=pytz.UTC,
         )
     )

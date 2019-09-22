@@ -8,6 +8,7 @@ import pytz
 from faker import Faker
 import numpy as np
 import pandas as pd
+from django.utils import timezone
 
 from server.types import CleanFixtureData, MatchData
 from server.models import Match
@@ -41,8 +42,8 @@ class CyclicalTeamNames:
 
 def _min_max_datetimes_by_year(year: int) -> Dict[str, datetime]:
     return {
-        "datetime_start": datetime(year, JAN, FIRST, tzinfo=pytz.UTC),
-        "datetime_end": datetime(year, DEC, THIRTY_FIRST, tzinfo=pytz.UTC),
+        "datetime_start": timezone.make_aware(datetime(year, JAN, FIRST)),
+        "datetime_end": timezone.make_aware(datetime(year, DEC, THIRTY_FIRST)),
     }
 
 

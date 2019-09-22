@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 from unittest import skipIf
 import os
-import pytz
 
 from django.test import TestCase
+from django.utils import timezone
 from freezegun import freeze_time
 import pandas as pd
 import numpy as np
@@ -19,8 +19,8 @@ from project.settings.data_config import TEAM_NAMES
 
 ROW_COUNT = 5
 TIP_DATES = [
-    datetime(2016, 1, 1, tzinfo=pytz.UTC),
-    datetime(2017, 1, 1, tzinfo=pytz.UTC),
+    timezone.make_aware(datetime(2016, 1, 1)),
+    timezone.make_aware(datetime(2017, 1, 1)),
 ]
 
 
@@ -60,10 +60,10 @@ class TestTipping(TestCase):
         )
 
     def test_tip(self):
-        fake_datetime = datetime(2016, 1, 1, tzinfo=pytz.UTC)
+        fake_datetime = timezone.make_aware(datetime(2016, 1, 1))
 
         with freeze_time(fake_datetime):
-            right_now = datetime.now(tz=pytz.UTC)
+            right_now = timezone.localtime()
             self.tipping.right_now = right_now
 
             with self.subTest("with no existing match records in DB"):
@@ -89,11 +89,11 @@ class TestTipping(TestCase):
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
-        fake_datetime = datetime(2017, 1, 1, tzinfo=pytz.UTC)
+        fake_datetime = timezone.make_aware(datetime(2017, 1, 1))
 
         with freeze_time(fake_datetime):
             with self.subTest("with scoreless matches from ealier rounds"):
-                right_now = datetime.now(tz=pytz.UTC)
+                right_now = timezone.localtime()
                 self.tipping.right_now = right_now
 
                 self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
@@ -120,7 +120,7 @@ class TestTipping(TestCase):
 
     def __build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):
-            tomorrow = datetime.now() + timedelta(days=1)
+            tomorrow = timezone.localtime() + timedelta(days=1)
             year = tomorrow.year
 
             # Mock footywire fixture data
@@ -218,7 +218,7 @@ class TestTippingEndToEnd(TestCase):
 
         match_count = Match.objects.count()
         future_match_count = Match.objects.filter(
-            start_date_time__gt=datetime.now(tz=pytz.UTC)
+            start_date_time__gt=timezone.localtime()
         ).count()
 
         self.assertGreater(match_count, 0)

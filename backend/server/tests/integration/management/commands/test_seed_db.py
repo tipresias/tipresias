@@ -1,8 +1,8 @@
 from unittest.mock import Mock, patch
 from datetime import datetime
-import pytz
 
 from django.test import TestCase
+from django.utils import timezone
 import joblib
 import pandas as pd
 
@@ -117,12 +117,12 @@ class TestSeedDb(TestCase):
         if start_date is None or end_date is None:
             return self.match_results_data_frame
 
-        tz_start_date = datetime.strptime(  # pylint: disable=W0612
-            start_date, "%Y-%m-%d"
-        ).replace(tzinfo=pytz.UTC)
-        tz_end_date = datetime.strptime(  # pylint: disable=W0612
-            end_date, "%Y-%m-%d"
-        ).replace(tzinfo=pytz.UTC)
+        tz_start_date = timezone.make_aware(  # pylint: disable=unused-variable
+            datetime.strptime(start_date, "%Y-%m-%d")
+        )
+        tz_end_date = timezone.make_aware(  # pylint: disable=unused-variable
+            datetime.strptime(end_date, "%Y-%m-%d")
+        )
 
         return self.match_results_data_frame.query(
             "date >= @tz_start_date & date <= @tz_end_date"

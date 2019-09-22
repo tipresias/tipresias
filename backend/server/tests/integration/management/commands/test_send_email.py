@@ -1,8 +1,7 @@
-from datetime import datetime
 from unittest.mock import patch
-import pytz
 
 from django.test import TestCase
+from django.utils import timezone
 from faker import Faker
 import numpy as np
 
@@ -16,7 +15,7 @@ ROW_COUNT = 10
 
 class TestSendEmail(TestCase):
     def setUp(self):
-        today = datetime.now(tz=pytz.UTC)
+        today = timezone.localtime()
         year = today.year
 
         self.match_results_data = fake_match_results_data(ROW_COUNT, (year, year + 1))
@@ -25,9 +24,7 @@ class TestSendEmail(TestCase):
         ml_model = MLModelFactory(name="tipresias")
 
         for match_data in self.match_results_data.to_dict("records"):
-            match_date = (
-                match_data["date"].to_pydatetime().astimezone(pytz.UTC)
-            )
+            match_date = timezone.localtime(match_data["date"].to_pydatetime())
             match_attrs = {
                 "start_date_time": match_date,
                 "round_number": match_data["round_number"],

@@ -1,11 +1,11 @@
 from typing import Optional
 from functools import reduce
 from datetime import datetime, timedelta
-import pytz
 
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 import numpy as np
 
 from project.settings.data_config import TEAM_NAMES
@@ -93,7 +93,7 @@ class Match(models.Model):
         # We need to check the scores in case the data hasn't been updated since the
         # match was played, because as far as the data is concerned it hasn't, even though
         # the date has passed.
-        return self.__has_score and match_end_time < datetime.now(tz=pytz.UTC)
+        return self.__has_score and match_end_time < timezone.localtime()
 
     @property
     def __has_score(self):

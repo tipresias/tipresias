@@ -4,10 +4,10 @@ from typing import Tuple, Optional, List, Dict, Any, cast
 import os
 from urllib.parse import urljoin
 from dateutil import parser
-import pytz
 
 import pandas as pd
 import requests
+from django.utils import timezone
 
 from server.types import MlModel
 
@@ -23,7 +23,7 @@ def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
     # because the former doesn't maintain the timezone offset.
     # We make sure all datetimes are converted to UTC, because that makes things
     # easier due to Django converting all datetime fields to UTC when saving DB records.
-    return data_frame["date"].map(lambda dt: parser.parse(dt).astimezone(pytz.UTC))
+    return data_frame["date"].map(lambda dt: timezone.localtime(parser.parse(dt)))
 
 
 def _make_request(

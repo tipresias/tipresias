@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import pytz
 from django.test import TestCase
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -9,9 +8,7 @@ from server.models import Match, Team
 
 class TestMatch(TestCase):
     def setUp(self):
-        match_datetime = timezone.make_aware(
-            datetime(2018, 5, 5), timezone=pytz.UTC
-        )
+        match_datetime = timezone.make_aware(datetime(2018, 5, 5))
         self.match = Match.objects.create(
             start_date_time=match_datetime, round_number=5, venue="Corporate Stadium"
         )
@@ -50,7 +47,7 @@ class TestMatch(TestCase):
             team_match.score = 100
             team_match.save()
 
-            self.match.start_date_time = datetime.now(tz=pytz.UTC) - timedelta(hours=1)
+            self.match.start_date_time = timezone.localtime() - timedelta(hours=1)
             self.match.save()
 
             self.assertFalse(self.match.has_been_played)

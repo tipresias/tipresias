@@ -1,9 +1,9 @@
 from datetime import datetime
 import itertools
 from dateutil import parser
-import pytz
 
 from django.test import TestCase
+from django.utils import timezone
 from graphene.test import Client
 import numpy as np
 from freezegun import freeze_time
@@ -31,7 +31,7 @@ class TestSchema(TestCase):
             FullMatchFactory(
                 year=year,
                 round_number=((idx % 23) + 1),
-                start_date_time=datetime(year, 6, (idx % 29) + 1, tzinfo=pytz.UTC),
+                start_date_time=timezone.make_aware(datetime(year, 6, (idx % 29) + 1)),
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
@@ -187,7 +187,7 @@ class TestSchema(TestCase):
             FullMatchFactory(
                 year=year,
                 round_number=((idx % 23) + 1),
-                start_date_time=datetime(year, 6, (idx % 29) + 1, tzinfo=pytz.UTC),
+                start_date_time=timezone.make_aware(datetime(year, 6, (idx % 29) + 1)),
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
@@ -256,7 +256,9 @@ class TestSchema(TestCase):
             FullMatchFactory(
                 year=YEAR,
                 round_number=(idx + 1),
-                start_date_time=datetime(YEAR, MONTH, (idx % 29) + 1, tzinfo=pytz.UTC),
+                start_date_time=timezone.make_aware(
+                    datetime(YEAR, MONTH, (idx % 29) + 1)
+                ),
                 prediction__ml_model=ml_models[0],
                 prediction__is_correct=True,
                 prediction_two__ml_model=ml_models[1],
@@ -300,7 +302,7 @@ class TestSchema(TestCase):
 
         with self.subTest("when the last matches haven't been played yet"):
             DAY = 3
-            fake_datetime = datetime(YEAR, MONTH, DAY, tzinfo=pytz.UTC)
+            fake_datetime = timezone.make_aware(datetime(YEAR, MONTH, DAY))
 
             with freeze_time(fake_datetime):
                 past_executed = self.client.execute(query)

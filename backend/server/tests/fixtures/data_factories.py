@@ -3,15 +3,16 @@
 from typing import List, Dict, Tuple, Union
 from datetime import datetime
 import itertools
+import pytz
 
 from faker import Faker
 import numpy as np
 import pandas as pd
+from django.utils import timezone
+from django.conf import settings
 
 from server.types import CleanFixtureData, MatchData
 from server.models import Match
-from project.settings.common import MELBOURNE_TIMEZONE
-from project.settings.data_config import TEAM_NAMES, DEFUNCT_TEAM_NAMES
 
 FIRST = 1
 SECOND = 2
@@ -20,7 +21,7 @@ DEC = 12
 THIRTY_FIRST = 31
 FAKE = Faker()
 CONTEMPORARY_TEAM_NAMES = [
-    name for name in TEAM_NAMES if name not in DEFUNCT_TEAM_NAMES
+    name for name in settings.TEAM_NAMES if name not in settings.DEFUNCT_TEAM_NAMES
 ]
 BASELINE_BET_PAYOUT = 1.92
 
@@ -41,15 +42,15 @@ class CyclicalTeamNames:
 
 def _min_max_datetimes_by_year(year: int) -> Dict[str, datetime]:
     return {
-        "datetime_start": datetime(year, JAN, FIRST),
-        "datetime_end": datetime(year, DEC, THIRTY_FIRST),
+        "datetime_start": timezone.make_aware(datetime(year, JAN, FIRST)),
+        "datetime_end": timezone.make_aware(datetime(year, DEC, THIRTY_FIRST)),
     }
 
 
 def _raw_match_data(year: int, team_names: Tuple[str, str]) -> MatchData:
     return {
         "date": FAKE.date_time_between_dates(
-            **_min_max_datetimes_by_year(year), tzinfo=MELBOURNE_TIMEZONE
+            **_min_max_datetimes_by_year(year), tzinfo=pytz.UTC
         ),
         "season": year,
         "round": "R1",
@@ -95,7 +96,7 @@ def fake_match_results_data(
 def _fixture_data(year: int, team_names: Tuple[str, str]) -> CleanFixtureData:
     return {
         "date": FAKE.date_time_between_dates(
-            **_min_max_datetimes_by_year(year), tzinfo=MELBOURNE_TIMEZONE
+            **_min_max_datetimes_by_year(year), tzinfo=pytz.UTC
         ),
         "year": year,
         "round_number": 1,

@@ -9,8 +9,8 @@ from warnings import warn
 import pandas as pd
 from splinter import Browser
 from splinter.driver import ElementAPI
+from django.utils import timezone
 
-from project.settings.common import MELBOURNE_TIMEZONE
 from server.models import Match, TeamMatch, Team, Prediction
 from server.types import CleanFixtureData
 from server import data_import
@@ -53,7 +53,7 @@ class Tipping:
         ml_models=None,
         submit_tips=True,
     ) -> None:
-        self.right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
+        self.right_now = timezone.localtime()
         self.current_year = self.right_now.year
         self.fetch_data = fetch_data
         self.data_importer = data_importer
@@ -67,6 +67,15 @@ class Tipping:
         self.data_importer.verbose = verbose
 
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
+
+        if not fixture_data_frame.any().any():
+            if self.verbose == 1:
+                print(
+                    "Fixture for the upcoming round haven't been posted yet, "
+                    "so there's nothing to tip. Try again later."
+                )
+
+            return None
 
         upcoming_round = (
             fixture_data_frame.query("date > @self.right_now")
@@ -118,6 +127,8 @@ class Tipping:
         if self.submit_tips:
             self.__submit_tips()
 
+        return None
+
     def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
         if self.verbose == 1:
             print(f"Fetching fixture for {year}...\n")
@@ -125,6 +136,9 @@ class Tipping:
         fixture_data_frame = self.data_importer.fetch_fixture_data(
             start_date=f"{year}-01-01", end_date=f"{year}-12-31"
         )
+
+        if not fixture_data_frame.any().any():
+            return fixture_data_frame
 
         latest_match_date = fixture_data_frame["date"].max()
 
@@ -188,16 +202,7 @@ class Tipping:
             else match_data["date"]
         )
 
-        # Fiddling with timezones is proving error-prone, so I'm just creating
-        # a new datetime based on the raw one
-        match_date = datetime(
-            raw_date.year,
-            raw_date.month,
-            raw_date.day,
-            raw_date.hour,
-            raw_date.minute,
-            tzinfo=MELBOURNE_TIMEZONE,
-        )
+        match_date = timezone.localtime(raw_date)
 
         match, was_created = Match.objects.get_or_create(
             start_date_time=match_date,
@@ -375,8 +380,8 @@ class Tipping:
         latest_round_predictions = (
             Prediction.objects.filter(
                 ml_model__name="tipresias",
-                match__start_date_time__gt=datetime(
-                    latest_year, JAN, FIRST, tzinfo=MELBOURNE_TIMEZONE
+                match__start_date_time__gt=timezone.make_aware(
+                    datetime(latest_year, JAN, FIRST)
                 ),
                 match__round_number=latest_round,
             )

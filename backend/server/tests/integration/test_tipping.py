@@ -5,20 +5,24 @@ from unittest import skipIf
 import os
 
 from django.test import TestCase
+from django.utils import timezone
+from django.conf import settings
 from freezegun import freeze_time
 import pandas as pd
 import numpy as np
 
 from server.models import Match, TeamMatch, Prediction
 from server.tipping import Tipping
+from server import data_import
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
-from project.settings.data_config import TEAM_NAMES
-from project.settings.common import MELBOURNE_TIMEZONE
 
 
 ROW_COUNT = 5
-TIP_DATES = ["2016-01-01", "2017-01-01"]
+TIP_DATES = [
+    timezone.make_aware(datetime(2016, 1, 1)),
+    timezone.make_aware(datetime(2017, 1, 1)),
+]
 
 
 class TestTipping(TestCase):
@@ -57,8 +61,10 @@ class TestTipping(TestCase):
         )
 
     def test_tip(self):
-        with freeze_time("2016-01-01"):
-            right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
+        fake_datetime = timezone.make_aware(datetime(2016, 1, 1))
+
+        with freeze_time(fake_datetime):
+            right_now = timezone.localtime()
             self.tipping.right_now = right_now
 
             with self.subTest("with no existing match records in DB"):
@@ -84,9 +90,11 @@ class TestTipping(TestCase):
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
-        with freeze_time("2017-01-01"):
+        fake_datetime = timezone.make_aware(datetime(2017, 1, 1))
+
+        with freeze_time(fake_datetime):
             with self.subTest("with scoreless matches from ealier rounds"):
-                right_now = datetime.now(tz=MELBOURNE_TIMEZONE)
+                right_now = timezone.localtime()
                 self.tipping.right_now = right_now
 
                 self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
@@ -113,7 +121,7 @@ class TestTipping(TestCase):
 
     def __build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):
-            tomorrow = datetime.now() + timedelta(days=1)
+            tomorrow = timezone.localtime() + timedelta(days=1)
             year = tomorrow.year
 
             # Mock footywire fixture data
@@ -197,7 +205,7 @@ class TestTippingEndToEnd(TestCase):
     def setUp(self):
         MLModelFactory(name="tipresias")
 
-        for team_name in TEAM_NAMES:
+        for team_name in settings.TEAM_NAMES:
             TeamFactory(name=team_name)
 
         self.tipping = Tipping(ml_models="tipresias", submit_tips=False)
@@ -211,9 +219,17 @@ class TestTippingEndToEnd(TestCase):
 
         match_count = Match.objects.count()
         future_match_count = Match.objects.filter(
-            start_date_time__gt=datetime.now().replace(tzinfo=MELBOURNE_TIMEZONE)
+            start_date_time__gt=timezone.localtime()
         ).count()
 
-        self.assertGreater(match_count, 0)
+        start_date = datetime.today()
+        end_date = datetime(start_date.year, 12, 31)
+        fixture_data = data_import.fetch_fixture_data(str(start_date), str(end_date))
+
+        # Sometimes the fixtures haven't been updated yet. This mostly happens
+        # during finals and the off-season
+        if fixture_data.any().any():
+            self.assertGreater(match_count, 0)
+
         self.assertEqual(TeamMatch.objects.count(), match_count * 2)
         self.assertEqual(Prediction.objects.count(), future_match_count)

@@ -1,14 +1,13 @@
 from typing import List, cast, Optional
-from datetime import datetime
 
 import graphene
 from graphene_django.types import DjangoObjectType
 from django.db.models import Count, Q, QuerySet
+from django.utils import timezone
 import pandas as pd
 from mypy_extensions import TypedDict
 
 from server.models import Prediction, MLModel, TeamMatch, Match, Team
-from project.settings.common import MELBOURNE_TIMEZONE
 
 
 ModelPrediction = TypedDict(
@@ -241,8 +240,7 @@ class Query(graphene.ObjectType):
     )
 
     fetch_yearly_predictions = graphene.Field(
-        SeasonType,
-        year=graphene.Int(default_value=datetime.now(tz=MELBOURNE_TIMEZONE).year),
+        SeasonType, year=graphene.Int(default_value=timezone.localtime().year)
     )
 
     fetch_latest_round_predictions = graphene.Field(
@@ -303,9 +301,7 @@ class Query(graphene.ObjectType):
     @staticmethod
     def resolve_fetch_latest_round_stats(_root, _info, ml_model_name) -> ModelStats:
         max_played_match = (
-            Match.objects.filter(
-                start_date_time__lt=datetime.now(tz=MELBOURNE_TIMEZONE)
-            )
+            Match.objects.filter(start_date_time__lt=timezone.localtime())
             .order_by("-start_date_time")
             .first()
         )
@@ -315,7 +311,7 @@ class Query(graphene.ObjectType):
             Prediction.objects.filter(
                 match__start_date_time__year=max_year,
                 ml_model__name=ml_model_name,
-                match__start_date_time__lt=datetime.now(tz=MELBOURNE_TIMEZONE),
+                match__start_date_time__lt=timezone.localtime(),
             )
             .select_related("match", "ml_model")
             .order_by("match__start_date_time")

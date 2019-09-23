@@ -134,7 +134,8 @@ class Tipping:
             print(f"Fetching fixture for {year}...\n")
 
         fixture_data_frame = self.data_importer.fetch_fixture_data(
-            start_date=f"{year}-01-01", end_date=f"{year}-12-31"
+            start_date=timezone.make_aware(datetime(year, 1, 1)),
+            end_date=timezone.make_aware(datetime(year, 12, 31)),
         )
 
         if not fixture_data_frame.any().any():
@@ -252,9 +253,7 @@ class Tipping:
         ).start_date_time
 
         return self.data_importer.fetch_match_results_data(
-            str(earliest_match_date.date()),
-            str(self.right_now.date()),
-            fetch_data=self.fetch_data,
+            earliest_match_date, self.right_now, fetch_data=self.fetch_data
         )
 
     def __update_played_match_scores(

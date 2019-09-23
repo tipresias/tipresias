@@ -1,9 +1,11 @@
 """Module for functions that fetch data"""
 
-from typing import Tuple, Optional, List, Dict, Any, cast
+from typing import Tuple, Optional, List, Dict, Any, cast, Union
 import os
+from datetime import datetime
 from urllib.parse import urljoin
 from dateutil import parser
+import pytz
 
 import pandas as pd
 import requests
@@ -11,6 +13,7 @@ from django.utils import timezone
 
 from server.types import MlModel
 
+ParamValue = Union[str, int, datetime]
 
 LOCAL_DATA_SCIENCE_SERVICE = "http://data_science:8008"
 DATA_SCIENCE_SERVICE = os.getenv(
@@ -40,6 +43,24 @@ def _make_request(
     return response
 
 
+def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
+    if not isinstance(param_value, datetime):
+        return None
+
+    # For the edge-case in which this gets run early enough in the morning
+    # such that UTC is still the previous day, and the start/end date filters are all
+    # one day off.
+    return str(
+        timezone.localtime(
+            param_value, timezone=pytz.timezone("Australia/Melbourne")
+        ).date
+    )
+
+
+def _clean_param_value(param_value: ParamValue) -> str:
+    return _clean_datetime_param(param_value) or str(param_value)
+
+
 def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
     if os.getenv("PYTHON_ENV") == "production":
         service_host = DATA_SCIENCE_SERVICE
@@ -49,8 +70,9 @@ def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
         headers = {}
 
     service_url = urljoin(service_host, path)
+    clean_params = {key: _clean_param_value(value) for key, value in params.items()}
 
-    response = _make_request(service_url, params=params, headers=headers)
+    response = _make_request(service_url, params=clean_params, headers=headers)
 
     return response.json().get("data")
 
@@ -90,14 +112,14 @@ def fetch_prediction_data(
     )
 
 
-def fetch_fixture_data(start_date: str, end_date: str) -> pd.DataFrame:
+def fetch_fixture_data(start_date: datetime, end_date: datetime) -> pd.DataFrame:
     """
     Fetch fixture data (doesn't include match results) from machine_learning module.
 
     Args:
-        start_date (str): Stringified date of form yyy-mm-dd that determines
+        start_date (timezone-aware, datetime): Date-time that determines
             the earliest date for which to fetch data.
-        end_date (str): Stringified date of form yyy-mm-dd that determines
+        end_date (timezone-aware, datetime): Date-time that determines
             the latest date for which to fetch data.
         verbose (0 or 1): Whether to print info messages while fetching data.
 
@@ -116,15 +138,15 @@ def fetch_fixture_data(start_date: str, end_date: str) -> pd.DataFrame:
 
 
 def fetch_match_results_data(
-    start_date: str, end_date: str, fetch_data: bool = False
+    start_date: datetime, end_date: datetime, fetch_data: bool = False
 ) -> pd.DataFrame:
     """
     Fetch results data for past matches from machine_learning module.
 
     Args:
-        start_date (str): Stringified date of form yyy-mm-dd that determines
+        start_date (timezone-aware, datetime): Date-time that determines
             the earliest date for which to fetch data.
-        end_date (str): Stringified date of form yyy-mm-dd that determines
+        end_date (timezone-aware, datetime): Date-time that determines
             the latest date for which to fetch data.
         fetch_data (bool): Whether to fetch fresh data. Non-fresh data goes up to end
             of 2016 season.

@@ -18,7 +18,7 @@ splinter
 selenium>=2.0
 
 # Testing/Linting
-pylint==2.3.1
+pylint==2.4.1
 black
 pytest
 pytest-env

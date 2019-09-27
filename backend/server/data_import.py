@@ -36,8 +36,10 @@ def _make_request(
 
     if response.status_code != 200:
         raise Exception(
-            "Bad response from application: "
-            f"{response.status_code} / {response.headers} / {response.text}"
+            f"Bad response from application when requesting {url}:\n"
+            f"Status: {response.status_code}\n"
+            f"Headers: {response.headers}\n"
+            f"Body: {response.text}"
         )
 
     return response
@@ -53,7 +55,7 @@ def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
     return str(
         timezone.localtime(
             param_value, timezone=pytz.timezone("Australia/Melbourne")
-        ).date
+        ).date()
     )
 
 

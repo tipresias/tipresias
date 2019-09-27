@@ -53,7 +53,7 @@ def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
     return str(
         timezone.localtime(
             param_value, timezone=pytz.timezone("Australia/Melbourne")
-        ).date
+        ).date()
     )
 
 

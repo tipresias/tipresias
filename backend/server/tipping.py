@@ -69,11 +69,24 @@ class Tipping:
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
 
         if not fixture_data_frame.any().any():
-            if self.verbose == 1:
-                print(
-                    "Fixture for the upcoming round haven't been posted yet, "
-                    "so there's nothing to tip. Try again later."
-                )
+            warn(
+                "Fixture for the upcoming round haven't been posted yet, "
+                "so there's nothing to tip. Try again later."
+            )
+
+            self.__backfill_match_results()
+
+            return None
+
+        latest_match_date = fixture_data_frame["date"].max()
+
+        if self.right_now > latest_match_date:
+            warn(
+                f"No matches found after {self.right_now}. The latest match "
+                f"found is at {latest_match_date}\n"
+            )
+
+            self.__backfill_match_results()
 
             return None
 
@@ -97,7 +110,9 @@ class Tipping:
                     "Creating new match and prediction records...\n"
                 )
 
-            self.__create_matches(fixture_for_upcoming_round.to_dict("records"))
+            self.__create_matches(
+                fixture_for_upcoming_round.to_dict("records"), upcoming_round
+            )
         else:
             if self.verbose == 1:
                 print(
@@ -129,17 +144,11 @@ class Tipping:
         if not fixture_data_frame.any().any():
             return fixture_data_frame
 
-        latest_match_date = fixture_data_frame["date"].max()
-
-        if self.right_now > latest_match_date:
-            raise ValueError(
-                f"No matches found after {self.right_now}. The latest match found is "
-                f"at {latest_match_date}\n"
-            )
-
         return fixture_data_frame
 
-    def __create_matches(self, fixture_data: List[CleanFixtureData]) -> None:
+    def __create_matches(
+        self, fixture_data: List[CleanFixtureData], upcoming_round: int
+    ) -> None:
         if self.verbose == 1:
             print(f"Saving Match and TeamMatch records for round {upcoming_round}...")
 
@@ -289,7 +298,8 @@ class Tipping:
             "team__name",
             "at_home",
         )
-        assert match_results.any().any(), (
+
+        assert match_result.any().any(), (
             "Didn't find any match data rows that matched match record:\n"
             f"{match_values}"
         )

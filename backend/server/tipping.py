@@ -97,11 +97,6 @@ class Tipping:
                     "Creating new match and prediction records...\n"
                 )
 
-            if self.verbose == 1:
-                print(
-                    f"Saving Match and TeamMatch records for round {upcoming_round}..."
-                )
-
             self.__create_matches(fixture_for_upcoming_round.to_dict("records"))
         else:
             if self.verbose == 1:
@@ -114,14 +109,7 @@ class Tipping:
             fixture_for_upcoming_round["date"].map(lambda x: x.year).max()
         )
 
-        if self.verbose == 1:
-            print("Saving prediction records...")
-
         self.__make_predictions(upcoming_round_year, upcoming_round)
-
-        if self.verbose == 1:
-            print("Filling in results for recent matches...")
-
         self.__backfill_match_results()
 
         if self.submit_tips:
@@ -152,6 +140,9 @@ class Tipping:
         return fixture_data_frame
 
     def __create_matches(self, fixture_data: List[CleanFixtureData]) -> None:
+        if self.verbose == 1:
+            print(f"Saving Match and TeamMatch records for round {upcoming_round}...")
+
         if not any(fixture_data):
             raise ValueError("No fixture data found.")
 
@@ -217,6 +208,9 @@ class Tipping:
         return self.__build_team_match(match, match_data)
 
     def __make_predictions(self, year: int, round_number: int) -> None:
+        if self.verbose == 1:
+            print("Saving prediction records...")
+
         predictions = self.data_importer.fetch_prediction_data(
             (year, year + 1), round_number=round_number, ml_models=self.ml_models
         )
@@ -229,6 +223,9 @@ class Tipping:
             print("Predictions saved!\n")
 
     def __backfill_match_results(self) -> None:
+        if self.verbose == 1:
+            print("Filling in results for recent matches...")
+
         matches_without_results = Match.objects.prefetch_related(
             "teammatch_set", "prediction_set"
         ).filter(start_date_time__lt=self.right_now, teammatch__score=0)

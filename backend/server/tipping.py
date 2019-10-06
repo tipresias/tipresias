@@ -69,11 +69,24 @@ class Tipping:
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
 
         if not fixture_data_frame.any().any():
-            if self.verbose == 1:
-                print(
-                    "Fixture for the upcoming round haven't been posted yet, "
-                    "so there's nothing to tip. Try again later."
-                )
+            warn(
+                "Fixture for the upcoming round haven't been posted yet, "
+                "so there's nothing to tip. Try again later."
+            )
+
+            self.__backfill_match_results()
+
+            return None
+
+        latest_match_date = fixture_data_frame["date"].max()
+
+        if self.right_now > latest_match_date:
+            warn(
+                f"No matches found after {self.right_now}. The latest match "
+                f"found is at {latest_match_date}\n"
+            )
+
+            self.__backfill_match_results()
 
             return None
 
@@ -97,12 +110,9 @@ class Tipping:
                     "Creating new match and prediction records...\n"
                 )
 
-            if self.verbose == 1:
-                print(
-                    f"Saving Match and TeamMatch records for round {upcoming_round}..."
-                )
-
-            self.__create_matches(fixture_for_upcoming_round.to_dict("records"))
+            self.__create_matches(
+                fixture_for_upcoming_round.to_dict("records"), upcoming_round
+            )
         else:
             if self.verbose == 1:
                 print(
@@ -114,14 +124,7 @@ class Tipping:
             fixture_for_upcoming_round["date"].map(lambda x: x.year).max()
         )
 
-        if self.verbose == 1:
-            print("Saving prediction records...")
-
         self.__make_predictions(upcoming_round_year, upcoming_round)
-
-        if self.verbose == 1:
-            print("Filling in results for recent matches...")
-
         self.__backfill_match_results()
 
         if self.submit_tips:
@@ -141,17 +144,14 @@ class Tipping:
         if not fixture_data_frame.any().any():
             return fixture_data_frame
 
-        latest_match_date = fixture_data_frame["date"].max()
-
-        if self.right_now > latest_match_date:
-            raise ValueError(
-                f"No matches found after {self.right_now}. The latest match found is "
-                f"at {latest_match_date}\n"
-            )
-
         return fixture_data_frame
 
-    def __create_matches(self, fixture_data: List[CleanFixtureData]) -> None:
+    def __create_matches(
+        self, fixture_data: List[CleanFixtureData], upcoming_round: int
+    ) -> None:
+        if self.verbose == 1:
+            print(f"Saving Match and TeamMatch records for round {upcoming_round}...")
+
         if not any(fixture_data):
             raise ValueError("No fixture data found.")
 
@@ -217,6 +217,9 @@ class Tipping:
         return self.__build_team_match(match, match_data)
 
     def __make_predictions(self, year: int, round_number: int) -> None:
+        if self.verbose == 1:
+            print("Saving prediction records...")
+
         predictions = self.data_importer.fetch_prediction_data(
             (year, year + 1), round_number=round_number, ml_models=self.ml_models
         )
@@ -229,6 +232,9 @@ class Tipping:
             print("Predictions saved!\n")
 
     def __backfill_match_results(self) -> None:
+        if self.verbose == 1:
+            print("Filling in results for recent matches...")
+
         matches_without_results = Match.objects.prefetch_related(
             "teammatch_set", "prediction_set"
         ).filter(start_date_time__lt=self.right_now, teammatch__score=0)
@@ -292,7 +298,8 @@ class Tipping:
             "team__name",
             "at_home",
         )
-        assert match_results.any().any(), (
+
+        assert match_result.any().any(), (
             "Didn't find any match data rows that matched match record:\n"
             f"{match_values}"
         )

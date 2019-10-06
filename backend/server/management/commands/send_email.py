@@ -40,9 +40,12 @@ class Command(BaseCommand):
         """Run 'send_email' command"""
 
         right_now = timezone.localtime()
-        upcoming_match = Match.objects.filter(start_date_time__gt=right_now).earliest(
-            "start_date_time"
-        )
+        future_matches = Match.objects.filter(start_date_time__gt=right_now)
+
+        if future_matches.count() == 0:
+            return None
+
+        upcoming_match = future_matches.earliest("start_date_time")
         upcoming_match_year = upcoming_match.start_date_time.year
         upcoming_round = upcoming_match.round_number
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@babel/core": "^7.0.0-0",
+    "@babel/core": "^7.6.3",
     "apollo-boost": "0.4.4",
     "apollo-client": "^2.5.1",
     "d3": "^5.7.0",

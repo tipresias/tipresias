@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 from faker import Faker
 import numpy as np
+from freezegun import freeze_time
 
 from server.management.commands import send_email
 from server.tests.fixtures.data_factories import fake_match_results_data
@@ -11,14 +12,14 @@ from server.tests.fixtures.factories import MLModelFactory, FullMatchFactory
 
 FAKE = Faker()
 ROW_COUNT = 10
+PREDICTION_YEAR = 2016
 
 
 class TestSendEmail(TestCase):
     def setUp(self):
-        today = timezone.localtime()
-        year = today.year
-
-        self.match_results_data = fake_match_results_data(ROW_COUNT, (year, year + 1))
+        self.match_results_data = fake_match_results_data(
+            ROW_COUNT, (PREDICTION_YEAR, PREDICTION_YEAR + 1)
+        )
 
         # Save records in DB
         ml_model = MLModelFactory(name="tipresias")
@@ -46,6 +47,7 @@ class TestSendEmail(TestCase):
 
         self.send_email_command = send_email.Command()
 
+    @freeze_time(f"{PREDICTION_YEAR}-01-01")
     def test_handle(self):
         with patch("sendgrid.SendGridAPIClient") as MockClient:
             MockClient.return_value.client.return_value.mail.return_value.send.return_value.post = (

@@ -1,7 +1,7 @@
 // @flow
 import React, { Component, Fragment } from 'react';
 import type { Node } from 'react';
-import { Query } from 'react-apollo';
+import { Query } from '@apollo/react-components';
 import styled from 'styled-components/macro';
 import {
   FETCH_PREDICTION_YEARS_QUERY,

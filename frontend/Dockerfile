@@ -1,5 +1,5 @@
 # Use an official node runtime as a parent image
-FROM node:8@sha256:06adec3330444f71d8fd873600c20d6cec1aed6c26c714c881eebd03391814f2
+FROM node:10.17@sha256:be69034700545030c110f67ae22e0584ddd59eeb2af81e4bd7f16f3ba5fa93a6
 
 # Install dependencies
 COPY package.json yarn.lock /app/

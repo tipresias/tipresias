@@ -1,5 +1,5 @@
 import React from 'react';
-import { MockedProvider } from 'react-apollo/test-utils';
+import { MockedProvider } from '@apollo/react-testing';
 import { shallow, mount } from 'enzyme';
 import MockComponent from '../../../test-support/MockComponent';
 import FETCH_PREDICTIONS_QUERY from '../../../graphql';

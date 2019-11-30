@@ -8,7 +8,7 @@
     "apollo-client": "^2.5.1",
     "d3": "^5.7.0",
     "enzyme": "^3.7.0",
-    "enzyme-adapter-react-16": "^1.6.0",
+    "enzyme-adapter-react-16": "^1.15.1",
     "flow-typed": "^2.5.1",
     "graphql": "^14.5.8",
     "graphql-tag": "^2.10.1",

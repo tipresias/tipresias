@@ -1,4 +1,4 @@
-FROM cypress/browsers:node10.2.1-chrome74@sha256:21d6232541c3d99409edcdd2b581784a93cb0ffe43bb845f07f62c8d693a9b1c
+FROM cypress/browsers:node10.16.0-chrome77@sha256:df704dfda7c6e453e78f2f075a9a6a23c428f97dd1b5d09b015adcd05079eca1
 WORKDIR /app
 
 COPY package.json package-lock.json ./

@@ -1,4 +1,4 @@
 it("loads page", () => {
-  cy.visit("/");
+  cy.visit("/", { headers: { Connection: "Keep-Alive" } });
   cy.contains("Tipresias");
 });

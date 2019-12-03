@@ -8,7 +8,7 @@
     "@babel/core": "^7.7.4",
     "apollo-boost": "0.4.4",
     "apollo-client": "^2.5.1",
-    "d3": "^5.7.0",
+    "d3": "^5.14.2",
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.15.1",
     "flow-typed": "^2.6.2",

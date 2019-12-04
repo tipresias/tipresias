@@ -46,7 +46,7 @@
     "eslint-plugin-flowtype": "^4.5.2",
     "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-jsx-a11y": "^6.1.1",
-    "eslint-plugin-react": "^7.16.0",
+    "eslint-plugin-react": "^7.17.0",
     "flow-bin": "^0.112.0"
   },
   "proxy": "http://backend:8000",

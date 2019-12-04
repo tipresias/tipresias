@@ -19,13 +19,15 @@ before_script:
 script:
   - docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
   - docker run cfranklin11/tipresias_backend:latest mypy server project scripts
-  - docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
 
   - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
   - docker run cfranklin11/tipresias_frontend:latest yarn run flow
   - docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
 
-  - docker-compose -f docker-compose.ci.yml run browser_test ./wait-for-it.sh localhost:3000 -- npx cypress run
+  - docker-compose -f docker-compose.ci.yml up -d
+  - ./browser_test/wait-for-it.sh localhost:3000 -t 30 -- echo "Server ready"
+  - docker-compose -f docker-compose.ci.yml run backend python3 -Wi manage.py test
+  - docker-compose -f docker-compose.ci.yml run browser_test npx cypress run
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_backend:latest

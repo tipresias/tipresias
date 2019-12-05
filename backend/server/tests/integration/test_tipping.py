@@ -9,7 +9,6 @@ from django.utils import timezone
 from django.conf import settings
 from freezegun import freeze_time
 import pandas as pd
-import numpy as np
 
 from server.models import Match, TeamMatch, Prediction
 from server.tipping import Tipping
@@ -61,9 +60,7 @@ class TestTipping(TestCase):
         )
 
     def test_tip(self):
-        fake_datetime = timezone.make_aware(datetime(2016, 1, 1))
-
-        with freeze_time(fake_datetime):
+        with freeze_time(TIP_DATES[0]):
             right_now = timezone.localtime()
             self.tipping.right_now = right_now
 
@@ -90,9 +87,7 @@ class TestTipping(TestCase):
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
-        fake_datetime = timezone.make_aware(datetime(2017, 1, 1))
-
-        with freeze_time(fake_datetime):
+        with freeze_time(TIP_DATES[1]):
             with self.subTest("with scoreless matches from ealier rounds"):
                 right_now = timezone.localtime()
                 self.tipping.right_now = right_now
@@ -130,10 +125,10 @@ class TestTipping(TestCase):
             prediction_match_data, _ = zip(
                 *[
                     (
-                        self.__build_prediction_and_match_results_data(idx, match_data),
+                        self.__build_prediction_and_match_results_data(match_data),
                         self.__build_teams(match_data),
                     )
-                    for idx, match_data in enumerate(fixture_data.to_dict("records"))
+                    for match_data in fixture_data.to_dict("records")
                 ]
             )
 
@@ -145,18 +140,18 @@ class TestTipping(TestCase):
             pd.DataFrame(list(match_results_data)),
         )
 
-    def __build_prediction_and_match_results_data(self, idx, match_data):
+    def __build_prediction_and_match_results_data(self, match_data):
         match_predictions = fake_prediction_data(
             match_data=match_data, ml_model_name="test_estimator"
         )
 
         return (
             match_predictions,
-            self.__build_match_results_data(idx, match_data, match_predictions),
+            self.__build_match_results_data(match_data, match_predictions),
         )
 
     @staticmethod
-    def __build_match_results_data(idx, match_data, match_predictions):
+    def __build_match_results_data(match_data, match_predictions):
         home_team_prediction = (
             match_predictions.query("at_home == 1").iloc[0, :].to_dict()
         )
@@ -164,30 +159,15 @@ class TestTipping(TestCase):
             match_predictions.query("at_home == 0").iloc[0, :].to_dict()
         )
 
-        # Make sure at least some predictions are correct to make assertions
-        # more meaningful
-        is_correct = idx % 2 == 0
-
-        home_score = np.random.randint(50, 150)
-        predicted_winner = (
-            home_team_prediction["team"]
-            if home_team_prediction["predicted_margin"]
-            > away_team_prediction["predicted_margin"]
-            else away_team_prediction["team"]
-        )
-        away_score = (
-            home_score + 25
-            if predicted_winner == match_data["away_team"] and is_correct
-            else home_score - 25
-        )
-
+        # Making all predictions correct, because trying to get fancy with it
+        # resulted in flakiness that was difficult to fix
         return {
             "year": match_data["year"],
             "round_number": match_data["round_number"],
             "home_team": match_data["home_team"],
             "away_team": match_data["away_team"],
-            "home_score": home_score,
-            "away_score": away_score,
+            "home_score": home_team_prediction["predicted_margin"] + 50,
+            "away_score": away_team_prediction["predicted_margin"] + 50,
         }
 
     @staticmethod

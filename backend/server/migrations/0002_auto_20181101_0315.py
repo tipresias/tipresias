@@ -7,29 +7,36 @@ import server.models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('server', '0001_initial'),
-    ]
+    dependencies = [("server", "0001_initial")]
 
     operations = [
         migrations.AlterField(
-            model_name='mlmodel',
-            name='description',
+            model_name="mlmodel",
+            name="description",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='mlmodel',
-            name='filepath',
+            model_name="mlmodel",
+            name="filepath",
             field=models.CharField(blank=True, max_length=500, null=True),
         ),
         migrations.AlterField(
-            model_name='mlmodel',
-            name='trained_to_match',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='server.Match'),
+            model_name="mlmodel",
+            name="trained_to_match",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="server.Match",
+            ),
         ),
         migrations.AlterField(
-            model_name='team',
-            name='name',
-            field=models.CharField(max_length=100, unique=True, validators=[server.models.validate_name]),
+            model_name="team",
+            name="name",
+            field=models.CharField(
+                max_length=100,
+                unique=True,
+                validators=[server.models.team.validate_name],
+            ),
         ),
     ]

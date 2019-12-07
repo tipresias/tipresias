@@ -197,22 +197,7 @@ class Tipping:
             print("Match data saved!\n")
 
     def __build_match(self, match_data: CleanFixtureData) -> Optional[List[TeamMatch]]:
-        raw_date = (
-            match_data["date"].to_pydatetime()
-            if isinstance(match_data["date"], pd.Timestamp)
-            else match_data["date"]
-        )
-
-        match_date = timezone.localtime(raw_date)
-
-        match, was_created = Match.objects.get_or_create(
-            start_date_time=match_date,
-            round_number=int(match_data["round_number"]),
-            venue=match_data["venue"],
-        )
-
-        if was_created:
-            match.full_clean()
+        match = Match.get_or_create_from_raw_data(match_data)
 
         return self.__build_team_match(match, match_data)
 

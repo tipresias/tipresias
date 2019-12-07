@@ -1,15 +1,19 @@
 """Data model for AFL matches"""
 
-from typing import Optional
+from typing import Optional, TypeVar, Type, Union
 from functools import reduce
 from datetime import datetime, timedelta
 
-from django.db import models
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+import pandas as pd
 
+from server.types import CleanFixtureData, MatchData
 from .team import Team
+
+T = TypeVar("T", bound="Match")
 
 # Rough estimate, but exactitude isn't necessary here
 GAME_LENGTH_HRS = 3
@@ -31,6 +35,32 @@ class Match(models.Model):
 
     class Meta:
         unique_together = ("start_date_time", "venue")
+
+    @classmethod
+    def get_or_create_from_raw_data(
+        cls: Type[T], match_data: Union[CleanFixtureData, MatchData]
+    ) -> T:
+        """Get or create a match record from a row of fixture data"""
+
+        raw_date = (
+            match_data["date"].to_pydatetime()
+            if isinstance(match_data["date"], pd.Timestamp)
+            else match_data["date"]
+        )
+
+        match_date = timezone.localtime(raw_date)
+
+        with transaction.atomic():
+            match, was_created = Match.objects.get_or_create(
+                start_date_time=match_date,
+                round_number=int(match_data["round_number"]),
+                venue=match_data["venue"],
+            )
+
+            if was_created:
+                match.full_clean()
+
+        return match
 
     @property
     def is_draw(self):

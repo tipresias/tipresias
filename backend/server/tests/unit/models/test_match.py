@@ -1,9 +1,13 @@
+from copy import copy
+
 from datetime import datetime, timedelta
 from django.test import TestCase
 from django.utils import timezone
+from django.db.utils import DataError
 from django.core.exceptions import ValidationError
 
 from server.models import Match, Team
+from server.tests.fixtures.data_factories import fake_fixture_data
 
 
 class TestMatch(TestCase):
@@ -21,6 +25,30 @@ class TestMatch(TestCase):
         self.match.teammatch_set.create(
             team=self.away_team, match=self.match, at_home=False, score=100
         )
+
+    def test_get_or_create_from_raw_data(self):
+        fixture_data = fake_fixture_data(1, (2015, 2016)).to_dict("records")[0]
+        match_count = Match.objects.count()
+
+        with self.subTest("with validation error"):
+            invalid_fixture_data = copy(fixture_data)
+            invalid_fixture_data["venue"] = "venue" * 25
+
+            with self.assertRaises(DataError):
+                Match.get_or_create_from_raw_data(invalid_fixture_data)
+
+            self.assertEqual(Match.objects.count(), match_count)
+
+        created_match = Match.get_or_create_from_raw_data(fixture_data)
+
+        self.assertIsInstance(created_match, Match)
+        self.assertEqual(Match.objects.count(), match_count + 1)
+
+        with self.subTest("with existing match record"):
+            gotten_match = Match.get_or_create_from_raw_data(fixture_data)
+
+            self.assertEqual(gotten_match, created_match)
+            self.assertEqual(Match.objects.count(), match_count + 1)
 
     def test_year(self):
         self.assertEqual(self.match.year, 2018)

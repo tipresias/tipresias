@@ -123,28 +123,7 @@ class Command(BaseCommand):
             print("Match data saved!")
 
     def __build_match(self, match_data: MatchData) -> List[TeamMatch]:
-        raw_date = match_data["date"]
-        python_date = (
-            raw_date if isinstance(raw_date, datetime) else raw_date.to_pydatetime()
-        )
-
-        # 'make_aware' raises error if datetime already has a timezone
-        if (
-            python_date.tzinfo is None
-            or python_date.tzinfo.utcoffset(python_date) is None
-        ):
-            match_date = timezone.make_aware(python_date)
-        else:
-            match_date = python_date
-
-        match: Match = Match(
-            start_date_time=match_date,
-            round_number=int(match_data["round_number"]),
-            venue=match_data["venue"],
-        )
-
-        match.full_clean()
-        match.save()
+        match = Match.get_or_create_from_raw_data(match_data)
 
         return self.__build_team_match(match, match_data)
 

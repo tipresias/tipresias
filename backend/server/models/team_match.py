@@ -1,7 +1,9 @@
 """Data model for the join table for matches and teams"""
 
-from typing import Type, TypeVar, Union, Tuple, cast, List
+from typing import Type, TypeVar, Union, Tuple
+
 from django.db import models, transaction
+import pandas as pd
 
 from server.types import CleanFixtureData, MatchData
 from .team import Team
@@ -73,3 +75,14 @@ class TeamMatch(models.Model):
         team_match.save()
 
         return team_match
+
+    def update_score(self, match_result: pd.Series):
+        """Update score for records with the given match result data"""
+
+        team_type_prefix = "home" if self.at_home else "away"
+
+        assert self.team.name == match_result[f"{team_type_prefix}_team"]
+
+        self.score = match_result[f"{team_type_prefix}_score"]
+        self.full_clean()
+        self.save()

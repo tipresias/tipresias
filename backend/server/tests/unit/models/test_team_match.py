@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from server.models import TeamMatch
-from server.tests.fixtures.factories import MatchFactory
+from server.tests.fixtures.factories import MatchFactory, TeamMatchFactory
 from server.tests.fixtures.data_factories import (
     fake_fixture_data,
     fake_match_results_data,
@@ -54,3 +54,13 @@ class TestTeamMatch(TestCase):
             self.assertEqual(home_team.score, match_data["home_score"])
             self.assertEqual(away_team.score, match_data["away_score"])
 
+    def test_update_score(self):
+        match_result = fake_match_results_data(1, (2014, 2015)).iloc[0, :]
+
+        team_match = TeamMatchFactory(
+            team__name=match_result["home_team"], at_home=True, score=0
+        )
+
+        team_match.update_score(match_result)
+
+        self.assertEqual(team_match.score, match_result["home_score"])

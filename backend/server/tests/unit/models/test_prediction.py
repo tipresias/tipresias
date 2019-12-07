@@ -24,48 +24,6 @@ class TestPrediction(TestCase):
         self.match.teammatch_set.create(team=self.home_team, at_home=True, score=150)
         self.match.teammatch_set.create(team=self.away_team, at_home=False, score=100)
 
-    def test_calculate_whether_correct(self):
-        with self.subTest("when higher-scoring team is predicted winner"):
-            prediction = Prediction(
-                match=self.match,
-                ml_model=self.ml_model,
-                predicted_winner=self.home_team,
-                predicted_margin=50,
-            )
-            self.assertTrue(
-                Prediction.calculate_whether_correct(
-                    self.match, prediction.predicted_winner
-                )
-            )
-
-        with self.subTest("when lower-scoring team is predicted winner"):
-            prediction = Prediction(
-                match=self.match,
-                ml_model=self.ml_model,
-                predicted_winner=self.away_team,
-                predicted_margin=50,
-            )
-            self.assertFalse(
-                Prediction.calculate_whether_correct(
-                    self.match, prediction.predicted_winner
-                )
-            )
-
-        with self.subTest("when match is a draw"):
-            self.match.teammatch_set.update(score=100)
-            prediction = Prediction(
-                match=self.match,
-                ml_model=self.ml_model,
-                predicted_winner=self.away_team,
-                predicted_margin=50,
-            )
-
-            self.assertTrue(
-                Prediction.calculate_whether_correct(
-                    self.match, prediction.predicted_winner
-                )
-            )
-
     def test_convert_data_to_record(self):
         data = fake_prediction_data(self.match, ml_model_name=self.ml_model.name)
         home_away_df = pivot_team_matches_to_matches(pd.DataFrame(data))
@@ -165,3 +123,38 @@ class TestPrediction(TestCase):
 
             with self.assertRaises(ValidationError):
                 prediction.full_clean()
+
+    def test_update_correctness(self):
+        with self.subTest("when higher-scoring team is predicted winner"):
+            prediction = Prediction(
+                match=self.match,
+                ml_model=self.ml_model,
+                predicted_winner=self.home_team,
+                predicted_margin=50,
+            )
+            prediction.update_correctness()
+
+            self.assertTrue(prediction.is_correct)
+
+        with self.subTest("when lower-scoring team is predicted winner"):
+            prediction = Prediction(
+                match=self.match,
+                ml_model=self.ml_model,
+                predicted_winner=self.away_team,
+                predicted_margin=50,
+            )
+            prediction.update_correctness()
+
+            self.assertFalse(prediction.is_correct)
+
+        with self.subTest("when match is a draw"):
+            self.match.teammatch_set.update(score=100)
+            prediction = Prediction(
+                match=self.match,
+                ml_model=self.ml_model,
+                predicted_winner=self.away_team,
+                predicted_margin=50,
+            )
+            prediction.update_correctness()
+
+            self.assertTrue(prediction.is_correct)

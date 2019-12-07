@@ -21,27 +21,6 @@ class Prediction(models.Model):
     is_correct = models.BooleanField(default=False)
 
     @classmethod
-    def calculate_whether_correct(cls, match: Match, predicted_winner: Team) -> bool:
-        """
-        Calculate if a prediction is correct. Implemented as a class method to allow
-        for one-step creation of new prediction records.
-
-        Args:
-            match (Match): Match data model
-            predicted_winner (Team): Team data model for the team
-                that's predicted to win
-
-        Returns:
-            bool
-        """
-
-        # In footy tipping competitions its typical to grant everyone a correct tip
-        # in the case of a draw
-        return match.has_been_played and (
-            match.is_draw or predicted_winner == match.winner
-        )
-
-    @classmethod
     def update_or_create_from_data(cls, prediction_data: CleanPredictionData) -> None:
         """
         Convert raw prediction data to a Prediction model instance. Tries to find
@@ -115,3 +94,22 @@ class Prediction(models.Model):
         # Judgement call, but I want to avoid 0 predicted margin values for the cases
         # where the floating prediction is < 0.5, because we're never predicting a draw
         self.predicted_margin = round(self.predicted_margin) or 1
+
+    def update_correctness(self):
+        """Update the correct attribute based on associated team_match scores"""
+
+        self.is_correct = self._calculate_whether_correct()
+        self.full_clean()
+        self.save()
+
+    def _calculate_whether_correct(self) -> bool:
+        """
+        Calculate whether a prediction is correct based on match results
+        and conventional footy-tipping rules.
+        """
+
+        # In footy tipping competitions its typical to grant everyone a correct tip
+        # in the case of a draw
+        return self.match.has_been_played and (
+            self.match.is_draw or self.predicted_winner == self.match.winner
+        )

@@ -1,6 +1,6 @@
 """Module for handling generation and saving of tips (i.e. predictions)"""
 
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from typing import List, Optional, Dict, Tuple
 import os
 from warnings import warn
@@ -200,102 +200,25 @@ class Tipping:
         if self.verbose == 1:
             print("Filling in results for recent matches...")
 
-        matches_without_results = Match.objects.prefetch_related(
-            "teammatch_set", "prediction_set"
-        ).filter(start_date_time__lt=self.right_now, teammatch__score=0)
+        earliest_date_without_results = Match.earliest_date_without_results()
 
-        if matches_without_results.count() == 0:
+        if earliest_date_without_results is None:
+            if self.verbose == 1:
+                print("No played matches are missing results.")
+
             return None
 
-        match_results = self.__fetch_match_results_to_fill(matches_without_results)
+        match_results = self.data_importer.fetch_match_results_data(
+            earliest_date_without_results, self.right_now, fetch_data=self.fetch_data
+        )
 
         if not any(match_results):
+            print("Results data is not yet available to update match records.")
             return None
 
-        for match in matches_without_results:
-            self.__update_played_match_scores(match_results, match)
-            self.__update_predictions_correctness(match)
+        Match.update_results(match_results)
 
         return None
-
-    def __fetch_match_results_to_fill(self, matches_without_results) -> pd.DataFrame:
-        earliest_match_date = matches_without_results.earliest(
-            "start_date_time"
-        ).start_date_time
-
-        return self.data_importer.fetch_match_results_data(
-            earliest_match_date, self.right_now, fetch_data=self.fetch_data
-        )
-
-    def __update_played_match_scores(
-        self, match_results: pd.DataFrame, match: Match
-    ) -> None:
-        home_team_match = match.teammatch_set.get(at_home=True)
-        away_team_match = match.teammatch_set.get(at_home=False)
-
-        match_result = match_results.query(
-            "year == @match.start_date_time.year & "
-            "round_number == @match.round_number & "
-            "home_team == @home_team_match.team.name & "
-            "away_team == @away_team_match.team.name"
-        )
-
-        # AFLTables usually updates match results a few days after the round
-        # is finished. Allowing for the occasional delay, we accept matches without
-        # results data for a week before raising an error.
-        if (
-            match.start_date_time > self.right_now - timedelta(days=WEEK_IN_DAYS)
-            and not match_results.any().any()
-        ):
-            warn(
-                f"Unable to update the match between {home_team_match.team.name} "
-                f"and {away_team_match.team.name} from round {match.round_number}. "
-                "This is likely due to AFLTables not having updated the match results "
-                "yet."
-            )
-
-            return None
-
-        match_values = match.teammatch_set.values(
-            "match__start_date_time",
-            "match__round_number",
-            "match__venue",
-            "team__name",
-            "at_home",
-        )
-
-        assert match_result.any().any(), (
-            "Didn't find any match data rows that matched match record:\n"
-            f"{match_values}"
-        )
-
-        assert len(match_result) == 1, (
-            "Filtering match results by year, round_number and team name "
-            "should result in a single row, but instead the following was "
-            "returned:\n"
-            f"{match_result}"
-        )
-
-        match_result = match_result.iloc[0, :]
-
-        home_team_match.score = match_result["home_score"]
-        home_team_match.clean()
-        home_team_match.save()
-
-        away_team_match.score = match_result["away_score"]
-        away_team_match.clean()
-        away_team_match.save()
-
-        return None
-
-    @staticmethod
-    def __update_predictions_correctness(match: Match) -> None:
-        for prediction in match.prediction_set.all():
-            prediction.is_correct = Prediction.calculate_whether_correct(
-                match, prediction.predicted_winner
-            )
-            prediction.clean()
-            prediction.save()
 
     def __submit_tips(self) -> None:
         print("Submitting tips to footytips.com.au...")

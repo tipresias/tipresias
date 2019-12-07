@@ -1,6 +1,5 @@
 """Django command for seeding the DB with match & prediction data"""
 
-import itertools
 from typing import Tuple, List
 from datetime import datetime
 import pandas as pd
@@ -79,18 +78,6 @@ class Command(BaseCommand):
 
             raise
 
-    def __create_teams(self, fixture_data: pd.DataFrame) -> None:
-        team_names = np.unique(fixture_data[["home_team", "away_team"]].values)
-        teams = [self.__build_team(team_name) for team_name in team_names]
-
-        if not any(teams):
-            raise ValueError("Something went wrong and no teams were saved.")
-
-        Team.objects.bulk_create(teams)
-
-        if self.verbose == 1:
-            print("Teams seeded!")
-
     def __create_ml_models(self) -> List[MLModel]:
         ml_models = [
             self.__build_ml_model(ml_model)
@@ -111,21 +98,18 @@ class Command(BaseCommand):
         if not any(fixture_data):
             raise ValueError("No match data found.")
 
-        team_matches = [self.__build_match(match_data) for match_data in fixture_data]
-        team_matches_to_save = list(itertools.chain.from_iterable(team_matches))
-
-        if not any(team_matches):
-            raise ValueError("Something went wrong, and no team matches were saved.")
-
-        TeamMatch.objects.bulk_create(team_matches_to_save)
+        build_matches = (
+            self.__build_match(fixture_datum) for fixture_datum in fixture_data
+        )
+        list(build_matches)
 
         if self.verbose == 1:
             print("Match data saved!")
 
-    def __build_match(self, match_data: MatchData) -> List[TeamMatch]:
+    @staticmethod
+    def __build_match(match_data: MatchData) -> None:
         match = Match.get_or_create_from_raw_data(match_data)
-
-        return self.__build_team_match(match, match_data)
+        TeamMatch.get_or_create_from_raw_data(match, match_data)
 
     def __make_predictions(self, year_range: Tuple[int, int]) -> None:
         predictions = self.data_importer.fetch_prediction_data(
@@ -145,32 +129,6 @@ class Command(BaseCommand):
         ml_model_record.full_clean()
 
         return ml_model_record
-
-    @staticmethod
-    def __build_team(team_name: str) -> Team:
-        team = Team(name=team_name)
-        team.full_clean()
-
-        return team
-
-    @staticmethod
-    def __build_team_match(match: Match, match_data: MatchData) -> List[TeamMatch]:
-        home_team = Team.objects.get(name=match_data["home_team"])
-        away_team = Team.objects.get(name=match_data["away_team"])
-
-        home_team_match = TeamMatch(
-            team=home_team, match=match, at_home=True, score=match_data["home_score"]
-        )
-        away_team_match = TeamMatch(
-            team=away_team, match=match, at_home=False, score=match_data["away_score"]
-        )
-
-        home_team_match.clean_fields()
-        home_team_match.clean()
-        away_team_match.clean_fields()
-        away_team_match.clean()
-
-        return [home_team_match, away_team_match]
 
     @staticmethod
     def __build_match_prediction(

@@ -1,6 +1,5 @@
 """Module for handling generation and saving of tips (i.e. predictions)"""
 
-from functools import reduce
 from datetime import datetime, date, timedelta
 from typing import List, Optional, Dict, Tuple
 import os
@@ -11,7 +10,7 @@ from splinter import Browser
 from splinter.driver import ElementAPI
 from django.utils import timezone
 
-from server.models import Match, TeamMatch, Team, Prediction
+from server.models import Match, TeamMatch, Prediction
 from server.types import CleanFixtureData
 from server import data_import
 from server.helpers import pivot_team_matches_to_matches
@@ -168,38 +167,19 @@ class Tipping:
                 f"in {prev_match.start_date_time.year}"
             )
 
-        team_match_lists = [
-            self.__build_match(match_data) for match_data in fixture_data
-        ]
-
-        compacted_team_match_lists = [
-            team_match_list
-            for team_match_list in team_match_lists
-            if team_match_list is not None
-        ]
-
-        team_matches_to_save: List[TeamMatch] = reduce(
-            lambda acc_list, curr_list: acc_list + curr_list,
-            compacted_team_match_lists,
-            [],
+        build_matches = (
+            self.__build_match(fixture_datum) for fixture_datum in fixture_data
         )
-
-        team_match_count = TeamMatch.objects.filter(
-            match__start_date_time__year=year, match__round_number=round_number
-        ).count()
-
-        if not any(team_matches_to_save) and team_match_count == 0:
-            raise ValueError("Something went wrong, and no team matches were saved.\n")
-
-        TeamMatch.objects.bulk_create(team_matches_to_save)
+        list(build_matches)
 
         if self.verbose == 1:
             print("Match data saved!\n")
 
-    def __build_match(self, match_data: CleanFixtureData) -> Optional[List[TeamMatch]]:
+    @staticmethod
+    def __build_match(match_data: CleanFixtureData) -> Tuple[TeamMatch, TeamMatch]:
         match = Match.get_or_create_from_raw_data(match_data)
 
-        return self.__build_team_match(match, match_data)
+        return TeamMatch.get_or_create_from_raw_data(match, match_data)
 
     def __make_predictions(self, year: int, round_number: int) -> None:
         if self.verbose == 1:
@@ -316,38 +296,6 @@ class Tipping:
             )
             prediction.clean()
             prediction.save()
-
-    @staticmethod
-    def __build_team_match(
-        match: Match, match_data: CleanFixtureData
-    ) -> Optional[List[TeamMatch]]:
-        team_match_count = match.teammatch_set.count()
-
-        if team_match_count == 2:
-            return None
-
-        if team_match_count == 1 or team_match_count > 2:
-            model_string = "TeamMatches" if team_match_count > 1 else "TeamMatch"
-            raise ValueError(
-                f"{match} has {team_match_count} associated {model_string}, which shouldn't "
-                "happen. Figure out what's up."
-            )
-        home_team = Team.objects.get(name=match_data["home_team"])
-        away_team = Team.objects.get(name=match_data["away_team"])
-
-        home_team_match = TeamMatch(
-            team=home_team, match=match, at_home=True, score=NO_SCORE
-        )
-        away_team_match = TeamMatch(
-            team=away_team, match=match, at_home=False, score=NO_SCORE
-        )
-
-        home_team_match.clean_fields()
-        home_team_match.clean()
-        away_team_match.clean_fields()
-        away_team_match.clean()
-
-        return [home_team_match, away_team_match]
 
     def __submit_tips(self) -> None:
         print("Submitting tips to footytips.com.au...")

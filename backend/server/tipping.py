@@ -11,7 +11,7 @@ from splinter.driver import ElementAPI
 from django.utils import timezone
 
 from server.models import Match, TeamMatch, Prediction
-from server.types import CleanFixtureData
+from server.types import FixtureData
 from server import data_import
 from server.helpers import pivot_team_matches_to_matches
 
@@ -146,7 +146,7 @@ class Tipping:
         return fixture_data_frame
 
     def __create_matches(
-        self, fixture_data: List[CleanFixtureData], upcoming_round: int
+        self, fixture_data: List[FixtureData], upcoming_round: int
     ) -> None:
         if self.verbose == 1:
             print(f"Saving Match and TeamMatch records for round {upcoming_round}...")
@@ -176,7 +176,7 @@ class Tipping:
             print("Match data saved!\n")
 
     @staticmethod
-    def __build_match(match_data: CleanFixtureData) -> Tuple[TeamMatch, TeamMatch]:
+    def __build_match(match_data: FixtureData) -> Tuple[TeamMatch, TeamMatch]:
         match = Match.get_or_create_from_raw_data(match_data)
 
         return TeamMatch.get_or_create_from_raw_data(match, match_data)

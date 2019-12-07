@@ -11,7 +11,7 @@ import pandas as pd
 from django.utils import timezone
 from django.conf import settings
 
-from server.types import CleanFixtureData, MatchData
+from server.types import FixtureData, MatchData
 from server.models import Match
 
 FIRST = 1
@@ -52,7 +52,7 @@ def _raw_match_data(year: int, team_names: Tuple[str, str]) -> MatchData:
         "date": FAKE.date_time_between_dates(
             **_min_max_datetimes_by_year(year), tzinfo=pytz.UTC
         ),
-        "season": year,
+        "year": year,
         "round": "R1",
         "round_number": 1,
         "home_team": team_names[0],
@@ -93,7 +93,7 @@ def fake_match_results_data(
     return data_frame
 
 
-def _fixture_data(year: int, team_names: Tuple[str, str]) -> CleanFixtureData:
+def _fixture_data(year: int, team_names: Tuple[str, str]) -> FixtureData:
     return {
         "date": FAKE.date_time_between_dates(
             **_min_max_datetimes_by_year(year), tzinfo=pytz.UTC
@@ -106,7 +106,7 @@ def _fixture_data(year: int, team_names: Tuple[str, str]) -> CleanFixtureData:
     }
 
 
-def _fixture_by_round(row_count: int, year: int) -> List[CleanFixtureData]:
+def _fixture_by_round(row_count: int, year: int) -> List[FixtureData]:
     team_names = CyclicalTeamNames()
 
     return [
@@ -117,7 +117,7 @@ def _fixture_by_round(row_count: int, year: int) -> List[CleanFixtureData]:
 
 def _fixture_by_year(
     row_count: int, year_range: Tuple[int, int]
-) -> List[List[CleanFixtureData]]:
+) -> List[List[FixtureData]]:
     return [_fixture_by_round(row_count, year) for year in range(*year_range)]
 
 
@@ -129,7 +129,7 @@ def fake_fixture_data(row_count: int, year_range: Tuple[int, int]) -> pd.DataFra
 
 
 def fake_prediction_data(
-    match_data: Union[CleanFixtureData, Match, None] = None,
+    match_data: Union[FixtureData, Match, None] = None,
     ml_model_name="test_estimator",
 ) -> pd.DataFrame:
     if match_data is None:

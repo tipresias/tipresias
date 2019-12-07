@@ -5,7 +5,7 @@ from typing import Type, TypeVar, Union, Tuple
 from django.db import models, transaction
 import pandas as pd
 
-from server.types import CleanFixtureData, MatchData
+from server.types import FixtureData, MatchData
 from .team import Team
 from .match import Match
 
@@ -26,7 +26,7 @@ class TeamMatch(models.Model):
 
     @classmethod
     def get_or_create_from_raw_data(
-        cls: Type[T], match: Match, match_data: Union[CleanFixtureData, MatchData]
+        cls: Type[T], match: Match, match_data: Union[FixtureData, MatchData]
     ) -> Tuple[T, T]:
         """
         Get or create a pair of team-match record from an associated match

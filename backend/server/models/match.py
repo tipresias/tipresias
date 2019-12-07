@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 import pandas as pd
 
-from server.types import CleanFixtureData, MatchData
+from server.types import FixtureData, MatchData
 from .team import Team
 
 T = TypeVar("T", bound="Match")
@@ -38,7 +38,7 @@ class Match(models.Model):
 
     @classmethod
     def get_or_create_from_raw_data(
-        cls: Type[T], match_data: Union[CleanFixtureData, MatchData]
+        cls: Type[T], match_data: Union[FixtureData, MatchData]
     ) -> T:
         """Get or create a match record from a row of fixture data"""
 

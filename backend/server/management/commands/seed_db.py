@@ -118,7 +118,7 @@ class Command(BaseCommand):
         home_away_df = pivot_team_matches_to_matches(predictions)
 
         for pred in home_away_df.to_dict("records"):
-            Prediction.update_or_create_from_data(pred)
+            Prediction.update_or_create_from_raw_data(pred)
 
         if self.verbose == 1:
             print("\nPredictions saved!")

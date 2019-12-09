@@ -29,10 +29,10 @@ class TestTipping(TestCase):
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         MLModelFactory(name="test_estimator")
 
-        # Mock update_or_create_from_data to make assertions on calls
-        update_or_create_from_data = copy.copy(Prediction.update_or_create_from_data)
-        Prediction.update_or_create_from_data = Mock(
-            side_effect=self.__update_or_create_from_data(update_or_create_from_data)
+        # Mock update_or_create_from_raw_data to make assertions on calls
+        update_or_create_from_raw_data = copy.copy(Prediction.update_or_create_from_raw_data)
+        Prediction.update_or_create_from_raw_data = Mock(
+            side_effect=self.__update_or_create_from_raw_data(update_or_create_from_raw_data)
         )
 
         (
@@ -82,7 +82,7 @@ class TestTipping(TestCase):
 
                 self.tipping.tip(verbose=0)
 
-                Prediction.update_or_create_from_data.assert_called()
+                Prediction.update_or_create_from_raw_data.assert_called()
 
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
@@ -111,8 +111,8 @@ class TestTipping(TestCase):
                 )
 
     @staticmethod
-    def __update_or_create_from_data(update_or_create_from_data):
-        return update_or_create_from_data
+    def __update_or_create_from_raw_data(update_or_create_from_raw_data):
+        return update_or_create_from_raw_data
 
     def __build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):

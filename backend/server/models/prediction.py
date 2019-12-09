@@ -21,7 +21,7 @@ class Prediction(models.Model):
     is_correct = models.BooleanField(default=False)
 
     @classmethod
-    def update_or_create_from_data(cls, prediction_data: CleanPredictionData) -> None:
+    def update_or_create_from_raw_data(cls, prediction_data: CleanPredictionData) -> None:
         """
         Convert raw prediction data to a Prediction model instance. Tries to find
         and update existing prediction for the given match/model combination,

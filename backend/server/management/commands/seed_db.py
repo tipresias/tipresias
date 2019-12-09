@@ -1,13 +1,12 @@
 """Django command for seeding the DB with match & prediction data"""
 
-from typing import Tuple, List
+from typing import Tuple, List, cast
 from datetime import datetime
-import pandas as pd
-import numpy as np
 from django.utils import timezone
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
-from server.models import Team, Match, TeamMatch, MLModel, Prediction
+from server.models import Match, TeamMatch, MLModel, Prediction
 from server import data_import
 from server.helpers import pivot_team_matches_to_matches
 from server.types import MlModel, MatchData
@@ -45,38 +44,19 @@ class Command(BaseCommand):
                 f"an integer. {year_range} is invalid."
             )
 
-        # A little clunky, but mypy complains when you create a tuple with tuple(),
-        # which is open-ended, then try to use a restricted tuple type
-        year_range_tuple = (years_list[0], years_list[1])
-
         match_data_frame = self.data_importer.fetch_match_results_data(
             start_date=timezone.make_aware(datetime(years_list[0], 1, 1)),
             end_date=timezone.make_aware(datetime(years_list[1] - 1, 12, 31)),
             fetch_data=self.fetch_data,
         )
 
-        # Putting saving records in a try block, so we can go back and delete everything
-        # if an error is raised
-        try:
-            self.__create_teams(match_data_frame)
+        with transaction.atomic():
             self.__create_ml_models()
             self.__create_matches(match_data_frame.to_dict("records"))
-            self.__make_predictions(year_range_tuple)
+            self.__make_predictions(cast(Tuple[int, int], years_list))
 
             if self.verbose == 1:
                 print("\n...DB seeded!\n")
-        except:
-            if self.verbose == 1:
-                print("\nRolling back DB changes...")
-
-            Team.objects.all().delete()
-            MLModel.objects.all().delete()
-            Match.objects.all().delete()
-
-            if self.verbose == 1:
-                print("...DB unseeded!\n")
-
-            raise
 
     def __create_ml_models(self) -> List[MLModel]:
         ml_models = [
@@ -98,10 +78,8 @@ class Command(BaseCommand):
         if not any(fixture_data):
             raise ValueError("No match data found.")
 
-        build_matches = (
-            self.__build_match(fixture_datum) for fixture_datum in fixture_data
-        )
-        list(build_matches)
+        for fixture_datum in fixture_data:
+            self.__build_match(fixture_datum)
 
         if self.verbose == 1:
             print("Match data saved!")
@@ -129,47 +107,3 @@ class Command(BaseCommand):
         ml_model_record.full_clean()
 
         return ml_model_record
-
-    @staticmethod
-    def __build_match_prediction(
-        ml_model_record: MLModel, prediction_data: pd.DataFrame, match: Match
-    ) -> Prediction:
-        home_team = match.teammatch_set.get(at_home=True).team
-        away_team = match.teammatch_set.get(at_home=False).team
-
-        match_prediction = prediction_data.loc[
-            ([home_team.name, away_team.name], match.year, match.round_number),
-            "predicted_margin",
-        ]
-
-        predicted_home_margin = match_prediction.loc[home_team.name].iloc[0]
-        predicted_away_margin = match_prediction.loc[away_team.name].iloc[0]
-
-        # predicted_margin is always positive as its always associated with predicted_winner
-        predicted_margin = match_prediction.abs().mean()
-
-        if predicted_home_margin > predicted_away_margin:
-            predicted_winner = home_team
-        elif predicted_away_margin > predicted_home_margin:
-            predicted_winner = away_team
-        else:
-            raise ValueError(
-                "Predicted home and away margins are equal, which is basically impossible, "
-                "so figure out what's going on:\n"
-                f"home_team = {home_team.name}\n"
-                f"away_team = {away_team.name}\n"
-                "data ="
-                f"{match_prediction}"
-            )
-
-        prediction = Prediction(
-            match=match,
-            ml_model=ml_model_record,
-            predicted_margin=predicted_margin,
-            predicted_winner=predicted_winner,
-        )
-
-        prediction.clean_fields()
-        prediction.clean()
-
-        return prediction

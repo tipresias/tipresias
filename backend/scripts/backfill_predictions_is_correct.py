@@ -21,9 +21,7 @@ def main():
     for prediction in Prediction.objects.select_related(
         "match", "predicted_winner"
     ).all():
-        prediction.is_correct = Prediction.calculate_whether_correct(
-            prediction.match, prediction.predicted_winner
-        )
+        prediction.update_correctness()
         prediction.save()
 
 

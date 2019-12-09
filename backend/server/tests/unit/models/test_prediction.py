@@ -24,54 +24,12 @@ class TestPrediction(TestCase):
         self.match.teammatch_set.create(team=self.home_team, at_home=True, score=150)
         self.match.teammatch_set.create(team=self.away_team, at_home=False, score=100)
 
-    def test_calculate_whether_correct(self):
-        with self.subTest("when higher-scoring team is predicted winner"):
-            prediction = Prediction(
-                match=self.match,
-                ml_model=self.ml_model,
-                predicted_winner=self.home_team,
-                predicted_margin=50,
-            )
-            self.assertTrue(
-                Prediction.calculate_whether_correct(
-                    self.match, prediction.predicted_winner
-                )
-            )
-
-        with self.subTest("when lower-scoring team is predicted winner"):
-            prediction = Prediction(
-                match=self.match,
-                ml_model=self.ml_model,
-                predicted_winner=self.away_team,
-                predicted_margin=50,
-            )
-            self.assertFalse(
-                Prediction.calculate_whether_correct(
-                    self.match, prediction.predicted_winner
-                )
-            )
-
-        with self.subTest("when match is a draw"):
-            self.match.teammatch_set.update(score=100)
-            prediction = Prediction(
-                match=self.match,
-                ml_model=self.ml_model,
-                predicted_winner=self.away_team,
-                predicted_margin=50,
-            )
-
-            self.assertTrue(
-                Prediction.calculate_whether_correct(
-                    self.match, prediction.predicted_winner
-                )
-            )
-
     def test_convert_data_to_record(self):
         data = fake_prediction_data(self.match, ml_model_name=self.ml_model.name)
         home_away_df = pivot_team_matches_to_matches(pd.DataFrame(data))
 
         self.assertEqual(Prediction.objects.count(), 0)
-        Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+        Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
         self.assertEqual(Prediction.objects.count(), 1)
 
         with self.subTest("when prediction record already exists"):
@@ -79,13 +37,13 @@ class TestPrediction(TestCase):
             home_away_df.loc[:, "home_predicted_margin"] = predicted_margin
             home_away_df.loc[:, "away_predicted_margin"] = -predicted_margin
 
-            Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+            Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
             self.assertEqual(Prediction.objects.count(), 1)
 
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, predicted_margin)
 
-        # Regression tests for bug that caused update_or_create_from_data
+        # Regression tests for bug that caused update_or_create_from_raw_data
         # to select wrong team as predicted_winner when predicted margin
         # was greater than away team's predicted winning margin
         with self.subTest(
@@ -96,7 +54,7 @@ class TestPrediction(TestCase):
             home_away_df.loc[:, "home_predicted_margin"] = predicted_losing_margin
             home_away_df.loc[:, "away_predicted_margin"] = predicted_winning_margin
 
-            Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+            Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 150)
             self.assertEqual(
@@ -111,7 +69,7 @@ class TestPrediction(TestCase):
             home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
             home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
 
-            Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+            Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 150)
             self.assertEqual(
@@ -124,7 +82,7 @@ class TestPrediction(TestCase):
             home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
             home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
 
-            Prediction.update_or_create_from_data(home_away_df.to_dict("records")[0])
+            Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 1)
             self.assertEqual(
@@ -165,3 +123,38 @@ class TestPrediction(TestCase):
 
             with self.assertRaises(ValidationError):
                 prediction.full_clean()
+
+    def test_update_correctness(self):
+        with self.subTest("when higher-scoring team is predicted winner"):
+            prediction = Prediction(
+                match=self.match,
+                ml_model=self.ml_model,
+                predicted_winner=self.home_team,
+                predicted_margin=50,
+            )
+            prediction.update_correctness()
+
+            self.assertTrue(prediction.is_correct)
+
+        with self.subTest("when lower-scoring team is predicted winner"):
+            prediction = Prediction(
+                match=self.match,
+                ml_model=self.ml_model,
+                predicted_winner=self.away_team,
+                predicted_margin=50,
+            )
+            prediction.update_correctness()
+
+            self.assertFalse(prediction.is_correct)
+
+        with self.subTest("when match is a draw"):
+            self.match.teammatch_set.update(score=100)
+            prediction = Prediction(
+                match=self.match,
+                ml_model=self.ml_model,
+                predicted_winner=self.away_team,
+                predicted_margin=50,
+            )
+            prediction.update_correctness()
+
+            self.assertTrue(prediction.is_correct)

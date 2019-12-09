@@ -1,7 +1,6 @@
 """Module for handling generation and saving of tips (i.e. predictions)"""
 
-from functools import reduce
-from datetime import datetime, date, timedelta
+from datetime import datetime
 from typing import List, Optional, Dict, Tuple
 import os
 from warnings import warn
@@ -11,23 +10,13 @@ from splinter import Browser
 from splinter.driver import ElementAPI
 from django.utils import timezone
 
-from server.models import Match, TeamMatch, Team, Prediction
-from server.types import CleanFixtureData
+from server.models import Match, TeamMatch, Prediction
+from server.types import FixtureData
 from server import data_import
 from server.helpers import pivot_team_matches_to_matches
 
 
-NO_SCORE = 0
 FIRST_ROUND = 1
-# We calculate rolling sums/means for some features that can span over 5 seasons
-# of data, so we're setting it to 10 to be on the safe side.
-N_SEASONS_FOR_PREDICTION = 10
-# We want to limit the amount of data loaded as much as possible,
-# because we only need the full data set for model training and data analysis,
-# and we want to limit memory usage and speed up data processing for tipping
-PREDICTION_DATA_START_DATE = f"{date.today().year - N_SEASONS_FOR_PREDICTION}-01-01"
-
-WEEK_IN_DAYS = 7
 JAN = 1
 FIRST = 1
 
@@ -39,10 +28,7 @@ FT_TEAM_TRANSLATIONS = {
     "West Coast": "West Coast Eagles",
 }
 
-# TODO: Along with SeedDb command, this is in serious need of a refactor.
-# The data fetching isn't too bad, but the DB record CRUD should be moved
-# to the relevant model classes (same goes for SeedDb). submit_tips should
-# probably be a public method rather than a private one that gets called inside tip
+
 class Tipping:
     """Handles generation and saving of tips (i.e. predictions)"""
 
@@ -67,62 +53,17 @@ class Tipping:
         self.data_importer.verbose = verbose
 
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
+        upcoming_round, upcoming_matches = self._select_upcoming_matches(
+            fixture_data_frame
+        )
 
-        if not fixture_data_frame.any().any():
-            warn(
-                "Fixture for the upcoming round haven't been posted yet, "
-                "so there's nothing to tip. Try again later."
-            )
-
+        if upcoming_round is None or upcoming_matches is None:
             self.__backfill_match_results()
-
             return None
 
-        latest_match_date = fixture_data_frame["date"].max()
+        self.__create_matches(upcoming_matches.to_dict("records"), upcoming_round)
 
-        if self.right_now > latest_match_date:
-            warn(
-                f"No matches found after {self.right_now}. The latest match "
-                f"found is at {latest_match_date}\n"
-            )
-
-            self.__backfill_match_results()
-
-            return None
-
-        upcoming_round = (
-            fixture_data_frame.query("date > @self.right_now")
-            .loc[:, "round_number"]
-            .min()
-        )
-        fixture_for_upcoming_round = fixture_data_frame.query(
-            "round_number == @upcoming_round"
-        )
-
-        saved_match_count = Match.objects.filter(
-            start_date_time__gt=self.right_now, round_number=upcoming_round
-        ).count()
-
-        if saved_match_count == 0:
-            if self.verbose == 1:
-                print(
-                    f"No existing match records found for round {upcoming_round}. "
-                    "Creating new match and prediction records...\n"
-                )
-
-            self.__create_matches(
-                fixture_for_upcoming_round.to_dict("records"), upcoming_round
-            )
-        else:
-            if self.verbose == 1:
-                print(
-                    f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
-                    "Updating associated prediction records with new model predictions.\n"
-                )
-
-        upcoming_round_year = (
-            fixture_for_upcoming_round["date"].map(lambda x: x.year).max()
-        )
+        upcoming_round_year = upcoming_matches["date"].max().year
 
         self.__make_predictions(upcoming_round_year, upcoming_round)
         self.__backfill_match_results()
@@ -146,14 +87,60 @@ class Tipping:
 
         return fixture_data_frame
 
-    def __create_matches(
-        self, fixture_data: List[CleanFixtureData], upcoming_round: int
-    ) -> None:
-        if self.verbose == 1:
-            print(f"Saving Match and TeamMatch records for round {upcoming_round}...")
+    def _select_upcoming_matches(
+        self, fixture_data_frame: pd.DataFrame
+    ) -> Tuple[Optional[int], Optional[pd.DataFrame]]:
+        if not fixture_data_frame.any().any():
+            warn(
+                "Fixture for the upcoming round haven't been posted yet, "
+                "so there's nothing to tip. Try again later."
+            )
 
-        if not any(fixture_data):
-            raise ValueError("No fixture data found.")
+            return None, None
+
+        latest_match_date = fixture_data_frame["date"].max()
+
+        if self.right_now > latest_match_date:
+            warn(
+                f"No matches found after {self.right_now}. The latest match "
+                f"found is at {latest_match_date}\n"
+            )
+
+            return None, None
+
+        upcoming_round = (
+            fixture_data_frame.query("date > @self.right_now")
+            .loc[:, "round_number"]
+            .min()
+        )
+        fixture_for_upcoming_round = fixture_data_frame.query(
+            "round_number == @upcoming_round"
+        )
+
+        return upcoming_round, fixture_for_upcoming_round
+
+    def __create_matches(
+        self, fixture_data: List[FixtureData], upcoming_round: int
+    ) -> None:
+        saved_match_count = Match.objects.filter(
+            start_date_time__gt=self.right_now, round_number=upcoming_round
+        ).count()
+
+        if saved_match_count > 0:
+            if self.verbose == 1:
+                print(
+                    f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
+                    "Updating associated prediction records with new model predictions.\n"
+                )
+
+            return None
+
+        if self.verbose == 1:
+            print(
+                f"Creating new Match and TeamMatch records for round {upcoming_round}..."
+            )
+
+        assert any(fixture_data), "No fixture data found."
 
         round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
         year = {match_data["year"] for match_data in fixture_data}.pop()
@@ -168,53 +155,19 @@ class Tipping:
                 f"in {prev_match.start_date_time.year}"
             )
 
-        team_match_lists = [
-            self.__build_match(match_data) for match_data in fixture_data
-        ]
-
-        compacted_team_match_lists = [
-            team_match_list
-            for team_match_list in team_match_lists
-            if team_match_list is not None
-        ]
-
-        team_matches_to_save: List[TeamMatch] = reduce(
-            lambda acc_list, curr_list: acc_list + curr_list,
-            compacted_team_match_lists,
-            [],
-        )
-
-        team_match_count = TeamMatch.objects.filter(
-            match__start_date_time__year=year, match__round_number=round_number
-        ).count()
-
-        if not any(team_matches_to_save) and team_match_count == 0:
-            raise ValueError("Something went wrong, and no team matches were saved.\n")
-
-        TeamMatch.objects.bulk_create(team_matches_to_save)
+        for fixture_datum in fixture_data:
+            self.__build_match(fixture_datum)
 
         if self.verbose == 1:
             print("Match data saved!\n")
 
-    def __build_match(self, match_data: CleanFixtureData) -> Optional[List[TeamMatch]]:
-        raw_date = (
-            match_data["date"].to_pydatetime()
-            if isinstance(match_data["date"], pd.Timestamp)
-            else match_data["date"]
-        )
+        return None
 
-        match_date = timezone.localtime(raw_date)
+    @staticmethod
+    def __build_match(match_data: FixtureData) -> Tuple[TeamMatch, TeamMatch]:
+        match = Match.get_or_create_from_raw_data(match_data)
 
-        match, was_created = Match.objects.get_or_create(
-            start_date_time=match_date,
-            round_number=int(match_data["round_number"]),
-            venue=match_data["venue"],
-        )
-
-        if was_created:
-            match.full_clean()
-
-        return self.__build_team_match(match, match_data)
+        return TeamMatch.get_or_create_from_raw_data(match, match_data)
 
     def __make_predictions(self, year: int, round_number: int) -> None:
         if self.verbose == 1:
@@ -226,7 +179,7 @@ class Tipping:
         home_away_df = pivot_team_matches_to_matches(predictions)
 
         for pred in home_away_df.to_dict("records"):
-            Prediction.update_or_create_from_data(pred)
+            Prediction.update_or_create_from_raw_data(pred)
 
         if self.verbose == 1:
             print("Predictions saved!\n")
@@ -235,134 +188,25 @@ class Tipping:
         if self.verbose == 1:
             print("Filling in results for recent matches...")
 
-        matches_without_results = Match.objects.prefetch_related(
-            "teammatch_set", "prediction_set"
-        ).filter(start_date_time__lt=self.right_now, teammatch__score=0)
+        earliest_date_without_results = Match.earliest_date_without_results()
 
-        if matches_without_results.count() == 0:
+        if earliest_date_without_results is None:
+            if self.verbose == 1:
+                print("No played matches are missing results.")
+
             return None
 
-        match_results = self.__fetch_match_results_to_fill(matches_without_results)
+        match_results = self.data_importer.fetch_match_results_data(
+            earliest_date_without_results, self.right_now, fetch_data=self.fetch_data
+        )
 
         if not any(match_results):
+            print("Results data is not yet available to update match records.")
             return None
 
-        for match in matches_without_results:
-            self.__update_played_match_scores(match_results, match)
-            self.__update_predictions_correctness(match)
+        Match.update_results(match_results)
 
         return None
-
-    def __fetch_match_results_to_fill(self, matches_without_results) -> pd.DataFrame:
-        earliest_match_date = matches_without_results.earliest(
-            "start_date_time"
-        ).start_date_time
-
-        return self.data_importer.fetch_match_results_data(
-            earliest_match_date, self.right_now, fetch_data=self.fetch_data
-        )
-
-    def __update_played_match_scores(
-        self, match_results: pd.DataFrame, match: Match
-    ) -> None:
-        home_team_match = match.teammatch_set.get(at_home=True)
-        away_team_match = match.teammatch_set.get(at_home=False)
-
-        match_result = match_results.query(
-            "year == @match.start_date_time.year & "
-            "round_number == @match.round_number & "
-            "home_team == @home_team_match.team.name & "
-            "away_team == @away_team_match.team.name"
-        )
-
-        # AFLTables usually updates match results a few days after the round
-        # is finished. Allowing for the occasional delay, we accept matches without
-        # results data for a week before raising an error.
-        if (
-            match.start_date_time > self.right_now - timedelta(days=WEEK_IN_DAYS)
-            and not match_results.any().any()
-        ):
-            warn(
-                f"Unable to update the match between {home_team_match.team.name} "
-                f"and {away_team_match.team.name} from round {match.round_number}. "
-                "This is likely due to AFLTables not having updated the match results "
-                "yet."
-            )
-
-            return None
-
-        match_values = match.teammatch_set.values(
-            "match__start_date_time",
-            "match__round_number",
-            "match__venue",
-            "team__name",
-            "at_home",
-        )
-
-        assert match_result.any().any(), (
-            "Didn't find any match data rows that matched match record:\n"
-            f"{match_values}"
-        )
-
-        assert len(match_result) == 1, (
-            "Filtering match results by year, round_number and team name "
-            "should result in a single row, but instead the following was "
-            "returned:\n"
-            f"{match_result}"
-        )
-
-        match_result = match_result.iloc[0, :]
-
-        home_team_match.score = match_result["home_score"]
-        home_team_match.clean()
-        home_team_match.save()
-
-        away_team_match.score = match_result["away_score"]
-        away_team_match.clean()
-        away_team_match.save()
-
-        return None
-
-    @staticmethod
-    def __update_predictions_correctness(match: Match) -> None:
-        for prediction in match.prediction_set.all():
-            prediction.is_correct = Prediction.calculate_whether_correct(
-                match, prediction.predicted_winner
-            )
-            prediction.clean()
-            prediction.save()
-
-    @staticmethod
-    def __build_team_match(
-        match: Match, match_data: CleanFixtureData
-    ) -> Optional[List[TeamMatch]]:
-        team_match_count = match.teammatch_set.count()
-
-        if team_match_count == 2:
-            return None
-
-        if team_match_count == 1 or team_match_count > 2:
-            model_string = "TeamMatches" if team_match_count > 1 else "TeamMatch"
-            raise ValueError(
-                f"{match} has {team_match_count} associated {model_string}, which shouldn't "
-                "happen. Figure out what's up."
-            )
-        home_team = Team.objects.get(name=match_data["home_team"])
-        away_team = Team.objects.get(name=match_data["away_team"])
-
-        home_team_match = TeamMatch(
-            team=home_team, match=match, at_home=True, score=NO_SCORE
-        )
-        away_team_match = TeamMatch(
-            team=away_team, match=match, at_home=False, score=NO_SCORE
-        )
-
-        home_team_match.clean_fields()
-        home_team_match.clean()
-        away_team_match.clean_fields()
-        away_team_match.clean()
-
-        return [home_team_match, away_team_match]
 
     def __submit_tips(self) -> None:
         print("Submitting tips to footytips.com.au...")

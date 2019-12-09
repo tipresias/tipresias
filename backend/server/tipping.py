@@ -1,6 +1,6 @@
 """Module for handling generation and saving of tips (i.e. predictions)"""
 
-from datetime import datetime, date
+from datetime import datetime
 from typing import List, Optional, Dict, Tuple
 import os
 from warnings import warn
@@ -16,17 +16,7 @@ from server import data_import
 from server.helpers import pivot_team_matches_to_matches
 
 
-NO_SCORE = 0
 FIRST_ROUND = 1
-# We calculate rolling sums/means for some features that can span over 5 seasons
-# of data, so we're setting it to 10 to be on the safe side.
-N_SEASONS_FOR_PREDICTION = 10
-# We want to limit the amount of data loaded as much as possible,
-# because we only need the full data set for model training and data analysis,
-# and we want to limit memory usage and speed up data processing for tipping
-PREDICTION_DATA_START_DATE = f"{date.today().year - N_SEASONS_FOR_PREDICTION}-01-01"
-
-WEEK_IN_DAYS = 7
 JAN = 1
 FIRST = 1
 
@@ -38,10 +28,7 @@ FT_TEAM_TRANSLATIONS = {
     "West Coast": "West Coast Eagles",
 }
 
-# TODO: Along with SeedDb command, this is in serious need of a refactor.
-# The data fetching isn't too bad, but the DB record CRUD should be moved
-# to the relevant model classes (same goes for SeedDb). submit_tips should
-# probably be a public method rather than a private one that gets called inside tip
+
 class Tipping:
     """Handles generation and saving of tips (i.e. predictions)"""
 
@@ -66,62 +53,17 @@ class Tipping:
         self.data_importer.verbose = verbose
 
         fixture_data_frame = self.__fetch_fixture_data(self.current_year)
+        upcoming_round, upcoming_matches = self._select_upcoming_matches(
+            fixture_data_frame
+        )
 
-        if not fixture_data_frame.any().any():
-            warn(
-                "Fixture for the upcoming round haven't been posted yet, "
-                "so there's nothing to tip. Try again later."
-            )
-
+        if upcoming_round is None or upcoming_matches is None:
             self.__backfill_match_results()
-
             return None
 
-        latest_match_date = fixture_data_frame["date"].max()
+        self.__create_matches(upcoming_matches.to_dict("records"), upcoming_round)
 
-        if self.right_now > latest_match_date:
-            warn(
-                f"No matches found after {self.right_now}. The latest match "
-                f"found is at {latest_match_date}\n"
-            )
-
-            self.__backfill_match_results()
-
-            return None
-
-        upcoming_round = (
-            fixture_data_frame.query("date > @self.right_now")
-            .loc[:, "round_number"]
-            .min()
-        )
-        fixture_for_upcoming_round = fixture_data_frame.query(
-            "round_number == @upcoming_round"
-        )
-
-        saved_match_count = Match.objects.filter(
-            start_date_time__gt=self.right_now, round_number=upcoming_round
-        ).count()
-
-        if saved_match_count == 0:
-            if self.verbose == 1:
-                print(
-                    f"No existing match records found for round {upcoming_round}. "
-                    "Creating new match and prediction records...\n"
-                )
-
-            self.__create_matches(
-                fixture_for_upcoming_round.to_dict("records"), upcoming_round
-            )
-        else:
-            if self.verbose == 1:
-                print(
-                    f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
-                    "Updating associated prediction records with new model predictions.\n"
-                )
-
-        upcoming_round_year = (
-            fixture_for_upcoming_round["date"].map(lambda x: x.year).max()
-        )
+        upcoming_round_year = upcoming_matches["date"].max().year
 
         self.__make_predictions(upcoming_round_year, upcoming_round)
         self.__backfill_match_results()
@@ -145,14 +87,60 @@ class Tipping:
 
         return fixture_data_frame
 
+    def _select_upcoming_matches(
+        self, fixture_data_frame: pd.DataFrame
+    ) -> Tuple[Optional[int], Optional[pd.DataFrame]]:
+        if not fixture_data_frame.any().any():
+            warn(
+                "Fixture for the upcoming round haven't been posted yet, "
+                "so there's nothing to tip. Try again later."
+            )
+
+            return None, None
+
+        latest_match_date = fixture_data_frame["date"].max()
+
+        if self.right_now > latest_match_date:
+            warn(
+                f"No matches found after {self.right_now}. The latest match "
+                f"found is at {latest_match_date}\n"
+            )
+
+            return None, None
+
+        upcoming_round = (
+            fixture_data_frame.query("date > @self.right_now")
+            .loc[:, "round_number"]
+            .min()
+        )
+        fixture_for_upcoming_round = fixture_data_frame.query(
+            "round_number == @upcoming_round"
+        )
+
+        return upcoming_round, fixture_for_upcoming_round
+
     def __create_matches(
         self, fixture_data: List[FixtureData], upcoming_round: int
     ) -> None:
-        if self.verbose == 1:
-            print(f"Saving Match and TeamMatch records for round {upcoming_round}...")
+        saved_match_count = Match.objects.filter(
+            start_date_time__gt=self.right_now, round_number=upcoming_round
+        ).count()
 
-        if not any(fixture_data):
-            raise ValueError("No fixture data found.")
+        if saved_match_count > 0:
+            if self.verbose == 1:
+                print(
+                    f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
+                    "Updating associated prediction records with new model predictions.\n"
+                )
+
+            return None
+
+        if self.verbose == 1:
+            print(
+                f"Creating new Match and TeamMatch records for round {upcoming_round}..."
+            )
+
+        assert any(fixture_data), "No fixture data found."
 
         round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
         year = {match_data["year"] for match_data in fixture_data}.pop()
@@ -167,13 +155,13 @@ class Tipping:
                 f"in {prev_match.start_date_time.year}"
             )
 
-        build_matches = (
-            self.__build_match(fixture_datum) for fixture_datum in fixture_data
-        )
-        list(build_matches)
+        for fixture_datum in fixture_data:
+            self.__build_match(fixture_datum)
 
         if self.verbose == 1:
             print("Match data saved!\n")
+
+        return None
 
     @staticmethod
     def __build_match(match_data: FixtureData) -> Tuple[TeamMatch, TeamMatch]:

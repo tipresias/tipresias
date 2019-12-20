@@ -92,3 +92,6 @@ data_science
 
 # GCP files
 .gcloud
+
+# Logs
+*.log

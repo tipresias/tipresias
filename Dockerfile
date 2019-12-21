@@ -1,58 +1,54 @@
+# Specifying the sha is to guarantee that CI will not try to rebuild from the
+# source image (i.e. node:13.5), which apparently CIs are bad at avoiding on
+# their own.
+# Using buster-slim instead of alpine, because there's an open issue
+# about flow not working on alpine, and the response is *shrug*
+FROM node:13.5.0-buster-slim@sha256:cc8594c222457a525e04b0af1e2a8ffa6a9dcb9e9d3e6ce4e03a881d449ce8d4 AS frontend
+
+WORKDIR /app/frontend
+
+# Set up frontend code & dependencies
+COPY ./frontend/package.json ./frontend/yarn.lock ./
+RUN yarn
+COPY ./frontend .
+
+# Build static files
+RUN yarn run build
+WORKDIR /app/frontend/build
+# Have to move all static files other than index.html to root/
+# for whitenoise middleware
+RUN mkdir root && mv *.ico *.js *.json root
+
 # Use an official Python runtime as a parent image
 # Specifying the sha is to guarantee that CI will not try to rebuild from the
 # source image (i.e. python:3.6), which apparently CIs are bad at avoiding on
-# their own
-FROM python:3.6@sha256:00110125bd9c23f200cfd2cfa82e68b8ab2006e1358f7a048e005794aa51568f
+# their own.
+# Using slim-buster instead of alpine based on this GH comment:
+# https://github.com/docker-library/python/issues/381#issuecomment-464258800
+# TODO: Might be able to switch to alpine when we remove pandas and/or numpy
+# as dependencies
+FROM python:3.8.0-slim-buster@sha256:8e243f41e500238f78f7a29a81656114d3fe603d5c34079a462d090f71c4b225
 
-# Install curl, node, & yarn
-RUN apt-get -y install curl \
-  && curl -sL https://deb.nodesource.com/setup_8.x | bash \
-  && apt-get install nodejs \
-  && curl -o- -L https://yarnpkg.com/install.sh | bash
+# Install linux packages
+RUN apt-get --no-install-recommends update \
+  # g++ is a dependency of gcc, so must come before
+  && apt-get -y --no-install-recommends install g++ gcc \
+  && rm -rf /var/lib/apt/lists/*
 
+# Set up backend dependencies & code
 WORKDIR /app/backend
-
-# Install firefox & geckodriver for use by selenium
-RUN apt-get update \
-  && apt-get -y install firefox-esr \
-  && wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz \
-  && tar -xvzf geckodriver* \
-  && chmod +x geckodriver \
-  && mv geckodriver /usr/local/bin/
-
-# Install Python dependencies
-COPY ./backend/requirements.txt /app/backend/
+COPY ./backend/requirements.txt .
 RUN pip3 install --upgrade pip -r requirements.txt
-
-# Install JS dependencies
-WORKDIR /app/frontend
-
-COPY ./frontend/package.json ./frontend/yarn.lock /app/frontend/
-RUN $HOME/.yarn/bin/yarn install
-
-# Add frontend code
-COPY ./frontend /app/frontend/
+COPY ./backend .
 
 # Build static files
-RUN $HOME/.yarn/bin/yarn build
-
-# Have to move all static files other than index.html to root/
-# for whitenoise middleware
-WORKDIR /app/frontend/build
-
-RUN mkdir root && mv *.ico *.js *.json root
-
-# Add backend code
-COPY ./backend /app/backend/
-
-# Build static files
+WORKDIR /app
+COPY --from=frontend /app/frontend/build /app/frontend/build
 RUN mkdir /app/backend/staticfiles
 
-WORKDIR /app
-
-# SECRET_KEY is only included here to avoid raising an error when generating static files.
-# Be sure to add a real SECRET_KEY config/env variable in prod.
 RUN DJANGO_SETTINGS_MODULE=project.settings.production \
+  # SECRET_KEY is only included here to avoid raising an error when generating static files.
+  # Be sure to add a real SECRET_KEY config/env variable in prod.
   SECRET_KEY=somethingsupersecret \
   python3 backend/manage.py collectstatic --noinput
 

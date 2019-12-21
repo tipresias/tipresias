@@ -34,12 +34,7 @@ before_deploy:
   - docker push cfranklin11/tipresias_frontend:latest
   - docker push cfranklin11/tipresias_browser_test:latest
 
-  - docker pull cfranklin11/tipresias_app:latest
-  - docker build --cache-from cfranklin11/tipresias_app:latest -t cfranklin11/tipresias_app:latest .
-  - docker push cfranklin11/tipresias_app:latest
-
-  - echo "$PUBLIC_KEY" >> $HOME/.ssh/known_hosts
-  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in deploy_rsa.enc -out ~/.ssh/deploy_rsa -d
+  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in keyfile.json.enc -out ${HOME}/.gcloud/keyfile.json -d
 deploy:
   provider: script
   script: ./scripts/deploy.sh

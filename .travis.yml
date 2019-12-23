@@ -3,7 +3,7 @@ services:
   - docker
 env:
   DOCKER_COMPOSE_VERSION: 1.22.0
-  IP_ADDRESS: 68.183.185.155
+  GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/.gcloud/keyfile.json
 before_install:
   - sudo rm /usr/local/bin/docker-compose
   - sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -34,12 +34,9 @@ before_deploy:
   - docker push cfranklin11/tipresias_frontend:latest
   - docker push cfranklin11/tipresias_browser_test:latest
 
-  - docker pull cfranklin11/tipresias_app:latest
-  - docker build --cache-from cfranklin11/tipresias_app:latest -t cfranklin11/tipresias_app:latest .
-  - docker push cfranklin11/tipresias_app:latest
+  - mkdir ${HOME}/.gcloud
+  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in keyfile.json.enc -out ${GOOGLE_APPLICATION_CREDENTIALS} -d
 
-  - echo "$PUBLIC_KEY" >> $HOME/.ssh/known_hosts
-  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in deploy_rsa.enc -out ~/.ssh/deploy_rsa -d
 deploy:
   provider: script
   script: ./scripts/deploy.sh

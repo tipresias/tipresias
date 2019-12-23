@@ -2,12 +2,11 @@
 
 set -euo pipefail
 
-DOCKER_COMPOSE_FILE=/var/www/tipresias/docker-compose.yml
+DOCKER_IMAGE=cfranklin11/tipresias_app:latest
 
-sudo chmod 600 ~/.ssh/deploy_rsa
-sudo chmod 755 ~/.ssh
-scp -i ~/.ssh/deploy_rsa docker-compose.prod.yml ${DEPLOY_USER}@${IP_ADDRESS}:${DOCKER_COMPOSE_FILE}
+docker pull ${DOCKER_IMAGE}
+docker build --cache-from ${DOCKER_IMAGE} -t ${DOCKER_IMAGE} .
+docker push ${DOCKER_IMAGE}
 
-ssh -i ~/.ssh/deploy_rsa ${DEPLOY_USER}@${IP_ADDRESS} "docker pull cfranklin11/tipresias_app:latest \
-  && docker-compose -f ${DOCKER_COMPOSE_FILE} up -d --build \
-  && docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm app python3 backend/manage.py migrate"
+gcloud auth activate-service-account ${GC_SERVICE_ACCOUNT} --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
+gcloud beta compute instances update-container ${PROJECT_ID}-app --container-image ${DOCKER_IMAGE} --zone australia-southeast1-b --project ${PROJECT_ID}

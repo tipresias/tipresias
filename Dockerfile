@@ -1,25 +1,20 @@
-# Specifying the sha is to guarantee that CI will not try to rebuild from the
-# source image (i.e. node:13.5), which apparently CIs are bad at avoiding on
-# their own.
-# Using buster-slim instead of alpine, because there's an open issue
-# about flow not working on alpine, and the response is *shrug*
-FROM node:13.5.0-buster-slim@sha256:cc8594c222457a525e04b0af1e2a8ffa6a9dcb9e9d3e6ce4e03a881d449ce8d4 AS frontend
+# Using frontend image for dev environment as base to avoid duplicating
+# building the image, because Docker doesn't cache intermediate images
+# in multistage builds
+FROM cfranklin11/tipresias_frontend:latest AS frontend
 
-WORKDIR /app/frontend
-
-# Set up frontend code & dependencies
-COPY ./frontend/package.json ./frontend/yarn.lock ./
-RUN yarn
-COPY ./frontend .
+WORKDIR /app
 
 # Build static files
-RUN yarn run build
-WORKDIR /app/frontend/build
-# Have to move all static files other than index.html to root/
-# for whitenoise middleware
-RUN mkdir root && mv *.ico *.js *.json root
+RUN yarn run build \
+  && mkdir -p frontend/build/root \
+  # Have to move all static files other than index.html to root/
+  # for whitenoise middleware
+  && mv build/*.ico build/*.js build/*.json frontend/build/root/ \
+  && mv build/* frontend/build/
 
-# Use an official Python runtime as a parent image
+# Using Python base image instead of backend image, because we leave out
+# many dev-only packages to reduce image size.
 # Specifying the sha is to guarantee that CI will not try to rebuild from the
 # source image (i.e. python:3.6), which apparently CIs are bad at avoiding on
 # their own.
@@ -41,15 +36,19 @@ COPY ./backend/requirements.txt .
 RUN pip3 install --upgrade pip -r requirements.txt
 COPY ./backend .
 
-# Build static files
-WORKDIR /app
 COPY --from=frontend /app/frontend/build /app/frontend/build
-RUN mkdir /app/backend/staticfiles
 
-RUN DJANGO_SETTINGS_MODULE=project.settings.production \
-  # SECRET_KEY is only included here to avoid raising an error when generating static files.
-  # Be sure to add a real SECRET_KEY config/env variable in prod.
+# Collect static files
+RUN mkdir staticfiles \
+  && DJANGO_SETTINGS_MODULE=project.settings.production \
+  # SECRET_KEY is only included here to avoid raising an error
+  # when generating static files. Be sure to add a real SECRET_KEY
+  # config/env variable in prod.
   SECRET_KEY=somethingsupersecret \
-  python3 backend/manage.py collectstatic --noinput
+  python3 manage.py collectstatic --noinput
 
-CMD python3 backend/manage.py runserver 0.0.0.0:$PORT
+WORKDIR /app
+
+EXPOSE ${PORT:-8000}
+
+CMD python3 backend/manage.py runserver 0.0.0.0:${PORT:-8000}

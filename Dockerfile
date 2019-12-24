@@ -22,7 +22,7 @@ RUN yarn run build \
 # https://github.com/docker-library/python/issues/381#issuecomment-464258800
 # TODO: Might be able to switch to alpine when we remove pandas and/or numpy
 # as dependencies
-FROM python:3.8.0-slim-buster@sha256:8e243f41e500238f78f7a29a81656114d3fe603d5c34079a462d090f71c4b225
+FROM python:3.8.1-slim-buster@sha256:dc9c4de1bb38720f70af28e8071f324052725ba122878fbac784be9b03f41590
 
 # Install linux packages
 RUN apt-get --no-install-recommends update \

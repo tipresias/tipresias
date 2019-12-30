@@ -6,7 +6,7 @@
 # https://github.com/docker-library/python/issues/381#issuecomment-464258800
 # TODO: Might be able to switch to alpine when we remove pandas and/or numpy
 # as dependencies
-FROM python:3.8.1-slim-buster@sha256:dc9c4de1bb38720f70af28e8071f324052725ba122878fbac784be9b03f41590
+FROM python:3.8.1-slim-buster@sha256:0f460f29f0d1de365be61fe5bf40a766baca7dde2246213bc9cd6ea4f6a98e5a
 
 # Install firefox & geckodriver for use by selenium
 RUN apt-get --no-install-recommends update \

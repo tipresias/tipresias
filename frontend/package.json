@@ -47,7 +47,7 @@
     "eslint-plugin-react": "^7.17.0",
     "flow-bin": "^0.115.0",
     "flow-typed": "^2.6.2",
-    "nock": "^11.7.1"
+    "nock": "^11.7.2"
   },
   "proxy": "http://backend:8000",
   "browserslist": [

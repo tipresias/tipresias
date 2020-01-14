@@ -37,7 +37,7 @@
     "@babel/preset-env": "^7.7.7",
     "@babel/preset-flow": "^7.7.4",
     "@babel/preset-react": "^7.7.4",
-    "@storybook/react": "^5.2.8",
+    "@storybook/react": "^5.3.3",
     "babel-cli": "^6.26.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-airbnb-base": "^14.0.0",

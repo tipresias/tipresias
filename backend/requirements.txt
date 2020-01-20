@@ -24,5 +24,5 @@ pytest
 pytest-env
 faker==4.0.0
 mypy>=0.70
-freezegun
+freezegun==0.3.12
 factory_boy

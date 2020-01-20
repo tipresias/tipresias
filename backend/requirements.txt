@@ -22,7 +22,7 @@ pylint==2.4.4
 black
 pytest
 pytest-env
-faker>=3.0,<4.0
+faker==4.0.0
 mypy>=0.70
-freezegun
+freezegun==0.3.12
 factory_boy

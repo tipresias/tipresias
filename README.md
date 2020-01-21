@@ -24,6 +24,10 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 - Reset the DB to match production: `./scripts/reset_db.sh`
   - This requires ability to `ssh` into the prod server (i.e. you must have been added as a user to the server by an admin)
   - `PROD_USER` and `IP_ADDRESS` environment variables have to be set in the current bash session, and their values have to be applicable to the relevant server
+- To interact with production resources, install the Google Cloud SDK:
+  - `brew cask install google-cloud-sdk` (on Mac)
+  - `gcloud auth login` (redirects you to log into your Google account in the browser)
+  - `gcloud config set project ${PROJECT_ID}`
 
 ### Run the app
 

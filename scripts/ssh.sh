@@ -1,1 +1,4 @@
-ssh -t ${PROD_USER}@${IP_ADDRESS} "cd /var/www/tipresias; bash"
+gcloud compute ssh \
+  --project ${PROJECT_ID} \
+  --zone australia-southeast1-b \
+  ${PROJECT_ID}-app

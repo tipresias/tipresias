@@ -4,5 +4,4 @@ gcloud beta compute instances create-with-container tipresias-app \
   --machine-type g1-small \
   --network-tier STANDARD \
   --zone australia-southeast1-b \
-  --tags http-server,https-server \
-  --metadata-from-file startup-script=./scripts/startup_script.sh
+  --tags http-server,https-server

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 DB_FILE=local_dump_`date +%Y-%m-%d"_"%H_%M_%S`.sql
 
 # Including a bunch of extra options for compatibility with Google Cloud SQL

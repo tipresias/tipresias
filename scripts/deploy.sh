@@ -6,7 +6,7 @@ DOCKER_IMAGE=gcr.io/${PROJECT_ID}/${PROJECT_ID}-app
 
 gcloud auth activate-service-account ${GC_SERVICE_ACCOUNT} \
   --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
-yes | gcloud auth configure-docker
+cat ${GOOGLE_APPLICATION_CREDENTIALS} | docker login -u _json_key --password-stdin gcr.io
 
 docker pull ${DOCKER_IMAGE}
 docker build --cache-from ${DOCKER_IMAGE} -t ${DOCKER_IMAGE} .

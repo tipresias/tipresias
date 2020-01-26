@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-DOCKER_IMAGE=cfranklin11/tipresias_app:latest
+DOCKER_IMAGE=gcr.io/${PROJECT_ID}/${PROJECT_ID}-app
 
 docker pull ${DOCKER_IMAGE}
 docker build --cache-from ${DOCKER_IMAGE} -t ${DOCKER_IMAGE} .

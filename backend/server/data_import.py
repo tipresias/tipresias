@@ -72,7 +72,11 @@ def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
         headers = {}
 
     service_url = urljoin(service_host, path)
-    clean_params = {key: _clean_param_value(value) for key, value in params.items()}
+    clean_params = {
+        key: _clean_param_value(value)
+        for key, value in params.items()
+        if value is not None
+    }
 
     response = _make_request(service_url, params=clean_params, headers=headers)
 

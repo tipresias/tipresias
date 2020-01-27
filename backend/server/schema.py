@@ -15,6 +15,7 @@ ModelPrediction = TypedDict(
     {
         "ml_model__name": str,
         "cumulative_correct_count": int,
+        "cumulative_accuracy": float,
         "cumulative_mean_absolute_error": float,
         "cumulative_margin_difference": int,
     },
@@ -95,6 +96,13 @@ class CumulativePredictionsByRoundType(graphene.ObjectType):
         description=(
             "Cumulative sum of correct tips made by the given model "
             "for the given season"
+        ),
+        default_value=0,
+    )
+    cumulative_accuracy = graphene.Float(
+        description=(
+            "Cumulative mean of correct tips (i.e. accuracy) made by the given model "
+            "for the given season."
         ),
         default_value=0,
     )
@@ -184,18 +192,29 @@ class SeasonType(graphene.ObjectType):
         query_set = (
             root.values("match__round_number", "ml_model__name")
             .order_by("match__round_number")
-            .annotate(correct_count=Count("is_correct", filter=Q(is_correct=True)))
+            .annotate(
+                correct_count=Count("is_correct", filter=Q(is_correct=True)),
+                match_count=Count("match"),
+            )
         )
 
         # TODO: There's definitely a way to do these calculations via SQL, but chained
         # GROUP BYs and calculations based on calculations is a bit much for me
         # right now, so I'll come back and figure it out later
-        calculate_cumulative_correct = (
-            lambda df: df.groupby("ml_model__name")
+        calculate_cumulative_correct = lambda df: (
+            df.groupby("ml_model__name")
             .expanding()
             .sum()
             .reset_index(level=0)["correct_count"]
             .rename("cumulative_correct_count")
+        )
+
+        calculate_cumulative_count = lambda df: (
+            df.groupby("ml_model__name")
+            .expanding()
+            .sum()
+            .reset_index(level=0, drop=True)["match_count"]
+            .rename("cumulative_count")
         )
 
         collect_round_predictions = lambda df: [
@@ -220,8 +239,15 @@ class SeasonType(graphene.ObjectType):
 
         round_predictions = (
             query_set_data_frame.assign(
-                cumulative_correct_count=calculate_cumulative_correct
+                cumulative_correct_count=calculate_cumulative_correct,
+                cumulative_match_count=calculate_cumulative_count,
+                cumulative_accuracy=lambda df: (
+                    (
+                        df["cumulative_correct_count"] / df["cumulative_match_count"]
+                    ).round(2)
+                ),
             )
+            .drop("cumulative_match_count", axis=1)
             .groupby(["match__round_number", "ml_model__name"])
             .mean()
         )
@@ -353,20 +379,23 @@ class Query(graphene.ObjectType):
         # TODO: There's definitely a way to do these calculations via SQL, but chained
         # GROUP BYs and calculations based on calculations is a bit much for me
         # right now, so I'll come back and figure it out later
-        calculate_cumulative_correct = (
-            lambda df: df.expanding()["correct_count"]
-            .sum()
-            .rename("cumulative_correct_count")
+        calculate_cumulative_correct = lambda df: (
+            df.expanding()["correct_count"].sum().rename("cumulative_correct_count")
         )
 
-        calculate_sae = (
-            lambda df: df.expanding()["margin_diff"]
-            .sum()
-            .rename("cumulative_margin_difference")
+        calculate_cumulative_accuracy = lambda df: (
+            df.expanding()["correct_count"]
+            .mean()
+            .round(2)
+            .rename("cumulative_accuracy")
         )
 
-        calculate_mae = (
-            lambda df: df.expanding()["margin_diff"]
+        calculate_sae = lambda df: (
+            df.expanding()["margin_diff"].sum().rename("cumulative_margin_difference")
+        )
+
+        calculate_mae = lambda df: (
+            df.expanding()["margin_diff"]
             .mean()
             .round(2)
             .rename("cumulative_mean_absolute_error")
@@ -376,6 +405,7 @@ class Query(graphene.ObjectType):
             pd.DataFrame(prediction_data)
             .assign(
                 cumulative_correct_count=calculate_cumulative_correct,
+                cumulative_accuracy=calculate_cumulative_accuracy,
                 margin_diff=calculate_margin_diff,
             )
             .assign(cumulative_margin_difference=calculate_sae)

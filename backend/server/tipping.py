@@ -45,6 +45,7 @@ class Tipping:
         self.data_importer = data_importer
         self.ml_models = ml_models
         self.submit_tips = submit_tips
+        self.verbose = 0
 
     def tip(self, verbose=1) -> None:
         """Run 'tip' command"""
@@ -52,28 +53,28 @@ class Tipping:
         self.verbose = verbose  # pylint: disable=W0201
         self.data_importer.verbose = verbose
 
-        fixture_data_frame = self.__fetch_fixture_data(self.current_year)
+        fixture_data_frame = self._fetch_fixture_data(self.current_year)
         upcoming_round, upcoming_matches = self._select_upcoming_matches(
             fixture_data_frame
         )
 
         if upcoming_round is None or upcoming_matches is None:
-            self.__backfill_match_results()
+            self._backfill_match_results()
             return None
 
-        self.__create_matches(upcoming_matches.to_dict("records"), upcoming_round)
+        self._create_matches(upcoming_matches.to_dict("records"), upcoming_round)
 
         upcoming_round_year = upcoming_matches["date"].max().year
 
-        self.__make_predictions(upcoming_round_year, upcoming_round)
-        self.__backfill_match_results()
+        self._make_predictions(upcoming_round_year, upcoming_round)
+        self._backfill_match_results()
 
         if self.submit_tips:
-            self.__submit_tips()
+            self._submit_tips()
 
         return None
 
-    def __fetch_fixture_data(self, year: int) -> pd.DataFrame:
+    def _fetch_fixture_data(self, year: int) -> pd.DataFrame:
         if self.verbose == 1:
             print(f"Fetching fixture for {year}...\n")
 
@@ -119,7 +120,7 @@ class Tipping:
 
         return upcoming_round, fixture_for_upcoming_round
 
-    def __create_matches(
+    def _create_matches(
         self, fixture_data: List[FixtureData], upcoming_round: int
     ) -> None:
         saved_match_count = Match.objects.filter(
@@ -156,7 +157,7 @@ class Tipping:
             )
 
         for fixture_datum in fixture_data:
-            self.__build_match(fixture_datum)
+            self._build_match(fixture_datum)
 
         if self.verbose == 1:
             print("Match data saved!\n")
@@ -164,12 +165,12 @@ class Tipping:
         return None
 
     @staticmethod
-    def __build_match(match_data: FixtureData) -> Tuple[TeamMatch, TeamMatch]:
+    def _build_match(match_data: FixtureData) -> Tuple[TeamMatch, TeamMatch]:
         match = Match.get_or_create_from_raw_data(match_data)
 
         return TeamMatch.get_or_create_from_raw_data(match, match_data)
 
-    def __make_predictions(self, year: int, round_number: int) -> None:
+    def _make_predictions(self, year: int, round_number: int) -> None:
         if self.verbose == 1:
             print("Saving prediction records...")
 
@@ -184,7 +185,7 @@ class Tipping:
         if self.verbose == 1:
             print("Predictions saved!\n")
 
-    def __backfill_match_results(self) -> None:
+    def _backfill_match_results(self) -> None:
         if self.verbose == 1:
             print("Filling in results for recent matches...")
 
@@ -208,21 +209,21 @@ class Tipping:
 
         return None
 
-    def __submit_tips(self) -> None:
+    def _submit_tips(self) -> None:
         print("Submitting tips to footytips.com.au...")
 
         browser = Browser("firefox", headless=True)
-        self.__log_in(browser)
+        self._log_in(browser)
 
-        predictions = self.__get_latest_round_predictions()
+        predictions = self._get_latest_round_predictions()
         match_elements = browser.find_by_css(".tipping-container")
 
-        self.__fill_in_tipping_form(predictions, match_elements)
+        self._fill_in_tipping_form(predictions, match_elements)
         browser.find_by_css(".tipform-submit-button").first.click()
 
         print("Tips submitted!")
 
-    def __get_latest_round_predictions(self) -> Dict[str, int]:
+    def _get_latest_round_predictions(self) -> Dict[str, int]:
         latest_match = Match.objects.latest("start_date_time")
         latest_year = latest_match.start_date_time.year
         latest_round = latest_match.round_number
@@ -245,21 +246,21 @@ class Tipping:
         ), f"No predictions found for round {latest_round}."
 
         return {
-            self.__translate_team_name(pred["predicted_winner__name"]): pred[
+            self._translate_team_name(pred["predicted_winner__name"]): pred[
                 "predicted_margin"
             ]
             for pred in latest_round_predictions
         }
 
     @staticmethod
-    def __translate_team_name(team_name: str) -> str:
+    def _translate_team_name(team_name: str) -> str:
         if team_name not in FT_TEAM_TRANSLATIONS:
             return team_name
 
         return FT_TEAM_TRANSLATIONS[team_name]
 
     @staticmethod
-    def __log_in(browser):
+    def _log_in(browser):
         browser.visit("https://www.footytips.com.au/tipping/afl/")
 
         # Have to use second login form, because the first is some invisible Angular
@@ -271,11 +272,11 @@ class Tipping:
         )
         login_form.find_by_id("signin-ft").click()
 
-    def __fill_in_tipping_form(
+    def _fill_in_tipping_form(
         self, predictions: Dict[str, int], match_elements: ElementAPI
     ):
         for match_element in match_elements:
-            predicted_winner, predicted_margin = self.__get_match_prediction(
+            predicted_winner, predicted_margin = self._get_match_prediction(
                 predictions, match_element
             )
 
@@ -288,13 +289,13 @@ class Tipping:
 
                 return None
 
-            self.__select_predicted_winner(predicted_winner, match_element)
-            self.__fill_in_predicted_margin(predicted_margin, match_element)
+            self._select_predicted_winner(predicted_winner, match_element)
+            self._fill_in_predicted_margin(predicted_margin, match_element)
 
             return None
 
     @staticmethod
-    def __get_match_prediction(
+    def _get_match_prediction(
         predictions: Dict[str, int], match_element: ElementAPI
     ) -> Tuple[Optional[str], Optional[int]]:
         for team_name in predictions.keys():
@@ -304,7 +305,7 @@ class Tipping:
         return None, None
 
     @staticmethod
-    def __select_predicted_winner(
+    def _select_predicted_winner(
         predicted_winner: str, match_element: ElementAPI
     ) -> None:
         team_matches = match_element.find_by_css(".tip-selection")
@@ -316,7 +317,7 @@ class Tipping:
                 team_match_input.click()
 
     @staticmethod
-    def __fill_in_predicted_margin(
+    def _fill_in_predicted_margin(
         predicted_margin: int, match_element: ElementAPI
     ) -> None:
         margin_input = match_element.find_by_name("Margin")

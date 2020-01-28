@@ -50,6 +50,7 @@ services:
     env_file: .env
     environment:
       - PYTHON_ENV=development
+      - PYTHONPATH=./src
     command: python3 app.py
   afl_data:
     image: cfranklin11/tipresias_afl_data:latest
@@ -59,7 +60,7 @@ services:
     tty: true
     command: Rscript app.R
   db:
-    image: postgres
+    image: postgres:11.6
     environment:
       - POSTGRES_DB=tipresias
   browser_test:

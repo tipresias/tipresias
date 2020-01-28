@@ -75,8 +75,8 @@ WSGI_APPLICATION = "project.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "tipresias",
-        "HOST": os.getenv("DATABASE_HOST") or "",
+        "NAME": os.getenv("DATABASE_NAME", ""),
+        "HOST": os.getenv("DATABASE_HOST", ""),
         "USER": "postgres",
         "PASSWORD": "",
         "PORT": 5432,

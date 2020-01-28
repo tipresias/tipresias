@@ -128,7 +128,11 @@ class TestSchema(TestCase):
                     predictionModelNames
                     predictionsByRound {
                         roundNumber
-                        modelPredictions { modelName, cumulativeCorrectCount }
+                        modelPredictions {
+                            modelName
+                            cumulativeCorrectCount
+                            cumulativeAccuracy
+                        }
                         matches { predictions { isCorrect } }
                     }
                 }
@@ -142,6 +146,11 @@ class TestSchema(TestCase):
         self.assertEqual(data["seasonYear"], 2015)
 
         predictions = data["predictionsByRound"]
+
+        for pred in predictions:
+            for model_pred in pred["modelPredictions"]:
+                self.assertGreaterEqual(model_pred["cumulativeAccuracy"], 0.0)
+                self.assertLessEqual(model_pred["cumulativeAccuracy"], 1.0)
 
         earlier_round = predictions[0]
         later_round = predictions[1]

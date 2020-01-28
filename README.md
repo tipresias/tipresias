@@ -12,14 +12,16 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ### Setup
 
-- To manage environemnt variables:
+- To manage environment variables:
   - Install [`direnv`](https://direnv.net/)
   - Add `eval "$(direnv hook bash)"` to the bottom of `~/.bashrc`
   - Run `direnv allow .` inside the project directory
 - Create the `node_modules` volume: `docker volume create --name=node_modules`
 - To build and run the app: `docker-compose up --build`
 - Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
-- Generate raw data for `data_science` functionality: `docker-compose run --rm data_science ./scripts/generate_data_sets.sh`
+- Generate required files for for `data_science` functionality:
+  - Generate data set files: `docker-compose run --rm data_science ./scripts/generate_data_sets.sh`
+  - Generate trained model files: `docker-compose run --rm data_science python3 scripts/save_default_models.py`
 - Seed the DB: `docker-compose run --rm backend python3 manage.py seed_db` (this takes a very long time, so it's recommended that you reset the DB as described below if possible)
 - Reset the DB to match production: `./scripts/reset_local_db_to_prod.sh`
   - This requires ability to `ssh` into the prod server (i.e. you must have been added as a user to the server by an admin)

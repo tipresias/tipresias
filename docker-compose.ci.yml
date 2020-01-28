@@ -24,7 +24,7 @@ services:
       - backend
     command: yarn start
   db:
-    image: postgres
+    image: postgres:11.6
     environment:
       - POSTGRES_DB=tipresias
   browser_test:

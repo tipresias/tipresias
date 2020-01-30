@@ -1,6 +1,6 @@
 # Data packages
 numpy
-pandas>=0.23.0,<0.26
+pandas>=0.23.0,<1.1
 
 # App packages
 django>=2.2,<3.1

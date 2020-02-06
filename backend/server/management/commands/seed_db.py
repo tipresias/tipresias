@@ -11,7 +11,7 @@ from server import data_import
 from server.helpers import pivot_team_matches_to_matches
 from server.types import MlModel, MatchData
 
-YEAR_RANGE = "2014-2019"
+YEAR_RANGE = "2014-2020"
 JAN = 1
 
 
@@ -19,22 +19,44 @@ class Command(BaseCommand):
     help = "Seed the database with team, match, and prediction data."
 
     def __init__(
-        self, *args, fetch_data=True, data_importer=data_import, **kwargs
+        self,
+        *args,
+        fetch_data=True,
+        data_importer=data_import,
+        verbose: int = 1,
+        **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
         self.fetch_data = fetch_data
         self.data_importer = data_importer
+        self.verbose = verbose
+        self.ml_model = None
 
-    def handle(  # pylint: disable=W0221
-        self, *_args, year_range: str = YEAR_RANGE, verbose: int = 1, **_kwargs
-    ) -> None:  # pylint: disable=W0613
-        self.verbose = verbose  # pylint: disable=W0201
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--ml_model",
+            type=str,
+            help=(
+                "Specify a single MLModel whose associated data "
+                "will be added to the DB."
+            ),
+        )
+
+    def handle(self, *_args, **kwargs) -> None:
+        year_range: str = kwargs.get("year_range") or YEAR_RANGE
+        self.verbose = kwargs.get("verbose") or self.verbose
+        self.ml_model = kwargs.get("ml_model") or self.ml_model
 
         if self.verbose == 1:
-            print("\nSeeding DB...\n")
+            ml_model_msg = (
+                "" if self.ml_model is None else f" with data for {self.ml_model}"
+            )
+            print(f"\nSeeding DB{ml_model_msg}...\n")
 
-        years_list = [int(year) for year in year_range.split("-")]
+        years_list = cast(
+            Tuple[int, int], tuple([int(year) for year in year_range.split("-")])
+        )
 
         if len(years_list) != 2 or not all(
             [len(str(year)) == 4 for year in years_list]
@@ -44,28 +66,27 @@ class Command(BaseCommand):
                 f"an integer. {year_range} is invalid."
             )
 
-        match_data_frame = self.data_importer.fetch_match_results_data(
-            start_date=timezone.make_aware(datetime(years_list[0], 1, 1)),
-            end_date=timezone.make_aware(datetime(years_list[1] - 1, 12, 31)),
-            fetch_data=self.fetch_data,
-        )
-
         with transaction.atomic():
-            self.__create_ml_models()
-            self.__create_matches(match_data_frame.to_dict("records"))
-            self.__make_predictions(cast(Tuple[int, int], years_list))
+            self._create_ml_models()
+
+            # We assume that if we're only adding an MLModel, then we're not doing
+            # a full seed
+            if self.ml_model is None:
+                self._create_matches(years_list)
+
+            self._make_predictions(years_list)
 
             if self.verbose == 1:
                 print("\n...DB seeded!\n")
 
-    def __create_ml_models(self) -> List[MLModel]:
+    def _create_ml_models(self) -> List[MLModel]:
         ml_models = [
-            self.__build_ml_model(ml_model)
+            self._build_ml_model(ml_model)
             for ml_model in self.data_importer.fetch_ml_model_info()
+            if self.ml_model is None or ml_model["name"] == self.ml_model
         ]
 
-        if not any(ml_models):
-            raise ValueError("Something went wrong and no ML models were saved.")
+        assert any(ml_models), "Something went wrong and no ML models were saved."
 
         MLModel.objects.bulk_create(ml_models)
 
@@ -74,24 +95,31 @@ class Command(BaseCommand):
 
         return ml_models
 
-    def __create_matches(self, fixture_data: List[MatchData]) -> None:
-        if not any(fixture_data):
-            raise ValueError("No match data found.")
+    def _create_matches(self, years_list: Tuple[int, int]) -> None:
+        match_data_frame = self.data_importer.fetch_match_results_data(
+            start_date=timezone.make_aware(datetime(years_list[0], 1, 1)),
+            end_date=timezone.make_aware(datetime(years_list[1] - 1, 12, 31)),
+            fetch_data=self.fetch_data,
+        )
+
+        fixture_data = match_data_frame.to_dict("records")
+
+        assert any(fixture_data), "No match data found."
 
         for fixture_datum in fixture_data:
-            self.__build_match(fixture_datum)
+            self._build_match(fixture_datum)
 
         if self.verbose == 1:
             print("Match data saved!")
 
     @staticmethod
-    def __build_match(match_data: MatchData) -> None:
+    def _build_match(match_data: MatchData) -> None:
         match = Match.get_or_create_from_raw_data(match_data)
         TeamMatch.get_or_create_from_raw_data(match, match_data)
 
-    def __make_predictions(self, year_range: Tuple[int, int]) -> None:
+    def _make_predictions(self, year_range: Tuple[int, int]) -> None:
         predictions = self.data_importer.fetch_prediction_data(
-            year_range, verbose=self.verbose
+            year_range, ml_models=self.ml_model
         )
         home_away_df = pivot_team_matches_to_matches(predictions)
 
@@ -102,8 +130,8 @@ class Command(BaseCommand):
             print("\nPredictions saved!")
 
     @staticmethod
-    def __build_ml_model(ml_model: MlModel) -> MLModel:
-        ml_model_record = MLModel(name=ml_model["name"], filepath=ml_model["filepath"])
+    def _build_ml_model(ml_model: MlModel) -> MLModel:
+        ml_model_record = MLModel(name=ml_model["name"])
         ml_model_record.full_clean()
 
         return ml_model_record

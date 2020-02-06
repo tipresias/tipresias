@@ -86,7 +86,7 @@ def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
 def fetch_prediction_data(
     year_range: Tuple[int, int],
     round_number: Optional[int] = None,
-    ml_models: str = None,
+    ml_models: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Fetch prediction data from machine_learning module
@@ -97,7 +97,6 @@ def fetch_prediction_data(
         round_number (int): Specify a particular round for which to fetch data.
         ml_models (str): Comma-separated list of ML model names to use for making
             predictions.
-        verbose (0 or 1): Whether to print info messages while fetching data.
 
     Returns:
         List of prediction data dictionaries
@@ -127,7 +126,6 @@ def fetch_fixture_data(start_date: datetime, end_date: datetime) -> pd.DataFrame
             the earliest date for which to fetch data.
         end_date (timezone-aware, datetime): Date-time that determines
             the latest date for which to fetch data.
-        verbose (0 or 1): Whether to print info messages while fetching data.
 
     Returns:
         pandas.DataFrame with fixture data.

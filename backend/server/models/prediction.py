@@ -17,11 +17,14 @@ class Prediction(models.Model):
     predicted_winner = models.ForeignKey(
         Team, on_delete=models.CASCADE, related_name="predicted_wins"
     )
-    predicted_margin = models.PositiveSmallIntegerField()
+    predicted_margin = models.PositiveSmallIntegerField(blank=True, null=True)
+    predicted_win_probability = models.FloatField(blank=True, null=True)
     is_correct = models.BooleanField(default=False)
 
     @classmethod
-    def update_or_create_from_raw_data(cls, prediction_data: CleanPredictionData) -> None:
+    def update_or_create_from_raw_data(
+        cls, prediction_data: CleanPredictionData
+    ) -> None:
         """
         Convert raw prediction data to a Prediction model instance. Tries to find
         and update existing prediction for the given match/model combination,

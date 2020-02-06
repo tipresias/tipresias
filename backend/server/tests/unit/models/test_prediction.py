@@ -24,7 +24,7 @@ class TestPrediction(TestCase):
         self.match.teammatch_set.create(team=self.home_team, at_home=True, score=150)
         self.match.teammatch_set.create(team=self.away_team, at_home=False, score=100)
 
-    def test_convert_data_to_record(self):
+    def test_update_or_create_from_raw_data(self):
         data = fake_prediction_data(self.match, ml_model_name=self.ml_model.name)
         home_away_df = pivot_team_matches_to_matches(pd.DataFrame(data))
 
@@ -32,12 +32,18 @@ class TestPrediction(TestCase):
         Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
         self.assertEqual(Prediction.objects.count(), 1)
 
+        prediction = Prediction.objects.first()
+        self.assertIsInstance(prediction.predicted_margin, int)
+        self.assertIsNone(prediction.predicted_win_probability)
+
         with self.subTest("when prediction record already exists"):
             predicted_margin = 100
             home_away_df.loc[:, "home_predicted_margin"] = predicted_margin
             home_away_df.loc[:, "away_predicted_margin"] = -predicted_margin
 
-            Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
+            Prediction.update_or_create_from_raw_data(
+                home_away_df.to_dict("records")[0]
+            )
             self.assertEqual(Prediction.objects.count(), 1)
 
             prediction = Prediction.objects.first()
@@ -54,7 +60,9 @@ class TestPrediction(TestCase):
             home_away_df.loc[:, "home_predicted_margin"] = predicted_losing_margin
             home_away_df.loc[:, "away_predicted_margin"] = predicted_winning_margin
 
-            Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
+            Prediction.update_or_create_from_raw_data(
+                home_away_df.to_dict("records")[0]
+            )
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 150)
             self.assertEqual(
@@ -69,7 +77,9 @@ class TestPrediction(TestCase):
             home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
             home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
 
-            Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
+            Prediction.update_or_create_from_raw_data(
+                home_away_df.to_dict("records")[0]
+            )
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 150)
             self.assertEqual(
@@ -82,12 +92,28 @@ class TestPrediction(TestCase):
             home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
             home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
 
-            Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
+            Prediction.update_or_create_from_raw_data(
+                home_away_df.to_dict("records")[0]
+            )
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 1)
             self.assertEqual(
                 home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
             )
+
+        with self.subTest("when predicting win probability"):
+            proba_data = fake_prediction_data(
+                self.match, ml_model_name=self.ml_model.name, predict_margin=False
+            )
+            proba_home_away_df = pivot_team_matches_to_matches(pd.DataFrame(proba_data))
+
+            Prediction.update_or_create_from_raw_data(
+                proba_home_away_df.to_dict("records")[0]
+            )
+
+            prediction = Prediction.objects.first()
+            self.assertIsInstance(prediction.predicted_win_probability, float)
+            self.assertIsNone(prediction.predicted_margin)
 
     def test_clean(self):
         with self.subTest("when predicted margin rounds to 0"):

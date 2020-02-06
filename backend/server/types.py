@@ -55,6 +55,8 @@ CleanPredictionData = TypedDict(
         "ml_model": str,
         "home_predicted_margin": float,
         "away_predicted_margin": float,
+        "home_predicted_win_probability": float,
+        "away_predicted_win_probability": float,
     },
 )
 

@@ -1,17 +1,20 @@
 """Helper functions"""
 
-from typing import Dict
+from typing import Dict, Callable
 import pandas as pd
 
 
-def _replace_col_names(team_type: str) -> Dict[str, str]:
+NON_METRIC_COLS = ["home_team", "away_team", "year", "round_number", "ml_model"]
+
+
+def _replace_metric_col_names(team_type: str) -> Callable:
+    return lambda col: col if col in NON_METRIC_COLS else team_type + "_" + col
+
+
+def _replace_team_col_names(team_type: str) -> Dict[str, str]:
     oppo_team_type = "away" if team_type == "home" else "home"
 
-    return {
-        "team": team_type + "_team",
-        "oppo_team": oppo_team_type + "_team",
-        "predicted_margin": team_type + "_predicted_margin",
-    }
+    return {"team": team_type + "_team", "oppo_team": oppo_team_type + "_team"}
 
 
 def _home_away_data_frame(data_frame: pd.DataFrame, team_type: str) -> pd.DataFrame:
@@ -21,7 +24,8 @@ def _home_away_data_frame(data_frame: pd.DataFrame, team_type: str) -> pd.DataFr
     return (
         data_frame.query("at_home == @at_home_query")
         .drop("at_home", axis=1)
-        .rename(columns=_replace_col_names(team_type))
+        .rename(columns=_replace_team_col_names(team_type))
+        .rename(columns=_replace_metric_col_names(team_type))
         .reset_index()
     )
 

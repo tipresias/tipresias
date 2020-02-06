@@ -131,6 +131,7 @@ def fake_fixture_data(row_count: int, year_range: Tuple[int, int]) -> pd.DataFra
 def fake_prediction_data(
     match_data: Union[FixtureData, Match, None] = None,
     ml_model_name="test_estimator",
+    predict_margin=True,
 ) -> pd.DataFrame:
     if match_data is None:
         match_data_for_pred = fake_fixture_data(1, (2018, 2019)).iloc[0, :]
@@ -144,6 +145,11 @@ def fake_prediction_data(
     else:
         match_data_for_pred = match_data
 
+    predicted_home_margin = np.random.rand() * 50 if predict_margin else None
+    predicted_away_margin = np.random.rand() * 50 if predict_margin else None
+    predicted_home_proba = np.random.rand() if not predict_margin else None
+    predicted_away_proba = np.random.rand() if not predict_margin else None
+
     predictions = [
         {
             "team": match_data_for_pred["home_team"],
@@ -152,7 +158,8 @@ def fake_prediction_data(
             "at_home": 1,
             "oppo_team": match_data_for_pred["away_team"],
             "ml_model": ml_model_name,
-            "predicted_margin": np.random.rand() * 50,
+            "predicted_margin": predicted_home_margin,
+            "predicted_win_probability": predicted_home_proba,
         },
         {
             "team": match_data_for_pred["away_team"],
@@ -161,7 +168,8 @@ def fake_prediction_data(
             "at_home": 0,
             "oppo_team": match_data_for_pred["home_team"],
             "ml_model": ml_model_name,
-            "predicted_margin": np.random.rand() * 50,
+            "predicted_margin": predicted_away_margin,
+            "predicted_win_probability": predicted_away_proba,
         },
     ]
 

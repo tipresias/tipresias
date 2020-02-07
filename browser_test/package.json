@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"devDependencies": {
-		"cypress": "3.8.3"
+		"cypress": "4.0.0"
 	},
 	"dependencies": {
 		"lodash": "4.17.15"

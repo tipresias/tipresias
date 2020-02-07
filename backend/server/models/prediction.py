@@ -1,5 +1,7 @@
 """Data model for ML predictions for AFL matches"""
 
+from typing import Tuple, Optional
+
 from django.db import models, transaction
 import numpy as np
 
@@ -17,11 +19,14 @@ class Prediction(models.Model):
     predicted_winner = models.ForeignKey(
         Team, on_delete=models.CASCADE, related_name="predicted_wins"
     )
-    predicted_margin = models.PositiveSmallIntegerField()
+    predicted_margin = models.PositiveSmallIntegerField(blank=True, null=True)
+    predicted_win_probability = models.FloatField(blank=True, null=True)
     is_correct = models.BooleanField(default=False)
 
     @classmethod
-    def update_or_create_from_raw_data(cls, prediction_data: CleanPredictionData) -> None:
+    def update_or_create_from_raw_data(
+        cls, prediction_data: CleanPredictionData
+    ) -> None:
         """
         Convert raw prediction data to a Prediction model instance. Tries to find
         and update existing prediction for the given match/model combination,
@@ -35,26 +40,24 @@ class Prediction(models.Model):
         Returns:
             prediction (Prediction): Unsaved Prediction model instance.
         """
-
         home_team = prediction_data["home_team"]
         away_team = prediction_data["away_team"]
 
-        home_margin = prediction_data["home_predicted_margin"]
-        away_margin = prediction_data["away_predicted_margin"]
+        predicted_margin, predicted_margin_winner = cls._calculate_predicted_margin(
+            prediction_data, home_team, away_team
+        )
+        predicted_win_probability, predicted_proba_winner = cls._calculate_predicted_win_probability(  # pylint: disable=line-too-long
+            prediction_data, home_team, away_team
+        )
 
-        # predicted_margin is always positive as its always associated with predicted_winner
-        predicted_margin = np.mean(np.abs([home_margin, away_margin]))
+        # For now, each estimator predicts margins or win probabilities, but not both.
+        # If we eventually have an estimator that predicts both, we're defaulting
+        # to the predicted winner by margin, but we may want to revisit this
+        predicted_winner = predicted_margin_winner or predicted_proba_winner
 
-        if home_margin > away_margin:
-            predicted_winner = Team.objects.get(name=home_team)
-        elif away_margin > home_margin:
-            predicted_winner = Team.objects.get(name=away_team)
-        else:
-            raise ValueError(
-                "Predicted home and away margins are equal, which is basically "
-                "impossible, so figure out what's going on:\n"
-                f"{prediction_data}"
-            )
+        assert predicted_winner is not None, (
+            "Each prediction should have a predicted_winner:\n" f"{prediction_data}"
+        )
 
         matches = Match.objects.filter(
             start_date_time__year=prediction_data["year"],
@@ -72,13 +75,14 @@ class Prediction(models.Model):
 
         match = matches.first()
         ml_model = MLModel.objects.get(name=prediction_data["ml_model"])
-        prediction_attributes = {"match": match, "ml_model": ml_model}
+        matching_prediction_attributes = {"match": match, "ml_model": ml_model}
 
         with transaction.atomic():
             prediction, was_created = cls.objects.update_or_create(
-                **prediction_attributes,
+                **matching_prediction_attributes,
                 defaults={
                     "predicted_margin": predicted_margin,
+                    "predicted_win_probability": predicted_win_probability,
                     "predicted_winner": predicted_winner,
                 },
             )
@@ -89,11 +93,70 @@ class Prediction(models.Model):
                 prediction.clean()
 
             prediction.save()
+            cls.update_correctness(prediction)
+
+    @classmethod
+    def _calculate_predicted_margin(
+        cls, prediction_data: CleanPredictionData, home_team, away_team
+    ) -> Tuple[Optional[float], Optional[str]]:
+        home_margin = prediction_data["home_predicted_margin"]
+        away_margin = prediction_data["away_predicted_margin"]
+
+        if home_margin is None or away_margin is None:
+            return None, None
+
+        # predicted_margin is always positive as it's always associated
+        # with predicted_winner
+        predicted_margin = np.mean(np.abs([home_margin, away_margin]))
+
+        if home_margin > away_margin:
+            predicted_winner = Team.objects.get(name=home_team)
+        elif away_margin > home_margin:
+            predicted_winner = Team.objects.get(name=away_team)
+        else:
+            raise ValueError(
+                "Predicted home and away margins are equal, which is basically "
+                "impossible, so figure out what's going on:\n"
+                f"{prediction_data}"
+            )
+
+        return predicted_margin, predicted_winner
+
+    @classmethod
+    def _calculate_predicted_win_probability(
+        cls, prediction_data: CleanPredictionData, home_team, away_team
+    ) -> Tuple[Optional[float], Optional[str]]:
+        home_probability = prediction_data["home_predicted_win_probability"]
+        away_probability = prediction_data["away_predicted_win_probability"]
+
+        if home_probability is None or away_probability is None:
+            return None, None
+
+        assert home_probability != away_probability, (
+            "Predicted home and away win probabilities are equal, "
+            "which is basically impossible, so figure out what's going on:\n"
+            f"{prediction_data}"
+        )
+
+        predicted_loser_oppo_win_proba = 1 - min([home_probability, away_probability])
+        predicted_winner_win_proba = max([home_probability, away_probability])
+        predicted_win_probability = np.mean(
+            [predicted_loser_oppo_win_proba, predicted_winner_win_proba]
+        )
+
+        predicted_winner_name = (
+            home_team if home_probability > away_probability else away_team
+        )
+        predicted_winner = Team.objects.get(name=predicted_winner_name)
+
+        return predicted_win_probability, predicted_winner
 
     def clean(self):
-        # Judgement call, but I want to avoid 0 predicted margin values for the cases
-        # where the floating prediction is < 0.5, because we're never predicting a draw
-        self.predicted_margin = round(self.predicted_margin) or 1
+        if self.predicted_margin is not None:
+            # Judgement call, but I want to avoid 0 predicted margin values
+            # for the cases where the floating prediction is < 0.5,
+            # because we're never predicting a draw
+            self.predicted_margin = round(self.predicted_margin) or 1
 
     def update_correctness(self):
         """Update the correct attribute based on associated team_match scores"""

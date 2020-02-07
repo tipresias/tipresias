@@ -93,6 +93,7 @@ class Prediction(models.Model):
                 prediction.clean()
 
             prediction.save()
+            cls.update_correctness(prediction)
 
     @classmethod
     def _calculate_predicted_margin(

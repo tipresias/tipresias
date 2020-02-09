@@ -23,14 +23,12 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
   - Generate data set files: `docker-compose run --rm data_science ./scripts/generate_data_sets.sh`
   - Generate trained model files: `docker-compose run --rm data_science python3 scripts/save_default_models.py`
 - Seed the DB: `docker-compose run --rm backend python3 manage.py seed_db` (this takes a very long time, so it's recommended that you reset the DB as described below if possible)
-- Reset the DB to match production: `./scripts/reset_local_db_to_prod.sh`
-  - This requires ability to `ssh` into the prod server (i.e. you must have been added as a user to the server by an admin)
-  - `PROD_USER` and `IP_ADDRESS` environment variables have to be set in the current bash session, and their values have to be applicable to the relevant server
 - To interact with production resources, install the Google Cloud SDK:
   - `brew cask install google-cloud-sdk` (on Mac)
   - `gcloud auth login` (redirects you to log into your Google account in the browser)
   - `gcloud config set project ${PROJECT_ID}`
 - To `ssh` into the server, run `./scripts/ssh.sh`.
+- To reset the DB to match production: `./scripts/reset_local_db_to_prod.sh`
 - To run the tipping command, run `./scripts/tip.sh`.
 
 ### Run the app

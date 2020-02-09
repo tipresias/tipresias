@@ -89,6 +89,7 @@ deploy_rsa.enc
 .vscode
 *.sql
 data_science
+db/backups
 
 # GCP files
 .gcloud

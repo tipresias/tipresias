@@ -16,3 +16,7 @@ gcloud beta compute instances update-container ${PROJECT_ID}-app \
   --container-image ${DOCKER_IMAGE} \
   --zone australia-southeast1-b \
   --project ${PROJECT_ID}
+
+./backend/scripts/wait-for-it.sh ${PRODUCTION_HOST}:${PORT:-8000} \
+  -t 60 \
+  -- ./scripts/migrate.sh

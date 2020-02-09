@@ -24,4 +24,5 @@ docker exec -t -u postgres tipresias_db_1 psql \
 docker exec -t -u postgres tipresias_db_1 psql \
   --command="CREATE ROLE cloudsqlsuperuser" \
   --dbname=${DATABASE_NAME}
-cat $PWD/db/backups/${DB_FILE} | docker exec -i tipresias_db_1 psql -U postgres -d ${DATABASE_NAME}
+cat $PWD/db/backups/${DB_FILE} \
+  | docker exec -i tipresias_db_1 psql -U postgres -d ${DATABASE_NAME}

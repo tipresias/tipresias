@@ -1,3 +1,9 @@
+# TODO: Refactor the stats calculations. This may require some reorganising
+# of the API itself, as there is quite a bit of similarity between stats-by-round
+# and latest round stats.
+# The main issue is that the queries and types are a little too specific.
+# Consolidating the logic would require a little bit of processing on the frontend,
+# but should reduce the overall complexity of the code.
 from typing import List, cast, Optional
 
 import graphene

@@ -16,6 +16,9 @@ FIRST = 1
 DEC = 12
 THIRTY_FIRST = 31
 
+N_ML_MODELS = 5
+ML_MODEL_NAMES = [factory.Faker("company") for _ in range(N_ML_MODELS)]
+
 
 class TeamFactory(DjangoModelFactory):
     class Meta:
@@ -70,7 +73,10 @@ class PredictionFactory(DjangoModelFactory):
         model = Prediction
 
     match = factory.SubFactory(MatchFactory)
-    ml_model = factory.SubFactory(MLModelFactory)
+    # Can't use SubFactory for associated MLModel, because it's not realistic to have
+    # one model per prediction, and in cases where there are a lot of predictions,
+    # we risk duplicate model names, which is invalid
+    ml_model = factory.Iterator(MLModel.objects.all())
     predicted_winner = factory.SubFactory(TeamFactory)
     predicted_margin = factory.Faker("pyint", min_value=0, max_value=50)
     # Doesn't give realistic win probabilities (i.e. between 0.5 and 1.0)

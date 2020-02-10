@@ -9,9 +9,8 @@ import numpy as np
 from freezegun import freeze_time
 
 from server.schema import schema
-from server.tests.fixtures.factories import FullMatchFactory
+from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
 from server.models import Match, MLModel
-from server.tests.fixtures.factories import MLModelFactory
 
 
 ROUND_COUNT = 4

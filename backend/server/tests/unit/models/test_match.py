@@ -12,10 +12,11 @@ from server.tests.fixtures.data_factories import (
     fake_fixture_data,
     fake_match_results_data,
 )
-from server.tests.fixtures.factories import FullMatchFactory
+from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
 
 
 ONE_YEAR_RANGE = (2014, 2015)
+N_ML_MODELS = 3
 
 
 class TestMatch(TestCase):
@@ -59,6 +60,9 @@ class TestMatch(TestCase):
             self.assertEqual(Match.objects.count(), match_count + 1)
 
     def test_played_without_results(self):
+        for _ in range(N_ML_MODELS):
+            MLModelFactory()
+
         FullMatchFactory(
             start_date_time=timezone.localtime() - timedelta(days=1),
             home_team_match__score=0,
@@ -80,6 +84,9 @@ class TestMatch(TestCase):
         self.assertEqual(played_matches_without_results.count(), 1)
 
     def test_earliest_data_without_results(self):
+        for _ in range(N_ML_MODELS):
+            MLModelFactory()
+
         FullMatchFactory(
             start_date_time=timezone.localtime() - timedelta(days=1),
             home_team_match__score=50,
@@ -113,6 +120,9 @@ class TestMatch(TestCase):
         match_results = fake_match_results_data(3, ONE_YEAR_RANGE)
         calls = []
 
+        for _ in range(N_ML_MODELS):
+            MLModelFactory()
+
         for _idx, match_result in match_results.iterrows():
             FullMatchFactory(
                 home_team_match__score=0,
@@ -129,6 +139,9 @@ class TestMatch(TestCase):
         self.assertEqual(mock_update_result.call_count, 3)
 
     def test_update_result(self):
+        for _ in range(N_ML_MODELS):
+            MLModelFactory()
+
         match_results = fake_match_results_data(1, ONE_YEAR_RANGE)
         match_result = match_results.iloc[0, :]
 

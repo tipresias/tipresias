@@ -1,3 +1,9 @@
+# TODO: Refactor the stats calculations. This may require some reorganising
+# of the API itself, as there is quite a bit of similarity between stats-by-round
+# and latest round stats.
+# The main issue is that the queries and types are a little too specific.
+# Consolidating the logic would require a little bit of processing on the frontend,
+# but should reduce the overall complexity of the code.
 from typing import List, cast, Optional
 
 import graphene
@@ -6,6 +12,7 @@ from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
 import pandas as pd
 from mypy_extensions import TypedDict
+import numpy as np
 
 from server.models import Prediction, MLModel, TeamMatch, Match, Team
 
@@ -18,6 +25,7 @@ ModelPrediction = TypedDict(
         "cumulative_accuracy": float,
         "cumulative_mean_absolute_error": float,
         "cumulative_margin_difference": int,
+        "cumulative_bits": float,
     },
 )
 
@@ -34,6 +42,11 @@ RoundPrediction = TypedDict(
         "matches": QuerySet,
     },
 )
+
+
+# For regressors that might try to predict negative values or 0,
+# we need a slightly positive minimum to not get errors when calculating logarithms
+MIN_LOG_VAL = 1 * 10 ** -10
 
 
 class TeamType(DjangoObjectType):
@@ -116,6 +129,9 @@ class CumulativePredictionsByRoundType(graphene.ObjectType):
             "for the given season."
         ),
         default_value=0,
+    )
+    cumulative_bits = graphene.Float(
+        description="Cumulative bits metric for the given season.", default_value=0
     )
 
 
@@ -357,6 +373,7 @@ class Query(graphene.ObjectType):
                     "match__round_number": match.round_number,
                     "ml_model__name": prediction.ml_model.name,
                     "predicted_margin": prediction.predicted_margin,
+                    "predicted_win_probability": prediction.predicted_win_probability,
                     "predicted_winner__name": prediction.predicted_winner.name,
                     "correct_count": prediction.correct_count,
                     "winner": match.winner.name,
@@ -401,14 +418,43 @@ class Query(graphene.ObjectType):
             .rename("cumulative_mean_absolute_error")
         )
 
+        positive_pred = lambda y_pred: (
+            np.maximum(y_pred, np.repeat(MIN_LOG_VAL, len(y_pred)))
+        )
+        draw_bits = lambda y_pred: (
+            1 + (0.5 * np.log2(positive_pred(y_pred * (1 - y_pred))))
+        )
+        win_bits = lambda y_pred: 1 + np.log2(positive_pred(y_pred))
+        loss_bits = lambda y_pred: 1 + np.log2(positive_pred(1 - y_pred))
+
+        # Raw bits calculations per http://probabilistic-footy.monash.edu/~footy/about.shtml
+        calculate_bits = lambda df: np.where(
+            df["margin"] == 0,
+            draw_bits(df["predicted_win_probability"]),
+            np.where(
+                df["winner"] == df["predicted_winner__name"],
+                win_bits(df["predicted_win_probability"]),
+                loss_bits(df["predicted_win_probability"]),
+            ),
+        )
+
+        calculate_cumulative_bits = lambda df: (
+            df.expanding()["bits"].sum().rename("cumulative_bits")
+        )
+
         cumulative_stats = (
             pd.DataFrame(prediction_data)
+            .fillna(0)
             .assign(
                 cumulative_correct_count=calculate_cumulative_correct,
                 cumulative_accuracy=calculate_cumulative_accuracy,
                 margin_diff=calculate_margin_diff,
+                bits=calculate_bits,
             )
-            .assign(cumulative_margin_difference=calculate_sae)
+            .assign(
+                cumulative_margin_difference=calculate_sae,
+                cumulative_bits=calculate_cumulative_bits,
+            )
             .assign(cumulative_mean_absolute_error=calculate_mae)
         )
 

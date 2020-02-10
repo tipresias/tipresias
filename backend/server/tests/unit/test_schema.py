@@ -286,6 +286,7 @@ class TestSchema(TestCase):
                         cumulativeCorrectCount
                         cumulativeMeanAbsoluteError
                         cumulativeMarginDifference
+                        cumulativeBits
                     }
                 }
             }
@@ -308,6 +309,9 @@ class TestSchema(TestCase):
         self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
         self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
         self.assertGreater(model_stats["cumulativeMarginDifference"], 0)
+        # Bits can be positive or negative, so we just want to make sure it's not 0,
+        # which would suggest a problem
+        self.assertNotEqual(model_stats["cumulativeBits"], 0)
 
         with self.subTest("when the last matches haven't been played yet"):
             DAY = 3

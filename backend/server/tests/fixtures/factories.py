@@ -73,6 +73,11 @@ class PredictionFactory(DjangoModelFactory):
     ml_model = factory.SubFactory(MLModelFactory)
     predicted_winner = factory.SubFactory(TeamFactory)
     predicted_margin = factory.Faker("pyint", min_value=0, max_value=50)
+    # Doesn't give realistic win probabilities (i.e. between 0.5 and 1.0)
+    # due to an open issue in faker: https://github.com/joke2k/faker/issues/1068
+    # Since they're taking this as an opportunity to completely change the method,
+    # they're going to wait for a major version rather than just permit floats...
+    predicted_win_probability = factory.Faker("pyfloat", min_value=0, max_value=1)
     is_correct = factory.Faker("pybool")
 
 

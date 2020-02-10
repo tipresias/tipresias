@@ -7,7 +7,7 @@ services:
     depends_on:
       - db
     environment:
-      - DJANGO_SETTINGS_MODULE=project.settings.development
+      - DJANGO_SETTINGS_MODULE=project.settings.test
       - DATABASE_HOST=db
       - EMAIL_RECIPIENT=test@test.com
       - SENDGRID_API_KEY=test

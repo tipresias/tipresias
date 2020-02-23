@@ -12,6 +12,7 @@ services:
       - EMAIL_RECIPIENT=test@test.com
       - SENDGRID_API_KEY=test
       - CI=true
+      - DATABASE_NAME=$DATABASE_NAME
     command: ./scripts/wait-for-it.sh data_science:8008 -- python3 manage.py runserver 0.0.0.0:8000
   frontend:
     image: cfranklin11/tipresias_frontend:latest
@@ -26,7 +27,7 @@ services:
   db:
     image: postgres:11.6
     environment:
-      - POSTGRES_DB=tipresias
+      - POSTGRES_DB=$DATABASE_NAME
   browser_test:
     image: cfranklin11/tipresias_browser_test:latest
     depends_on:

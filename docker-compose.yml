@@ -62,7 +62,7 @@ services:
   db:
     image: postgres:11.6
     environment:
-      - POSTGRES_DB=tipresias
+      - POSTGRES_DB=$DATABASE_NAME
   browser_test:
     build: ./browser_test
     depends_on:

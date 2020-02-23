@@ -25,7 +25,7 @@ services:
   db:
     image: postgres
     environment:
-      - POSTGRES_DB=tipresias
+      - POSTGRES_DB=$DATABASE_NAME
     networks:
       - webnet
     restart: unless-stopped

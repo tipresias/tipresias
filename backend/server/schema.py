@@ -360,6 +360,12 @@ class Query(graphene.ObjectType):
             .annotate(correct_count=Count("is_correct", filter=Q(is_correct=True)))
         )
 
+        assert query_set.count() > 0, (
+            "Could not find records for the latest round. Check that there are matches "
+            f"in {max_year}, that {ml_model_name} has predictions for that year, "
+            f"and that there are match records after {timezone.localtime()}"
+        )
+
         prediction_data = []
 
         for prediction in query_set:
@@ -380,6 +386,8 @@ class Query(graphene.ObjectType):
                     "margin": match.margin,
                 }
             )
+
+        prediction_df = pd.DataFrame(prediction_data)
 
         calculate_margin_diff = lambda df: (
             df["predicted_margin"]
@@ -443,8 +451,7 @@ class Query(graphene.ObjectType):
         )
 
         cumulative_stats = (
-            pd.DataFrame(prediction_data)
-            .fillna(0)
+            prediction_df.fillna(0)
             .assign(
                 cumulative_correct_count=calculate_cumulative_correct,
                 cumulative_accuracy=calculate_cumulative_accuracy,

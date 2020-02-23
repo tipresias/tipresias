@@ -1,4 +1,6 @@
 it("loads page", () => {
   cy.visit("/", { headers: { Connection: "Keep-Alive" } });
-  cy.contains("tipresias performance metrics");
+  // Need to extend timeout, because the query that fetches this data
+  // is a bit slower
+  cy.contains("performance metrics", {timeout: 10000});
 });

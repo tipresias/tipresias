@@ -68,13 +68,11 @@ class TestSeedDb(TestCase):
         )
 
         self.seed_command = seed_db.Command(
-            data_importer=mock_data_import, fetch_data=False
+            data_importer=mock_data_import, fetch_data=False, verbose=0
         )
 
     def test_handle(self):
-        self.seed_command.handle(
-            year_range=f"{self.years[0]}-{self.years[1]}", verbose=0
-        )
+        self.seed_command.handle(year_range=f"{self.years[0]}-{self.years[1]}")
 
         self.assertGreater(Team.objects.count(), 0)
         self.assertEqual(MLModel.objects.count(), 1)

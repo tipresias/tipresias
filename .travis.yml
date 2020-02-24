@@ -24,6 +24,9 @@ script:
   - docker run cfranklin11/tipresias_frontend:latest yarn run flow
   - docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
 
+  # We use gcloud/gsutil to upload screenshot artifacts on browser test failures
+  - mkdir ${HOME}/.gcloud
+  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in keyfile.json.enc -out ${GOOGLE_APPLICATION_CREDENTIALS} -d
   - ./scripts/browser_tests.sh
   - ./backend/scripts/integration_tests.sh
 before_deploy:
@@ -31,9 +34,6 @@ before_deploy:
   - docker push cfranklin11/tipresias_backend:latest
   - docker push cfranklin11/tipresias_frontend:latest
   - docker push cfranklin11/tipresias_browser_test:latest
-
-  - mkdir ${HOME}/.gcloud
-  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in keyfile.json.enc -out ${GOOGLE_APPLICATION_CREDENTIALS} -d
 
 deploy:
   provider: script

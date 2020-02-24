@@ -18,6 +18,8 @@ from .data_config import *  # pylint: disable=wildcard-import,unused-wildcard-im
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 
+FIXTURE_DIRS = [os.path.join(BASE_DIR, "server/tests/fixtures")]
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 

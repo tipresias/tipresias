@@ -13,7 +13,7 @@ services:
       - SENDGRID_API_KEY=test
       - CI=true
       - DATABASE_NAME=$DATABASE_NAME
-    command: ./scripts/wait-for-it.sh data_science:8008 -- python3 manage.py runserver 0.0.0.0:8000
+    command: python3 manage.py runserver 0.0.0.0:8000
   frontend:
     image: cfranklin11/tipresias_frontend:latest
     ports:

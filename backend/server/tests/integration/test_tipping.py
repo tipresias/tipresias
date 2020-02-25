@@ -25,14 +25,22 @@ TIP_DATES = [
 
 
 class TestTipping(TestCase):
-    @patch("server.data_import")
-    def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
         MLModelFactory(name="test_estimator")
 
+    @patch("server.data_import")
+    def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         # Mock update_or_create_from_raw_data to make assertions on calls
-        update_or_create_from_raw_data = copy.copy(Prediction.update_or_create_from_raw_data)
+        update_or_create_from_raw_data = copy.copy(
+            Prediction.update_or_create_from_raw_data
+        )
         Prediction.update_or_create_from_raw_data = Mock(
-            side_effect=self.__update_or_create_from_raw_data(update_or_create_from_raw_data)
+            side_effect=self.__update_or_create_from_raw_data(
+                update_or_create_from_raw_data
+            )
         )
 
         (
@@ -182,12 +190,16 @@ class TestTipping(TestCase):
     "Run manually on your machine to be safe",
 )
 class TestTippingEndToEnd(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
         MLModelFactory(name="tipresias")
 
         for team_name in settings.TEAM_NAMES:
             TeamFactory(name=team_name)
 
+    def setUp(self):
         self.tipping = Tipping(ml_models="tipresias", submit_tips=False)
 
     def test_tip(self):

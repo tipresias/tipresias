@@ -16,9 +16,12 @@ from server.tests.fixtures.factories import FullMatchFactory
 
 
 ONE_YEAR_RANGE = (2014, 2015)
+N_ML_MODELS = 3
 
 
 class TestMatch(TestCase):
+    fixtures = ["ml_models.json"]
+
     def setUp(self):
         match_datetime = timezone.make_aware(datetime(2018, 5, 5))
         self.match = Match.objects.create(
@@ -85,6 +88,7 @@ class TestMatch(TestCase):
             home_team_match__score=50,
             away_team_match__score=80,
         )
+
         FullMatchFactory(
             start_date_time=timezone.localtime() + timedelta(days=1),
             home_team_match__score=0,

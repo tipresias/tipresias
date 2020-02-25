@@ -96,3 +96,7 @@ db/backups
 
 # Logs
 *.log
+
+# Cypress artifacts
+browser_test/cypress/screenshots/
+browser_test/cypress/videos/

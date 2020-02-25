@@ -7,12 +7,13 @@ services:
     depends_on:
       - db
     environment:
-      - DJANGO_SETTINGS_MODULE=project.settings.development
+      - DJANGO_SETTINGS_MODULE=project.settings.test
       - DATABASE_HOST=db
       - EMAIL_RECIPIENT=test@test.com
       - SENDGRID_API_KEY=test
       - CI=true
-    command: ./scripts/wait-for-it.sh data_science:8008 -- python3 manage.py runserver 0.0.0.0:8000
+      - DATABASE_NAME=$DATABASE_NAME
+    command: python3 manage.py runserver 0.0.0.0:8000
   frontend:
     image: cfranklin11/tipresias_frontend:latest
     ports:
@@ -26,11 +27,13 @@ services:
   db:
     image: postgres:11.6
     environment:
-      - POSTGRES_DB=tipresias
+      - POSTGRES_DB=$DATABASE_NAME
   browser_test:
     image: cfranklin11/tipresias_browser_test:latest
     depends_on:
       - frontend
+    volumes:
+      - ./browser_test/cypress/screenshots:/app/cypress/screenshots
     # Need to use 'host' network mode to avoid cross-host errors
     # from Webpack server
     network_mode: "host"

@@ -137,8 +137,8 @@ dask-worker-space
 .Rproj.user
 
 # Cypress artifacts
-browser/cypress/screenshots/
-browser/cypress/videos/
+browser_test/cypress/screenshots/
+browser_test/cypress/videos/
 
 # DB dumps
 *.sql

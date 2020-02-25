@@ -10,11 +10,14 @@ from django.conf import settings
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
 
 FAKE = Faker()
-THIS_YEAR = date.today().year
+TODAY = date.today()
 JAN = 1
 FIRST = 1
 DEC = 12
 THIRTY_FIRST = 31
+
+N_ML_MODELS = 5
+ML_MODEL_NAMES = [factory.Faker("company") for _ in range(N_ML_MODELS)]
 
 
 class TeamFactory(DjangoModelFactory):
@@ -29,9 +32,6 @@ class MatchFactory(DjangoModelFactory):
     class Meta:
         model = Match
 
-    class Params:
-        year = THIS_YEAR
-
     start_date_time = factory.LazyAttribute(
         lambda obj: FAKE.date_time_between_dates(
             datetime_start=timezone.make_aware(datetime(obj.year, JAN, FIRST)),
@@ -43,6 +43,23 @@ class MatchFactory(DjangoModelFactory):
     venue = settings.VENUES[
         FAKE.pyint(min_value=0, max_value=(len(settings.VENUES) - 1))
     ]
+
+    class Params:
+        year = TODAY.year
+        # A lot of functionality depends on future matches for generating predictions
+        future = factory.Trait(
+            start_date_time=factory.LazyAttribute(
+                lambda obj: FAKE.date_time_between_dates(
+                    datetime_start=timezone.make_aware(
+                        datetime(obj.year, TODAY.month, TODAY.day + 1)
+                    ),
+                    datetime_end=timezone.make_aware(
+                        datetime(obj.year, DEC, THIRTY_FIRST)
+                    ),
+                    tzinfo=pytz.UTC,
+                )
+            )
+        )
 
 
 class TeamMatchFactory(DjangoModelFactory):
@@ -70,7 +87,10 @@ class PredictionFactory(DjangoModelFactory):
         model = Prediction
 
     match = factory.SubFactory(MatchFactory)
-    ml_model = factory.SubFactory(MLModelFactory)
+    # Can't use SubFactory for associated MLModel, because it's not realistic to have
+    # one model per prediction, and in cases where there are a lot of predictions,
+    # we risk duplicate model names, which is invalid
+    ml_model = factory.Iterator(MLModel.objects.all())
     predicted_winner = factory.SubFactory(TeamFactory)
     predicted_margin = factory.Faker("pyint", min_value=0, max_value=50)
     # Doesn't give realistic win probabilities (i.e. between 0.5 and 1.0)

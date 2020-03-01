@@ -2,7 +2,7 @@
 import React from 'react';
 import type { Node } from 'react';
 import {
-  LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Label,
 } from 'recharts';
 import { isEmpty } from 'lodash';
 import type { BarChartDataType } from '../../types';
@@ -49,8 +49,10 @@ const LineChartMain = ({ data, models }: Props): Node => {
         }}
       >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="roundNumber" />
-        <YAxis />
+        <XAxis dataKey="roundNumber">
+          <Label value="Rounds" offset={0} position="insideBottom" />
+        </XAxis>
+        <YAxis label={{ value: 'Accuracy', angle: -90, position: 'insideLeft' }} />
         <Tooltip />
         <Legend />
         {!isEmpty(models) && models.map((item, i) => <Line dataKey={item} type="monotone" stroke={colorblindFriendlyPalette[i]} fill={colorblindFriendlyPalette[i]} key={`model-${item}`} />)}

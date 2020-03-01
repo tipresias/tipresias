@@ -47,8 +47,10 @@ RUN mkdir staticfiles \
   SECRET_KEY=somethingsupersecret \
   python3 manage.py collectstatic --noinput
 
-WORKDIR /app
+# Gunicorn needs to be run from the backend directory to be able find the wsgi
+# via python modules.
+WORKDIR /app/backend
 
-EXPOSE ${PORT:-8000}
+EXPOSE ${PORT:-80}
 
-CMD python3 backend/manage.py runserver 0.0.0.0:${PORT:-8000}
+CMD gunicorn project.wsgi -b 0.0.0.0:80

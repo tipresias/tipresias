@@ -8,7 +8,11 @@ ENVIRONMENT = "production"
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-ALLOWED_HOSTS = ["tipresias.herokuapp.com", os.environ.get("PRODUCTION_HOST")]
+ALLOWED_HOSTS = [
+    "tipresias.herokuapp.com",
+    ".tipresias.net",
+    os.environ.get("PRODUCTION_HOST"),
+]
 
 INSTALLED_APPS.append("whitenoise.runserver_nostatic")
 

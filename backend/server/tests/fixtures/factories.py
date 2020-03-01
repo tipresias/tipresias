@@ -28,6 +28,28 @@ class TeamFactory(DjangoModelFactory):
     name = factory.Sequence(lambda n: settings.TEAM_NAMES[n % len(settings.TEAM_NAMES)])
 
 
+def fake_future_datetime(match_factory):
+    # Running tests on 28 Feb of a leap year breaks them, because the given year
+    # generally won't be a leap year (e.g. 2018-2-29 doesn't exist),
+    # so we retry with two days in the future (e.g. 2018-3-1).
+    try:
+        datetime_start = timezone.make_aware(
+            datetime(match_factory.year, TODAY.month, TODAY.day + 1)
+        )
+    except ValueError:
+        datetime_start = timezone.make_aware(
+            datetime(match_factory.year, TODAY.month, TODAY.day + 2)
+        )
+
+    return FAKE.date_time_between_dates(
+        datetime_start=datetime_start,
+        datetime_end=timezone.make_aware(
+            datetime(match_factory.year, DEC, THIRTY_FIRST)
+        ),
+        tzinfo=pytz.UTC,
+    )
+
+
 class MatchFactory(DjangoModelFactory):
     class Meta:
         model = Match
@@ -48,17 +70,7 @@ class MatchFactory(DjangoModelFactory):
         year = TODAY.year
         # A lot of functionality depends on future matches for generating predictions
         future = factory.Trait(
-            start_date_time=factory.LazyAttribute(
-                lambda obj: FAKE.date_time_between_dates(
-                    datetime_start=timezone.make_aware(
-                        datetime(obj.year, TODAY.month, TODAY.day + 1)
-                    ),
-                    datetime_end=timezone.make_aware(
-                        datetime(obj.year, DEC, THIRTY_FIRST)
-                    ),
-                    tzinfo=pytz.UTC,
-                )
-            )
+            start_date_time=factory.LazyAttribute(fake_future_datetime)
         )
 
 

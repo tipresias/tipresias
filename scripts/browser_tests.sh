@@ -10,6 +10,16 @@ docker-compose -f docker-compose.ci.yml up -d
     --rm backend \
     python3 server/tests/fixtures/seed_db.py
 
+# We manually manage exit codes rather than using pipefail, because we want
+# to be sure to stop docker-compose before exiting.
+EXIT_CODE=$?
+
+if [ ${EXIT_CODE} != 0 ]
+then
+  docker-compose -f docker-compose.ci.yml stop
+  exit ${EXIT_CODE}
+fi
+
 # There's probably a better way to do this, but we change the default DB name
 # to test_$DATABASE_NAME, which the app will then use as the default DB
 # for the browser tests.

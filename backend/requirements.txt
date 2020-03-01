@@ -12,6 +12,7 @@ dj-database-url
 sendgrid>=6.0,<6.99
 requests
 joblib
+gunicorn
 
 # Browser automation
 splinter

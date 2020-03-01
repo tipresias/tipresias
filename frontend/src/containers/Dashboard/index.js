@@ -42,17 +42,8 @@ class Dashboard extends Component<Props, State> {
       <ErrorBoundary>
         <DashboardContainerStyled>
           <Widget gridColumn="1 / -1">
-            <WidgetHeading>Cumulative points per round</WidgetHeading>
-            <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
-              {(response: any): Node => {
-                const { loading, error, data } = response;
-                if (loading) return <BarChartLoading text="Loading predictions..." />;
-                if (error) return <StatusBar text={error.message} error />;
-                if (data.fetchYearlyPredictions.predictionsByRound.length === 0) return <StatusBar text="No data found" empty />;
-                return <LineChartMain models={data.fetchYearlyPredictions.predictionModelNames} data={data.fetchYearlyPredictions.predictionsByRound} />;
-              }}
-            </Query>
-            <WidgetFooter>
+            <WidgetHeading>
+              Cumulative accuracy by round
               <Query query={FETCH_PREDICTION_YEARS_QUERY}>
                 {(response: any): Node => {
                   const { loading, error, data } = response;
@@ -68,10 +59,23 @@ class Dashboard extends Component<Props, State> {
                   );
                 }}
               </Query>
+            </WidgetHeading>
+            <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
+              {(response: any): Node => {
+                const { loading, error, data } = response;
+                if (loading) return <BarChartLoading text="Loading predictions..." />;
+                if (error) return <StatusBar text={error.message} error />;
+                if (data.fetchYearlyPredictions.predictionsByRound.length === 0) return <StatusBar text="No data found" empty />;
+                return <LineChartMain models={data.fetchYearlyPredictions.predictionModelNames} data={data.fetchYearlyPredictions.predictionsByRound} />;
+              }}
+            </Query>
+            <WidgetFooter>
+              wip
             </WidgetFooter>
           </Widget>
 
           <Widget gridColumn="1 / -1">
+            <WidgetHeading>Predictions</WidgetHeading>
             <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
               {(response: any): Node => {
                 const { loading, error, data } = response;

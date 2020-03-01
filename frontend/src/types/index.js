@@ -10,7 +10,7 @@ export type Game = {
 
 export type BarDataType = {
   modelName: string,
-  cumulativeCorrectCount: number
+  cumulativeAccuracy: number
 }
 
 export type BarChartDataType = {

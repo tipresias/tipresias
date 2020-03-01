@@ -27,7 +27,7 @@ const dataTransformer = (previousDataSet: PreviousDataSet): NewDataSet => {
     acc[currentIndex].roundNumber = currentItem.roundNumber;
     currentItem.modelPredictions.forEach((item) => {
       const { modelName } = item;
-      acc[currentIndex][modelName] = item.cumulativeCorrectCount;
+      acc[currentIndex][modelName] = item.cumulativeAccuracy;
     });
     return acc;
   }, []);

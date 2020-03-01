@@ -27,8 +27,9 @@ export const WidgetHeading = styled.h3`
   font-style: normal;
   color: ${props => props.theme.colors.textColor};
   letter-spacing: 0;
-  text-align: left;
   margin-top: 0;
+  display: flex;
+  justify-content: space-between;
 `;
 
 export const WidgetFooter = styled.div`

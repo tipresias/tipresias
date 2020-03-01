@@ -28,7 +28,7 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
   - `gcloud auth login` (redirects you to log into your Google account in the browser)
   - `gcloud config set project ${PROJECT_ID}`
 - To `ssh` into the server, run `./scripts/ssh.sh`.
-- To reset the DB to match production: `./scripts/reset_local_db_to_prod.sh`
+- To reset the DB to match production: `./scripts/set_local_db_to_prod.sh`
 - To run the tipping command, run `./scripts/tip.sh`.
 
 ### Run the app

@@ -9,7 +9,7 @@ import {
   FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
   FETCH_LATEST_ROUND_STATS,
 } from '../../graphql';
-import BarChartMain from '../../components/BarChartMain';
+import LineChartMain from '../../components/LineChartMain';
 import Select from '../../components/Select';
 import BarChartLoading from '../../components/BarChartLoading';
 import StatusBar from '../../components/StatusBar';
@@ -49,7 +49,7 @@ class Dashboard extends Component<Props, State> {
                 if (loading) return <BarChartLoading text="Loading predictions..." />;
                 if (error) return <StatusBar text={error.message} error />;
                 if (data.fetchYearlyPredictions.predictionsByRound.length === 0) return <StatusBar text="No data found" empty />;
-                return <BarChartMain data={data.fetchYearlyPredictions.predictionsByRound} />;
+                return <LineChartMain models={data.fetchYearlyPredictions.predictionModelNames} data={data.fetchYearlyPredictions.predictionsByRound} />;
               }}
             </Query>
             <WidgetFooter>

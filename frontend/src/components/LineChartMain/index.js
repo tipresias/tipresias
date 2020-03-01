@@ -2,7 +2,7 @@
 import React from 'react';
 import type { Node } from 'react';
 import {
-  BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { isEmpty } from 'lodash';
 import type { BarChartDataType } from '../../types';
@@ -25,7 +25,7 @@ const dataTransformer = (previousDataSet: PreviousDataSet): NewDataSet => {
   const newDataSet = previousDataSet.reduce((acc, currentItem, currentIndex) => {
     acc[currentIndex] = acc[currentIndex] || {};
     acc[currentIndex].roundNumber = currentItem.roundNumber;
-    currentItem.modelMetrics.forEach((item) => {
+    currentItem.modelPredictions.forEach((item) => {
       const { modelName } = item;
       acc[currentIndex][modelName] = item.cumulativeCorrectCount;
     });
@@ -34,13 +34,13 @@ const dataTransformer = (previousDataSet: PreviousDataSet): NewDataSet => {
   return newDataSet;
 };
 
-const BarChartMain = ({ data, models }: Props): Node => {
+const LineChartMain = ({ data, models }: Props): Node => {
   const dataTransformed = dataTransformer(data);
-  const colorblindFriendlyPalette = ['#E69F00', '#56B4E9', '#009E73', '#CC79A7', '#0072B2', '#D55E00', '#F0E442'];
+  const colorblindFriendlyPalette = ['#E69F00', '#56B4E9', '#CC79A7', '#009E73', '#0072B2', '#D55E00', '#F0E442'];
 
   return (
     <ResponsiveContainer width="100%" height={451}>
-      <BarChart
+      <LineChart
         width={800}
         height={300}
         data={dataTransformed}
@@ -53,10 +53,10 @@ const BarChartMain = ({ data, models }: Props): Node => {
         <YAxis />
         <Tooltip />
         <Legend />
-        {!isEmpty(models) && models.map((item, i) => <Bar dataKey={item} fill={colorblindFriendlyPalette[i]} key={`model-${item}`} />)}
-      </BarChart>
+        {!isEmpty(models) && models.map((item, i) => <Line dataKey={item} type="monotone" stroke={colorblindFriendlyPalette[i]} fill={colorblindFriendlyPalette[i]} key={`model-${item}`} />)}
+      </LineChart>
     </ResponsiveContainer>
   );
 };
 
-export default BarChartMain;
+export default LineChartMain;

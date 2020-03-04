@@ -296,7 +296,7 @@ class Query(graphene.ObjectType):
     fetch_latest_round_stats = graphene.Field(
         RoundStatsType,
         description="Cumulative model prediction stats for the latest season.",
-        ml_model_name=graphene.String(default_value="tipresias"),
+        ml_model_name=graphene.String(default_value="tipresias_2019"),
     )
 
     @staticmethod

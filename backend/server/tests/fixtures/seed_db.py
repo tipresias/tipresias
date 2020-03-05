@@ -44,7 +44,7 @@ def main():
     with transaction.atomic():
         # "tipresias" is the name of the primary MLModel and is hardcoded in various
         # places, so we need at least one MLModel with that name
-        MLModelFactory(name="tipresias")
+        MLModelFactory(name="tipresias_2019")
 
         for _ in range(N_ML_MODELS - 1):
             MLModelFactory()

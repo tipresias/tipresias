@@ -49,7 +49,7 @@ const BarChartMain = ({ data }: Props): Node => {
         <YAxis />
         <Tooltip />
         <Legend />
-        <Bar dataKey="tipresias" fill="#8884d8" />
+        <Bar dataKey="tipresias_2019" fill="#8884d8" />
         <Bar dataKey="benchmark_estimator" fill="#82ca9d" />
       </BarChart>
     </ResponsiveContainer>

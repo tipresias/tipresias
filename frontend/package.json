@@ -45,7 +45,7 @@
     "eslint-plugin-import": "^2.20.1",
     "eslint-plugin-jsx-a11y": "^6.1.1",
     "eslint-plugin-react": "^7.18.3",
-    "flow-bin": "^0.119.1",
+    "flow-bin": "^0.120.1",
     "flow-typed": "^3.0.0",
     "nock": "^12.0.2"
   },

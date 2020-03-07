@@ -30,8 +30,13 @@ def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
 
 
 def _make_request(
-    url: str, params: Dict[str, Any] = {}, headers: Dict[str, str] = {}
+    url: str,
+    params: Optional[Dict[str, Any]] = None,
+    headers: Optional[Dict[str, str]] = None,
 ) -> requests.Response:
+    params = params or {}
+    headers = headers or {}
+
     response = requests.get(url, params=params, headers=headers)
 
     if response.status_code != 200:
@@ -63,7 +68,11 @@ def _clean_param_value(param_value: ParamValue) -> str:
     return _clean_datetime_param(param_value) or str(param_value)
 
 
-def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
+def _fetch_data(
+    path: str, params: Optional[Dict[str, Any]] = None
+) -> List[Dict[str, Any]]:
+    params = params or {}
+
     if os.getenv("PYTHON_ENV") == "production":
         service_host = DATA_SCIENCE_SERVICE
         headers = {"Authorization": f'Bearer {os.getenv("GCPF_TOKEN")}'}

@@ -14,6 +14,7 @@ if PROJECT_PATH not in sys.path:
 
 django.setup()
 
+# pylint: disable=wrong-import-position
 from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
 
 

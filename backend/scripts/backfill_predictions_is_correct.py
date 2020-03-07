@@ -14,7 +14,7 @@ if PROJECT_PATH not in sys.path:
 
 django.setup()
 
-from server.models import Prediction
+from server.models import Prediction  # pylint: disable=wrong-import-position
 
 
 def main():

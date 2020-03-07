@@ -14,3 +14,5 @@ ignore=migrations
 # AttributeError: 'AssignAttr' object has no attribute 'qname'
 # There are a few GitHub issues, but they're all closed and everyone went home.
 # load-plugins=pylint_django
+
+jobs=2

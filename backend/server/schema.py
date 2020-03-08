@@ -7,6 +7,7 @@
 # Consolidating the logic would require a little bit of processing on the frontend,
 # but should reduce the overall complexity of the code.
 from typing import List, cast, Optional
+from functools import partial
 
 import graphene
 from graphene_django.types import DjangoObjectType
@@ -274,7 +275,7 @@ class SeasonType(graphene.ObjectType):
             .rename("cumulative_count")
         )
 
-        collect_round_predictions = lambda df: [
+        collect_round_predictions = lambda rnd_num, df: [
             {
                 df.index.names[ROUND_NUMBER_LVL]: round_number_idx,
                 "model_predictions": df.xs(round_number_idx, level=ROUND_NUMBER_LVL),
@@ -285,20 +286,10 @@ class SeasonType(graphene.ObjectType):
                 ),
             }
             for round_number_idx in df.index.levels[ROUND_NUMBER_LVL]
+            if rnd_num is None or round_number_idx == rnd_num
         ]
 
         query_set_data_frame = pd.DataFrame(list(query_set))
-
-        if round_number is not None:
-            round_number_filter = (  # pylint: disable=unused-variable
-                query_set_data_frame["match__round_number"].max()
-                if round_number == -1
-                else round_number
-            )
-
-            query_set_data_frame = query_set_data_frame.query(
-                "match__round_number == @round_number_filter"
-            )
 
         round_predictions = (
             query_set_data_frame.assign(
@@ -315,7 +306,15 @@ class SeasonType(graphene.ObjectType):
             .mean()
         )
 
-        return round_predictions.pipe(collect_round_predictions)
+        round_number_filter = (
+            query_set_data_frame["match__round_number"].max()
+            if round_number == -1
+            else round_number
+        )
+
+        return round_predictions.pipe(
+            partial(collect_round_predictions, round_number_filter)
+        )
 
 
 class Query(graphene.ObjectType):

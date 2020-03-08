@@ -211,6 +211,25 @@ class TestSchema(TestCase):
             # for mlModelName)
             self.assertEqual(len(data["matches"][0]["predictions"]), len(ml_models))
 
+        with self.subTest("with roundNumber argument of -1"):
+            executed = self.client.execute(
+                """
+                query QueryType {
+                    fetchYearlyPredictions(year: 2015) {
+                        predictionsByRound(roundNumber: -1) { roundNumber }
+                    }
+                }
+                """
+            )
+
+            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"]
+
+            self.assertEqual(len(data), 1)
+            self.assertEqual(
+                data[0]["roundNumber"],
+                Match.objects.order_by("round_number").last().round_number,
+            )
+
     def test_fetch_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
         year = TWENTY_SEVENTEEN

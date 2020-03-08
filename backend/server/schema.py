@@ -220,7 +220,10 @@ class SeasonType(graphene.ObjectType):
         description="Match and prediction data grouped by round",
         round_number=graphene.Int(
             default_value=None,
-            description="Optional filter when only one round of data is required",
+            description=(
+                "Optional filter when only one round of data is required. "
+                "-1 will return the last available round."
+            ),
         ),
     )
 
@@ -287,8 +290,14 @@ class SeasonType(graphene.ObjectType):
         query_set_data_frame = pd.DataFrame(list(query_set))
 
         if round_number is not None:
+            round_number_filter = (  # pylint: disable=unused-variable
+                query_set_data_frame["match__round_number"].max()
+                if round_number == -1
+                else round_number
+            )
+
             query_set_data_frame = query_set_data_frame.query(
-                "match__round_number == @round_number"
+                "match__round_number == @round_number_filter"
             )
 
         round_predictions = (

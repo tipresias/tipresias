@@ -94,33 +94,40 @@ class Dashboard extends Component<Props, State> {
           </Widget>
 
           <Widget gridColumn="1 / -2">
-            <Query query={FETCH_LATEST_ROUND_STATS}>
+            <Query query={FETCH_LATEST_ROUND_STATS} variables={{ year, roundNumber: -1, mlModelName: 'tipresias_2019' }}>
               {(response: any): Node => {
                 const { loading, error, data } = response;
                 if (loading) return <p>Loading metrics...</p>;
                 if (error) return <StatusBar text={error.message} error />;
-                const { seasonYear, roundNumber, modelStats } = data.fetchLatestRoundStats;
+                const { seasonYear, predictionsByRound } = data.fetchYearlyPredictions;
+                const { roundNumber, modelPredictions } = predictionsByRound[0];
+                const {
+                  modelName,
+                  cumulativeCorrectCount,
+                  cumulativeMarginDifference,
+                  cumulativeMeanAbsoluteError,
+                } = modelPredictions[0];
                 return (
                   <Fragment>
                     <WidgetHeading>
-                      {`${modelStats.modelName} performance metrics for round ${roundNumber} season ${seasonYear}`}
+                      {`${modelName} performance metrics for round ${roundNumber} season ${seasonYear}`}
 
                     </WidgetHeading>
                     <DefinitionList items={[
                       {
                         id: 1,
                         key: 'Cumulative Correct Count',
-                        value: modelStats.cumulativeCorrectCount,
+                        value: cumulativeCorrectCount,
                       },
                       {
                         id: 2,
                         key: 'Cumulative Mean Absolute Error (MAE)',
-                        value: modelStats.cumulativeMeanAbsoluteError,
+                        value: cumulativeMeanAbsoluteError,
                       },
                       {
                         id: 3,
                         key: 'Cumulative Margin Difference',
-                        value: modelStats.cumulativeMarginDifference,
+                        value: cumulativeMarginDifference,
                       },
                     ]}
                     />

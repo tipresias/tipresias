@@ -32,11 +32,6 @@ ModelPrediction = TypedDict(
     },
 )
 
-ModelStats = TypedDict(
-    "ModelStats",
-    {"model_stats": ModelPrediction, "round_number": int, "season_year": int},
-)
-
 RoundPrediction = TypedDict(
     "RoundPrediction",
     {
@@ -53,6 +48,7 @@ MIN_LOG_VAL = 1 * 10 ** -10
 
 ROUND_NUMBER_LVL = 0
 ML_MODEL_NAME_LVL = 0
+GROUP_BY_LVL = 0
 
 
 class TeamType(DjangoObjectType):
@@ -160,14 +156,6 @@ class CumulativePredictionsByRoundType(graphene.ObjectType):
     )
 
 
-class RoundStatsType(graphene.ObjectType):
-    """Cumulative model stats for a given season up to a given round."""
-
-    season_year = graphene.Int()
-    round_number = graphene.Int()
-    model_stats = graphene.Field(CumulativePredictionsByRoundType)
-
-
 class RoundType(graphene.ObjectType):
     """Match and prediction data for a given season grouped by round."""
 
@@ -247,32 +235,126 @@ class SeasonType(graphene.ObjectType):
         root, _info, round_number: Optional[int] = None
     ) -> List[RoundPrediction]:
         """Return predictions for the season grouped by round."""
-        query_set = (
-            root.values("match__round_number", "ml_model__name")
-            .order_by("match__round_number")
-            .annotate(
-                correct_count=Count("is_correct", filter=Q(is_correct=True)),
-                match_count=Count("match"),
-            )
+        query_set = root.order_by("match__start_date_time").annotate(
+            correct_count=Count("is_correct", filter=Q(is_correct=True)),
+            match_count=Count("match"),
         )
+
+        prediction_data = []
+
+        for prediction in query_set:
+            match = prediction.match
+
+            if match.winner is None:
+                continue
+
+            prediction_data.append(
+                {
+                    "match__round_number": match.round_number,
+                    "ml_model__name": prediction.ml_model.name,
+                    "predicted_margin": prediction.predicted_margin,
+                    "predicted_win_probability": prediction.predicted_win_probability,
+                    "predicted_winner__name": prediction.predicted_winner.name,
+                    "correct_count": prediction.correct_count,
+                    "winner": match.winner.name,
+                    "margin": match.margin,
+                }
+            )
+
+        prediction_df = pd.DataFrame(prediction_data)
+
+        calculate_margin_diff = lambda df: (
+            df["predicted_margin"]
+            + (
+                df["margin"]
+                # We want to subtract margins if correct winner was predicted,
+                # add margins otherwise
+                * (df["predicted_winner__name"] == df["winner"]).apply(
+                    lambda x: -1 if x else 1
+                )
+            )
+        ).abs()
 
         # TODO: There's definitely a way to do these calculations via SQL, but chained
         # GROUP BYs and calculations based on calculations is a bit much for me
         # right now, so I'll come back and figure it out later
         calculate_cumulative_correct = lambda df: (
             df.groupby("ml_model__name")
-            .expanding()
+            .expanding()["correct_count"]
             .sum()
-            .reset_index(level=0)["correct_count"]
             .rename("cumulative_correct_count")
+            .reset_index(level=GROUP_BY_LVL, drop=True)
         )
 
-        calculate_cumulative_count = lambda df: (
+        calculate_cumulative_accuracy = lambda df: (
             df.groupby("ml_model__name")
-            .expanding()
+            .expanding()["correct_count"]
+            .mean()
+            .round(2)
+            .rename("cumulative_accuracy")
+            .reset_index(level=GROUP_BY_LVL, drop=True)
+        )
+
+        calculate_sae = lambda df: (
+            df.groupby("ml_model__name")
+            .expanding()["margin_diff"]
             .sum()
-            .reset_index(level=0, drop=True)["match_count"]
-            .rename("cumulative_count")
+            .rename("cumulative_margin_difference")
+            .reset_index(level=GROUP_BY_LVL, drop=True)
+        )
+
+        calculate_mae = lambda df: (
+            df.groupby("ml_model__name")
+            .expanding()["margin_diff"]
+            .mean()
+            .round(2)
+            .rename("cumulative_mean_absolute_error")
+            .reset_index(level=GROUP_BY_LVL, drop=True)
+        )
+
+        positive_pred = lambda y_pred: (
+            np.maximum(y_pred, np.repeat(MIN_LOG_VAL, len(y_pred)))
+        )
+        draw_bits = lambda y_pred: (
+            1 + (0.5 * np.log2(positive_pred(y_pred * (1 - y_pred))))
+        )
+        win_bits = lambda y_pred: 1 + np.log2(positive_pred(y_pred))
+        loss_bits = lambda y_pred: 1 + np.log2(positive_pred(1 - y_pred))
+
+        # Raw bits calculations per http://probabilistic-footy.monash.edu/~footy/about.shtml
+        calculate_bits = lambda df: np.where(
+            df["margin"] == 0,
+            draw_bits(df["predicted_win_probability"]),
+            np.where(
+                df["winner"] == df["predicted_winner__name"],
+                win_bits(df["predicted_win_probability"]),
+                loss_bits(df["predicted_win_probability"]),
+            ),
+        )
+
+        calculate_cumulative_bits = lambda df: (
+            df.groupby("ml_model__name")
+            .expanding()["bits"]
+            .sum()
+            .rename("cumulative_bits")
+            .reset_index(level=GROUP_BY_LVL, drop=True)
+        )
+
+        cumulative_stats = (
+            prediction_df.fillna(0)
+            .assign(
+                cumulative_correct_count=calculate_cumulative_correct,
+                cumulative_accuracy=calculate_cumulative_accuracy,
+                margin_diff=calculate_margin_diff,
+                bits=calculate_bits,
+            )
+            .assign(
+                cumulative_margin_difference=calculate_sae,
+                cumulative_bits=calculate_cumulative_bits,
+            )
+            .assign(cumulative_mean_absolute_error=calculate_mae)
+            .groupby(["match__round_number", "ml_model__name"])
+            .mean()
         )
 
         collect_round_predictions = lambda rnd_num, df: [
@@ -289,30 +371,13 @@ class SeasonType(graphene.ObjectType):
             if rnd_num is None or round_number_idx == rnd_num
         ]
 
-        query_set_data_frame = pd.DataFrame(list(query_set))
-
-        round_predictions = (
-            query_set_data_frame.assign(
-                cumulative_correct_count=calculate_cumulative_correct,
-                cumulative_match_count=calculate_cumulative_count,
-                cumulative_accuracy=lambda df: (
-                    (
-                        df["cumulative_correct_count"] / df["cumulative_match_count"]
-                    ).round(2)
-                ),
-            )
-            .drop("cumulative_match_count", axis=1)
-            .groupby(["match__round_number", "ml_model__name"])
-            .mean()
-        )
-
         round_number_filter = (
-            query_set_data_frame["match__round_number"].max()
+            cumulative_stats.index.get_level_values(ROUND_NUMBER_LVL).max()
             if round_number == -1
             else round_number
         )
 
-        return round_predictions.pipe(
+        return cumulative_stats.pipe(
             partial(collect_round_predictions, round_number_filter)
         )
 
@@ -339,12 +404,6 @@ class Query(graphene.ObjectType):
             "Match info and predictions for the latest round for which data "
             "is available"
         ),
-    )
-
-    fetch_latest_round_stats = graphene.Field(
-        RoundStatsType,
-        description="Cumulative model prediction stats for the latest season.",
-        ml_model_name=graphene.String(default_value="tipresias_2019"),
     )
 
     @staticmethod
@@ -390,140 +449,6 @@ class Query(graphene.ObjectType):
             "match__round_number": max_match.round_number,
             "model_predictions": pd.DataFrame(),
             "matches": matches,
-        }
-
-    @staticmethod
-    def resolve_fetch_latest_round_stats(_root, _info, ml_model_name) -> ModelStats:
-        """Calculate model performance metrics through the latest round."""
-        max_played_match = (
-            Match.objects.filter(start_date_time__lt=timezone.localtime())
-            .order_by("-start_date_time")
-            .first()
-        )
-        max_year = max_played_match.start_date_time.year
-
-        query_set = (
-            Prediction.objects.filter(
-                match__start_date_time__year=max_year,
-                ml_model__name=ml_model_name,
-                match__start_date_time__lt=timezone.localtime(),
-            )
-            .select_related("match", "ml_model")
-            .order_by("match__start_date_time")
-            .annotate(correct_count=Count("is_correct", filter=Q(is_correct=True)))
-        )
-
-        assert query_set.count() > 0, (
-            "Could not find records for the latest round. Check that there are matches "
-            f"in {max_year}, that {ml_model_name} has predictions for that year, "
-            f"and that there are match records after {timezone.localtime()}"
-        )
-
-        prediction_data = []
-
-        for prediction in query_set:
-            match = prediction.match
-
-            if match.winner is None:
-                continue
-
-            prediction_data.append(
-                {
-                    "match__round_number": match.round_number,
-                    "ml_model__name": prediction.ml_model.name,
-                    "predicted_margin": prediction.predicted_margin,
-                    "predicted_win_probability": prediction.predicted_win_probability,
-                    "predicted_winner__name": prediction.predicted_winner.name,
-                    "correct_count": prediction.correct_count,
-                    "winner": match.winner.name,
-                    "margin": match.margin,
-                }
-            )
-
-        prediction_df = pd.DataFrame(prediction_data)
-
-        calculate_margin_diff = lambda df: (
-            df["predicted_margin"]
-            + (
-                df["margin"]
-                # We want to subtract margins if correct winner was predicted,
-                # add margins otherwise
-                * (df["predicted_winner__name"] == df["winner"]).apply(
-                    lambda x: -1 if x else 1
-                )
-            )
-        ).abs()
-
-        # TODO: There's definitely a way to do these calculations via SQL, but chained
-        # GROUP BYs and calculations based on calculations is a bit much for me
-        # right now, so I'll come back and figure it out later
-        calculate_cumulative_correct = lambda df: (
-            df.expanding()["correct_count"].sum().rename("cumulative_correct_count")
-        )
-
-        calculate_cumulative_accuracy = lambda df: (
-            df.expanding()["correct_count"]
-            .mean()
-            .round(2)
-            .rename("cumulative_accuracy")
-        )
-
-        calculate_sae = lambda df: (
-            df.expanding()["margin_diff"].sum().rename("cumulative_margin_difference")
-        )
-
-        calculate_mae = lambda df: (
-            df.expanding()["margin_diff"]
-            .mean()
-            .round(2)
-            .rename("cumulative_mean_absolute_error")
-        )
-
-        positive_pred = lambda y_pred: (
-            np.maximum(y_pred, np.repeat(MIN_LOG_VAL, len(y_pred)))
-        )
-        draw_bits = lambda y_pred: (
-            1 + (0.5 * np.log2(positive_pred(y_pred * (1 - y_pred))))
-        )
-        win_bits = lambda y_pred: 1 + np.log2(positive_pred(y_pred))
-        loss_bits = lambda y_pred: 1 + np.log2(positive_pred(1 - y_pred))
-
-        # Raw bits calculations per http://probabilistic-footy.monash.edu/~footy/about.shtml
-        calculate_bits = lambda df: np.where(
-            df["margin"] == 0,
-            draw_bits(df["predicted_win_probability"]),
-            np.where(
-                df["winner"] == df["predicted_winner__name"],
-                win_bits(df["predicted_win_probability"]),
-                loss_bits(df["predicted_win_probability"]),
-            ),
-        )
-
-        calculate_cumulative_bits = lambda df: (
-            df.expanding()["bits"].sum().rename("cumulative_bits")
-        )
-
-        cumulative_stats = (
-            prediction_df.fillna(0)
-            .assign(
-                cumulative_correct_count=calculate_cumulative_correct,
-                cumulative_accuracy=calculate_cumulative_accuracy,
-                margin_diff=calculate_margin_diff,
-                bits=calculate_bits,
-            )
-            .assign(
-                cumulative_margin_difference=calculate_sae,
-                cumulative_bits=calculate_cumulative_bits,
-            )
-            .assign(cumulative_mean_absolute_error=calculate_mae)
-        )
-
-        last_cumulative_stats = cumulative_stats.iloc[-1, :]
-
-        return {
-            "season_year": max_year,
-            "round_number": last_cumulative_stats["match__round_number"],
-            "model_stats": last_cumulative_stats.to_dict(),
         }
 
 

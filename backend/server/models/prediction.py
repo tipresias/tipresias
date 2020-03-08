@@ -1,4 +1,4 @@
-"""Data model for ML predictions for AFL matches"""
+"""Data model for ML predictions for AFL matches."""
 
 from typing import Tuple, Optional
 
@@ -12,7 +12,7 @@ from .team import Team
 
 
 class Prediction(models.Model):
-    """Model for ML model predictions for each match"""
+    """Model for ML model predictions for each match."""
 
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     ml_model = models.ForeignKey(MLModel, on_delete=models.CASCADE)
@@ -28,17 +28,19 @@ class Prediction(models.Model):
         cls, prediction_data: CleanPredictionData
     ) -> None:
         """
-        Convert raw prediction data to a Prediction model instance. Tries to find
-        and update existing prediction for the given match/model combination,
-        and creates new one if none is found.
+        Convert raw prediction data to a Prediction model instance.
 
-        Args:
-            prediction_data (CleanPredictionData): Dictionary that include
-                prediction data for two teams that are playing each other
-                in a given match.
+        Tries to find and update existing prediction for the given
+        match/model combination, and creates new one if none is found.
+
+        Params:
+        -------
+        prediction_data: Dictionary that include prediction data for two teams
+            that are playing each other in a given match.
 
         Returns:
-            prediction (Prediction): Unsaved Prediction model instance.
+        --------
+            Unsaved Prediction model instance.
         """
         home_team = prediction_data["home_team"]
         away_team = prediction_data["away_team"]
@@ -152,6 +154,11 @@ class Prediction(models.Model):
         return predicted_win_probability, predicted_winner
 
     def clean(self):
+        """
+        Clean prediction records before saving them.
+
+        Round predicted_margin to the nearest integer and sets the minimum to 1.
+        """
         if self.predicted_margin is not None:
             # Judgement call, but I want to avoid 0 predicted margin values
             # for the cases where the floating prediction is < 0.5,
@@ -159,16 +166,17 @@ class Prediction(models.Model):
             self.predicted_margin = round(self.predicted_margin) or 1
 
     def update_correctness(self):
-        """Update the correct attribute based on associated team_match scores"""
-
+        """Update the correct attribute based on associated team_match scores."""
         self.is_correct = self._calculate_whether_correct()
         self.full_clean()
         self.save()
 
     def _calculate_whether_correct(self) -> bool:
         """
-        Calculate whether a prediction is correct based on match results
-        and conventional footy-tipping rules.
+        Calculate whether a prediction is correct.
+
+        This is based on a combination of match results and conventional
+        footy-tipping rules (i.e. draws count as correct).
         """
 
         # In footy tipping competitions its typical to grant everyone a correct tip

@@ -1,3 +1,5 @@
+"""GraphQL schema for all queries."""
+
 # TODO: Refactor the stats calculations. This may require some reorganising
 # of the API itself, as there is quite a bit of similarity between stats-by-round
 # and latest round stats.
@@ -50,19 +52,29 @@ MIN_LOG_VAL = 1 * 10 ** -10
 
 
 class TeamType(DjangoObjectType):
+    """GraphQL type based on the Team data model."""
+
     class Meta:
+        """For adding Django model attributes to their associated GraphQL types."""
+
         model = Team
 
 
 class PredictionType(DjangoObjectType):
-    """Basic prediction type based on Prediction data model"""
+    """Basic prediction type based on the Prediction data model."""
 
     class Meta:
+        """For adding Django model attributes to their associated GraphQL types."""
+
         model = Prediction
 
 
 class MatchType(DjangoObjectType):
+    """GraphQL type based on the Match data model."""
+
     class Meta:
+        """For adding Django model attributes to their associated GraphQL types."""
+
         model = Match
 
     winner = graphene.Field(TeamType)
@@ -75,6 +87,7 @@ class MatchType(DjangoObjectType):
 
     @staticmethod
     def resolve_predictions(root, _info, ml_model_name=None):
+        """Return predictions for this match."""
         if ml_model_name is None:
             return root.prediction_set.all()
 
@@ -82,27 +95,35 @@ class MatchType(DjangoObjectType):
 
     @staticmethod
     def resolve_home_team(root, _info):
+        """Return the home team for this match."""
         return root.teammatch_set.get(at_home=True).team
 
     @staticmethod
     def resolve_away_team(root, _info):
+        """Return the away team for this match."""
         return root.teammatch_set.get(at_home=False).team
 
 
 class TeamMatchType(DjangoObjectType):
+    """GraphQL type based on the TeamMatch data model."""
+
     class Meta:
+        """For adding Django model attributes to their associated GraphQL types."""
+
         model = TeamMatch
 
 
 class MLModelType(DjangoObjectType):
+    """GraphQL type based on the MLModel data model."""
+
     class Meta:
+        """For adding Django model attributes to their associated GraphQL types."""
+
         model = MLModel
 
 
 class CumulativePredictionsByRoundType(graphene.ObjectType):
-    """
-    Cumulative stats for predictions made by the given model through the given round
-    """
+    """Cumulative performance metrics for the given model through the given round."""
 
     ml_model__name = graphene.String(name="modelName")
     cumulative_correct_count = graphene.Int(
@@ -136,7 +157,7 @@ class CumulativePredictionsByRoundType(graphene.ObjectType):
 
 
 class RoundStatsType(graphene.ObjectType):
-    """Cumulative model stats for a given season up to a given round"""
+    """Cumulative model stats for a given season up to a given round."""
 
     season_year = graphene.Int()
     round_number = graphene.Int()
@@ -144,7 +165,7 @@ class RoundStatsType(graphene.ObjectType):
 
 
 class RoundType(graphene.ObjectType):
-    """Match and prediction data for a given season grouped by round"""
+    """Match and prediction data for a given season grouped by round."""
 
     match__round_number = graphene.Int(name="roundNumber")
     model_predictions = graphene.List(
@@ -159,6 +180,7 @@ class RoundType(graphene.ObjectType):
 
     @staticmethod
     def resolve_model_predictions(root, _info) -> List[ModelPrediction]:
+        """Calculate metrics related to the quality of models' predictions."""
         model_predictions_to_dict = lambda df: [
             {df.index.names[0]: value, **df.loc[value, :].to_dict()}
             for value in df.index
@@ -173,7 +195,7 @@ class RoundType(graphene.ObjectType):
 
 
 class SeasonType(graphene.ObjectType):
-    """Match and prediction data grouped by season"""
+    """Match and prediction data grouped by season."""
 
     season_year = graphene.Int()
 
@@ -191,6 +213,7 @@ class SeasonType(graphene.ObjectType):
 
     @staticmethod
     def resolve_season_year(root, _info) -> int:
+        """Return the year for the given season."""
         # Have to use list indexing to get first instead of .first(),
         # because the latter raises a weird SQL error
         return root.distinct("match__start_date_time__year")[
@@ -199,12 +222,14 @@ class SeasonType(graphene.ObjectType):
 
     @staticmethod
     def resolve_prediction_model_names(root, _info) -> List[str]:
+        """Return the names of all models that have predictions for the given season."""
         return root.distinct("ml_model__name").values_list("ml_model__name", flat=True)
 
     @staticmethod
     def resolve_predictions_by_round(
         root, _info, round_number: Optional[int] = None
     ) -> List[RoundPrediction]:
+        """Return predictions for the season grouped by round."""
         query_set = (
             root.values("match__round_number", "ml_model__name")
             .order_by("match__round_number")
@@ -272,6 +297,8 @@ class SeasonType(graphene.ObjectType):
 
 
 class Query(graphene.ObjectType):
+    """Base GraphQL Query type that contains all queries and their resolvers."""
+
     fetch_predictions = graphene.List(
         PredictionType, year=graphene.Int(default_value=None)
     )
@@ -301,6 +328,7 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     def resolve_fetch_predictions(_root, _info, year=None) -> QuerySet:
+        """Return all predictions from the given year or from all years."""
         if year is None:
             return Prediction.objects.all()
 
@@ -308,6 +336,7 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     def resolve_fetch_prediction_years(_root, _info) -> List[int]:
+        """Return all years for which we have prediction data."""
         return (
             Prediction.objects.select_related("match")
             .distinct("match__start_date_time__year")
@@ -317,12 +346,14 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     def resolve_fetch_yearly_predictions(_root, _info, year) -> QuerySet:
+        """Return all predictions from the given year."""
         return Prediction.objects.filter(
             match__start_date_time__year=year
         ).select_related("ml_model", "match")
 
     @staticmethod
     def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPrediction:
+        """Return predictions and model metrics for the latest available round."""
         max_match = Match.objects.order_by("-start_date_time").first()
 
         matches = (
@@ -342,6 +373,7 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     def resolve_fetch_latest_round_stats(_root, _info, ml_model_name) -> ModelStats:
+        """Calculate model performance metrics through the latest round."""
         max_played_match = (
             Match.objects.filter(start_date_time__lt=timezone.localtime())
             .order_by("-start_date_time")

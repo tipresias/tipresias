@@ -1,14 +1,17 @@
 [MESSAGES CONTROL]
 disable=
-    W0102, # Dangerous default value (list)
     R0903, # Too few public methods
-    E1101, # Instance of generator has no <something> method (needed for Flake)
+    no-member, # TODO: Until I can get pylint_django working, way too many false positives to be useful
     W0511, # No TODOs
-    R0913, # Too many arguments
     C0330, # Wrong indentation (indentation handled by black),
-    C0103, # Wrong case naming style
-    C0111, # TODO: Fix docstrings and reenable this rule
-    C0413, # Imports at the top (sometimes need to add project to sys.path)
+    invalid-name, # Too rigid about constant case/name conventions to be useful
 
 [MASTER]
 ignore=migrations
+
+# TODO: Figure out why using pylint_django plugin keeps raising:
+# AttributeError: 'AssignAttr' object has no attribute 'qname'
+# There are a few GitHub issues, but they're all closed and everyone went home.
+# load-plugins=pylint_django
+
+jobs=2

@@ -1,4 +1,4 @@
-"""Module for functions that fetch data"""
+"""Module for functions that fetch data."""
 
 from typing import Tuple, Optional, List, Dict, Any, cast, Union
 import os
@@ -30,8 +30,13 @@ def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
 
 
 def _make_request(
-    url: str, params: Dict[str, Any] = {}, headers: Dict[str, str] = {}
+    url: str,
+    params: Optional[Dict[str, Any]] = None,
+    headers: Optional[Dict[str, str]] = None,
 ) -> requests.Response:
+    params = params or {}
+    headers = headers or {}
+
     response = requests.get(url, params=params, headers=headers)
 
     if response.status_code != 200:
@@ -63,7 +68,11 @@ def _clean_param_value(param_value: ParamValue) -> str:
     return _clean_datetime_param(param_value) or str(param_value)
 
 
-def _fetch_data(path: str, params: Dict[str, Any] = {}) -> List[Dict[str, Any]]:
+def _fetch_data(
+    path: str, params: Optional[Dict[str, Any]] = None
+) -> List[Dict[str, Any]]:
+    params = params or {}
+
     if os.getenv("PYTHON_ENV") == "production":
         service_host = DATA_SCIENCE_SERVICE
         headers = {"Authorization": f'Bearer {os.getenv("GCPF_TOKEN")}'}
@@ -89,19 +98,18 @@ def fetch_prediction_data(
     ml_models: Optional[str] = None,
 ) -> pd.DataFrame:
     """
-    Fetch prediction data from machine_learning module
+    Fetch prediction data from machine_learning module.
 
-    Args:
-        year_range (Tuple(int, int)): Min (inclusive) and max (exclusive) years
-            for which to fetch data.
-        round_number (int): Specify a particular round for which to fetch data.
-        ml_models (str): Comma-separated list of ML model names to use for making
-            predictions.
+    Params:
+    -------
+    year_range: Min (inclusive) and max (exclusive) years for which to fetch data.
+    round_number: Specify a particular round for which to fetch data.
+    ml_models: Comma-separated list of ML model names to use for making predictions.
 
     Returns:
-        List of prediction data dictionaries
+    --------
+        List of prediction data dictionaries.
     """
-
     min_year, max_year = year_range
     year_range_param = "-".join((str(min_year), str(max_year)))
 
@@ -121,16 +129,17 @@ def fetch_fixture_data(start_date: datetime, end_date: datetime) -> pd.DataFrame
     """
     Fetch fixture data (doesn't include match results) from machine_learning module.
 
-    Args:
-        start_date (timezone-aware, datetime): Date-time that determines
-            the earliest date for which to fetch data.
-        end_date (timezone-aware, datetime): Date-time that determines
-            the latest date for which to fetch data.
+    Params:
+    -------
+    start_date: Timezone-aware date-time that determines the earliest date
+        for which to fetch data.
+    end_date: Timezone-aware date-time that determines the latest date
+        for which to fetch data.
 
     Returns:
+    --------
         pandas.DataFrame with fixture data.
     """
-
     fixtures = pd.DataFrame(
         _fetch_data("fixtures", {"start_date": start_date, "end_date": end_date})
     )
@@ -147,18 +156,19 @@ def fetch_match_results_data(
     """
     Fetch results data for past matches from machine_learning module.
 
-    Args:
-        start_date (timezone-aware, datetime): Date-time that determines
-            the earliest date for which to fetch data.
-        end_date (timezone-aware, datetime): Date-time that determines
-            the latest date for which to fetch data.
-        fetch_data (bool): Whether to fetch fresh data. Non-fresh data goes up to end
-            of 2016 season.
+    Params:
+    -------
+    start_date: Timezone-aware date-time that determines the earliest date
+        for which to fetch data.
+    end_date: Timezone-aware date-time that determines the latest date
+        for which to fetch data.
+    fetch_data: Whether to fetch fresh data. Non-fresh data goes up to end
+        of 2016 season.
 
     Returns:
-        pandas.DataFrame with fixture data.
+    --------
+        pandas.DataFrame with match results data.
     """
-
     match_results = pd.DataFrame(
         _fetch_data(
             "match_results",
@@ -173,6 +183,11 @@ def fetch_match_results_data(
 
 
 def fetch_ml_model_info() -> List[MlModel]:
-    """Fetch general info about all saved ML models"""
+    """
+    Fetch general info about all saved ML models.
 
+    Returns:
+    --------
+    A list of objects with basic info about each ML model.
+    """
     return [cast(MlModel, ml_model) for ml_model in _fetch_data("ml_models")]

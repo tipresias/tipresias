@@ -1,5 +1,8 @@
 """
-One-off script for backfilling is_correct values in the predictions data table
+Script for backfilling is_correct values in the predictions data table.
+
+Initially intended as a one-off, this is useful for fixing up any data errors
+related to missing results data.
 """
 
 import os
@@ -14,10 +17,11 @@ if PROJECT_PATH not in sys.path:
 
 django.setup()
 
-from server.models import Prediction
+from server.models import Prediction  # pylint: disable=wrong-import-position
 
 
 def main():
+    """Run the script for backfilling whether predictions were correct."""
     for prediction in Prediction.objects.select_related(
         "match", "predicted_winner"
     ).all():

@@ -1,3 +1,5 @@
+"""Settings for the server app in the test environment."""
+
 from project.settings.common import *  # pylint: disable=wildcard-import, unused-wildcard-import
 
 ALLOWED_HOSTS = ["backend", "localhost", "app"]

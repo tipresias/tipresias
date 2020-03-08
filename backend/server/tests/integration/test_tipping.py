@@ -1,3 +1,4 @@
+# pylint: disable=missing-docstring
 import copy
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch

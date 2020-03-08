@@ -1,4 +1,4 @@
-"""Module for factory functions that create raw data objects"""
+"""Module for factory functions that create raw data objects."""
 
 from typing import List, Dict, Tuple, Union
 from datetime import datetime
@@ -27,11 +27,22 @@ BASELINE_BET_PAYOUT = 1.92
 
 
 class CyclicalTeamNames:
+    """Cycles through real team names per data config."""
+
     def __init__(self, team_names: List[str] = CONTEMPORARY_TEAM_NAMES):
+        """
+        Instantiate a CyclicalTeamNames object.
+
+        Params:
+        -------
+        team_names: List of team names to cycle through. Defaults to all teams
+            currently in the AFL.
+        """
         self.team_names = team_names
         self.cyclical_team_names = (name for name in self.team_names)
 
     def next(self) -> str:
+        """Return the next team name or start over from the beginning."""
         try:
             return next(self.cyclical_team_names)
         except StopIteration:
@@ -83,6 +94,7 @@ def _matches_by_year(
 def fake_match_results_data(
     row_count: int, year_range: Tuple[int, int], clean=False
 ) -> pd.DataFrame:
+    """Return minimally-valid dummy match results data."""
     data = _matches_by_year(row_count, year_range)
     reduced_data = list(itertools.chain.from_iterable(data))
     data_frame = pd.DataFrame(list(reduced_data))
@@ -122,6 +134,12 @@ def _fixture_by_year(
 
 
 def fake_fixture_data(row_count: int, year_range: Tuple[int, int]) -> pd.DataFrame:
+    """
+    Return minimally-valid data for fixture data.
+
+    These matches are usually unplayed, future matches, but it is also possible to get
+    data for past fixtures.
+    """
     data = _fixture_by_year(row_count, year_range)
     reduced_data = list(itertools.chain.from_iterable(data))
 
@@ -133,6 +151,7 @@ def fake_prediction_data(
     ml_model_name="test_estimator",
     predict_margin=True,
 ) -> pd.DataFrame:
+    """Return minimally-valid prediction data."""
     if match_data is None:
         match_data_for_pred = fake_fixture_data(1, (2018, 2019)).iloc[0, :]
     elif isinstance(match_data, Match):

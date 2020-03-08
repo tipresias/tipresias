@@ -1,3 +1,4 @@
+# pylint: disable=missing-docstring
 from copy import copy
 from unittest.mock import patch, call
 

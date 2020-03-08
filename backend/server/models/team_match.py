@@ -1,4 +1,4 @@
-"""Data model for the join table for matches and teams"""
+"""Data model for the join table for matches and teams."""
 
 from typing import Type, TypeVar, Union, Tuple
 
@@ -17,7 +17,7 @@ NO_SCORE = 0
 
 
 class TeamMatch(models.Model):
-    """Data model for the join table for matches and teams"""
+    """Data model for the join table for matches and teams."""
 
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
@@ -29,10 +29,17 @@ class TeamMatch(models.Model):
         cls: Type[T], match: Match, match_data: Union[FixtureData, MatchData]
     ) -> Tuple[T, T]:
         """
-        Get or create a pair of team-match record from an associated match
-        and row of fixture data
-        """
+        Get or create a pair of team-match records associated with a given match.
 
+        Params:
+        -------
+        match: A match record from the DB.
+        match_data: A row of raw match data.
+
+        Returns:
+        --------
+        A pair of team-match records.
+        """
         teammatch_set = match.teammatch_set
         team_match_count = teammatch_set.count()
 
@@ -77,8 +84,13 @@ class TeamMatch(models.Model):
         return team_match
 
     def update_score(self, match_result: pd.Series):
-        """Update score for records with the given match result data"""
+        """
+        Update the final scores for match records.
 
+        Params:
+        -------
+        match_result: A row of raw match data with final scores.
+        """
         team_type_prefix = "home" if self.at_home else "away"
 
         assert self.team.name == match_result[f"{team_type_prefix}_team"]

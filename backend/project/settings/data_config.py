@@ -1,4 +1,4 @@
-"""Module for data transformations and internal conventions"""
+"""Module for data transformations and internal conventions."""
 
 TEAM_TRANSLATIONS = {
     "Tigers": "Richmond",

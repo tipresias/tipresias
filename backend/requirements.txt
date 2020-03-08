@@ -20,6 +20,8 @@ selenium>=2.0
 
 # Testing/Linting
 pylint==2.4.4
+pylint-django
+pydocstyle==5.0.2
 black
 pytest
 pytest-env

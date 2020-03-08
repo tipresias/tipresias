@@ -1,4 +1,4 @@
-"""Django command for seeding the DB with match & prediction data"""
+"""Django command for seeding the DB with match & prediction data."""
 
 from typing import Tuple, List, cast
 from datetime import datetime
@@ -16,6 +16,8 @@ JAN = 1
 
 
 class Command(BaseCommand):
+    """Django class for implementing the DB seeding as a CLI command."""
+
     help = "Seed the database with team, match, and prediction data."
 
     def __init__(
@@ -26,6 +28,16 @@ class Command(BaseCommand):
         verbose: int = 1,
         **kwargs,
     ) -> None:
+        """
+        Instantiate the seed_db Command.
+
+        Params:
+        fetch_data: Whether to fetch fresh data or load existing data files.
+        data_importer: Module for fetching data from external sources.
+        verbose: How much information should be printed.
+        args: Positional arguments passed directly to the parent BaseCommand.
+        Kwargs: Keyword arguments passed directly to the parent BaseCommand.
+        """
         super().__init__(*args, **kwargs)
 
         self.fetch_data = fetch_data
@@ -34,6 +46,15 @@ class Command(BaseCommand):
         self.ml_model = None
 
     def add_arguments(self, parser):
+        """
+        Accept an ML model name as an argument.
+
+        This allows us to only seed predictions for one model rather than all of them.
+
+        Params:
+        -------
+        parser: Built-in parser from the Django BaseCommand class.
+        """
         parser.add_argument(
             "--ml_model",
             type=str,
@@ -44,6 +65,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *_args, **kwargs) -> None:
+        """Seed the DB with all necessary match and prediction data."""
         year_range: str = kwargs.get("year_range") or YEAR_RANGE
         self.verbose = kwargs.get("verbose") or self.verbose
         self.ml_model = kwargs.get("ml_model") or self.ml_model

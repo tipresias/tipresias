@@ -1,4 +1,4 @@
-"""Data model for AFL matches"""
+"""Data model for AFL matches."""
 
 from typing import Optional, TypeVar, Type, Union
 from functools import reduce
@@ -22,6 +22,7 @@ WEEK_IN_DAYS = 7
 
 
 def validate_is_utc(start_date_time: datetime) -> None:
+    """Validate that start_date_time is always UTC for consistency."""
     if datetime.utcoffset(start_date_time) == timedelta(0):
         return None
 
@@ -29,21 +30,37 @@ def validate_is_utc(start_date_time: datetime) -> None:
 
 
 class Match(models.Model):
-    """Data model for AFL matches"""
+    """Data model for AFL matches."""
 
     start_date_time = models.DateTimeField(validators=[validate_is_utc])
     round_number = models.PositiveSmallIntegerField()
     venue = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
+        """
+        Meta class for including more-advanced attributes.
+
+        In this case, we want to validate that there are no duplicate match records
+        across the DB, as indicated by the start time and venue.
+        """
+
         unique_together = ("start_date_time", "venue")
 
     @classmethod
     def get_or_create_from_raw_data(
         cls: Type[T], match_data: Union[FixtureData, MatchData]
     ) -> T:
-        """Get or create a match record from a row of fixture data"""
+        """
+        Get or create a match record from a row of raw match data.
 
+        Params:
+        -------
+        match_data: A row of raw match data. Can be from fixture or match results data.
+
+        Returns:
+        --------
+        A match record.
+        """
         raw_date = (
             match_data["date"].to_pydatetime()
             if isinstance(match_data["date"], pd.Timestamp)
@@ -66,8 +83,13 @@ class Match(models.Model):
 
     @classmethod
     def played_without_results(cls):
-        """Get all matches that don't have any associated results data"""
+        """
+        Get all matches that don't have any associated results data.
 
+        Returns:
+        --------
+        A query set of past matches that haven't been updated with final scores yet.
+        """
         return (
             cls.objects.prefetch_related("teammatch_set").filter(
                 start_date_time__lt=timezone.localtime()
@@ -81,8 +103,13 @@ class Match(models.Model):
 
     @classmethod
     def earliest_date_without_results(cls) -> Optional[datetime]:
-        """Get the earliest start_date_time of played matches without results"""
+        """
+        Get the earliest start_date_time of played matches without results.
 
+        Returns:
+        --------
+        Date-time for the first past match without scores.
+        """
         if not any(cls.played_without_results()):
             return None
 
@@ -91,10 +118,12 @@ class Match(models.Model):
     @classmethod
     def update_results(cls, match_results: pd.DataFrame):
         """
-        Fill in match results data for the associated records of all matches
-        that have been played.
-        """
+        Fill in match results data for all matches that have been played.
 
+        Params:
+        -------
+        match_results: Raw match results data.
+        """
         for match in cls.played_without_results():
             match_result = match_results.query(
                 "year == @match.year & "
@@ -107,8 +136,11 @@ class Match(models.Model):
 
     def update_result(self, match_result: pd.DataFrame):
         """
-        Fill in match results data for the associated records of a match
-        if it's been played.
+        Fill in match results data for a match that's been played.
+
+        Params:
+        -------
+        match_result: Raw data for a single match.
         """
 
         if not self.has_been_played:
@@ -160,12 +192,14 @@ class Match(models.Model):
 
     @property
     def is_draw(self):
+        """Indicate whether a match result was a draw."""
         return self.has_results and reduce(
             lambda score_x, score_y: score_x == score_y, self._match_scores
         )
 
     @property
     def winner(self):
+        """Return the record for the winning team of the match."""
         if not self.has_results or self.is_draw:
             return None
 
@@ -173,6 +207,7 @@ class Match(models.Model):
 
     @property
     def margin(self):
+        """Return the absolute difference between the two match scores."""
         if not self.has_been_played:
             return 0
 
@@ -182,9 +217,11 @@ class Match(models.Model):
 
     @property
     def year(self):
+        """Return the year in which the match is played."""
         return self.start_date_time.year
 
     def team(self, at_home: Optional[bool] = None) -> Team:
+        """Return the record for the home or away team."""
         if at_home is None:
             raise ValueError("Must pass a boolean value for at_home")
 
@@ -192,6 +229,7 @@ class Match(models.Model):
 
     @property
     def has_been_played(self):
+        """Return whether a match has been played yet."""
         match_end_time = self.start_date_time + timedelta(hours=GAME_LENGTH_HRS)
 
         # We need to check the scores in case the data hasn't been updated since the
@@ -201,6 +239,7 @@ class Match(models.Model):
 
     @property
     def has_results(self):
+        """Return whether a match has a final score."""
         return self.has_been_played and self._has_score
 
     @property

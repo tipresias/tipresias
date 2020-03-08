@@ -1,3 +1,14 @@
+"""
+Script for seeding a test DB for end-to-end browser tests.
+
+We run browser tests with Cypress, which is completely separate from
+Django's test runner, which means we have to manually set up a DB with data
+in order to get realistic UI elements to test.
+
+There might be a better way to do this (I don't feel particularly good about
+manually setting up a test DB, then just leaving it to be clobbered later),
+but it works.
+"""
 from datetime import date
 from itertools import product
 import os
@@ -14,6 +25,7 @@ if PROJECT_PATH not in sys.path:
 
 django.setup()
 
+# pylint: disable=wrong-import-position
 from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
 
 
@@ -26,6 +38,7 @@ N_MATCHES_PER_ROUND = 5
 
 
 def main():
+    """Set up test DB and seed it with FactoryBoy records."""
     assert settings.ENVIRONMENT == "test"
 
     current_year = date.today().year
@@ -42,7 +55,7 @@ def main():
     assert settings.DATABASES["default"]["NAME"] != os.getenv("DATABASE_NAME")
 
     with transaction.atomic():
-        # "tipresias" is the name of the primary MLModel and is hardcoded in various
+        # "tipresias_2019" is the name of the primary MLModel and is hardcoded in various
         # places, so we need at least one MLModel with that name
         MLModelFactory(name="tipresias_2019")
 

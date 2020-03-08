@@ -1,3 +1,5 @@
+"""Settings for the server app in the production environment."""
+
 import dj_database_url
 
 # pylint: disable=W0401,W0614

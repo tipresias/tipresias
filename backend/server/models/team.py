@@ -1,4 +1,4 @@
-"""Data model for AFL teams"""
+"""Data model for AFL teams."""
 
 from django.db import models
 from django.conf import settings
@@ -15,6 +15,6 @@ def validate_name(name: str) -> None:
 
 
 class Team(models.Model):
-    """Data model for AFL teams"""
+    """Data model for AFL teams."""
 
     name = models.CharField(max_length=100, unique=True, validators=[validate_name])

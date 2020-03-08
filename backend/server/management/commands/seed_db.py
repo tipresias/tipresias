@@ -1,4 +1,4 @@
-"""Django command for seeding the DB with match & prediction data"""
+"""Django command for seeding the DB with match & prediction data."""
 
 from typing import Tuple, List, cast
 from datetime import datetime
@@ -28,6 +28,16 @@ class Command(BaseCommand):
         verbose: int = 1,
         **kwargs,
     ) -> None:
+        """
+        Instantiate the seed_db Command.
+
+        Params:
+        fetch_data: Whether to fetch fresh data or load existing data files.
+        data_importer: Module for fetching data from external sources.
+        verbose: How much information should be printed.
+        args: Positional arguments passed directly to the parent BaseCommand.
+        Kwargs: Keyword arguments passed directly to the parent BaseCommand.
+        """
         super().__init__(*args, **kwargs)
 
         self.fetch_data = fetch_data
@@ -40,6 +50,10 @@ class Command(BaseCommand):
         Accept an ML model name as an argument.
 
         This allows us to only seed predictions for one model rather than all of them.
+
+        Params:
+        -------
+        parser: Built-in parser from the Django BaseCommand class.
         """
         parser.add_argument(
             "--ml_model",

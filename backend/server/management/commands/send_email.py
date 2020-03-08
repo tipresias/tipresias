@@ -25,22 +25,15 @@ PREDICTION_HEADERS = [
 
 
 class Command(BaseCommand):
-    """
-    manage.py command for 'send_email' that sends an email with the most recent predictions
-    AFL matches
-    """
+    """Django command that sends an email with predictions for upcoming AFL matches."""
 
     help = """
-    Send email with predictions for most-recent round predicted (either the upcoming round
-    or most recently-played round).
+    Send email with predictions for most-recent round predicted
+    (either the upcoming round or most recently-played round).
     """
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
     def handle(self, *_args, **_kwargs):
-        """Run 'send_email' command"""
-
+        """Run 'send_email' command."""
         right_now = timezone.localtime()
         future_matches = Match.objects.filter(start_date_time__gt=right_now)
 

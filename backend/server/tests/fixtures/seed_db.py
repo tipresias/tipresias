@@ -39,7 +39,6 @@ N_MATCHES_PER_ROUND = 5
 
 def main():
     """Set up test DB and seed it with FactoryBoy records."""
-
     assert settings.ENVIRONMENT == "test"
 
     current_year = date.today().year

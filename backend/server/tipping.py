@@ -1,4 +1,4 @@
-"""Module for handling generation and saving of tips (i.e. predictions)"""
+"""Module for handling generation and saving of tips (i.e. predictions)."""
 
 from datetime import datetime
 from typing import List, Optional, Dict, Tuple
@@ -30,7 +30,7 @@ FT_TEAM_TRANSLATIONS = {
 
 
 class Tipping:
-    """Handles generation and saving of tips (i.e. predictions)"""
+    """Handles generation and saving of tips (i.e. predictions)."""
 
     def __init__(
         self,
@@ -39,6 +39,16 @@ class Tipping:
         ml_models=None,
         submit_tips=True,
     ) -> None:
+        """
+        Instantiate a Tipping object.
+
+        Params:
+        -------
+        fetch_data: Whether to fetch up-to-date data or load saved data files.
+        data_importer: Module used for importing data from remote sources.
+        ml_models: Which models to use when making tipping predictions.
+        submit_tips: Whether to submit the tips to the relevant competition websites.
+        """
         self.right_now = timezone.localtime()
         self.current_year = self.right_now.year
         self.fetch_data = fetch_data
@@ -48,8 +58,7 @@ class Tipping:
         self.verbose = 0
 
     def tip(self, verbose=1) -> None:
-        """Run 'tip' command"""
-
+        """Fetch and save predictions, then submit tips to competitions."""
         self.verbose = verbose  # pylint: disable=W0201
         self.data_importer.verbose = verbose
 

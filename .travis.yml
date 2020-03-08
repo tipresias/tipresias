@@ -18,6 +18,7 @@ before_script:
   - docker build --cache-from cfranklin11/tipresias_browser_test:latest -t cfranklin11/tipresias_browser_test:latest ./browser_test
 script:
   - docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
+  - docker run cfranklin11/tipresias_backend:latest pydocstyle server project scripts
   - docker run cfranklin11/tipresias_backend:latest mypy server project scripts
 
   - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src

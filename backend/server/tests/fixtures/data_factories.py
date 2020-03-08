@@ -30,6 +30,14 @@ class CyclicalTeamNames:
     """Cycles through real team names per data config."""
 
     def __init__(self, team_names: List[str] = CONTEMPORARY_TEAM_NAMES):
+        """
+        Instantiate a CyclicalTeamNames object.
+
+        Params:
+        -------
+        team_names: List of team names to cycle through. Defaults to all teams
+            currently in the AFL.
+        """
         self.team_names = team_names
         self.cyclical_team_names = (name for name in self.team_names)
 

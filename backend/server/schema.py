@@ -123,9 +123,7 @@ class MLModelType(DjangoObjectType):
 
 
 class CumulativePredictionsByRoundType(graphene.ObjectType):
-    """
-    Cumulative stats for predictions made by the given model through the given round.
-    """
+    """Cumulative performance metrics for the given model through the given round."""
 
     ml_model__name = graphene.String(name="modelName")
     cumulative_correct_count = graphene.Int(

@@ -1,5 +1,8 @@
 """
-One-off script for backfilling is_correct values in the predictions data table
+Script for backfilling is_correct values in the predictions data table.
+
+Initially intended as a one-off, this is useful for fixing up any data errors
+related to missing results data.
 """
 
 import os

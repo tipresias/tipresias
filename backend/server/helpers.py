@@ -1,4 +1,4 @@
-"""Helper functions"""
+"""Helper functions."""
 
 from typing import Dict, Callable
 import pandas as pd
@@ -32,19 +32,20 @@ def _home_away_data_frame(data_frame: pd.DataFrame, team_type: str) -> pd.DataFr
 
 def pivot_team_matches_to_matches(team_match_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Pivots per at_home column to change team-match rows with team and oppo_ columns
-    to match rows with home_ and away_ columns. Due to how columns are renamed,
-    currently only works for prediction data frames.
+    Pivots data frame from team-match rows to match rows with home_ and away_ columns.
 
-    Args:
-        team_match_df (pd.DataFrame): DataFrame structured to have two rows per match
-            (one for each participating team) with team & oppo_team columns
+    Due to how columns are renamed, currently only works for prediction data frames.
+
+    Params:
+    -------
+    team_match_df: Prediction data structured to have two rows per match
+        (one for each participating team) with team & oppo_team columns
 
     Returns:
-        pd.DataFrame: Reshaped to have one row per match, with columns for home_team
-            and away_team.
+    --------
+    Prediction data frame reshaped to have one row per match, with columns for home_team
+        and away_team.
     """
-
     home_data_frame = _home_away_data_frame(team_match_df, "home")
     away_data_frame = _home_away_data_frame(team_match_df, "away")
 

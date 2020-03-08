@@ -50,6 +50,9 @@ RoundPrediction = TypedDict(
 # we need a slightly positive minimum to not get errors when calculating logarithms
 MIN_LOG_VAL = 1 * 10 ** -10
 
+ROUND_NUMBER_LVL = 0
+ML_MODEL_NAME_LVL = 0
+
 
 class TeamType(DjangoObjectType):
     """GraphQL type based on the Team data model."""
@@ -175,15 +178,25 @@ class RoundType(graphene.ObjectType):
             "through the given round"
         ),
         default_value=pd.DataFrame(),
+        ml_model_name=graphene.String(
+            default_value=None,
+            description="Get predictions and metrics for a specific ML model",
+        ),
     )
     matches = graphene.List(MatchType, default_value=[])
 
     @staticmethod
-    def resolve_model_predictions(root, _info) -> List[ModelPrediction]:
+    def resolve_model_predictions(
+        root, _info, ml_model_name=None
+    ) -> List[ModelPrediction]:
         """Calculate metrics related to the quality of models' predictions."""
         model_predictions_to_dict = lambda df: [
-            {df.index.names[0]: value, **df.loc[value, :].to_dict()}
-            for value in df.index
+            {
+                df.index.names[ML_MODEL_NAME_LVL]: ml_model_name_idx,
+                **df.loc[ml_model_name_idx, :].to_dict(),
+            }
+            for ml_model_name_idx in df.index
+            if ml_model_name is None or ml_model_name_idx == ml_model_name
         ]
 
         prediction_dicts = root.get("model_predictions").pipe(model_predictions_to_dict)
@@ -260,15 +273,15 @@ class SeasonType(graphene.ObjectType):
 
         collect_round_predictions = lambda df: [
             {
-                df.index.names[0]: value,
-                "model_predictions": df.xs(value, level=0),
+                df.index.names[ROUND_NUMBER_LVL]: round_number_idx,
+                "model_predictions": df.xs(round_number_idx, level=ROUND_NUMBER_LVL),
                 "matches": Match.objects.filter(
-                    id__in=query_set.filter(match__round_number=value).values_list(
-                        "match", flat=True
-                    )
+                    id__in=query_set.filter(
+                        match__round_number=round_number_idx
+                    ).values_list("match", flat=True)
                 ),
             }
-            for value in df.index.levels[0]
+            for round_number_idx in df.index.levels[ROUND_NUMBER_LVL]
         ]
 
         query_set_data_frame = pd.DataFrame(list(query_set))

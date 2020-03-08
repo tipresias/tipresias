@@ -188,6 +188,29 @@ class TestSchema(TestCase):
 
         self.assertLessEqual(sum(earlier_round_cum_counts), sum(later_round_cum_counts))
 
+        with self.subTest("with mlModelName argument 'predictanator'"):
+            executed = self.client.execute(
+                """
+                query QueryType {
+                    fetchYearlyPredictions(year: 2015) {
+                        predictionsByRound {
+                            modelPredictions(mlModelName: "predictanator") { modelName }
+                            matches { predictions { isCorrect } }
+                        }
+                    }
+                }
+                """
+            )
+
+            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0]
+
+            self.assertEqual(len(data["modelPredictions"]), 1)
+            self.assertEqual(data["modelPredictions"][0]["modelName"], "predictanator")
+            # matches and predictions associations are unaffected
+            # by the modelPredictions argument (predictions has its own argument
+            # for mlModelName)
+            self.assertEqual(len(data["matches"][0]["predictions"]), len(ml_models))
+
     def test_fetch_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
         year = TWENTY_SEVENTEEN

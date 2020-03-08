@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 def validate_name(name: str) -> None:
+    """Validate that the given name is for a real team."""
     if name in settings.TEAM_NAMES:
         return None
 

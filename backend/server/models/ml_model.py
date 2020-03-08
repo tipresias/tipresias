@@ -8,6 +8,7 @@ from .match import Match
 
 
 def validate_module_path(path: str) -> None:
+    """Validate that the given path is for Python modules not files."""
     if "." in path and "/" not in path:
         return None
 

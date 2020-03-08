@@ -1,3 +1,5 @@
+"""Django command for sending predictions via email."""
+
 import os
 from datetime import datetime
 from typing import List, Union

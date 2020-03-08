@@ -1,3 +1,5 @@
+"""Factory classes for generating realistic DB records for tests."""
+
 from datetime import date, datetime
 import pytz
 
@@ -21,7 +23,11 @@ ML_MODEL_NAMES = [factory.Faker("company") for _ in range(N_ML_MODELS)]
 
 
 class TeamFactory(DjangoModelFactory):
+    """Factory class for the Team data model."""
+
     class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
         model = Team
         django_get_or_create = ("name",)
 
@@ -29,6 +35,7 @@ class TeamFactory(DjangoModelFactory):
 
 
 def fake_future_datetime(match_factory):
+    """Return a realistic future datetime value for a match's start_date_time."""
     # Running tests on 28 Feb of a leap year breaks them, because the given year
     # generally won't be a leap year (e.g. 2018-2-29 doesn't exist),
     # so we retry with two days in the future (e.g. 2018-3-1).
@@ -51,7 +58,11 @@ def fake_future_datetime(match_factory):
 
 
 class MatchFactory(DjangoModelFactory):
+    """Factory class for the Match data model."""
+
     class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
         model = Match
 
     start_date_time = factory.LazyAttribute(
@@ -67,6 +78,8 @@ class MatchFactory(DjangoModelFactory):
     ]
 
     class Params:
+        """Params for modifying the factory's default attributes."""
+
         year = TODAY.year
         # A lot of functionality depends on future matches for generating predictions
         future = factory.Trait(
@@ -75,7 +88,11 @@ class MatchFactory(DjangoModelFactory):
 
 
 class TeamMatchFactory(DjangoModelFactory):
+    """Factory class for the TeamMatch data model."""
+
     class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
         model = TeamMatch
 
     team = factory.SubFactory(TeamFactory)
@@ -85,7 +102,11 @@ class TeamMatchFactory(DjangoModelFactory):
 
 
 class MLModelFactory(DjangoModelFactory):
+    """Factory class for the MLModel data model."""
+
     class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
         model = MLModel
 
     name = factory.Faker("company")
@@ -95,7 +116,11 @@ class MLModelFactory(DjangoModelFactory):
 
 
 class PredictionFactory(DjangoModelFactory):
+    """Factory class for the Prediction data model."""
+
     class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
         model = Prediction
 
     match = factory.SubFactory(MatchFactory)
@@ -114,6 +139,15 @@ class PredictionFactory(DjangoModelFactory):
 
 
 class FullMatchFactory(MatchFactory):
+    """
+    Factory for creating a match with all associated records.
+
+    Given the difficulty in recreating all the associations in a flexible way,
+    the predictions associated with the created match are hard-coded to be two,
+    which limits us to two models. So far, this has been sufficient for testing
+    functionality.
+    """
+
     prediction = factory.RelatedFactory(PredictionFactory, "match")
     prediction_two = factory.RelatedFactory(PredictionFactory, "match")
 

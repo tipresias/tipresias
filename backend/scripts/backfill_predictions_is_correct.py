@@ -18,6 +18,7 @@ from server.models import Prediction  # pylint: disable=wrong-import-position
 
 
 def main():
+    """Run the script for backfilling whether predictions were correct."""
     for prediction in Prediction.objects.select_related(
         "match", "predicted_winner"
     ).all():

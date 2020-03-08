@@ -1,3 +1,4 @@
+# pylint: disable=missing-docstring
 from unittest.mock import patch
 
 from django.test import TestCase

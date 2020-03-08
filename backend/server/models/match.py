@@ -22,6 +22,7 @@ WEEK_IN_DAYS = 7
 
 
 def validate_is_utc(start_date_time: datetime) -> None:
+    """Validate that start_date_time is always UTC for consistency."""
     if datetime.utcoffset(start_date_time) == timedelta(0):
         return None
 
@@ -36,6 +37,13 @@ class Match(models.Model):
     venue = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
+        """
+        Meta class for including more-advanced attributes.
+
+        In this case, we want to validate that there are no duplicate match records
+        across the DB, as indicated by the start time and venue.
+        """
+
         unique_together = ("start_date_time", "venue")
 
     @classmethod
@@ -160,12 +168,14 @@ class Match(models.Model):
 
     @property
     def is_draw(self):
+        """Indicate whether a match result was a draw."""
         return self.has_results and reduce(
             lambda score_x, score_y: score_x == score_y, self._match_scores
         )
 
     @property
     def winner(self):
+        """Return the record for the winning team of the match."""
         if not self.has_results or self.is_draw:
             return None
 
@@ -173,6 +183,7 @@ class Match(models.Model):
 
     @property
     def margin(self):
+        """Return the absolute difference between the two match scores."""
         if not self.has_been_played:
             return 0
 
@@ -182,9 +193,11 @@ class Match(models.Model):
 
     @property
     def year(self):
+        """Return the year in which the match is played."""
         return self.start_date_time.year
 
     def team(self, at_home: Optional[bool] = None) -> Team:
+        """Return the record for the home or away team."""
         if at_home is None:
             raise ValueError("Must pass a boolean value for at_home")
 
@@ -192,6 +205,7 @@ class Match(models.Model):
 
     @property
     def has_been_played(self):
+        """Return whether a match has been played yet."""
         match_end_time = self.start_date_time + timedelta(hours=GAME_LENGTH_HRS)
 
         # We need to check the scores in case the data hasn't been updated since the
@@ -201,6 +215,7 @@ class Match(models.Model):
 
     @property
     def has_results(self):
+        """Return whether a match has a final score."""
         return self.has_been_played and self._has_score
 
     @property

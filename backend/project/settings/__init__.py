@@ -1,3 +1,5 @@
+"""Settings for the server app, separated by environment."""
+
 import sys
 from project.settings.common import BASE_DIR
 

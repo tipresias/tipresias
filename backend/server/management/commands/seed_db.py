@@ -16,6 +16,8 @@ JAN = 1
 
 
 class Command(BaseCommand):
+    """Django class for implementing the DB seeding as a CLI command."""
+
     help = "Seed the database with team, match, and prediction data."
 
     def __init__(
@@ -34,6 +36,11 @@ class Command(BaseCommand):
         self.ml_model = None
 
     def add_arguments(self, parser):
+        """
+        Accept an ML model name as an argument.
+
+        This allows us to only seed predictions for one model rather than all of them.
+        """
         parser.add_argument(
             "--ml_model",
             type=str,
@@ -44,6 +51,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *_args, **kwargs) -> None:
+        """Seed the DB with all necessary match and prediction data."""
         year_range: str = kwargs.get("year_range") or YEAR_RANGE
         self.verbose = kwargs.get("verbose") or self.verbose
         self.ml_model = kwargs.get("ml_model") or self.ml_model

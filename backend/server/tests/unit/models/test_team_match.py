@@ -1,3 +1,4 @@
+# pylint: disable=missing-docstring
 from django.test import TestCase
 
 from server.models import TeamMatch

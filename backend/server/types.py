@@ -1,3 +1,5 @@
+"""Contains custom mypy TypedDicts that are used across the application."""
+
 from typing import Union
 from datetime import datetime
 from mypy_extensions import TypedDict

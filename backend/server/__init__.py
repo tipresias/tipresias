@@ -1,3 +1,5 @@
+"""Only Django 'app' in the project. Contains all core functionality."""
+
 import os
 import sys
 

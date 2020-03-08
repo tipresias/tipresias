@@ -5,7 +5,6 @@ disable=
     W0511, # No TODOs
     C0330, # Wrong indentation (indentation handled by black),
     invalid-name, # Too rigid about constant case/name conventions to be useful
-    C0111, # TODO: Fix docstrings and reenable this rule
 
 [MASTER]
 ignore=migrations

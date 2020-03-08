@@ -15,7 +15,7 @@ export type BarDataType = {
 
 export type BarChartDataType = {
   roundNumber: number,
-  modelPredictions: Array<BarDataType>
+  modelMetrics: Array<BarDataType>
 }
 
 export type MatchType = {

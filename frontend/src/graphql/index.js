@@ -67,7 +67,7 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
       predictionModelNames
       predictionsByRound{
         roundNumber
-        modelPredictions{
+        modelMetrics{
           modelName
           cumulativeCorrectCount
         }
@@ -82,7 +82,7 @@ export const FETCH_LATEST_ROUND_STATS = gql`
       seasonYear
       predictionsByRound(roundNumber: $roundNumber){
         roundNumber
-        modelPredictions(mlModelName: $mlModelName){
+        modelMetrics(mlModelName: $mlModelName){
           modelName
           cumulativeCorrectCount
           cumulativeMeanAbsoluteError

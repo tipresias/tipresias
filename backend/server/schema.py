@@ -20,8 +20,8 @@ import numpy as np
 from server.models import Prediction, MLModel, TeamMatch, Match, Team
 
 
-ModelPrediction = TypedDict(
-    "ModelPrediction",
+ModelMetric = TypedDict(
+    "ModelMetric",
     {
         "ml_model__name": str,
         "cumulative_correct_count": int,
@@ -36,7 +36,7 @@ RoundPrediction = TypedDict(
     "RoundPrediction",
     {
         "match__round_number": int,
-        "model_predictions": List[ModelPrediction],
+        "model_metrics": List[ModelMetric],
         "matches": QuerySet,
     },
 )
@@ -122,7 +122,7 @@ class MLModelType(DjangoObjectType):
         model = MLModel
 
 
-class CumulativePredictionsByRoundType(graphene.ObjectType):
+class CumulativeMetricsByRoundType(graphene.ObjectType):
     """Cumulative performance metrics for the given model through the given round."""
 
     ml_model__name = graphene.String(name="modelName")
@@ -160,10 +160,10 @@ class RoundType(graphene.ObjectType):
     """Match and prediction data for a given season grouped by round."""
 
     match__round_number = graphene.Int(name="roundNumber")
-    model_predictions = graphene.List(
-        CumulativePredictionsByRoundType,
+    model_metrics = graphene.List(
+        CumulativeMetricsByRoundType,
         description=(
-            "Cumulative stats for predictions made by the given model "
+            "Cumulative performance metrics for predictions made by the given model "
             "through the given round"
         ),
         default_value=pd.DataFrame(),
@@ -175,11 +175,9 @@ class RoundType(graphene.ObjectType):
     matches = graphene.List(MatchType, default_value=[])
 
     @staticmethod
-    def resolve_model_predictions(
-        root, _info, ml_model_name=None
-    ) -> List[ModelPrediction]:
+    def resolve_model_metrics(root, _info, ml_model_name=None) -> List[ModelMetric]:
         """Calculate metrics related to the quality of models' predictions."""
-        model_predictions_to_dict = lambda df: [
+        model_metrics_to_dict = lambda df: [
             {
                 df.index.names[ML_MODEL_NAME_LVL]: ml_model_name_idx,
                 **df.loc[ml_model_name_idx, :].to_dict(),
@@ -188,12 +186,9 @@ class RoundType(graphene.ObjectType):
             if ml_model_name is None or ml_model_name_idx == ml_model_name
         ]
 
-        prediction_dicts = root.get("model_predictions").pipe(model_predictions_to_dict)
+        metric_dicts = root.get("model_metrics").pipe(model_metrics_to_dict)
 
-        return [
-            cast(ModelPrediction, model_prediction)
-            for model_prediction in prediction_dicts
-        ]
+        return [cast(ModelMetric, model_metrics) for model_metrics in metric_dicts]
 
 
 class SeasonType(graphene.ObjectType):
@@ -360,7 +355,7 @@ class SeasonType(graphene.ObjectType):
         collect_round_predictions = lambda rnd_num, df: [
             {
                 df.index.names[ROUND_NUMBER_LVL]: round_number_idx,
-                "model_predictions": df.xs(round_number_idx, level=ROUND_NUMBER_LVL),
+                "model_metrics": df.xs(round_number_idx, level=ROUND_NUMBER_LVL),
                 "matches": Match.objects.filter(
                     id__in=query_set.filter(
                         match__round_number=round_number_idx
@@ -395,7 +390,11 @@ class Query(graphene.ObjectType):
     )
 
     fetch_yearly_predictions = graphene.Field(
-        SeasonType, year=graphene.Int(default_value=timezone.localtime().year)
+        SeasonType,
+        year=graphene.Int(
+            default_value=timezone.localtime().year,
+            description=("Filter results by year."),
+        ),
     )
 
     fetch_latest_round_predictions = graphene.Field(
@@ -447,7 +446,7 @@ class Query(graphene.ObjectType):
 
         return {
             "match__round_number": max_match.round_number,
-            "model_predictions": pd.DataFrame(),
+            "model_metrics": pd.DataFrame(),
             "matches": matches,
         }
 

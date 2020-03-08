@@ -128,7 +128,7 @@ class TestSchema(TestCase):
                     predictionModelNames
                     predictionsByRound {
                         roundNumber
-                        modelPredictions {
+                        modelMetrics {
                             modelName
                             cumulativeCorrectCount
                             cumulativeAccuracy
@@ -148,9 +148,9 @@ class TestSchema(TestCase):
         predictions = data["predictionsByRound"]
 
         for pred in predictions:
-            for model_pred in pred["modelPredictions"]:
-                self.assertGreaterEqual(model_pred["cumulativeAccuracy"], 0.0)
-                self.assertLessEqual(model_pred["cumulativeAccuracy"], 1.0)
+            for model_metric in pred["modelMetrics"]:
+                self.assertGreaterEqual(model_metric["cumulativeAccuracy"], 0.0)
+                self.assertLessEqual(model_metric["cumulativeAccuracy"], 1.0)
 
         earlier_round = predictions[0]
         later_round = predictions[1]
@@ -159,7 +159,7 @@ class TestSchema(TestCase):
 
         earlier_round_cum_counts = [
             prediction["cumulativeCorrectCount"]
-            for prediction in earlier_round["modelPredictions"]
+            for prediction in earlier_round["modelMetrics"]
         ]
         earlier_round_correct = [
             prediction["isCorrect"]
@@ -172,7 +172,7 @@ class TestSchema(TestCase):
 
         later_round_cum_counts = [
             prediction["cumulativeCorrectCount"]
-            for prediction in later_round["modelPredictions"]
+            for prediction in later_round["modelMetrics"]
         ]
         later_round_correct = [
             prediction["isCorrect"]
@@ -194,7 +194,7 @@ class TestSchema(TestCase):
                 query QueryType {
                     fetchYearlyPredictions(year: 2015) {
                         predictionsByRound {
-                            modelPredictions(mlModelName: "predictanator") { modelName }
+                            modelMetrics(mlModelName: "predictanator") { modelName }
                             matches { predictions { isCorrect } }
                         }
                     }
@@ -204,10 +204,10 @@ class TestSchema(TestCase):
 
             data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0]
 
-            self.assertEqual(len(data["modelPredictions"]), 1)
-            self.assertEqual(data["modelPredictions"][0]["modelName"], "predictanator")
+            self.assertEqual(len(data["modelMetrics"]), 1)
+            self.assertEqual(data["modelMetrics"][0]["modelName"], "predictanator")
             # matches and predictions associations are unaffected
-            # by the modelPredictions argument (predictions has its own argument
+            # by the modelMetrics argument (predictions has its own argument
             # for mlModelName)
             self.assertEqual(len(data["matches"][0]["predictions"]), len(ml_models))
 

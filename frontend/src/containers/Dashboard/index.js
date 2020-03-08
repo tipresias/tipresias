@@ -100,13 +100,13 @@ class Dashboard extends Component<Props, State> {
                 if (loading) return <p>Loading metrics...</p>;
                 if (error) return <StatusBar text={error.message} error />;
                 const { seasonYear, predictionsByRound } = data.fetchYearlyPredictions;
-                const { roundNumber, modelPredictions } = predictionsByRound[0];
+                const { roundNumber, modelMetrics } = predictionsByRound[0];
                 const {
                   modelName,
                   cumulativeCorrectCount,
                   cumulativeMarginDifference,
                   cumulativeMeanAbsoluteError,
-                } = modelPredictions[0];
+                } = modelMetrics[0];
                 return (
                   <Fragment>
                     <WidgetHeading>

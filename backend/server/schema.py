@@ -11,7 +11,7 @@ from functools import partial
 
 import graphene
 from graphene_django.types import DjangoObjectType
-from django.db.models import Count, Q, QuerySet
+from django.db.models import QuerySet, Max, Subquery, OuterRef, Min
 from django.utils import timezone
 import pandas as pd
 from mypy_extensions import TypedDict
@@ -230,41 +230,42 @@ class SeasonType(graphene.ObjectType):
         root, _info, round_number: Optional[int] = None
     ) -> List[RoundPrediction]:
         """Return predictions for the season grouped by round."""
-        query_set = root.order_by("match__start_date_time").annotate(
-            correct_count=Count("is_correct", filter=Q(is_correct=True)),
-            match_count=Count("match"),
+        query_set = (
+            root.order_by("match__start_date_time")
+            .annotate(
+                match__winner__name=(
+                    Subquery(
+                        Match.objects.filter(id=OuterRef("match_id"))
+                        .order_by("-teammatch__score")
+                        .values_list("teammatch__team__name")[:1]
+                    )
+                ),
+                match__margin=(
+                    Max("match__teammatch__score") - Min("match__teammatch__score")
+                ),
+            )
+            .values(
+                "match__start_date_time",
+                "match__round_number",
+                "ml_model__name",
+                "predicted_margin",
+                "predicted_win_probability",
+                "predicted_winner__name",
+                "is_correct",
+                "match__winner__name",
+                "match__margin",
+            )
         )
 
-        prediction_data = []
-
-        for prediction in query_set:
-            match = prediction.match
-
-            if match.winner is None:
-                continue
-
-            prediction_data.append(
-                {
-                    "match__round_number": match.round_number,
-                    "ml_model__name": prediction.ml_model.name,
-                    "predicted_margin": prediction.predicted_margin,
-                    "predicted_win_probability": prediction.predicted_win_probability,
-                    "predicted_winner__name": prediction.predicted_winner.name,
-                    "correct_count": prediction.correct_count,
-                    "winner": match.winner.name,
-                    "margin": match.margin,
-                }
-            )
-
-        prediction_df = pd.DataFrame(prediction_data)
+        prediction_df = pd.DataFrame(query_set)
 
         calculate_margin_diff = lambda df: (
             df["predicted_margin"]
             + (
-                df["margin"]
+                df["match__margin"]
                 # We want to subtract margins if correct winner was predicted,
                 # add margins otherwise
-                * (df["predicted_winner__name"] == df["winner"]).apply(
+                * (df["predicted_winner__name"] == df["match__winner__name"]).apply(
                     lambda x: -1 if x else 1
                 )
             )
@@ -275,7 +276,7 @@ class SeasonType(graphene.ObjectType):
         # right now, so I'll come back and figure it out later
         calculate_cumulative_correct = lambda df: (
             df.groupby("ml_model__name")
-            .expanding()["correct_count"]
+            .expanding()["is_correct"]
             .sum()
             .rename("cumulative_correct_count")
             .reset_index(level=GROUP_BY_LVL, drop=True)
@@ -283,7 +284,7 @@ class SeasonType(graphene.ObjectType):
 
         calculate_cumulative_accuracy = lambda df: (
             df.groupby("ml_model__name")
-            .expanding()["correct_count"]
+            .expanding()["is_correct"]
             .mean()
             .round(2)
             .rename("cumulative_accuracy")
@@ -318,10 +319,10 @@ class SeasonType(graphene.ObjectType):
 
         # Raw bits calculations per http://probabilistic-footy.monash.edu/~footy/about.shtml
         calculate_bits = lambda df: np.where(
-            df["margin"] == 0,
+            df["match__margin"] == 0,
             draw_bits(df["predicted_win_probability"]),
             np.where(
-                df["winner"] == df["predicted_winner__name"],
+                df["match__winner__name"] == df["predicted_winner__name"],
                 win_bits(df["predicted_win_probability"]),
                 loss_bits(df["predicted_win_probability"]),
             ),
@@ -336,7 +337,12 @@ class SeasonType(graphene.ObjectType):
         )
 
         cumulative_stats = (
-            prediction_df.fillna(0)
+            prediction_df
+            # We don't want to include unplayed matches, which would impact
+            # mean-based metrics like accuracy and MAE
+            .query("match__start_date_time < @timezone.localtime()")
+            .astype({"is_correct": int})
+            .fillna(0)
             .assign(
                 cumulative_correct_count=calculate_cumulative_correct,
                 cumulative_accuracy=calculate_cumulative_accuracy,

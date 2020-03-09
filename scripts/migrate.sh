@@ -7,4 +7,4 @@ set -euo pipefail
   -e SECRET_KEY=${SECRET_KEY} \
   -e DATABASE_URL=${DATABASE_URL} \
   gcr.io/${PROJECT_ID}/${PROJECT_ID}-app \
-  python3 backend/manage.py migrate
+  python3 manage.py migrate

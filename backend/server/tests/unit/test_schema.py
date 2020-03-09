@@ -128,10 +128,13 @@ class TestSchema(TestCase):
                     predictionModelNames
                     predictionsByRound {
                         roundNumber
-                        modelPredictions {
+                        modelMetrics {
                             modelName
                             cumulativeCorrectCount
                             cumulativeAccuracy
+                            cumulativeMeanAbsoluteError
+                            cumulativeMarginDifference
+                            cumulativeBits
                         }
                         matches { predictions { isCorrect } }
                     }
@@ -148,9 +151,9 @@ class TestSchema(TestCase):
         predictions = data["predictionsByRound"]
 
         for pred in predictions:
-            for model_pred in pred["modelPredictions"]:
-                self.assertGreaterEqual(model_pred["cumulativeAccuracy"], 0.0)
-                self.assertLessEqual(model_pred["cumulativeAccuracy"], 1.0)
+            for model_metric in pred["modelMetrics"]:
+                self.assertGreaterEqual(model_metric["cumulativeAccuracy"], 0.0)
+                self.assertLessEqual(model_metric["cumulativeAccuracy"], 1.0)
 
         earlier_round = predictions[0]
         later_round = predictions[1]
@@ -159,7 +162,7 @@ class TestSchema(TestCase):
 
         earlier_round_cum_counts = [
             prediction["cumulativeCorrectCount"]
-            for prediction in earlier_round["modelPredictions"]
+            for prediction in earlier_round["modelMetrics"]
         ]
         earlier_round_correct = [
             prediction["isCorrect"]
@@ -172,7 +175,7 @@ class TestSchema(TestCase):
 
         later_round_cum_counts = [
             prediction["cumulativeCorrectCount"]
-            for prediction in later_round["modelPredictions"]
+            for prediction in later_round["modelMetrics"]
         ]
         later_round_correct = [
             prediction["isCorrect"]
@@ -187,6 +190,48 @@ class TestSchema(TestCase):
         )
 
         self.assertLessEqual(sum(earlier_round_cum_counts), sum(later_round_cum_counts))
+
+        with self.subTest("with mlModelName argument 'predictanator'"):
+            executed = self.client.execute(
+                """
+                query QueryType {
+                    fetchYearlyPredictions(year: 2015) {
+                        predictionsByRound {
+                            modelMetrics(mlModelName: "predictanator") { modelName }
+                            matches { predictions { isCorrect } }
+                        }
+                    }
+                }
+                """
+            )
+
+            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0]
+
+            self.assertEqual(len(data["modelMetrics"]), 1)
+            self.assertEqual(data["modelMetrics"][0]["modelName"], "predictanator")
+            # matches and predictions associations are unaffected
+            # by the modelMetrics argument (predictions has its own argument
+            # for mlModelName)
+            self.assertEqual(len(data["matches"][0]["predictions"]), len(ml_models))
+
+        with self.subTest("with roundNumber argument of -1"):
+            executed = self.client.execute(
+                """
+                query QueryType {
+                    fetchYearlyPredictions(year: 2015) {
+                        predictionsByRound(roundNumber: -1) { roundNumber }
+                    }
+                }
+                """
+            )
+
+            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"]
+
+            self.assertEqual(len(data), 1)
+            self.assertEqual(
+                data[0]["roundNumber"],
+                Match.objects.order_by("round_number").last().round_number,
+            )
 
     def test_fetch_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
@@ -256,12 +301,14 @@ class TestSchema(TestCase):
 
             self.assertEqual(ml_model_names, ["accurate_af"])
 
-    def test_fetch_latest_round_stats(self):
+    # Keeping this in a separate test, because it requires special setup
+    # to properly test metric calculations
+    def test_fetch_yearly_predictions_cumulative_metrics(self):
         ml_models = list(MLModel.objects.all())
         YEAR = TWENTY_SEVENTEEN
         MONTH = 6
 
-        latest_matches = [
+        for idx in range(ROUND_COUNT):
             FullMatchFactory(
                 year=YEAR,
                 round_number=(idx + 1),
@@ -273,20 +320,20 @@ class TestSchema(TestCase):
                 prediction_two__ml_model=ml_models[1],
                 prediction_two__is_correct=True,
             )
-            for idx in range(ROUND_COUNT)
-        ]
 
         query = """
             query QueryType {
-                fetchLatestRoundStats(mlModelName: "accurate_af") {
+                fetchYearlyPredictions(year: 2017) {
                     seasonYear
-                    roundNumber
-                    modelStats {
-                        modelName
-                        cumulativeCorrectCount
-                        cumulativeMeanAbsoluteError
-                        cumulativeMarginDifference
-                        cumulativeBits
+                    predictionsByRound(roundNumber: -1) {
+                        roundNumber
+                        modelMetrics(mlModelName: "accurate_af") {
+                            modelName
+                            cumulativeCorrectCount
+                            cumulativeMeanAbsoluteError
+                            cumulativeMarginDifference
+                            cumulativeBits
+                        }
                     }
                 }
             }
@@ -294,16 +341,12 @@ class TestSchema(TestCase):
 
         executed = self.client.execute(query)
 
-        data = executed["data"]["fetchLatestRoundStats"]
+        data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0][
+            "modelMetrics"
+        ]
 
-        max_match_round = max([match.round_number for match in latest_matches])
-        self.assertEqual(data["roundNumber"], max_match_round)
-
-        max_match_year = max([match.year for match in latest_matches])
-        self.assertEqual(max_match_year, data["seasonYear"])
-
-        model_stats = data["modelStats"]
-
+        self.assertEqual(len(data), 1)
+        model_stats = data[0]
         self.assertEqual("accurate_af", model_stats["modelName"])
 
         self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
@@ -320,14 +363,19 @@ class TestSchema(TestCase):
             with freeze_time(fake_datetime):
                 past_executed = self.client.execute(query)
 
-                data = past_executed["data"]["fetchLatestRoundStats"]
+                data = past_executed["data"]["fetchYearlyPredictions"][
+                    "predictionsByRound"
+                ][0]
 
+                max_match_round = (
+                    Match.objects.all().order_by("-round_number").first().round_number
+                )
                 self.assertLess(data["roundNumber"], max_match_round)
                 # Last played match will be from day before, because "now" and the
                 # start time for "today's match" are equal
                 self.assertEqual(data["roundNumber"], DAY - 1)
 
-                model_stats = data["modelStats"]
+                model_stats = data["modelMetrics"][0]
 
                 self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
                 self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)

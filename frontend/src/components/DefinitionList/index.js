@@ -2,19 +2,7 @@
 import React, { Fragment } from 'react';
 import type { Node } from 'react';
 import { DefinitionListStyled, DefinitionTermStyled, DefinitionDescriptionStyled } from './style';
-// TODO: Implement this in a src/graphql/index.js
-// query {
-//   fetchLatestRoundStats{
-//     seasonYear
-//     roundNumber
-//     modelStats{
-//       modelName
-//       cumulativeCorrectCount
-//       cumulativeMeanAbsoluteError
-//       cumulativeMarginDifference
-//     }
-//    }
-// }
+
 type Definition = {
   id: number,
   key: string,

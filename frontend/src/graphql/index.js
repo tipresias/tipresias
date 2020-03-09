@@ -65,26 +65,30 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
   query fetchYearlyPredictions($year: Int){
     fetchYearlyPredictions(year: $year){
       predictionModelNames
-       predictionsByRound{
+      predictionsByRound{
         roundNumber
-        modelPredictions{
+        modelMetrics{
           modelName
           cumulativeCorrectCount
         }
       }
-   }
-}`;
+    }
+  }
+`;
 
 export const FETCH_LATEST_ROUND_STATS = gql`
-  query {
-  fetchLatestRoundStats{
-    seasonYear
-    roundNumber
-    modelStats{
-      modelName
-      cumulativeCorrectCount
-      cumulativeMeanAbsoluteError
-      cumulativeMarginDifference
+  query fetchYearlyPredictions($year: Int, $roundNumber: Int, $mlModelName: String){
+    fetchYearlyPredictions(year: $year){
+      seasonYear
+      predictionsByRound(roundNumber: $roundNumber){
+        roundNumber
+        modelMetrics(mlModelName: $mlModelName){
+          modelName
+          cumulativeCorrectCount
+          cumulativeMeanAbsoluteError
+          cumulativeMarginDifference
+        }
+      }
     }
-   }
-}`;
+  }
+`;

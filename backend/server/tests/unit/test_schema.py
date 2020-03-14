@@ -116,6 +116,7 @@ class TestSchema(TestCase):
         FullMatchFactory(
             year=year,
             round_number=50,
+            start_date_time=timezone.make_aware(datetime(year, 10, 31)),
             prediction__ml_model=ml_models[0],
             prediction_two__ml_model=ml_models[1],
         )

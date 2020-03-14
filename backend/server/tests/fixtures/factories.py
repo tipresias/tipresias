@@ -66,6 +66,10 @@ class MatchFactory(DjangoModelFactory):
 
         model = Match
 
+    # TODO: Make start_date_time increment in sync with round_number,
+    # because sometimes fake data will have matches with higher round numbers,
+    # but earlier dates, which can cause test to fail, depending on how
+    # we're sorting data.
     start_date_time = factory.LazyAttribute(
         lambda obj: FAKE.date_time_between_dates(
             datetime_start=timezone.make_aware(datetime(obj.year, JAN, FIRST)),

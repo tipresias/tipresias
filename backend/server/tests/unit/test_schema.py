@@ -316,9 +316,9 @@ class TestSchema(TestCase):
                     datetime(YEAR, MONTH, (idx % 29) + 1)
                 ),
                 prediction__ml_model=ml_models[0],
-                prediction__is_correct=True,
+                prediction__force_correct=True,
                 prediction_two__ml_model=ml_models[1],
-                prediction_two__is_correct=True,
+                prediction_two__force_correct=True,
             )
 
         query = """

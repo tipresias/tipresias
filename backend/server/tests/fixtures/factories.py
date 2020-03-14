@@ -8,6 +8,7 @@ from factory.django import DjangoModelFactory
 from faker import Faker
 from django.utils import timezone
 from django.conf import settings
+import numpy as np
 
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
 
@@ -123,19 +124,45 @@ class PredictionFactory(DjangoModelFactory):
 
         model = Prediction
 
+    class Params:
+        """
+        Params for modifying the factory's default attributes.
+
+        Params:
+        -------
+        force_correct: A factory trait that, when present, forces the predicted_winner
+            to equal the actual match winner. We sometimes need this for tests
+            that check prediction metric calculations.
+        """
+
+        force_correct = factory.Trait(
+            predicted_winner=factory.LazyAttribute(
+                lambda pred: pred.match.teammatch_set.order_by("-score").first().team
+            )
+        )
+
     match = factory.SubFactory(MatchFactory)
     # Can't use SubFactory for associated MLModel, because it's not realistic to have
     # one model per prediction, and in cases where there are a lot of predictions,
     # we risk duplicate model names, which is invalid
     ml_model = factory.Iterator(MLModel.objects.all())
-    predicted_winner = factory.SubFactory(TeamFactory)
+    # Have to make sure we get a team from the associated match
+    # for realistic prediction metrics
+    predicted_winner = factory.LazyAttribute(
+        lambda pred: pred.match.teammatch_set.all()[np.random.randint(0, 2)].team
+    )
     predicted_margin = factory.Faker("pyint", min_value=0, max_value=50)
     # Doesn't give realistic win probabilities (i.e. between 0.5 and 1.0)
     # due to an open issue in faker: https://github.com/joke2k/faker/issues/1068
     # Since they're taking this as an opportunity to completely change the method,
     # they're going to wait for a major version rather than just permit floats...
     predicted_win_probability = factory.Faker("pyfloat", min_value=0, max_value=1)
-    is_correct = factory.Faker("pybool")
+    is_correct = factory.LazyAttribute(
+        lambda pred: (
+            pred.match.teammatch_set.order_by("-score").first().team
+            == pred.predicted_winner
+        )
+    )
 
 
 class FullMatchFactory(MatchFactory):
@@ -148,8 +175,10 @@ class FullMatchFactory(MatchFactory):
     functionality.
     """
 
-    prediction = factory.RelatedFactory(PredictionFactory, "match")
-    prediction_two = factory.RelatedFactory(PredictionFactory, "match")
-
+    # TeamMatchFactory calls must come before PredictionFactory calls,
+    # so predictions can refer to associated teams for predicted_winner.
     home_team_match = factory.RelatedFactory(TeamMatchFactory, "match", at_home=True)
     away_team_match = factory.RelatedFactory(TeamMatchFactory, "match", at_home=False)
+
+    prediction = factory.RelatedFactory(PredictionFactory, "match")
+    prediction_two = factory.RelatedFactory(PredictionFactory, "match")

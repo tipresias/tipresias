@@ -11,7 +11,22 @@ from functools import partial
 
 import graphene
 from graphene_django.types import DjangoObjectType
-from django.db.models import QuerySet, Max, Subquery, OuterRef, Min
+from django.db.models import (
+    QuerySet,
+    Max,
+    Subquery,
+    OuterRef,
+    Min,
+    Case,
+    When,
+    IntegerField,
+    F,
+    Func,
+    Value,
+    Window,
+    Sum,
+    Avg,
+)
 from django.utils import timezone
 import pandas as pd
 from mypy_extensions import TypedDict
@@ -232,16 +247,51 @@ class SeasonType(graphene.ObjectType):
         """Return predictions for the season grouped by round."""
         query_set = (
             root.order_by("match__start_date_time")
+            # We don't want to include unplayed matches, which would impact
+            # mean-based metrics like accuracy and MAE
+            .filter(match__start_date_time__lt=timezone.localtime())
             .annotate(
+                tip_point=(
+                    Case(
+                        When(is_correct=True, then=Value(1)),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )
+                ),
                 match__winner__name=(
                     Subquery(
-                        Match.objects.filter(id=OuterRef("match_id"))
-                        .order_by("-teammatch__score")
-                        .values_list("teammatch__team__name")[:1]
+                        TeamMatch.objects.filter(match_id=OuterRef("match_id"))
+                        .order_by("-score")
+                        .values_list("team__name")[:1]
                     )
                 ),
                 match__margin=(
                     Max("match__teammatch__score") - Min("match__teammatch__score")
+                ),
+            )
+            .annotate(
+                margin_diff=(
+                    Case(
+                        When(
+                            is_correct=True,
+                            then=Func(
+                                F("predicted_margin") - F("match__margin"),
+                                function="ABS",
+                            ),
+                        ),
+                        default=(F("predicted_margin") + F("match__margin")),
+                        output_field=IntegerField(),
+                    )
+                ),
+                cumulative_correct_count=Window(
+                    expression=Sum("tip_point"),
+                    partition_by=F("ml_model_id"),
+                    order_by=F("match__start_date_time").asc(),
+                ),
+                cumulative_accuracy=Window(
+                    expression=Avg("tip_point"),
+                    partition_by=F("ml_model_id"),
+                    order_by=F("match__start_date_time").asc(),
                 ),
             )
             .values(
@@ -251,46 +301,18 @@ class SeasonType(graphene.ObjectType):
                 "predicted_margin",
                 "predicted_win_probability",
                 "predicted_winner__name",
-                "is_correct",
                 "match__winner__name",
                 "match__margin",
+                "margin_diff",
+                "cumulative_correct_count",
             )
         )
 
         prediction_df = pd.DataFrame(query_set)
 
-        calculate_margin_diff = lambda df: (
-            df["predicted_margin"]
-            + (
-                df["match__margin"]
-                # We want to subtract margins if correct winner was predicted,
-                # add margins otherwise
-                * (df["predicted_winner__name"] == df["match__winner__name"]).apply(
-                    lambda x: -1 if x else 1
-                )
-            )
-        ).abs()
-
         # TODO: There's definitely a way to do these calculations via SQL, but chained
         # GROUP BYs and calculations based on calculations is a bit much for me
         # right now, so I'll come back and figure it out later
-        calculate_cumulative_correct = lambda df: (
-            df.groupby("ml_model__name")
-            .expanding()["is_correct"]
-            .sum()
-            .rename("cumulative_correct_count")
-            .reset_index(level=GROUP_BY_LVL, drop=True)
-        )
-
-        calculate_cumulative_accuracy = lambda df: (
-            df.groupby("ml_model__name")
-            .expanding()["is_correct"]
-            .mean()
-            .round(2)
-            .rename("cumulative_accuracy")
-            .reset_index(level=GROUP_BY_LVL, drop=True)
-        )
-
         calculate_sae = lambda df: (
             df.groupby("ml_model__name")
             .expanding()["margin_diff"]
@@ -337,18 +359,8 @@ class SeasonType(graphene.ObjectType):
         )
 
         cumulative_stats = (
-            prediction_df
-            # We don't want to include unplayed matches, which would impact
-            # mean-based metrics like accuracy and MAE
-            .query("match__start_date_time < @timezone.localtime()")
-            .astype({"is_correct": int})
-            .fillna(0)
-            .assign(
-                cumulative_correct_count=calculate_cumulative_correct,
-                cumulative_accuracy=calculate_cumulative_accuracy,
-                margin_diff=calculate_margin_diff,
-                bits=calculate_bits,
-            )
+            prediction_df.fillna(0)
+            .assign(bits=calculate_bits)
             .assign(
                 cumulative_margin_difference=calculate_sae,
                 cumulative_bits=calculate_cumulative_bits,
@@ -363,9 +375,9 @@ class SeasonType(graphene.ObjectType):
                 df.index.names[ROUND_NUMBER_LVL]: round_number_idx,
                 "model_metrics": df.xs(round_number_idx, level=ROUND_NUMBER_LVL),
                 "matches": Match.objects.filter(
-                    id__in=query_set.filter(
-                        match__round_number=round_number_idx
-                    ).values_list("match", flat=True)
+                    id__in=root.order_by("match__start_date_time")
+                    .filter(match__round_number=round_number_idx)
+                    .values_list("match", flat=True)
                 ),
             }
             for round_number_idx in df.index.levels[ROUND_NUMBER_LVL]

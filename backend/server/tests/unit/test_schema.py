@@ -9,7 +9,7 @@ from graphene.test import Client
 import numpy as np
 from freezegun import freeze_time
 
-from server.schema import schema
+from server.graphql import schema
 from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
 from server.models import Match, MLModel
 
@@ -116,6 +116,7 @@ class TestSchema(TestCase):
         FullMatchFactory(
             year=year,
             round_number=50,
+            start_date_time=timezone.make_aware(datetime(year, 10, 31)),
             prediction__ml_model=ml_models[0],
             prediction_two__ml_model=ml_models[1],
         )
@@ -316,9 +317,9 @@ class TestSchema(TestCase):
                     datetime(YEAR, MONTH, (idx % 29) + 1)
                 ),
                 prediction__ml_model=ml_models[0],
-                prediction__is_correct=True,
+                prediction__force_correct=True,
                 prediction_two__ml_model=ml_models[1],
-                prediction_two__is_correct=True,
+                prediction_two__force_correct=True,
             )
 
         query = """

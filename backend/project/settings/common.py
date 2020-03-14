@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 ]
 
-GRAPHENE = {"SCHEMA": "server.schema.schema"}
+GRAPHENE = {"SCHEMA": "server.graphql.schema"}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

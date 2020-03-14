@@ -9,7 +9,7 @@ from graphene.test import Client
 import numpy as np
 from freezegun import freeze_time
 
-from server.schema import schema
+from server.graphql import schema
 from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
 from server.models import Match, MLModel
 

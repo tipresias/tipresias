@@ -302,8 +302,6 @@ class SeasonType(graphene.ObjectType):
             )
         )
 
-        prediction_df = pd.DataFrame(query_set)
-
         # TODO: There's definitely a way to do these calculations via SQL, but chained
         # GROUP BYs and calculations based on calculations is a bit much for me
         # right now, so I'll come back and figure it out later
@@ -353,7 +351,8 @@ class SeasonType(graphene.ObjectType):
         )
 
         cumulative_stats = (
-            prediction_df.fillna(0)
+            pd.DataFrame(query_set)
+            .fillna(0)
             .assign(bits=calculate_bits)
             .assign(
                 cumulative_margin_difference=calculate_sae,
@@ -364,7 +363,18 @@ class SeasonType(graphene.ObjectType):
             .mean()
         )
 
-        collect_round_predictions = lambda rnd_num, df: [
+        round_number_filter = (
+            cumulative_stats.index.get_level_values(ROUND_NUMBER_LVL).max()
+            if round_number == -1
+            else round_number
+        )
+
+        if round_number_filter is not None:
+            cumulative_stats = cumulative_stats.loc[
+                (round_number_filter, slice(None)), :
+            ]
+
+        collect_round_predictions = lambda df: [
             {
                 df.index.names[ROUND_NUMBER_LVL]: round_number_idx,
                 "model_metrics": df.xs(round_number_idx, level=ROUND_NUMBER_LVL),
@@ -374,19 +384,12 @@ class SeasonType(graphene.ObjectType):
                     .values_list("match", flat=True)
                 ),
             }
-            for round_number_idx in df.index.levels[ROUND_NUMBER_LVL]
-            if rnd_num is None or round_number_idx == rnd_num
+            for round_number_idx in df.index.get_level_values(
+                ROUND_NUMBER_LVL
+            ).drop_duplicates()
         ]
 
-        round_number_filter = (
-            cumulative_stats.index.get_level_values(ROUND_NUMBER_LVL).max()
-            if round_number == -1
-            else round_number
-        )
-
-        return cumulative_stats.pipe(
-            partial(collect_round_predictions, round_number_filter)
-        )
+        return cumulative_stats.pipe(collect_round_predictions)
 
 
 class Query(graphene.ObjectType):

@@ -94,7 +94,7 @@ class Dashboard extends Component<Props, State> {
           </Widget>
 
           <Widget gridColumn="1 / -2">
-            <Query query={FETCH_LATEST_ROUND_STATS} variables={{ year, roundNumber: -1, mlModelName: 'tipresias_2019' }}>
+            <Query query={FETCH_LATEST_ROUND_STATS} variables={{ year, roundNumber: -1, mlModelName: 'tipresias_2020' }}>
               {(response: any): Node => {
                 const { loading, error, data } = response;
                 if (loading) return <p>Loading metrics...</p>;

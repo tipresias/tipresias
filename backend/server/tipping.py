@@ -9,6 +9,7 @@ import pandas as pd
 from splinter import Browser
 from splinter.driver import ElementAPI
 from django.utils import timezone
+from django.conf import settings
 
 from server.models import Match, TeamMatch, Prediction
 from server.types import FixtureData
@@ -239,7 +240,7 @@ class Tipping:
 
         latest_round_predictions = (
             Prediction.objects.filter(
-                ml_model__name="tipresias",
+                ml_model__name=settings.PRINCIPLE_ML_MODEL,
                 match__start_date_time__gt=timezone.make_aware(
                     datetime(latest_year, JAN, FIRST)
                 ),

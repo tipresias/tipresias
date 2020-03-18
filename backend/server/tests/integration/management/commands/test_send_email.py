@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
+from django.conf import settings
 from faker import Faker
 import numpy as np
 from freezegun import freeze_time
@@ -23,7 +24,7 @@ class TestSendEmail(TestCase):
         )
 
         # Save records in DB
-        ml_model = MLModelFactory(name="tipresias")
+        ml_model = MLModelFactory(name=settings.PRINCIPLE_ML_MODEL)
 
         for match_data in self.match_results_data.to_dict("records"):
             match_date = timezone.localtime(match_data["date"].to_pydatetime())

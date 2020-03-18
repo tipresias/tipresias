@@ -7,10 +7,11 @@ from typing import List, Union
 from django.core.management.base import BaseCommand
 from django.template.loader import get_template
 from django.utils import timezone
+from django.conf import settings
 import sendgrid
 from sendgrid.helpers.mail import Mail
 
-from server.models import Match, Prediction
+from server.models import Match
 
 JAN = 1
 FIRST = 1
@@ -21,7 +22,10 @@ PREDICTION_HEADERS = [
     "Away Team",
     "Predicted Winner",
     "Predicted Margin",
+    "Predicted Win Probability",
+    "Probability Predicts Different Team",
 ]
+CONFIDENCE_ML_MODEL = "confidence_estimator"
 
 
 class Command(BaseCommand):
@@ -44,44 +48,60 @@ class Command(BaseCommand):
         upcoming_match_year = upcoming_match.start_date_time.year
         upcoming_round = upcoming_match.round_number
 
-        upcoming_round_predictions = (
-            Prediction.objects.filter(
-                ml_model__name="tipresias",
-                match__start_date_time__gt=timezone.make_aware(
+        upcoming_matches = (
+            Match.objects.filter(
+                start_date_time__gt=timezone.make_aware(
                     datetime(upcoming_match_year, JAN, FIRST)
                 ),
-                match__round_number=upcoming_round,
+                round_number=upcoming_round,
             )
-            .select_related("match")
-            .prefetch_related("match__teammatch_set")
-            .order_by("match__start_date_time")
+            .prefetch_related("teammatch_set", "prediction_set")
+            .order_by("start_date_time")
         )
 
         prediction_rows = [
-            self.__map_prediction_to_row(prediction)
-            for prediction in upcoming_round_predictions
+            self.__map_prediction_to_row(match) for match in upcoming_matches
         ]
 
         self.__send_tips_email(prediction_rows, upcoming_round)
 
     @staticmethod
-    def __map_prediction_to_row(prediction: Prediction) -> List[Union[str, int]]:
-        match = prediction.match
+    def __map_prediction_to_row(match: Match) -> List[Union[str, int]]:
         home_team = match.teammatch_set.get(at_home=True).team.name
         away_team = match.teammatch_set.get(at_home=False).team.name
+
+        match_predictions = match.prediction_set
+
+        margin_prediction = match_predictions.get(
+            ml_model__name=settings.PRINCIPLE_ML_MODEL
+        )
+        probability_prediction = match_predictions.get(
+            ml_model__name=CONFIDENCE_ML_MODEL
+        )
+
+        different_winner_label = (
+            ""
+            if probability_prediction.predicted_winner.name
+            == margin_prediction.predicted_winner.name
+            else probability_prediction.predicted_winner.name
+        )
 
         return [
             str(match.start_date_time),
             home_team,
             away_team,
-            prediction.predicted_winner.name,
-            prediction.predicted_margin,
+            margin_prediction.predicted_winner.name,
+            margin_prediction.predicted_margin,
+            probability_prediction.predicted_win_probability,
+            different_winner_label,
         ]
 
     @staticmethod
     def __send_tips_email(
-        prediction_rows: List[Union[str, int]], latest_round: int
+        prediction_rows: List[List[Union[str, int]]], latest_round: int
     ) -> None:
+        assert len(PREDICTION_HEADERS) == len(prediction_rows[0])
+
         prediction_mail_params = {
             "prediction_headers": PREDICTION_HEADERS,
             "prediction_rows": prediction_rows,

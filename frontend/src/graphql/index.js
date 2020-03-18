@@ -41,7 +41,7 @@ query {
       awayTeam{
         name
       }
-      predictions(mlModelName: "tipresias_2019"){
+      predictions(mlModelName: "tipresias_2020"){
         mlModel{
           name
         }

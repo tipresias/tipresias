@@ -15,6 +15,9 @@ from typing import List, Dict, Any
 
 from .data_config import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
+
+PRINCIPLE_ML_MODEL = "tipresias_2020"
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 

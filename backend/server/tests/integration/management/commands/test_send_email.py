@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
+from django.conf import settings
 from faker import Faker
 import numpy as np
 from freezegun import freeze_time
@@ -23,7 +24,10 @@ class TestSendEmail(TestCase):
         )
 
         # Save records in DB
-        ml_model = MLModelFactory(name="tipresias")
+        ml_models = [
+            MLModelFactory(name=name)
+            for name in [settings.PRINCIPLE_ML_MODEL, "confidence_estimator"]
+        ]
 
         for match_data in self.match_results_data.to_dict("records"):
             match_date = timezone.localtime(match_data["date"].to_pydatetime())
@@ -33,8 +37,12 @@ class TestSendEmail(TestCase):
                 "venue": match_data["venue"],
             }
             prediction_attrs = {
-                "prediction__ml_model": ml_model,
+                "prediction__ml_model": ml_models[0],
                 "prediction__predicted_winner__name": np.random.choice(
+                    [match_data["home_team"], match_data["away_team"]]
+                ),
+                "prediction_two__ml_model": ml_models[1],
+                "prediction_two__predicted_winner__name": np.random.choice(
                     [match_data["home_team"], match_data["away_team"]]
                 ),
             }

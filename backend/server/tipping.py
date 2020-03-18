@@ -6,6 +6,7 @@ import os
 from warnings import warn
 
 import pandas as pd
+import numpy as np
 from splinter import Browser
 from splinter.driver import ElementAPI
 from django.utils import timezone
@@ -72,7 +73,9 @@ class Tipping:
             self._backfill_match_results()
             return None
 
-        self._create_matches(upcoming_matches.to_dict("records"), upcoming_round)
+        self._create_matches(
+            upcoming_matches.replace({np.nan: None}).to_dict("records"), upcoming_round
+        )
 
         upcoming_round_year = upcoming_matches["date"].max().year
 
@@ -189,7 +192,7 @@ class Tipping:
         )
         home_away_df = pivot_team_matches_to_matches(predictions)
 
-        for pred in home_away_df.to_dict("records"):
+        for pred in home_away_df.replace({np.nan: None}).to_dict("records"):
             Prediction.update_or_create_from_raw_data(pred)
 
         if self.verbose == 1:

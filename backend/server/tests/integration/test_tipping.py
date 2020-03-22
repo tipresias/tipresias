@@ -2,8 +2,6 @@
 import copy
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
-from unittest import skipIf
-import os
 
 from django.test import TestCase
 from django.utils import timezone
@@ -185,11 +183,6 @@ class TestTipping(TestCase):
         TeamFactory(name=match_data["away_team"])
 
 
-@skipIf(
-    os.getenv("CI", "").lower() == "true",
-    "Useful test for subtle, breaking changes, but way too long to run in CI. "
-    "Run manually on your machine to be safe",
-)
 class TestTippingEndToEnd(TestCase):
     @classmethod
     def setUpClass(cls):

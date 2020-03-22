@@ -71,7 +71,7 @@ class TestTipping(TestCase):
     def test_tip(self):
         with freeze_time(TIP_DATES[0]):
             right_now = timezone.localtime()
-            self.tipping.right_now = right_now
+            self.tipping._right_now = right_now  # pylint: disable=protected-access
 
             with self.subTest("with no existing match records in DB"):
                 self.assertEqual(Match.objects.count(), 0)
@@ -99,7 +99,7 @@ class TestTipping(TestCase):
         with freeze_time(TIP_DATES[1]):
             with self.subTest("with scoreless matches from ealier rounds"):
                 right_now = timezone.localtime()
-                self.tipping.right_now = right_now
+                self.tipping._right_now = right_now  # pylint: disable=protected-access
 
                 self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
                 self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)

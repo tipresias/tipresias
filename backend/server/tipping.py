@@ -36,10 +36,10 @@ class Tipping:
 
     def __init__(
         self,
-        fetch_data=True,
+        fetch_data: bool = True,
         data_importer=data_import,
-        ml_models=None,
-        submit_tips=True,
+        ml_models: Optional[str] = None,
+        submit_tips: bool = True,
     ) -> None:
         """
         Instantiate a Tipping object.
@@ -48,23 +48,29 @@ class Tipping:
         -------
         fetch_data: Whether to fetch up-to-date data or load saved data files.
         data_importer: Module used for importing data from remote sources.
-        ml_models: Which models to use when making tipping predictions.
+        ml_models: A list of names of models to use when making tipping predictions.
         submit_tips: Whether to submit the tips to the relevant competition websites.
         """
-        self.right_now = timezone.localtime()
-        self.current_year = self.right_now.year
         self.fetch_data = fetch_data
         self.data_importer = data_importer
         self.ml_models = ml_models
         self.submit_tips = submit_tips
-        self.verbose = 0
+
+        self._right_now = timezone.localtime()
+        self._current_year = self._right_now.year
+        self.verbose: int = 0
 
     def tip(self, verbose=1) -> None:
-        """Fetch and save predictions, then submit tips to competitions."""
-        self.verbose = verbose  # pylint: disable=W0201
-        self.data_importer.verbose = verbose
+        """
+        Fetch and save predictions, then submit tips to competitions.
 
-        fixture_data_frame = self._fetch_fixture_data(self.current_year)
+        Params:
+        -------
+        verbose: How much information to print. 1 prints all messages; 0 prints none.
+        """
+        self.verbose = verbose  # pylint: disable=W0201
+
+        fixture_data_frame = self._fetch_fixture_data(self._current_year)
         upcoming_round, upcoming_matches = self._select_upcoming_matches(
             fixture_data_frame
         )
@@ -114,16 +120,16 @@ class Tipping:
 
         latest_match_date = fixture_data_frame["date"].max()
 
-        if self.right_now > latest_match_date:
+        if self._right_now > latest_match_date:
             warn(
-                f"No matches found after {self.right_now}. The latest match "
+                f"No matches found after {self._right_now}. The latest match "
                 f"found is at {latest_match_date}\n"
             )
 
             return None, None
 
         upcoming_round = (
-            fixture_data_frame.query("date > @self.right_now")
+            fixture_data_frame.query("date > @self._right_now")
             .loc[:, "round_number"]
             .min()
         )
@@ -137,7 +143,7 @@ class Tipping:
         self, fixture_data: List[FixtureData], upcoming_round: int
     ) -> None:
         saved_match_count = Match.objects.filter(
-            start_date_time__gt=self.right_now, round_number=upcoming_round
+            start_date_time__gt=self._right_now, round_number=upcoming_round
         ).count()
 
         if saved_match_count > 0:
@@ -211,7 +217,7 @@ class Tipping:
             return None
 
         match_results = self.data_importer.fetch_match_results_data(
-            earliest_date_without_results, self.right_now, fetch_data=self.fetch_data
+            earliest_date_without_results, self._right_now, fetch_data=self.fetch_data
         )
 
         if not any(match_results):
@@ -223,7 +229,8 @@ class Tipping:
         return None
 
     def _submit_tips(self) -> None:
-        print("Submitting tips to footytips.com.au...")
+        if self.verbose == 1:
+            print("Submitting tips to footytips.com.au...")
 
         browser = Browser("firefox", headless=True)
         self._log_in(browser)
@@ -234,7 +241,8 @@ class Tipping:
         self._fill_in_tipping_form(predictions, match_elements)
         browser.find_by_css(".tipform-submit-button").first.click()
 
-        print("Tips submitted!")
+        if self.verbose == 1:
+            print("Tips submitted!")
 
     def _get_latest_round_predictions(self) -> Dict[str, int]:
         latest_match = Match.objects.latest("start_date_time")

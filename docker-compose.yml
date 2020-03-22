@@ -56,9 +56,15 @@ services:
     image: cfranklin11/tipresias_afl_data:latest
     ports:
       - "8080:8080"
+    depends_on:
+      - browser
     stdin_open: true
     tty: true
     command: Rscript app.R
+  browser:
+    image: selenium/standalone-chrome:3.141.59
+    ports:
+      - "4444:4444"
   db:
     image: postgres:11.6
     environment:

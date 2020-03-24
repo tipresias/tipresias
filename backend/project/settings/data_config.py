@@ -29,6 +29,13 @@ TEAM_TRANSLATIONS = {
     "Geelong Cats": "Geelong",
     "West Coast Eagles": "West Coast",
     "Sydney Swans": "Sydney",
+    # Monash footy tipping team names
+    "G_W_Sydney": "GWS",
+    "W_Bulldogs": "Western Bulldogs",
+    "P_Adelaide": "Port Adelaide",
+    "Gold_Coast": "Gold Coast",
+    "St_Kilda": "St Kilda",
+    "W_Coast": "West Coast",
 }
 
 VENUE_CITIES = {

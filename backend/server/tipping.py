@@ -1,7 +1,7 @@
 """Module for handling generation and saving of tips (i.e. predictions)."""
 
 from datetime import datetime
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Union, Literal, cast
 import os
 from warnings import warn
 
@@ -11,24 +11,140 @@ from splinter import Browser
 from splinter.driver import ElementAPI
 from django.utils import timezone
 from django.conf import settings
+from mypy_extensions import TypedDict
 
 from server.models import Match, TeamMatch, Prediction
 from server.types import FixtureData
 from server import data_import
 from server.helpers import pivot_team_matches_to_matches
+from project.settings.data_config import TEAM_TRANSLATIONS
+
+
+PredictedWinner = TypedDict(
+    "PredictedWinner",
+    {
+        "predicted_winner__name": str,
+        "predicted_margin": int,
+        "predicted_win_probability": float,
+    },
+)
+PredictionType = Union[
+    Literal["predicted_margin"], Literal["predicted_win_probability"]
+]
 
 
 FIRST_ROUND = 1
 JAN = 1
 FIRST = 1
 
-# Footytips has some different naming conventions from everyone else,
-# so we have to convert a few team names to match how they're displayed on the site
-FT_TEAM_TRANSLATIONS = {
-    "GWS": "GWS Giants",
-    "Brisbane": "Brisbane Lions",
-    "West Coast": "West Coast Eagles",
-}
+
+# There's also a 'gaussian' competition, but I don't participate in that one,
+# so leaving it out for now.
+SUPPORTED_MONASH_COMPS = ["normal", "info"]
+
+
+class MonashSubmitter:
+    """Submits tips to one or more of the Monash footy tipping competitions."""
+
+    def __init__(self, browser=Browser("firefox", headless=True), verbose: int = 1):
+        """
+        Instantiate a MonashSubmitter object.
+
+        Params:
+        -------
+        tips: A list of the tips to submit.
+        verbose: How much information to print. 1 prints all messages; 0 prints none.
+        """
+        self.browser = browser
+        self.verbose = verbose
+
+    def submit_tips(  # pylint: disable=dangerous-default-value
+        self,
+        predicted_winners: List[PredictedWinner],
+        competitions: List[str] = ["normal"],
+    ) -> None:
+        """Submit tips to probabilistic-footy.monash.edu.
+
+        Params:
+        -------
+        predicted_winners: A dict where the keys are team names and the values
+            are their predicted margins. Only includes predicted winners.
+        """
+
+        if self.verbose == 1:
+            print("Submitting tips to probabilistic-footy.monash.edu...")
+
+        for comp in competitions:
+            assert comp in SUPPORTED_MONASH_COMPS
+
+            # Need to revisit home page for each competition, because submitting tips
+            # doesn't redirect back to it.
+            self.browser.visit(
+                "http://probabilistic-footy.monash.edu/~footy/tips.shtml"
+            )
+            self._login(comp)
+            self._fill_in_tipping_form(
+                self._transform_into_tipping_input(predicted_winners, comp)
+            )
+
+            self._submit_form()
+
+            if self.verbose == 1:
+                print("Tips submitted!")
+
+    @staticmethod
+    def _transform_into_tipping_input(
+        predicted_winners: List[PredictedWinner], competition
+    ) -> Dict[str, Union[int, float]]:
+        PREDICTION_TYPE = {"normal": "margin", "info": "win_probability"}
+        competition_prediction_type = cast(
+            PredictionType, f"predicted_{PREDICTION_TYPE[competition]}",
+        )
+
+        return {
+            predicted_winner["predicted_winner__name"]: predicted_winner[
+                competition_prediction_type
+            ]
+            for predicted_winner in predicted_winners
+        }
+
+    def _login(self, competition: str) -> None:
+        login_form = self.browser.find_by_css("form")
+
+        login_form.find_by_name("name").fill(os.getenv("MONASH_USERNAME", ""))
+        login_form.find_by_name("passwd").fill(os.getenv("MONASH_PASSWORD", ""))
+        login_form.select("comp", competition)
+        # There's a round number select, but we don't need to change it,
+        # because it defaults to the upcoming/current round on page load.
+        login_form.find_by_css("input[type=submit]").click()
+
+    def _fill_in_tipping_form(self, predicted_winners: Dict[str, Union[int, float]]):
+        tip_table = self.browser.find_by_css("form table")
+
+        for table_row in tip_table.find_by_css("tr"):
+            self._enter_prediction(predicted_winners, table_row)
+
+    def _enter_prediction(self, predicted_winners, table_row) -> None:
+        for row_input in table_row.find_by_css("input"):
+            predicted_winner = None
+            team_name = self._translate_team_name(row_input.text)
+
+            if team_name in predicted_winners.keys():
+                row_input.click()
+                predicted_winner = row_input.text
+
+            if row_input.value.isnumeric():
+                row_input.fill(predicted_winners[predicted_winner])
+
+    @staticmethod
+    def _translate_team_name(element_text: str) -> str:
+        if element_text in TEAM_TRANSLATIONS.keys():
+            return TEAM_TRANSLATIONS[element_text]
+
+        return element_text
+
+    def _submit_form(self):
+        self.browser.find_by_css("input[type=submit]").click()
 
 
 class FootyTipsSubmitter:
@@ -45,40 +161,37 @@ class FootyTipsSubmitter:
         self.browser = browser
         self.verbose = verbose
 
-    def submit_tips(self, tips: Dict[str, int]) -> None:
+    def submit_tips(self, predicted_winners: List[PredictedWinner]) -> None:
         """
         Submit tips to footytips.com.au.
 
         Params:
         -------
-        tips: A dict where the keys are team names and the values .
+        predicted_winners: A dict where the keys are team names and the values
+            are their predicted margins. Only includes predicted winners.
         """
         if self.verbose == 1:
             print("Submitting tips to footytips.com.au...")
 
         self._log_in()
 
-        translated_tips = {
-            self._translate_team_name(tip["predicted_winner__name"]): tip[
-                "predicted_margin"
-            ]
-            for tip in tips
-        }
-
-        match_elements = self.browser.find_by_css(".tipping-container")
-
-        self._fill_in_tipping_form(translated_tips, match_elements)
+        self._fill_in_tipping_form(
+            self._transform_into_tipping_input(predicted_winners)
+        )
         self._submit_form()
 
         if self.verbose == 1:
             print("Tips submitted!")
 
-    @staticmethod
-    def _translate_team_name(team_name: str) -> str:
-        if team_name not in FT_TEAM_TRANSLATIONS:
-            return team_name
-
-        return FT_TEAM_TRANSLATIONS[team_name]
+    def _transform_into_tipping_input(
+        self, predicted_winners: List[PredictedWinner]
+    ) -> Dict[str, int]:
+        return {
+            self._translate_team_name(
+                predicted_winner["predicted_winner__name"]
+            ): predicted_winner["predicted_margin"]
+            for predicted_winner in predicted_winners
+        }
 
     def _log_in(self):
         self.browser.visit("https://www.footytips.com.au/tipping/afl/")
@@ -92,12 +205,12 @@ class FootyTipsSubmitter:
         )
         login_form.find_by_id("signin-ft").click()
 
-    def _fill_in_tipping_form(
-        self, predictions: Dict[str, int], match_elements: ElementAPI
-    ):
+    def _fill_in_tipping_form(self, predicted_winners: Dict[str, int]):
+        match_elements = self.browser.find_by_css(".tipping-container")
+
         for match_element in match_elements:
             predicted_winner, predicted_margin = self._get_match_prediction(
-                predictions, match_element
+                predicted_winners, match_element
             )
 
             if predicted_winner is None or predicted_margin is None:
@@ -124,17 +237,24 @@ class FootyTipsSubmitter:
 
         return None, None
 
-    @staticmethod
     def _select_predicted_winner(
-        predicted_winner: str, match_element: ElementAPI
+        self, predicted_winner: str, match_element: ElementAPI
     ) -> None:
-        team_matches = match_element.find_by_css(".tip-selection")
+        for team_name_element in match_element.find_by_css(".team-name.team-full"):
+            if (
+                self._translate_team_name(team_name_element.text) == predicted_winner
+                and team_name_element.visible
+            ):
+                # Even though it's not an input element, triggering a click
+                # on the team name still triggers the associated radio button.
+                team_name_element.click()
 
-        for team_match in team_matches:
-            team_match_input = team_match.find_by_css(".radio-button")
+    @staticmethod
+    def _translate_team_name(element_text: str) -> str:
+        if element_text in TEAM_TRANSLATIONS.keys():
+            return TEAM_TRANSLATIONS[element_text]
 
-            if predicted_winner in team_match.text and team_match_input.visible:
-                team_match_input.click()
+        return element_text
 
     @staticmethod
     def _fill_in_predicted_margin(
@@ -209,7 +329,9 @@ class Tipping:
         self._backfill_match_results()
 
         if self.submit_tips:
-            self.tip_submitter.submit_tips(self._get_latest_round_predictions())
+            self.tip_submitter.submit_tips(
+                self._get_predicted_winners_for_latest_round()
+            )
 
         return None
 
@@ -349,7 +471,7 @@ class Tipping:
         return None
 
     @staticmethod
-    def _get_latest_round_predictions() -> Dict[str, int]:
+    def _get_predicted_winners_for_latest_round() -> List[PredictedWinner]:
         latest_match = Match.objects.latest("start_date_time")
         latest_year = latest_match.start_date_time.year
         latest_round = latest_match.round_number
@@ -364,7 +486,11 @@ class Tipping:
             )
             .select_related("match")
             .prefetch_related("match__teammatch_set__team")
-            .values("predicted_winner__name", "predicted_margin")
+            .values(
+                "predicted_winner__name",
+                "predicted_margin",
+                "predicted_win_probability",
+            )
         )
 
         assert any(

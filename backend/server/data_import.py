@@ -73,7 +73,7 @@ def _fetch_data(
 ) -> List[Dict[str, Any]]:
     params = params or {}
 
-    if os.getenv("PYTHON_ENV") == "production":
+    if os.getenv("PYTHON_ENV") == "production" or bool(os.getenv("CI")):
         service_host = DATA_SCIENCE_SERVICE
         headers = {"Authorization": f'Bearer {os.getenv("GCPF_TOKEN")}'}
     else:

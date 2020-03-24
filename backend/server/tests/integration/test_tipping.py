@@ -2,8 +2,6 @@
 import copy
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
-from unittest import skipIf
-import os
 
 from django.test import TestCase
 from django.utils import timezone
@@ -12,7 +10,7 @@ from freezegun import freeze_time
 import pandas as pd
 
 from server.models import Match, TeamMatch, Prediction
-from server.tipping import Tipping
+from server.tipping import Tipper
 from server import data_import
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
@@ -25,7 +23,7 @@ TIP_DATES = [
 ]
 
 
-class TestTipping(TestCase):
+class TestTipper(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -64,14 +62,14 @@ class TestTipping(TestCase):
         )
 
         # Not fetching data, because it takes forever
-        self.tipping = Tipping(
-            fetch_data=False, data_importer=mock_data_import, submit_tips=False
+        self.tipping = Tipper(
+            fetch_data=False, data_importer=mock_data_import, tip_submitters=[]
         )
 
     def test_tip(self):
         with freeze_time(TIP_DATES[0]):
             right_now = timezone.localtime()
-            self.tipping.right_now = right_now
+            self.tipping._right_now = right_now  # pylint: disable=protected-access
 
             with self.subTest("with no existing match records in DB"):
                 self.assertEqual(Match.objects.count(), 0)
@@ -99,7 +97,7 @@ class TestTipping(TestCase):
         with freeze_time(TIP_DATES[1]):
             with self.subTest("with scoreless matches from ealier rounds"):
                 right_now = timezone.localtime()
-                self.tipping.right_now = right_now
+                self.tipping._right_now = right_now  # pylint: disable=protected-access
 
                 self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
                 self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)
@@ -185,12 +183,7 @@ class TestTipping(TestCase):
         TeamFactory(name=match_data["away_team"])
 
 
-@skipIf(
-    os.getenv("CI", "").lower() == "true",
-    "Useful test for subtle, breaking changes, but way too long to run in CI. "
-    "Run manually on your machine to be safe",
-)
-class TestTippingEndToEnd(TestCase):
+class TestTipperEndToEnd(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -201,7 +194,7 @@ class TestTippingEndToEnd(TestCase):
             TeamFactory(name=team_name)
 
     def setUp(self):
-        self.tipping = Tipping(ml_models=settings.PRINCIPLE_ML_MODEL, submit_tips=False)
+        self.tipping = Tipper(ml_models=settings.PRINCIPLE_ML_MODEL, tip_submitters=[])
 
     def test_tip(self):
         self.assertEqual(Match.objects.count(), 0)

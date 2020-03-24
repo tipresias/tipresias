@@ -10,7 +10,7 @@ from freezegun import freeze_time
 import pandas as pd
 
 from server.models import Match, TeamMatch, Prediction
-from server.tipping import Tipping
+from server.tipping import Tipper
 from server import data_import
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
@@ -23,7 +23,7 @@ TIP_DATES = [
 ]
 
 
-class TestTipping(TestCase):
+class TestTipper(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -62,8 +62,8 @@ class TestTipping(TestCase):
         )
 
         # Not fetching data, because it takes forever
-        self.tipping = Tipping(
-            fetch_data=False, data_importer=mock_data_import, submit_tips=False
+        self.tipping = Tipper(
+            fetch_data=False, data_importer=mock_data_import, tip_submitters=[]
         )
 
     def test_tip(self):
@@ -183,7 +183,7 @@ class TestTipping(TestCase):
         TeamFactory(name=match_data["away_team"])
 
 
-class TestTippingEndToEnd(TestCase):
+class TestTipperEndToEnd(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -194,7 +194,7 @@ class TestTippingEndToEnd(TestCase):
             TeamFactory(name=team_name)
 
     def setUp(self):
-        self.tipping = Tipping(ml_models=settings.PRINCIPLE_ML_MODEL, submit_tips=False)
+        self.tipping = Tipper(ml_models=settings.PRINCIPLE_ML_MODEL, tip_submitters=[])
 
     def test_tip(self):
         self.assertEqual(Match.objects.count(), 0)

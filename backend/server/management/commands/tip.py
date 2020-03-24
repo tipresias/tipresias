@@ -2,7 +2,7 @@
 
 from django.core.management.base import BaseCommand
 
-from server.tipping import Tipping
+from server.tipping import Tipper
 
 
 class Command(BaseCommand):
@@ -15,4 +15,4 @@ class Command(BaseCommand):
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
         """Run 'tip' command."""
-        Tipping(submit_tips=True).tip(verbose=verbose)
+        Tipper().tip(verbose=verbose)

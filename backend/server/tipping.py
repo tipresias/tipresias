@@ -1,7 +1,7 @@
 """Module for handling generation and saving of tips (i.e. predictions)."""
 
 from datetime import datetime
-from typing import List, Optional, Dict, Tuple, Union, Literal, cast
+from typing import List, Optional, Dict, Tuple, Union, Literal, cast, Any
 import os
 from warnings import warn
 
@@ -41,27 +41,34 @@ FIRST = 1
 # There's also a 'gaussian' competition, but I don't participate in that one,
 # so leaving it out for now.
 SUPPORTED_MONASH_COMPS = ["normal", "info"]
+MODELS_FOR_COMPETITIONS = [settings.PRINCIPLE_ML_MODEL, "confidence_estimator"]
 
 
 class MonashSubmitter:
     """Submits tips to one or more of the Monash footy tipping competitions."""
 
-    def __init__(self, browser=Browser("firefox", headless=True), verbose: int = 1):
+    def __init__(  # pylint: disable=dangerous-default-value
+        self,
+        competitions: List[str] = ["normal", "info"],
+        browser=Browser("firefox", headless=True),
+        verbose: int = 1,
+    ):
         """
         Instantiate a MonashSubmitter object.
 
         Params:
         -------
-        tips: A list of the tips to submit.
+        competitions: Names of the different Monash competitions.
+            Based on the option value of the select input for logging into
+            a competition.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
+        self.competitions = competitions
         self.browser = browser
         self.verbose = verbose
 
     def submit_tips(  # pylint: disable=dangerous-default-value
-        self,
-        predicted_winners: List[PredictedWinner],
-        competitions: List[str] = ["normal"],
+        self, predicted_winners: List[PredictedWinner],
     ) -> None:
         """Submit tips to probabilistic-footy.monash.edu.
 
@@ -74,7 +81,7 @@ class MonashSubmitter:
         if self.verbose == 1:
             print("Submitting tips to probabilistic-footy.monash.edu...")
 
-        for comp in competitions:
+        for comp in self.competitions:
             assert comp in SUPPORTED_MONASH_COMPS
 
             # Need to revisit home page for each competition, because submitting tips
@@ -106,6 +113,7 @@ class MonashSubmitter:
                 competition_prediction_type
             ]
             for predicted_winner in predicted_winners
+            if predicted_winner[competition_prediction_type] is not None
         }
 
     def _login(self, competition: str) -> None:
@@ -120,8 +128,15 @@ class MonashSubmitter:
 
     def _fill_in_tipping_form(self, predicted_winners: Dict[str, Union[int, float]]):
         tip_table = self.browser.find_by_css("form table")
+        table_rows = tip_table.find_by_css("tr")
 
-        for table_row in tip_table.find_by_css("tr"):
+        assert len(table_rows) == len(predicted_winners), (
+            "The number of predicted winners doesn't match the number of matches. "
+            "Check the given predicted winners below:\n"
+            f"{predicted_winners}"
+        )
+
+        for table_row in table_rows:
             self._enter_prediction(predicted_winners, table_row)
 
     def _enter_prediction(self, predicted_winners, table_row) -> None:
@@ -191,6 +206,7 @@ class FootyTipsSubmitter:
                 predicted_winner["predicted_winner__name"]
             ): predicted_winner["predicted_margin"]
             for predicted_winner in predicted_winners
+            if predicted_winner["predicted_margin"] is not None
         }
 
     def _log_in(self):
@@ -207,6 +223,12 @@ class FootyTipsSubmitter:
 
     def _fill_in_tipping_form(self, predicted_winners: Dict[str, int]):
         match_elements = self.browser.find_by_css(".tipping-container")
+
+        assert len(match_elements) == len(predicted_winners), (
+            "The number of predicted winners doesn't match the number of matches. "
+            "Check the given predicted winners below:\n"
+            f"{predicted_winners}"
+        )
 
         for match_element in match_elements:
             predicted_winner, predicted_margin = self._get_match_prediction(
@@ -269,16 +291,15 @@ class FootyTipsSubmitter:
         self.browser.find_by_css(".tipform-submit-button").first.click()
 
 
-class Tipping:
+class Tipper:
     """Handles generation and saving of tips (i.e. predictions)."""
 
-    def __init__(
+    def __init__(  # pylint: disable=dangerous-default-value
         self,
         fetch_data: bool = True,
         data_importer=data_import,
-        tip_submitter=FootyTipsSubmitter(),
-        ml_models: Optional[str] = None,
-        submit_tips: bool = True,
+        tip_submitters: List[Any] = [FootyTipsSubmitter(), MonashSubmitter()],
+        ml_models: Optional[List[str]] = None,
     ) -> None:
         """
         Instantiate a Tipping object.
@@ -292,12 +313,10 @@ class Tipping:
         """
         self.fetch_data = fetch_data
         self.data_importer = data_importer
-        self.tip_submitter = tip_submitter
+        self.tip_submitters = tip_submitters
         self.ml_models = ml_models
-        self.submit_tips = submit_tips
 
         self._right_now = timezone.localtime()
-        self._current_year = self._right_now.year
         self.verbose: int = 0
 
     def tip(self, verbose=1) -> None:
@@ -310,7 +329,7 @@ class Tipping:
         """
         self.verbose = verbose  # pylint: disable=W0201
 
-        fixture_data_frame = self._fetch_fixture_data(self._current_year)
+        fixture_data_frame = self._fetch_fixture_data(self._right_now.year)
         upcoming_round, upcoming_matches = self._select_upcoming_matches(
             fixture_data_frame
         )
@@ -328,10 +347,9 @@ class Tipping:
         self._make_predictions(upcoming_round_year, upcoming_round)
         self._backfill_match_results()
 
-        if self.submit_tips:
-            self.tip_submitter.submit_tips(
-                self._get_predicted_winners_for_latest_round()
-            )
+        for submitter in self.tip_submitters:
+            submitter.verbose = self.verbose
+            submitter.submit_tips(self._get_predicted_winners_for_latest_round())
 
         return None
 
@@ -478,7 +496,7 @@ class Tipping:
 
         latest_round_predictions = (
             Prediction.objects.filter(
-                ml_model__name=settings.PRINCIPLE_ML_MODEL,
+                ml_model__name__in=MODELS_FOR_COMPETITIONS,
                 match__start_date_time__gt=timezone.make_aware(
                     datetime(latest_year, JAN, FIRST)
                 ),

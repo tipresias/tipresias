@@ -154,7 +154,7 @@ class Command(BaseCommand):
 
     def _make_predictions(self) -> None:
         predictions = self.data_importer.fetch_prediction_data(
-            self._year_range, ml_models=[self.ml_model]
+            self._year_range, ml_models=[self.ml_model], train_models=True
         )
         home_away_df = pivot_team_matches_to_matches(predictions)
 

@@ -20,14 +20,17 @@ RUN yarn run build \
 # their own.
 # Using slim-buster instead of alpine based on this GH comment:
 # https://github.com/docker-library/python/issues/381#issuecomment-464258800
-# TODO: Might be able to switch to alpine when we remove pandas and/or numpy
-# as dependencies
 FROM python:3.8.1-slim-buster@sha256:dc9c4de1bb38720f70af28e8071f324052725ba122878fbac784be9b03f41590
 
 # Install linux packages
 RUN apt-get --no-install-recommends update \
   # g++ is a dependency of gcc, so must come before
-  && apt-get -y --no-install-recommends install g++ gcc \
+  # Install firefox & geckodriver for use by selenium
+  && apt-get -y --no-install-recommends install g++ gcc  wget firefox-esr \
+  && wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz \
+  && tar -xvzf geckodriver* \
+  && chmod +x geckodriver \
+  && mv geckodriver /usr/local/bin/ \
   && rm -rf /var/lib/apt/lists/*
 
 # Set up backend dependencies & code

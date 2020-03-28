@@ -32,6 +32,7 @@ class Command(BaseCommand):
         Instantiate the seed_db Command.
 
         Params:
+        -------
         fetch_data: Whether to fetch fresh data or load existing data files.
         data_importer: Module for fetching data from external sources.
         verbose: How much information should be printed.
@@ -47,9 +48,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """
-        Accept an ML model name as an argument.
+        Add arguments to the seed_db django command.
 
-        This allows us to only seed predictions for one model rather than all of them.
+        Adds the following arguments:
+        --ml_model: Name of an MLModel. This will be the only model whose predictions
+            are seeded.
 
         Params:
         -------

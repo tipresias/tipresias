@@ -93,14 +93,14 @@ class TestSeedDb(TestCase):
         with self.subTest(
             "with invalid year_range argument due to it being a single year"
         ):
-            with self.assertRaises(ValueError):
+            with self.assertRaises(AssertionError):
                 self.seed_command.handle(year_range="2015", verbose=0)
 
         with self.subTest(
             "with invalid year_range argument due to years being separated by an invalid symbol"
         ):
             for symbol in [".", "_", ",", "/", "|"]:
-                with self.assertRaises(ValueError):
+                with self.assertRaises(AssertionError):
                     self.seed_command.handle(
                         year_range=f"{self.years[0]}{symbol}{self.years[1]}", verbose=0
                     )

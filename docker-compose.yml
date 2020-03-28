@@ -49,7 +49,6 @@ services:
       - afl_data
     env_file: .env
     environment:
-      - PYTHON_ENV=development
       - PYTHONPATH=./src
     command: python3 app.py
   afl_data:

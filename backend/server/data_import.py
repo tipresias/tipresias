@@ -96,6 +96,7 @@ def fetch_prediction_data(
     year_range: Tuple[int, int],
     round_number: Optional[int] = None,
     ml_models: Optional[List[str]] = None,
+    train_models: Optional[bool] = False,
 ) -> pd.DataFrame:
     """
     Fetch prediction data from machine_learning module.
@@ -121,6 +122,7 @@ def fetch_prediction_data(
                 "year_range": year_range_param,
                 "round_number": round_number,
                 "ml_models": ml_model_param,
+                "train_models": train_models,
             },
         )
     )

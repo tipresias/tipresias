@@ -16,7 +16,7 @@ services:
       - DJANGO_SETTINGS_MODULE=project.settings.development
       - DATABASE_HOST=db
       - GRAPHIQL=True
-    command: ./scripts/wait-for-it.sh data_science:8008 -- python3 manage.py runserver 0.0.0.0:8000
+    command: ./scripts/wait-for-it.sh data_science:8008 -t 30 -- python3 manage.py runserver 0.0.0.0:8000
   frontend:
     build: ./frontend
     volumes:

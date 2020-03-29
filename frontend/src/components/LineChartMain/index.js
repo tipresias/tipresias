@@ -23,9 +23,10 @@ type NewDataSet = Array<NewDataItem>
 
 const dataTransformer = (previousDataSet: PreviousDataSet): NewDataSet => {
   const newDataSet = previousDataSet.reduce((acc, currentItem, currentIndex) => {
+    const { roundNumber, modelMetrics } = currentItem;
     acc[currentIndex] = acc[currentIndex] || {};
-    acc[currentIndex].roundNumber = currentItem.roundNumber;
-    currentItem.modelPredictions.forEach((item) => {
+    acc[currentIndex].roundNumber = roundNumber;
+    modelMetrics.forEach((item) => {
       const { modelName } = item;
       acc[currentIndex][modelName] = item.cumulativeAccuracy;
     });

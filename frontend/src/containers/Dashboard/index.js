@@ -26,10 +26,14 @@ type State = {
 type Props = {};
 
 const Widget = styled.div`${WidgetStyles}`;
+// TODO: CONSTANTS: this values should be prefetched from Query.
+const DEFAULT_MAIN_MODEL = 'tipresias'; // add some isDefault in graphql query to know what model load as default.
+const LATEST_YEAR = 2019;
 
 class Dashboard extends Component<Props, State> {
+  // make this dinamyc frmo query data
   state = {
-    year: 2019,
+    year: LATEST_YEAR,
   };
 
   onChangeYear = (event: SyntheticEvent<HTMLSelectElement>): void => {
@@ -76,7 +80,7 @@ class Dashboard extends Component<Props, State> {
 
           <Widget gridColumn="1 / -1">
             <WidgetHeading>Predictions</WidgetHeading>
-            <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
+            <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY} variables={{ mlModelName: DEFAULT_MAIN_MODEL }}>
               {(response: any): Node => {
                 const { loading, error, data } = response;
                 if (loading) return <p>Loading predictions...</p>;
@@ -98,7 +102,7 @@ class Dashboard extends Component<Props, State> {
           </Widget>
 
           <Widget gridColumn="1 / -2">
-            <Query query={FETCH_LATEST_ROUND_STATS} variables={{ year, roundNumber: -1, mlModelName: 'tipresias_2020' }}>
+            <Query query={FETCH_LATEST_ROUND_STATS} variables={{ year, roundNumber: -1, mlModelName: DEFAULT_MAIN_MODEL }}>
               {(response: any): Node => {
                 const { loading, error, data } = response;
                 if (loading) return <p>Loading metrics...</p>;

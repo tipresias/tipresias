@@ -304,6 +304,7 @@ class SeasonType(graphene.ObjectType):
                 "match__margin",
                 "margin_diff",
                 "cumulative_correct_count",
+                "cumulative_accuracy",
             )
         )
 

@@ -41,7 +41,6 @@ FIRST = 1
 # There's also a 'gaussian' competition, but I don't participate in that one,
 # so leaving it out for now.
 SUPPORTED_MONASH_COMPS = ["normal", "info"]
-MODELS_FOR_COMPETITIONS = [settings.PRINCIPLE_ML_MODEL, "confidence_estimator"]
 
 
 class MonashSubmitter:
@@ -496,7 +495,7 @@ class Tipper:
 
         latest_round_predictions = (
             Prediction.objects.filter(
-                ml_model__name__in=MODELS_FOR_COMPETITIONS,
+                ml_model__name__in=settings.COMPETITION_ML_MODELS,
                 match__start_date_time__gt=timezone.make_aware(
                     datetime(latest_year, JAN, FIRST)
                 ),

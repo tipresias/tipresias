@@ -5,11 +5,12 @@ from typing import List
 import graphene
 from django.db.models import QuerySet
 from django.utils import timezone
+from django.conf import settings
 import pandas as pd
 
-from server.models import Prediction, Match
+from server.models import Prediction, Match, MLModel
 from server.types import RoundPrediction
-from .types import SeasonType, PredictionType, RoundType
+from .types import SeasonType, PredictionType, RoundType, MLModelType
 
 
 class Query(graphene.ObjectType):
@@ -37,6 +38,19 @@ class Query(graphene.ObjectType):
         description=(
             "Match info and predictions for the latest round for which data "
             "is available"
+        ),
+    )
+
+    fetch_ml_models = graphene.List(
+        MLModelType,
+        for_competition_only=graphene.Boolean(
+            default_value=False,
+            description=(
+                "competition_only: Whether to filter ML models such that only "
+                "the models whose predictions are submitted to competitions "
+                "are returned. There are no more than one model per type of prediction "
+                "(e.g. margin, win probability)."
+            ),
         ),
     )
 
@@ -84,3 +98,23 @@ class Query(graphene.ObjectType):
             "model_metrics": pd.DataFrame(),
             "matches": matches,
         }
+
+    @staticmethod
+    def resolve_fetch_ml_models(
+        _root, _info, for_competition_only: bool
+    ) -> List[MLModel]:
+        """
+        Return machine-learning models.
+
+        Params:
+        -------
+        for_competition_only: Whether to filter ML models such that only the models
+            whose predictions are submitted to competitions are returned.
+        """
+
+        ml_models = MLModel.objects
+
+        if for_competition_only:
+            return ml_models.filter(name__in=settings.COMPETITION_ML_MODELS)
+
+        return ml_models.all()

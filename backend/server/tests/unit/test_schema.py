@@ -5,6 +5,7 @@ from dateutil import parser
 
 from django.test import TestCase
 from django.utils import timezone
+from django.conf import settings
 from graphene.test import Client
 import numpy as np
 from freezegun import freeze_time
@@ -383,6 +384,43 @@ class TestSchema(TestCase):
                 self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
                 self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
                 self.assertGreater(model_stats["cumulativeMarginDifference"], 0)
+
+    def test_fetch_ml_models(self):
+        N_MODELS = 3
+
+        for _ in range(N_MODELS):
+            MLModelFactory()
+
+        query = """
+            query QueryType {
+                fetchMlModels {
+                    name
+                    forCompetition
+                }
+            }
+        """
+
+        data = self.client.execute(query)["data"]["fetchMlModels"]
+        self.assertEqual(len(data), N_MODELS + len(MODEL_NAMES))
+
+        with self.subTest("when forCompetitionsOnly is true"):
+            for name in settings.COMPETITION_ML_MODELS:
+                MLModelFactory(name=name)
+
+            query = """
+                query QueryType {
+                    fetchMlModels(forCompetitionOnly: true) {
+                        name
+                        forCompetition
+                    }
+                }
+            """
+            data = self.client.execute(query)["data"]["fetchMlModels"]
+
+            self.assertEqual(len(data), len(settings.COMPETITION_ML_MODELS))
+
+            for model in data:
+                self.assertTrue(model["forCompetition"])
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

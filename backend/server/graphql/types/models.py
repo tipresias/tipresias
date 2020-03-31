@@ -2,6 +2,7 @@
 
 import graphene
 from graphene_django.types import DjangoObjectType
+from django.conf import settings
 
 from server.models import Team, Prediction, Match, TeamMatch, MLModel
 
@@ -75,3 +76,12 @@ class MLModelType(DjangoObjectType):
         """For adding Django model attributes to their associated GraphQL types."""
 
         model = MLModel
+
+    for_competition = graphene.Boolean(
+        description="Whether the model's predictions are used in any competitions."
+    )
+
+    @staticmethod
+    def resolve_for_competition(root: MLModel, _info):
+        """"Return whether the model is used for competitions."""
+        return root.name in settings.COMPETITION_ML_MODELS

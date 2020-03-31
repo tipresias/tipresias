@@ -17,6 +17,8 @@ from .data_config import *  # pylint: disable=wildcard-import,unused-wildcard-im
 
 
 PRINCIPLE_ML_MODEL = "tipresias_2020"
+CONFIDENCE_ML_MODEL = "confidence_estimator"
+COMPETITION_ML_MODELS = [PRINCIPLE_ML_MODEL, CONFIDENCE_ML_MODEL]
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))

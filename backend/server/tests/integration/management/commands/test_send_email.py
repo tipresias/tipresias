@@ -25,8 +25,7 @@ class TestSendEmail(TestCase):
 
         # Save records in DB
         ml_models = [
-            MLModelFactory(name=name)
-            for name in [settings.PRINCIPLE_ML_MODEL, "confidence_estimator"]
+            MLModelFactory(name=name) for name in settings.COMPETITION_ML_MODELS
         ]
 
         for match_data in self.match_results_data.to_dict("records"):

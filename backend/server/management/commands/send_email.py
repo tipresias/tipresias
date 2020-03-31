@@ -25,7 +25,6 @@ PREDICTION_HEADERS = [
     "Predicted Win Probability",
     "Probability Predicts Different Team",
 ]
-CONFIDENCE_ML_MODEL = "confidence_estimator"
 
 
 class Command(BaseCommand):
@@ -76,7 +75,7 @@ class Command(BaseCommand):
             ml_model__name=settings.PRINCIPLE_ML_MODEL
         )
         probability_prediction = match_predictions.get(
-            ml_model__name=CONFIDENCE_ML_MODEL
+            ml_model__name=settings.CONFIDENCE_ML_MODEL
         )
 
         different_winner_label = (

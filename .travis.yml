@@ -43,9 +43,9 @@ script:
   # Integration/system tests
   - ./backend/scripts/integration_tests.sh
   - ./scripts/browser_tests.sh
-  - mv ./backend/.coverage ./
 after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+  - ./cc-test-reporter format-coverage -t coverage.py ./backend/coverage.xml
+  - if [[ "$TRAVIS_TEST_RESULT" == 0 ]]; then ./cc-test-reporter upload-coverage; fi
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_backend:latest

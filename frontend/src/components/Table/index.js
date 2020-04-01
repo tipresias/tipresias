@@ -2,7 +2,6 @@
 import React from 'react';
 import type { Node } from 'react';
 import styled from 'styled-components/macro';
-import { dataTransformer } from './dataTransformer';
 import type { MatchesType } from '../../types';
 
 const StyledTable = styled.table`
@@ -34,14 +33,13 @@ text-align: left;
 type Props = {
   caption: string,
   headers: Array<string>,
-  rows: MatchesType
+  rows: ?MatchesType
 }
 
 const Table = ({ caption, headers, rows }: Props): Node => {
   if (!rows || rows.length === 0) {
     return <div>Data not found</div>;
   }
-  const rowsArray = dataTransformer(rows);
 
   return (
     <StyledTable>
@@ -55,7 +53,7 @@ const Table = ({ caption, headers, rows }: Props): Node => {
           }
         </tr>
         {
-          rowsArray && rowsArray.length > 0 && rowsArray.map(row => (
+          rows && rows.length > 0 && rows.map(row => (
             <tr key={Math.random()}>
               {row.map(value => (
                 <StyledDataCell key={value}>{value}</StyledDataCell>

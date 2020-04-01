@@ -5,7 +5,6 @@ import type { Node } from 'react';
 import { Query } from '@apollo/react-components';
 import styled from 'styled-components/macro';
 import {
-  FETCH_PREDICTION_YEARS_QUERY,
   FETCH_YEARLY_PREDICTIONS_QUERY,
   FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
   FETCH_LATEST_ROUND_STATS,
@@ -15,12 +14,12 @@ import Select from '../../components/Select';
 import BarChartLoading from '../../components/BarChartLoading';
 import StatusBar from '../../components/StatusBar';
 import DefinitionList from '../../components/DefinitionList';
-import Table from '../../components/Table';
+// import Table from '../../components/Table';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import {
   WidgetStyles, WidgetHeading, WidgetFooter, DashboardContainerStyled,
 } from './style';
-
+import { dataTransformer } from './dataTransformer';
 
 type DashboardProps = {
   defaultModel: string,
@@ -53,7 +52,7 @@ const Dashboard = ({ defaultModel, years }: DashboardProps) => {
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
             {(response: any): Node => {
               const { loading, error, data } = response;
-              if (loading) return <BarChartLoading text="Yearly Predictions go Brrrrr ..." />;
+              if (loading) return <BarChartLoading text="Brrrrr ..." />;
               if (error) return <StatusBar text={error.message} error />;
               if (data.fetchYearlyPredictions.predictionsByRound.length === 0) return <StatusBar text="No data found" empty />;
               return <LineChartMain models={data.fetchYearlyPredictions.predictionModelNames} data={data.fetchYearlyPredictions.predictionsByRound} />;
@@ -66,22 +65,30 @@ const Dashboard = ({ defaultModel, years }: DashboardProps) => {
 
         <Widget gridColumn="1 / -1">
           <WidgetHeading>Predictions</WidgetHeading>
-          <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY} variables={{ mlModelName: defaultModel }}>
+          <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
             {(response: any): Node => {
               const { loading, error, data } = response;
-              if (loading) return <p>Predictions go Brrrrrr...</p>;
+              if (loading) return <p>Brrrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
               if (data.fetchLatestRoundPredictions.matches.length === 0) return <StatusBar text="No data found" empty />;
 
-              const seasonYear = data.fetchLatestRoundPredictions.matches[0].year;
-              const { roundNumber } = data.fetchLatestRoundPredictions;
+              // const seasonYear = data.fetchLatestRoundPredictions.matches[0].year;
+              // const { roundNumber } = data.fetchLatestRoundPredictions;
 
+              const rowsArray = dataTransformer(data.fetchLatestRoundPredictions.matches);
+              console.log('rowsArray >>>', rowsArray);
+
+              // if (rowsArray.length === 0) {
+              //   return <StatusBar text="No data available." error />;
+              // }
+
+              // <Table
+              //   caption={`Tipresias predictions for matches of round ${roundNumber}, season ${seasonYear}`}
+              //   headers={['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?']}
+              //   rows={rowsArray}
+              // />
               return (
-                <Table
-                  caption={`Tipresias predictions for matches of round ${roundNumber}, season ${seasonYear}`}
-                  headers={['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?']}
-                  rows={data.fetchLatestRoundPredictions.matches}
-                />
+                <div>wip</div>
               );
             }}
           </Query>
@@ -91,7 +98,7 @@ const Dashboard = ({ defaultModel, years }: DashboardProps) => {
           <Query query={FETCH_LATEST_ROUND_STATS} variables={{ year, roundNumber: -1, mlModelName: defaultModel }}>
             {(response: any): Node => {
               const { loading, error, data } = response;
-              if (loading) return <p>metrics go Brrrrr...</p>;
+              if (loading) return <p>Brrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
               const { seasonYear, predictionsByRound } = data.fetchYearlyPredictions;
               const { roundNumber, modelMetrics } = predictionsByRound[0];

@@ -18,11 +18,24 @@ export type BarChartDataType = {
   modelMetrics: Array<BarDataType>
 }
 
+type modelType = {
+  name: string,
+  forCompetition: boolean,
+  isPrinciple: boolean
+}
+
+export type PredictionType = {
+  mlModel: modelType,
+  predictedWinner: Object,
+  predictedMargin: number,
+  isCorrect: boolean,
+}
+
 export type MatchType = {
   startDateTime: string,
   homeTeam: Object,
   awayTeam: Object,
-  predictions: Array<Object>
+  predictions: Array<PredictionType>
 }
 
 export type MatchesType = Array<MatchType>;

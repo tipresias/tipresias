@@ -29,7 +29,7 @@ export const FETCH_PREDICTIONS_QUERY = gql`
   }`;
 
 export const FETCH_LATEST_ROUND_PREDICTIONS_QUERY = gql`
-query fetchLatestRoundPredictions($mlModelName: String){
+query fetchLatestRoundPredictions{
   fetchLatestRoundPredictions {
     roundNumber
     matches {
@@ -41,9 +41,11 @@ query fetchLatestRoundPredictions($mlModelName: String){
       awayTeam{
         name
       }
-      predictions(mlModelName: $mlModelName){
+      predictions{
         mlModel{
           name
+          forCompetition
+          isPrinciple
         }
         predictedWinner{
           name

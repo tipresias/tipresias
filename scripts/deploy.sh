@@ -20,7 +20,3 @@ gcloud beta compute instances update-container ${PROJECT_ID}-app \
 ./backend/scripts/wait-for-it.sh ${PRODUCTION_HOST}:${PORT:-8000} \
   -t 60 \
   -- ./scripts/migrate.sh
-
-# Clean up old containers & images to avoid running out of disk space
-./scripts/ssh.sh -- docker container ls --all --quiet --filter exited=1 | xargs docker container rm
-./scripts/ssh.sh -- yes | docker image prune

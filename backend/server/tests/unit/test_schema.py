@@ -412,6 +412,7 @@ class TestSchema(TestCase):
                     fetchMlModels(forCompetitionOnly: true) {
                         name
                         forCompetition
+                        isPrinciple
                     }
                 }
             """
@@ -421,6 +422,9 @@ class TestSchema(TestCase):
 
             for model in data:
                 self.assertTrue(model["forCompetition"])
+
+            principle_model = [model for model in data if model["isPrinciple"]]
+            self.assertEqual(len(principle_model), 1)
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

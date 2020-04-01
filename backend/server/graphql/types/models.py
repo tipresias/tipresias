@@ -81,7 +81,21 @@ class MLModelType(DjangoObjectType):
         description="Whether the model's predictions are used in any competitions."
     )
 
+    is_principle = graphene.Boolean(
+        description=(
+            "Whether the model is the principle model for predicting match winners "
+            "among all the models used in competitions (i.e. all competition models "
+            "predict winners, but only one's predictions are official "
+            "predicted winners of Tipresias)."
+        )
+    )
+
     @staticmethod
     def resolve_for_competition(root: MLModel, _info):
         """"Return whether the model is used for competitions."""
         return root.name in settings.COMPETITION_ML_MODELS
+
+    @staticmethod
+    def resolve_is_principle(root: MLModel, _info):
+        """Return whether a model is the priniple model for predicting match winners."""
+        return root.name == settings.PRINCIPLE_ML_MODEL

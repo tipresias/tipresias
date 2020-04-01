@@ -1,6 +1,7 @@
 # Tipresias
 
 [![Build Status](https://travis-ci.com/tipresias/tipresias.svg?branch=master)](https://travis-ci.com/tipresias/tipresias)
+<a href="https://codeclimate.com/github/tipresias/tipresias/maintainability"><img src="https://api.codeclimate.com/v1/badges/b6a40f7f72b307763b88/maintainability" /></a>
 
 > I Tipresias, old bot with dusty cores<br>
 > Perceived the match, and foretold the score—<br>

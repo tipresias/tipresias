@@ -2,13 +2,21 @@ sudo: required
 services:
   - docker
 env:
-  DOCKER_COMPOSE_VERSION: 1.22.0
-  GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/.gcloud/keyfile.json
+  global:
+    - DOCKER_COMPOSE_VERSION=1.22.0
+    - GOOGLE_APPLICATION_CREDENTIALS=${HOME}/.gcloud/keyfile.json
+    - CC_TEST_REPORTER_ID=116e680b22e379b7a9da04e84696bc363d3e145776a92884de4b6b6b2a253fe5
 before_install:
   - sudo rm /usr/local/bin/docker-compose
   - sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   - sudo chmod +x /usr/local/bin/docker-compose
 before_script:
+  # Set up test coverage monitoring
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+
+  # Pull & build images
   - docker pull cfranklin11/tipresias_backend:latest
   - docker pull cfranklin11/tipresias_frontend:latest
   - docker pull cfranklin11/tipresias_browser_test:latest
@@ -17,19 +25,27 @@ before_script:
   - docker build --cache-from cfranklin11/tipresias_frontend:latest -t cfranklin11/tipresias_frontend:latest ./frontend
   - docker build --cache-from cfranklin11/tipresias_browser_test:latest -t cfranklin11/tipresias_browser_test:latest ./browser_test
 script:
+  # Python linting
   - docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
   - docker run cfranklin11/tipresias_backend:latest pydocstyle server project scripts
   - docker run cfranklin11/tipresias_backend:latest mypy server project scripts
 
+  # JS linting/tests
   - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
   - docker run cfranklin11/tipresias_frontend:latest yarn run flow
   - docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
 
-  # We use gcloud/gsutil to upload screenshot artifacts on browser test failures
+  # We use gcloud/gsutil to upload screenshot artifacts on browser test failures,
+  # so we have to add credentials before running system tests
   - mkdir ${HOME}/.gcloud
   - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in keyfile.json.enc -out ${GOOGLE_APPLICATION_CREDENTIALS} -d
-  - ./scripts/browser_tests.sh
+
+  # Integration/system tests
   - ./backend/scripts/integration_tests.sh
+  - ./scripts/browser_tests.sh
+  - mv ./backend/.coverage ./
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_backend:latest

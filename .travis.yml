@@ -3,10 +3,11 @@ services:
   - docker
 env:
   global:
+    - PORT=80
     - DOCKER_COMPOSE_VERSION=1.22.0
     - GOOGLE_APPLICATION_CREDENTIALS=${HOME}/.gcloud/keyfile.json
     - CC_TEST_REPORTER_ID=116e680b22e379b7a9da04e84696bc363d3e145776a92884de4b6b6b2a253fe5
-before_install:
+install:
   - sudo rm /usr/local/bin/docker-compose
   - sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   - sudo chmod +x /usr/local/bin/docker-compose
@@ -37,8 +38,11 @@ script:
 
   # We use gcloud/gsutil to upload screenshot artifacts on browser test failures,
   # so we have to add credentials before running system tests
-  - mkdir ${HOME}/.gcloud
-  - openssl aes-256-cbc -K $encrypted_e15241dd353b_key -iv $encrypted_e15241dd353b_iv -in keyfile.json.enc -out ${GOOGLE_APPLICATION_CREDENTIALS} -d
+  - openssl aes-256-cbc -K $encrypted_3b9f0b9d36d1_key -iv $encrypted_3b9f0b9d36d1_iv -in secrets.tar.enc -out secrets.tar -d
+  - tar xvf secrets.tar
+  - mkdir ${HOME}/.gcloud && mv keyfile.json ${GOOGLE_APPLICATION_CREDENTIALS}
+  - mv deploy_rsa.pub ${HOME}/.ssh/google_compute_engine.pub
+  - mv deploy_rsa ${HOME}/.ssh/google_compute_engine
 
   # Integration/system tests
   - ./backend/scripts/integration_tests.sh

@@ -2,7 +2,9 @@
 
 set -euo pipefail
 
-if [ -z "$1" ]
+FILE_ARG=${1:-""}
+
+if [ -z ${FILE_ARG} ]
 then
   DB_FILE=prod_dump_`date +%Y-%m-%d"_"%H_%M_%S`.sql
 
@@ -10,7 +12,7 @@ then
   gcloud sql export sql ${PROJECT_ID}-db gs://${PROJECT_ID}_db_backups/${DB_FILE} --database ${DATABASE_NAME}
   gsutil cp gs://${PROJECT_ID}_db_backups/${DB_FILE} $PWD/db/backups
 else
-  DB_FILE=$1
+  DB_FILE=${FILE_ARG}
 fi
 
 docker-compose rm -s -v db

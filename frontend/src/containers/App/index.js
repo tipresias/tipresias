@@ -10,7 +10,7 @@ import PageFooter from '../../components/PageFooter';
 import Dashboard from '../Dashboard';
 import Glossary from '../Glossary';
 import About from '../About';
-import { FETCH_PREDICTION_YEARS_QUERY } from '../../graphql';
+import { FETCH_MODELS_AND_YEARS_QUERY } from '../../graphql';
 import {
   AppContainerStyled, MainStyled, ThemeBarStyled, ToggleThemeButton,
 } from './style';
@@ -23,10 +23,14 @@ const isDarkModeStored = () => {
 const App = () => {
   const [isDarkMode, setIsDarkMode] = useState(isDarkModeStored());
 
-  const { data, loading, error } = useQuery(FETCH_PREDICTION_YEARS_QUERY);
+  const { data, loading, error } = useQuery(FETCH_MODELS_AND_YEARS_QUERY);
   if (loading) return <div>Loading....</div>;
   if (error) return <div>Loading....</div>;
   if (data === undefined) return <p>ERROR</p>;
+
+  // const [defaultModel] = data.fetchMlModels.filter(item => item.isPrinciple);
+  // const [secondaryModel] = data.fetchMlModels.filter(item => !item.isPrinciple && item.forCompetition);
+
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
@@ -53,7 +57,7 @@ const App = () => {
             </ThemeBarStyled>
           </PageHeader>
           <MainStyled>
-            <Route exact path="/" render={() => <Dashboard years={data.fetchPredictionYears} defaultModel="tipresias" />} />
+            <Route exact path="/" render={() => <Dashboard years={data.fetchPredictionYears} models={data.fetchMlModels} />} />
             <Route path="/glossary" component={Glossary} />
             <Route exact path="/about" component={About} />
           </MainStyled>

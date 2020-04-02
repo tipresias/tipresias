@@ -58,15 +58,9 @@ query fetchLatestRoundPredictions{
 }
 `;
 
-export const FETCH_PREDICTION_YEARS_QUERY = gql`
-  query {
-    fetchPredictionYears
-  }`;
-
 export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
   query fetchYearlyPredictions($year: Int){
     fetchYearlyPredictions(year: $year){
-      predictionModelNames
       predictionsByRound{
         roundNumber
         modelMetrics{
@@ -95,10 +89,17 @@ export const FETCH_LATEST_ROUND_STATS = gql`
   }
 `;
 
-export const FETCH_MODELS_QUERY = gql`
-query fetchYearlyPredictions($year: Int){
-  fetchYearlyPredictions(year: $year){
-    predictionModelNames
+export const FETCH_MODELS_AND_YEARS_QUERY = gql`
+query {
+  fetchPredictionYears
+  fetchMlModels {
+    name
+    isPrinciple
+    forCompetition
   }
 }
 `;
+// export const FETCH_PREDICTION_YEARS_QUERY = gql`
+//   query {
+//     fetchPredictionYears
+//   }`;

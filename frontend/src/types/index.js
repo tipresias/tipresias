@@ -18,14 +18,14 @@ export type BarChartDataType = {
   modelMetrics: Array<BarDataType>
 }
 
-type modelType = {
+export type ModelType = {
   name: string,
   forCompetition: boolean,
   isPrinciple: boolean
 }
 
 export type PredictionType = {
-  mlModel: modelType,
+  mlModel: ModelType,
   predictedWinner: Object,
   predictedMargin: number,
   isCorrect: boolean,

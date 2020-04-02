@@ -2,7 +2,6 @@
 import React from 'react';
 import type { Node } from 'react';
 import styled from 'styled-components/macro';
-import type { MatchesType } from '../../types';
 
 const StyledTable = styled.table`
   border-collapse: collapse;
@@ -30,13 +29,15 @@ padding: 0.75rem;
 text-align: left;
 `;
 
-type Props = {
+type TablePropsType = {
   caption: string,
   headers: Array<string>,
-  rows: ?MatchesType
+  rows: ?Array<Array<string>>
 }
 
-const Table = ({ caption, headers, rows }: Props): Node => {
+const Table = ({ caption, headers, rows }: TablePropsType): Node => {
+  console.log(rows);
+
   if (!rows || rows.length === 0) {
     return <div>Data not found</div>;
   }
@@ -56,7 +57,7 @@ const Table = ({ caption, headers, rows }: Props): Node => {
           rows && rows.length > 0 && rows.map(row => (
             <tr key={Math.random()}>
               {row.map(value => (
-                <StyledDataCell key={value}>{value}</StyledDataCell>
+                <StyledDataCell key={value + Math.random()}>{value}</StyledDataCell>
               ))}
             </tr>
           ))

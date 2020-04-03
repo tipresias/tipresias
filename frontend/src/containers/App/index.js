@@ -12,7 +12,7 @@ import Glossary from '../Glossary';
 import About from '../About';
 import { FETCH_MODELS_AND_YEARS_QUERY } from '../../graphql';
 import {
-  AppContainerStyled, MainStyled, ThemeBarStyled, ToggleThemeButton,
+  AppContainerStyled, MainStyled, ToggleThemeButton,
 } from './style';
 
 const isDarkModeStored = () => {
@@ -28,33 +28,28 @@ const App = () => {
   if (error) return <div>Loading....</div>;
   if (data === undefined) return <p>ERROR</p>;
 
-  // const [defaultModel] = data.fetchMlModels.filter(item => item.isPrinciple);
-  // const [secondaryModel] = data.fetchMlModels.filter(item => !item.isPrinciple && item.forCompetition);
-
-
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <Router>
         <AppContainerStyled>
           <PageHeader>
-            <ThemeBarStyled>
-              <ToggleThemeButton
-                onClick={() => {
-                  if (!isDarkModeStored()) {
-                    setIsDarkMode(true);
-                    localStorage.setItem('isDarkMode', 'true');
-                  } else {
-                    setIsDarkMode(false);
-                    localStorage.setItem('isDarkMode', 'false');
-                  }
-                }}
-              >
-                Toggle Dark Mode
-              </ToggleThemeButton>
-              <div>
-                {`Current theme: ${isDarkMode ? 'Dark' : 'Light'}`}
-              </div>
-            </ThemeBarStyled>
+            <ToggleThemeButton
+              aria-pressed={isDarkMode}
+              onClick={() => {
+                if (!isDarkModeStored()) {
+                  setIsDarkMode(true);
+                  localStorage.setItem('isDarkMode', 'true');
+                } else {
+                  setIsDarkMode(false);
+                  localStorage.setItem('isDarkMode', 'false');
+                }
+              }}
+            >
+              Dark theme:
+              <span aria-hidden="true">{isDarkMode ? 'On' : 'Off'}</span>
+            </ToggleThemeButton>
+
+
           </PageHeader>
           <MainStyled>
             <Route exact path="/" render={() => <Dashboard years={data.fetchPredictionYears} models={data.fetchMlModels} />} />

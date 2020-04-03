@@ -28,6 +28,7 @@ export type PredictionType = {
   mlModel: ModelType,
   predictedWinner: Object,
   predictedMargin: number,
+  predictedWinProbability: number,
   isCorrect: boolean,
 }
 

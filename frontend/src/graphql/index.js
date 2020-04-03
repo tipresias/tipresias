@@ -51,6 +51,7 @@ query fetchLatestRoundPredictions{
           name
         }
         predictedMargin
+        predictedWinProbability
         isCorrect
       }
     }
@@ -99,7 +100,3 @@ query {
   }
 }
 `;
-// export const FETCH_PREDICTION_YEARS_QUERY = gql`
-//   query {
-//     fetchPredictionYears
-//   }`;

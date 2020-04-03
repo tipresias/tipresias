@@ -30,7 +30,7 @@ const Widget = styled.div`${WidgetStyles}`;
 
 const Dashboard = ({ years, models }: DashboardProps) => {
   const [defaultModel] = models.filter(item => item.isPrinciple);
-  const [secondaryModel] = models.filter(item => !item.isPrinciple && item.forCompetition);
+  // const [secondaryModel] = models.filter(item => !item.isPrinciple && item.forCompetition);
 
   const latestYear = years[years.length - 1];
   const [year, setYear] = useState(latestYear);
@@ -66,7 +66,7 @@ const Dashboard = ({ years, models }: DashboardProps) => {
               }}
               options={years}
             />
-            <fieldset>
+            <fieldset style={{ display: 'flex', flexWrap: 'wrap' }}>
               <legend>Choose a model:</legend>
               {
                 initialSelectedModels.map((modelName) => {
@@ -98,7 +98,7 @@ const Dashboard = ({ years, models }: DashboardProps) => {
           </WidgetFooter>
         </Widget>
 
-        <Widget gridColumn="1 / -1">
+        <Widget gridColumn="1 / -1" style={{ overflowX: 'scroll' }}>
           <WidgetHeading>Predictions</WidgetHeading>
           <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
             {(response: any): Node => {
@@ -109,7 +109,7 @@ const Dashboard = ({ years, models }: DashboardProps) => {
 
               const { roundNumber } = data.fetchLatestRoundPredictions;
               const { matches } = data.fetchLatestRoundPredictions;
-              const rowsArray = dataTransformer(matches, defaultModel.name, secondaryModel.name);
+              const rowsArray = dataTransformer(matches, defaultModel.name);
 
               if (rowsArray.length === 0) {
                 return <StatusBar text="No data available." error />;
@@ -118,7 +118,7 @@ const Dashboard = ({ years, models }: DashboardProps) => {
               return (
                 <Table
                   caption={`${defaultModel.name} predictions for matches of round ${roundNumber}, season ${latestYear}`}
-                  headers={['Date', 'Predicted Winner', 'Predicted margin', 'Predicted Loser', 'is Correct?']}
+                  headers={['Date', 'Predicted Winner', 'Predicted margin', 'Win probability', 'is Correct?']}
                   rows={rowsArray}
                 />
               );
@@ -151,17 +151,17 @@ const Dashboard = ({ years, models }: DashboardProps) => {
                     {
                       id: 1,
                       key: 'Cumulative Correct Count',
-                      value: cumulativeCorrectCount,
+                      value: Math.round(cumulativeCorrectCount * 100) / 100,
                     },
                     {
                       id: 2,
                       key: 'Cumulative Mean Absolute Error (MAE)',
-                      value: cumulativeMeanAbsoluteError,
+                      value: Math.round(cumulativeMeanAbsoluteError * 100) / 100,
                     },
                     {
                       id: 3,
                       key: 'Cumulative Margin Difference',
-                      value: cumulativeMarginDifference,
+                      value: Math.round(cumulativeMarginDifference * 100) / 100,
                     },
                   ]}
                   />

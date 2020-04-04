@@ -2,13 +2,11 @@
 import React from 'react';
 import type { Node } from 'react';
 import styled from 'styled-components/macro';
-import { dataTransformer } from './dataTransformer';
-import type { MatchesType } from '../../types';
 
 const StyledTable = styled.table`
-  border-collapse: collapse;
   width: 100%;
-`;
+  border-collapse: collapse;
+ `;
 
 const StyledCaption = styled.caption`
   margin-bottom: .5rem;
@@ -18,7 +16,7 @@ const StyledCaption = styled.caption`
 
 const StyledTableHeading = styled.th`
 font-weight: 700;
-white-space: nowrap;
+white-space: normal;
 color: ${props => props.theme.colors.textColor};
 border-bottom: 4px solid ${props => props.theme.colors.tableBorderColor};
 padding: 0.5rem 0.75rem;
@@ -31,17 +29,18 @@ padding: 0.75rem;
 text-align: left;
 `;
 
-type Props = {
+type svgType = {svg: boolean, text: string, path: string};
+
+type TablePropsType = {
   caption: string,
   headers: Array<string>,
-  rows: MatchesType
+  rows: ?Array<Array<string | svgType>>
 }
 
-const Table = ({ caption, headers, rows }: Props): Node => {
+const Table = ({ caption, headers, rows }: TablePropsType): Node => {
   if (!rows || rows.length === 0) {
     return <div>Data not found</div>;
   }
-  const rowsArray = dataTransformer(rows);
 
   return (
     <StyledTable>
@@ -55,11 +54,20 @@ const Table = ({ caption, headers, rows }: Props): Node => {
           }
         </tr>
         {
-          rowsArray && rowsArray.length > 0 && rowsArray.map(row => (
+          rows && rows.length > 0 && rows.map(row => (
             <tr key={Math.random()}>
-              {row.map(value => (
-                <StyledDataCell key={value}>{value}</StyledDataCell>
-              ))}
+              {row.map((value: any) => {
+                const cellValue = value.svg ? (
+                  <StyledDataCell key={value.svg + Math.random()}>
+                    <img src={value.path} alt={value.text} width="24" />
+                  </StyledDataCell>
+                ) : (
+                  <StyledDataCell key={value + Math.random()}>
+                    {value}
+                  </StyledDataCell>
+                );
+                return (cellValue);
+              })}
             </tr>
           ))
         }

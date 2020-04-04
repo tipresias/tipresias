@@ -6,9 +6,9 @@ import FETCH_PREDICTIONS_QUERY from '../../../graphql';
 import App from '../index';
 import Select from '../../../components/Select';
 
-jest.mock('../../../components/BarChartMain', () => MockComponent);
+jest.mock('../../../components/LineChartMain', () => MockComponent);
 jest.mock('../../../components/StatusBar', () => MockComponent);
-jest.mock('../../../components/BarChartLoading', () => MockComponent);
+jest.mock('../../../components/ChartLoading', () => MockComponent);
 const waitForData = () => new Promise(resolve => setTimeout(resolve, 0));
 const mocks = [
   {
@@ -119,13 +119,13 @@ describe.skip('App with apollo', () => {
     mountedAppWithApollo = undefined;
   });
 
-  describe('when is in initial state', () => {
-    it('should render BarChartLoading component', () => {
+  describe.skip('when is in initial state', () => {
+    it('should render ChartLoading component', () => {
       props = { mocks: [] };
       const wrapper = appWithApollo();
       wrapper.update();
-      const BarChartLoading = wrapper.find(MockComponent);
-      expect(BarChartLoading.prop('text')).toBe('Loading predictions...');
+      const ChartLoading = wrapper.find(MockComponent);
+      expect(ChartLoading.prop('text')).toBe('Loading predictions...');
     });
   });
 

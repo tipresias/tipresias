@@ -2,8 +2,8 @@ export default {
   colors: {
     background: '#15202b',
     textColor: '#ECEFF4',
-    buttonBackground: '#d08770',
-    buttonColor: '#2E3440',
+    buttonBackground: '#ffffff',
+    buttonColor: '#222222',
     widgetBackground: '#192734',
     widgetBorderColor: 'rgb(56, 68, 77)',
     widgetBoxShadow: 'none',

@@ -9,13 +9,19 @@ const client = new ApolloClient({
   resolvers: {},
 });
 
-const withApollo = Component => (
+// const withApollo = Component => (
+//   <ApolloProvider client={client}>
+//     <Component />
+//   </ApolloProvider>
+// );
+// const AppWithApollo = withApollo(App);
+
+
+ReactDOM.render(
   <ApolloProvider client={client}>
-    <Component />
-  </ApolloProvider>
+    <App />
+  </ApolloProvider>,
+
+  document.getElementById('root'),
 );
-const AppWithApollo = withApollo(App);
-
-
-ReactDOM.render(AppWithApollo, document.getElementById('root'));
 registerServiceWorker();

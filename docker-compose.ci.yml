@@ -23,6 +23,8 @@ services:
     environment:
       - NODE_ENV=development
       - CI=true
+    stdin_open: true
+    tty: true
     depends_on:
       - backend
     command: yarn start

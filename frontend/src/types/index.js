@@ -10,19 +10,33 @@ export type Game = {
 
 export type BarDataType = {
   modelName: string,
-  cumulativeCorrectCount: number
+  cumulativeAccuracy: number
 }
 
-export type BarChartDataType = {
+export type LineChartDataType = {
   roundNumber: number,
   modelMetrics: Array<BarDataType>
+}
+
+export type ModelType = {
+  name: string,
+  forCompetition: boolean,
+  isPrinciple: boolean
+}
+
+export type PredictionType = {
+  mlModel: ModelType,
+  predictedWinner: Object,
+  predictedMargin: number,
+  predictedWinProbability: number,
+  isCorrect: boolean,
 }
 
 export type MatchType = {
   startDateTime: string,
   homeTeam: Object,
   awayTeam: Object,
-  predictions: Array<Object>
+  predictions: Array<PredictionType>
 }
 
 export type MatchesType = Array<MatchType>;

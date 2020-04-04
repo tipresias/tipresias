@@ -14,6 +14,6 @@ describe("HomePage", function(){
 
   it("toggles to dark theme", () => {
     cy.get("button[class*=ToggleThemeButton]").click();
-    cy.get("button[class*=ToggleThemeButton]").should('have.css', 'background-color', '#15202b');
+    cy.get("button[class*=ToggleThemeButton]").should('have.css', 'background-color', 'rgb(255, 255, 255)');
   });
 });

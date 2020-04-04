@@ -63,7 +63,6 @@ const TextLink = styled.a`
 
 const links = [
   { url: '/about', text: 'About' },
-  { url: '/glossary', text: 'Glossary' },
 ];
 
 type Props = {

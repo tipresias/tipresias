@@ -42,7 +42,7 @@ const Dashboard = ({ years, models }: DashboardProps) => {
       <DashboardContainerStyled>
         <Widget gridColumn="1 / -1">
           <WidgetHeading>
-              Cumulative accuracy by round
+            Cumulative accuracy by round
           </WidgetHeading>
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
             {(response: any): Node => {
@@ -88,7 +88,9 @@ const Dashboard = ({ years, models }: DashboardProps) => {
                         onChange={(event: SyntheticEvent<HTMLSelectElement>): void => {
                           const checkedModel = event.currentTarget.value;
                           if (checkedModels.includes(checkedModel)) {
-                            const updatedModels = checkedModels.filter(item => item !== checkedModel);
+                            const updatedModels = checkedModels.filter(
+                              item => item !== checkedModel,
+                            );
                             setSelectedModels(updatedModels);
                           } else {
                             setSelectedModels([...checkedModels, checkedModel]);

@@ -6,7 +6,7 @@ describe("HomePage", function(){
   it("loads page", () => {
     // Need to extend timeout, because the query that fetches this data
     // is a bit slower
-    cy.contains("PERFORMANCE METRICS FOR TIPRESIAS_2020", {timeout: 10000});
+    cy.contains("PERFORMANCE METRICS", {timeout: 10000});
     cy.contains("PREDICTIONS", {timeout: 10000});
     cy.contains("CUMULATIVE ACCURACY BY ROUND", {timeout: 10000});
   });

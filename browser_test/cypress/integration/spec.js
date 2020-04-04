@@ -1,17 +1,19 @@
 describe("HomePage", function(){
   beforeEach(() => {
     cy.visit("/", { headers: { Connection: "Keep-Alive" } });
+    cy.wait(1000);
   });
 
-  it("loads page", () => {
-    // Need to extend timeout, because the query that fetches this data
-    // is a bit slower
-    cy.contains("PERFORMANCE METRICS", {timeout: 10000});
-    cy.contains("PREDICTIONS", {timeout: 10000});
-    cy.contains("CUMULATIVE ACCURACY BY ROUND", {timeout: 10000});
+  it("loads widgets", () => {
+    cy.get("h3[class*=WidgetHeading]").should('have.length', 3);
+  });
+
+  it("loads chart", () => {
+    cy.get(".recharts-responsive-container").should('be.visible');
   });
 
   it("toggles to dark theme", () => {
     cy.get("button[class*=ToggleThemeButton]").click();
+    cy.get("div[class*=ToggleThemeButton]").should('have.css', 'background-color', '#15202b');
   });
 });

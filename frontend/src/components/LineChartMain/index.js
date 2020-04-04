@@ -5,9 +5,9 @@ import {
   LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Label,
 } from 'recharts';
 import { isEmpty } from 'lodash';
-import type { BarChartDataType } from '../../types';
+import type { LineChartDataType } from '../../types';
 
-type PreviousDataSet = Array<BarChartDataType>;
+type PreviousDataSet = Array<LineChartDataType>;
 
 type Props = {
   data: PreviousDataSet,

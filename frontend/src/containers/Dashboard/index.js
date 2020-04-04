@@ -10,7 +10,7 @@ import {
 } from '../../graphql';
 import LineChartMain from '../../components/LineChartMain';
 import Select from '../../components/Select';
-import BarChartLoading from '../../components/BarChartLoading';
+import ChartLoading from '../../components/ChartLoading';
 import StatusBar from '../../components/StatusBar';
 import DefinitionList from '../../components/DefinitionList';
 import Table from '../../components/Table';
@@ -30,7 +30,6 @@ const Widget = styled.div`${WidgetStyles}`;
 
 const Dashboard = ({ years, models }: DashboardProps) => {
   const [defaultModel] = models.filter(item => item.isPrinciple);
-  // const [secondaryModel] = models.filter(item => !item.isPrinciple && item.forCompetition);
 
   const latestYear = years[years.length - 1];
   const [year, setYear] = useState(latestYear);
@@ -48,11 +47,18 @@ const Dashboard = ({ years, models }: DashboardProps) => {
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
             {(response: any): Node => {
               const { loading, error, data } = response;
-              if (loading) return <BarChartLoading text="Brrrrr ..." />;
+              if (loading) return <ChartLoading text="Brrrrr ..." />;
               if (error) return <StatusBar text={error.message} error />;
-              if (data.fetchYearlyPredictions.predictionsByRound.length === 0) return <StatusBar text="No data found" empty />;
+              if (data.fetchYearlyPredictions.predictionsByRound.length === 0) {
+                return <StatusBar text="No data found" empty />;
+              }
 
-              return <LineChartMain models={checkedModels} data={data.fetchYearlyPredictions.predictionsByRound} />;
+              return (
+                <LineChartMain
+                  models={checkedModels}
+                  data={data.fetchYearlyPredictions.predictionsByRound}
+                />
+              );
             }}
           </Query>
           <WidgetFooter>
@@ -105,7 +111,14 @@ const Dashboard = ({ years, models }: DashboardProps) => {
               const { loading, error, data } = response;
               if (loading) return <p>Brrrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
-              if (data.fetchLatestRoundPredictions.matches.length === 0) return <StatusBar text="No data found" empty />;
+              if (data.fetchLatestRoundPredictions.matches.length === 0) {
+                return (
+                  <StatusBar
+                    text="No data found"
+                    empty
+                  />
+                );
+              }
 
               const { roundNumber } = data.fetchLatestRoundPredictions;
               const { matches } = data.fetchLatestRoundPredictions;
@@ -114,10 +127,10 @@ const Dashboard = ({ years, models }: DashboardProps) => {
               if (rowsArray.length === 0) {
                 return <StatusBar text="No data available." error />;
               }
-
+              const caption = `${defaultModel.name} predictions for matches of round ${roundNumber}, season ${latestYear}`;
               return (
                 <Table
-                  caption={`${defaultModel.name} predictions for matches of round ${roundNumber}, season ${latestYear}`}
+                  caption={caption}
                   headers={['Date', 'Predicted Winner', 'Predicted margin', 'Win probability', 'is Correct?']}
                   rows={rowsArray}
                 />
@@ -127,7 +140,10 @@ const Dashboard = ({ years, models }: DashboardProps) => {
         </Widget>
 
         <Widget gridColumn="1 / -2">
-          <Query query={FETCH_LATEST_ROUND_STATS} variables={{ latestYear, roundNumber: -1, mlModelName: defaultModel.name }}>
+          <Query
+            query={FETCH_LATEST_ROUND_STATS}
+            variables={{ latestYear, roundNumber: -1, mlModelName: defaultModel.name }}
+          >
             {(response: any): Node => {
               const { loading, error, data } = response;
               if (loading) return <p>Brrrrr...</p>;
@@ -174,6 +190,4 @@ const Dashboard = ({ years, models }: DashboardProps) => {
     </ErrorBoundary>
   );
 };
-
-
 export default Dashboard;

@@ -29,10 +29,14 @@ describe('select', () => {
       value={valueMocked}
       onChange={onChangeSpy}
       options={optionsMocked}
+      name="test_select"
+      id="test_select1"
+      label="choose an option"
     />);
-    wrapper.find('select').simulate('change', eventObjectMocked);
-    expect(onChangeSpy).toHaveBeenCalledWith(eventObjectMocked);
+    wrapper.find('Select__SelectStyled').simulate('change', eventObjectMocked);
+    expect(onChangeSpy).toHaveBeenCalledWith({ target: { value: 'ok' } });
   });
+
   it('sets the value prop when value prop is passed', () => {
     const optionsMocked = ['item1', 'item2', 'item3'];
     const valueMocked = 'mocked_value';
@@ -41,7 +45,10 @@ describe('select', () => {
       value={valueMocked}
       onChange={onChangeSpy}
       options={optionsMocked}
+      name="test_select"
+      id="test_select1"
+      label="choose an option"
     />);
-    expect(wrapper.find('select').props().value).toBe('mocked_value');
+    expect(wrapper.find('Select__SelectStyled').props().value).toBe('mocked_value');
   });
 });

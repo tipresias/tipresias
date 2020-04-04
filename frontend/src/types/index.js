@@ -13,7 +13,7 @@ export type BarDataType = {
   cumulativeAccuracy: number
 }
 
-export type BarChartDataType = {
+export type LineChartDataType = {
   roundNumber: number,
   modelMetrics: Array<BarDataType>
 }

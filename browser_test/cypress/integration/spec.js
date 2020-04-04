@@ -1,5 +1,5 @@
-describe("HomePage", () => {
-  this.beforeEach(() => {
+describe("HomePage", function(){
+  beforeEach(() => {
     cy.visit("/", { headers: { Connection: "Keep-Alive" } });
   });
 

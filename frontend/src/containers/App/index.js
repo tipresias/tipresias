@@ -24,9 +24,9 @@ const App = () => {
   const [isDarkMode, setIsDarkMode] = useState(isDarkModeStored());
 
   const { data, loading, error } = useQuery(FETCH_MODELS_AND_YEARS_QUERY);
-  if (loading) return <div>Loading....</div>;
-  if (error) return <div>Loading....</div>;
-  if (data === undefined) return <p>ERROR</p>;
+  if (loading) return <div>Loading Tipresias....</div>;
+  if (error) return <div>Error: Something happened, try again later.</div>;
+  if (data === undefined) return <p>Error: Data not defined.</p>;
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>

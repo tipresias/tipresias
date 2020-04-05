@@ -46,6 +46,9 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+.nyc_output
+coverage
+cc-test-reporter
 
 # Translations
 *.mo

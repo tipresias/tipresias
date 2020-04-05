@@ -13,10 +13,10 @@ install:
   - sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
   - sudo chmod +x /usr/local/bin/docker-compose
   # Set up test coverage monitoring
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./backend/cc-test-reporter
-  - chmod +x ./backend/cc-test-reporter
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
 before_script:
-  - ./backend/cc-test-reporter before-build
+  - ./cc-test-reporter before-build
 
   # Pull & build images
   - docker pull cfranklin11/tipresias_backend:latest
@@ -46,14 +46,20 @@ script:
   - mv deploy_rsa ${HOME}/.ssh/google_compute_engine
 
   # Integration/system tests
-  - ./backend/scripts/integration_tests.sh
-  - ./scripts/browser_tests.sh
+  - ./backend/scripts/integration_tests.sh docker-compose.ci.yml
+  - ./scripts/browser_tests.sh docker-compose.ci.yml
 after_script:
-  # Only way I could get it to work was running format-coverage from the backend app's root
-  # (otherwise, it can't find manage.py), and trying to run the code coverage
-  # tool inside docker was more trouble than it's worth.
-  - cd backend && ./cc-test-reporter format-coverage -t coverage.py && cd ..
-  - if [[ "$TRAVIS_TEST_RESULT" == 0 ]]; then ./backend/cc-test-reporter upload-coverage; fi
+  # Only way I could get it to work was running format-coverage from each app's root.
+  # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,
+  # and the --prefix option is to turn absolute paths into relative paths,
+  # not to find files in subdirectories.
+  # Also, trying to run the code coverage tool inside docker was more trouble than it's worth.
+  - cd ./backend && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.backend.json && cd ..
+  # Need to move coverage files to frontend, because filenames are relative to frontend root
+  - mv ./browser_test/coverage ./frontend
+  - cd ./frontend && ../cc-test-reporter format-coverage -t lcov -o ../coverage/codeclimate.frontend.json && cd ..
+  - ./cc-test-reporter sum-coverage ./coverage/codeclimate.*.json -p 2
+  - if [[ "$TRAVIS_TEST_RESULT" == 0 ]]; then ./cc-test-reporter upload-coverage; fi
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_backend:latest

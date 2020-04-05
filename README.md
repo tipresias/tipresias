@@ -60,7 +60,10 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 #### Run end-to-end browser tests
 
-- `docker-compose run --rm browser npx cypress run`
+- **Recommended:** `./scripts/browser_test.sh`
+  - Slower, but seeds test DB with random data, and is how tests are run in CI)
+- `docker-compose run --rm browser_test npx cypress run`
+  - Faster, but risks passing due to specific characteristics of local data, then failing in CI.
 
 ### Deploy
 

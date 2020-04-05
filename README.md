@@ -14,29 +14,50 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ### Setup
 
+#### Install dependencies
+
+- Install [`direnv`](https://direnv.net/)
+  - Loads env vars from `.env`, which is convenient
+- `brew cask install google-cloud-sdk` (on Mac)
+  - For interacting with production resources (e.g. ssh into the prod server, dumping prod DB data)
+- Install Docker
+
+#### Set up development environment and the app itself
+
 - To manage environment variables:
-  - Install [`direnv`](https://direnv.net/)
   - Add `eval "$(direnv hook bash)"` to the bottom of `~/.bashrc`
   - Run `direnv allow .` inside the project directory
-- Create the `node_modules` volume: `docker volume create --name=node_modules`
-- To build and run the app: `docker-compose up --build`
-- Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
-- Generate required files for for `data_science` functionality:
-  - Generate data set files: `docker-compose run --rm data_science ./scripts/generate_data_sets.sh`
-  - Generate trained model files: `docker-compose run --rm data_science python3 scripts/save_default_models.py`
-- Seed the DB: `docker-compose run --rm backend python3 manage.py seed_db` (this takes a very long time, so it's recommended that you reset the DB as described below if possible)
-- To interact with production resources, install the Google Cloud SDK:
-  - `brew cask install google-cloud-sdk` (on Mac)
+- To set up the app:
+  - Create the `node_modules` volume: `docker volume create --name=node_modules`
+  - To build and run the app: `docker-compose up --build`
+  - Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
+- To use Google Cloud SDK:
   - `gcloud auth login` (redirects you to log into your Google account in the browser)
   - `gcloud config set project ${PROJECT_ID}`
-- To `ssh` into the server, run `./scripts/ssh.sh`.
-- To reset the DB to match production: `./scripts/set_local_db_to_prod.sh`
-- To run the tipping command, run `./scripts/tip.sh`.
+
+#### Generate data for `data_science`
+
+The following are only required for using functionality from `tip` or `seed_db` Django commands:
+  - Generate data set files: `docker-compose run --rm data_science ./scripts/generate_data_sets.sh`
+  - Generate trained model files: `docker-compose run --rm data_science python3 scripts/save_default_models.py`
+
+#### Seed data
+
+**Recommended:** `./scripts/set_local_db_to_prod.sh`
+  - Downloads the production database and loads it on local
+
+Seed the DB with raw data: `docker-compose run --rm backend python3 manage.py seed_db`
+  - This takes a very long time, so it's recommended that you reset the DB as described below if possible
 
 ### Run the app
 
 - `docker-compose up`
 - Navigate to `localhost:3000`.
+
+#### Useful commands
+
+- To `ssh` into the server, run `./scripts/ssh.sh`.
+- To run the tipping command, run `./scripts/tip.sh`.
 
 ### A note on architecture
 
@@ -47,6 +68,7 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 #### Run Python tests
 
 - `docker-compose run --rm backend python3 -Wi manage.py test`
+  - Note: Pass CI=true as an env var to skip some of the longer end-to-end tests.
 - Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
   - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 - Type checking: `docker-compsoe run mypy <python modules you want to check>`
@@ -61,19 +83,16 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 #### Run end-to-end browser tests
 
 - **Recommended:** `./scripts/browser_test.sh`
-  - Slower, but seeds test DB with random data, and is how tests are run in CI)
+  - Slower, but seeds test DB with random data, and is how tests are run in CI
 - `docker-compose run --rm browser_test npx cypress run`
   - Faster, but risks passing due to specific characteristics of local data, then failing in CI.
 
 ### Deploy
 
-- Deploy app to DigitalOcean:
+The app is deployed to Google Cloud with every merge/push to `master`. You can manually deploy in two ways:
 
-  - Merge a pull request into `master`
-  - Manually trigger a deploy:
-    - In the Travis dashboard, navigate to the tipresias repository.
-    - Under 'More Options', trigger a build on `master`.
-    - This will build the image, run tests, and deploy to DigitalOcean.
+- **Recommended:** Manually trigger a build in Travis CI via the "More options" menu.
+- Run `./scripts/deploy.sh`, but be careful with which env vars you have in your shell.
 
 ## Pro-Tips
 

@@ -13,8 +13,9 @@ services:
       - data_science
     env_file: .env
     environment:
-      - DJANGO_SETTINGS_MODULE=project.settings.development
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-project.settings.development}
       - DATABASE_HOST=db
+      - DATABASE_NAME=${DATABASE_NAME:-tipresias}
       - GRAPHIQL=True
     command: ./scripts/wait-for-it.sh data_science:8008 -t 30 -- python3 manage.py runserver 0.0.0.0:8000
   frontend:

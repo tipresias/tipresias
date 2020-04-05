@@ -47,7 +47,7 @@ script:
 
   # Integration/system tests
   - ./backend/scripts/integration_tests.sh
-  - ./scripts/browser_tests.sh
+  - ./scripts/browser_tests.sh docker-compose.ci.yml
 after_script:
   # Only way I could get it to work was running format-coverage from the backend app's root
   # (otherwise, it can't find manage.py), and trying to run the code coverage

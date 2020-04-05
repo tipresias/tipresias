@@ -46,7 +46,7 @@ script:
   - mv deploy_rsa ${HOME}/.ssh/google_compute_engine
 
   # Integration/system tests
-  - ./backend/scripts/integration_tests.sh
+  - ./backend/scripts/integration_tests.sh docker-compose.ci.yml
   - ./scripts/browser_tests.sh docker-compose.ci.yml
 after_script:
   # Only way I could get it to work was running format-coverage from each app's root.

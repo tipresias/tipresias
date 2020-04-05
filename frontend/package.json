@@ -24,11 +24,11 @@
     "styled-components": "^4.4.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
     "test:eslint": "yarn run eslint 'src/**/*.js' --ext .jsx --ext .js",
     "test:flow": "yarn flow",
-    "test:unit": "react-scripts test --env=jsdom",
+    "test:unit": "react-app-rewired test --env=jsdom",
     "storybook": "start-storybook"
   },
   "devDependencies": {
@@ -40,6 +40,8 @@
     "@babel/preset-react": "^7.9.4",
     "@storybook/react": "5.3.18",
     "babel-cli": "^6.26.0",
+    "babel-plugin-istanbul": "^6.0.0",
+    "customize-cra": "^0.9.1",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-airbnb-base": "^14.1.0",
     "eslint-plugin-flowtype": "^4.7.0",
@@ -48,7 +50,8 @@
     "eslint-plugin-react": "^7.19.0",
     "flow-bin": "^0.121.0",
     "flow-typed": "^3.1.0",
-    "nock": "^12.0.3"
+    "nock": "^12.0.3",
+    "react-app-rewired": "^2.1.5"
   },
   "proxy": "http://backend:8000",
   "browserslist": [

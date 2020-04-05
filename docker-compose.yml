@@ -26,7 +26,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
     stdin_open: true
     tty: true
     depends_on:
@@ -76,8 +76,8 @@ services:
     depends_on:
       - frontend
     volumes:
-      - ./browser_test/cypress:/app/cypress
-      - ./browser_test/cypress.json:/app/cypress.json
+      - ./browser_test:/app
+      - /app/node_modules
     # Need to use 'host' network mode to avoid cross-host errors
     # from Webpack server
     network_mode: "host"

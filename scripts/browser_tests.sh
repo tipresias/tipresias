@@ -1,11 +1,14 @@
 #!/bin/bash
 
+#### SETUP ####
 DOCKER_COMPOSE_FILE="${1:-docker-compose.yml}"
 export DJANGO_SETTINGS_MODULE=project.settings.test
+export NODE_ENV=test
 
 docker-compose -f ${DOCKER_COMPOSE_FILE} stop
 docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
 
+#### SEED TEST DB ####
 ./browser_test/wait-for-it.sh localhost:8000 -t 30 -- \
   docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm \
     backend python3 server/tests/fixtures/seed_db.py
@@ -20,11 +23,12 @@ then
   exit ${EXIT_CODE}
 fi
 
+#### RUN TESTS ####
+
 # There's probably a better way to do this, but we change the default DB name
 # to test_$DATABASE_NAME, which the app will then use as the default DB
 # for the browser tests.
-ORIGINAL_DATABASE_NAME=${DATABASE_NAME}
-export DATABASE_NAME="test_${ORIGINAL_DATABASE_NAME}"
+export DATABASE_NAME="test_${DATABASE_NAME}"
 
 # Restarting backend for the new env var to be used
 docker-compose -f ${DOCKER_COMPOSE_FILE} stop backend
@@ -36,10 +40,8 @@ docker-compose -f ${DOCKER_COMPOSE_FILE} up -d backend
 
 EXIT_CODE=$?
 
+#### CLEANUP ####
 docker-compose -f ${DOCKER_COMPOSE_FILE} stop
-
-# Resetting the env var to the original just in case
-export DATABASE_NAME=${ORIGINAL_DATABASE_NAME}
 
 if [ ${EXIT_CODE} -eq 0 ]
 then
@@ -49,6 +51,8 @@ fi
 LOCAL_DIR=${PWD}/browser_test/cypress/screenshots
 BUCKET_DIR=`date +%Y-%m-%d"_"%H_%M_%S`
 
+# Only upload screenshots to a bucket if in CI, because we'll have access
+# to the image files on local
 if [ -d "${LOCAL_DIR}" ] && [ "${CI}" = "true" ]
 then
   echo "Uploading screenshots to Google Cloud Storage."

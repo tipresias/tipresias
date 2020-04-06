@@ -318,7 +318,7 @@ class SeasonType(graphene.ObjectType):
                 cumulative_mean_absolute_error=_calculate_cumulative_mae,
             )
             .groupby(["match__round_number", "ml_model__name"])
-            .mean()
+            .last()
             .pipe(partial(_filter_by_round, round_number=round_number))
             .pipe(partial(_collect_data_by_round, sorted_query_set))
         )

@@ -176,7 +176,7 @@ def _calculate_bits(data_frame: pd.DataFrame):
 def _calculate_cumulative_mae(data_frame: pd.DataFrame):
     return (
         data_frame.groupby("ml_model__name")
-        .expanding()["margin_diff"]
+        .expanding()["absolute_margin_diff"]
         .mean()
         .round(2)
         .rename("cumulative_mean_absolute_error")
@@ -187,7 +187,7 @@ def _calculate_cumulative_mae(data_frame: pd.DataFrame):
 def _calculate_cumulative_margin_difference(data_frame: pd.DataFrame):
     return (
         data_frame.groupby("ml_model__name")
-        .expanding()["margin_diff"]
+        .expanding()["absolute_margin_diff"]
         .sum()
         .rename("cumulative_margin_difference")
         .reset_index(level=GROUP_BY_LVL, drop=True)
@@ -210,7 +210,7 @@ def _calculate_cumulative_correct():
     )
 
 
-def _calculate_margin_difference():
+def _calculate_absolute_margin_difference():
     return Case(
         When(
             is_correct=True,
@@ -289,7 +289,7 @@ class SeasonType(graphene.ObjectType):
                 match__margin=(
                     Max("match__teammatch__score") - Min("match__teammatch__score")
                 ),
-                margin_diff=_calculate_margin_difference(),
+                absolute_margin_diff=_calculate_absolute_margin_difference(),
                 cumulative_correct_count=_calculate_cumulative_correct(),
                 cumulative_accuracy=_calculate_cumulative_accuracy(),
             )
@@ -302,7 +302,7 @@ class SeasonType(graphene.ObjectType):
                 "predicted_winner__name",
                 "match__winner__name",
                 "match__margin",
-                "margin_diff",
+                "absolute_margin_diff",
                 "cumulative_correct_count",
                 "cumulative_accuracy",
             )

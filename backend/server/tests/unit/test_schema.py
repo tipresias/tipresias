@@ -16,6 +16,7 @@ from server.models import Match, MLModel
 
 
 ROUND_COUNT = 4
+MATCH_COUNT = 3
 YEAR_RANGE = (2014, 2016)
 MODEL_NAMES = ["predictanator", "accurate_af"]
 TWENTY_SEVENTEEN = 2017
@@ -31,13 +32,16 @@ class TestSchema(TestCase):
         self.matches = [
             FullMatchFactory(
                 year=year,
-                round_number=((idx % 23) + 1),
-                start_date_time=timezone.make_aware(datetime(year, 6, (idx % 29) + 1)),
+                round_number=((round_n % 23) + 1),
+                start_date_time=timezone.make_aware(
+                    datetime(year, 6, (round_n % 29) + 1, match_n * 5)
+                ),
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
             for year in range(*YEAR_RANGE)
-            for idx in range(ROUND_COUNT)
+            for round_n in range(ROUND_COUNT)
+            for match_n in range(MATCH_COUNT)
         ]
 
     def test_fetch_predictions(self):
@@ -172,8 +176,14 @@ class TestSchema(TestCase):
             for prediction in match["predictions"]
         ]
 
-        # Regression test to make sure cumulative counts are being calculated correctly
+        # Regression tests to make sure cumulative counts and cumulative accuracy
+        # are being calculated correctly
+        match_count = sum([len(round_n["matches"]) for round_n in predictions])
         self.assertEqual(sum(earlier_round_cum_counts), sum(earlier_round_correct))
+        self.assertEqual(
+            sum(earlier_round_cum_counts) / match_count,
+            sum(earlier_round_correct) / match_count,
+        )
 
         later_round_cum_counts = [
             prediction["cumulativeCorrectCount"]
@@ -242,12 +252,14 @@ class TestSchema(TestCase):
         latest_matches = [
             FullMatchFactory(
                 year=year,
-                round_number=((idx % 23) + 1),
-                start_date_time=timezone.make_aware(datetime(year, 6, (idx % 29) + 1)),
+                round_number=((round_n % 23) + 1),
+                start_date_time=timezone.make_aware(
+                    datetime(year, 6, (round_n % 29) + 1)
+                ),
                 prediction__ml_model=ml_models[0],
                 prediction_two__ml_model=ml_models[1],
             )
-            for idx in range(ROUND_COUNT)
+            for round_n in range(ROUND_COUNT)
         ]
 
         executed = self.client.execute(
@@ -310,18 +322,19 @@ class TestSchema(TestCase):
         YEAR = TWENTY_SEVENTEEN
         MONTH = 6
 
-        for idx in range(ROUND_COUNT):
-            FullMatchFactory(
-                year=YEAR,
-                round_number=(idx + 1),
-                start_date_time=timezone.make_aware(
-                    datetime(YEAR, MONTH, (idx % 29) + 1)
-                ),
-                prediction__ml_model=ml_models[0],
-                prediction__force_correct=True,
-                prediction_two__ml_model=ml_models[1],
-                prediction_two__force_correct=True,
-            )
+        for round_n in range(ROUND_COUNT):
+            for match_n in range(MATCH_COUNT):
+                FullMatchFactory(
+                    year=YEAR,
+                    round_number=(round_n + 1),
+                    start_date_time=timezone.make_aware(
+                        datetime(YEAR, MONTH, (round_n % 29) + 1, match_n * 5)
+                    ),
+                    prediction__ml_model=ml_models[0],
+                    prediction__force_correct=True,
+                    prediction_two__ml_model=ml_models[1],
+                    prediction_two__force_correct=True,
+                )
 
         query = """
             query QueryType {

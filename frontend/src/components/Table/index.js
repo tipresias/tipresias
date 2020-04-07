@@ -29,6 +29,10 @@ padding: 0.75rem;
 text-align: left;
 `;
 
+const StyledDataCellImage = styled.img`
+filter: ${props => props.theme.colors.tableIcon};
+`;
+
 type svgType = {svg: boolean, text: string, path: string};
 
 type TablePropsType = {
@@ -59,7 +63,7 @@ const Table = ({ caption, headers, rows }: TablePropsType): Node => {
               {row.map((value: any) => {
                 const cellValue = value.svg ? (
                   <StyledDataCell key={value.svg + Math.random()}>
-                    <img src={value.path} alt={value.text} width="24" />
+                    <StyledDataCellImage src={value.path} alt={value.text} width="24" />
                   </StyledDataCell>
                 ) : (
                   <StyledDataCell key={value + Math.random()}>

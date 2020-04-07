@@ -10,5 +10,6 @@ export default {
     logoFilter: 'inherit',
     tableBorderColor: '#222222',
     divisionColor: '#DDD',
+    tableIcon: 'none',
   },
 };

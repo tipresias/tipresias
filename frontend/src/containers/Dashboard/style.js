@@ -44,7 +44,7 @@ export const WidgetSubHeading = styled.h4`
 `;
 
 export const WidgetFooter = styled.div`
-  padding: 2rem 0.5rem 1rem 0.5rem;
+  padding: 1rem 0.5rem;
   display: flex;
   align-items: center;
   justify-content: space-evenly;

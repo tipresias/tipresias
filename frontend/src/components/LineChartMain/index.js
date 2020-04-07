@@ -42,8 +42,6 @@ export const LineChartMainStyled = styled.div`
       fill: ${props => props.theme.colors.textColor};
     }
   }
-
-
 `;
 
 const LineChartMain = ({ data, models }: Props): Node => {

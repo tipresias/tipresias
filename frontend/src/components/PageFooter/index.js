@@ -47,7 +47,7 @@ const PageFooter = (): Node => (
       <li>
         <a href="https://github.com/tipresias">
           <Isotype src={isotype} alt="Tipresias" />
-          <span>Tipresias 2019</span>
+          <span>Tipresias</span>
         </a>
       </li>
       <li>

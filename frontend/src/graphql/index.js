@@ -67,6 +67,8 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
         modelMetrics{
           modelName
           cumulativeAccuracy
+          cumulativeBits
+          cumulativeMeanAbsoluteError
         }
       }
     }

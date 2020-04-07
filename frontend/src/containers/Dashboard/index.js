@@ -36,14 +36,15 @@ const Dashboard = ({ years, models }: DashboardProps) => {
 
   const initialSelectedModels = models.map(item => item.name);
   const [checkedModels, setSelectedModels] = useState(initialSelectedModels);
-
+  const mainWidgetTitle = 'Cumulative accuracy by round'; // todo: make this dinamyc depending on selections.
 
   return (
     <ErrorBoundary>
       <DashboardContainerStyled>
         <Widget gridColumn="1 / -1">
           <WidgetHeading>
-            Cumulative accuracy by round
+            {/* Cumulative accuracy by round */}
+            {mainWidgetTitle}
             {year && <div className="WidgetHeading__selected-year">{`year: ${year}`}</div>}
           </WidgetHeading>
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
@@ -86,6 +87,37 @@ const Dashboard = ({ years, models }: DashboardProps) => {
                         name={modelName}
                         value={modelName}
                         checked={checkedModels.includes(modelName)}
+                        onChange={(event: SyntheticEvent<HTMLSelectElement>): void => {
+                          const checkedModel = event.currentTarget.value;
+                          if (checkedModels.includes(checkedModel)) {
+                            const updatedModels = checkedModels.filter(
+                              item => item !== checkedModel,
+                            );
+                            setSelectedModels(updatedModels);
+                          } else {
+                            setSelectedModels([...checkedModels, checkedModel]);
+                          }
+                        }}
+                      />
+                      {labelName}
+                    </label>
+                  );
+                })
+              }
+            </fieldset>
+            <fieldset style={{ display: 'flex', flexWrap: 'wrap' }}>
+              <legend>Choose a metric:</legend>
+              {
+                ['bits', 'accuracy', 'MAE'].map((metricName) => {
+                  const labelName = metricName.replace(/_/g, ' ');
+                  return (
+                    <label htmlFor={metricName} key={metricName} style={{ margin: '0.5rem 0' }}>
+                      <input
+                        type="radio"
+                        id={metricName}
+                        name={metricName}
+                        value={metricName}
+                        checked={checkedModels.includes(metricName)}
                         onChange={(event: SyntheticEvent<HTMLSelectElement>): void => {
                           const checkedModel = event.currentTarget.value;
                           if (checkedModels.includes(checkedModel)) {

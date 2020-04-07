@@ -37,12 +37,14 @@ const Dashboard = ({ years, models }: DashboardProps) => {
   const initialSelectedModels = models.map(item => item.name);
   const [checkedModels, setSelectedModels] = useState(initialSelectedModels);
 
+
   return (
     <ErrorBoundary>
       <DashboardContainerStyled>
         <Widget gridColumn="1 / -1">
           <WidgetHeading>
             Cumulative accuracy by round
+            {year && <div className="WidgetHeading__selected-year">{`year: ${year}`}</div>}
           </WidgetHeading>
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
             {(response: any): Node => {
@@ -52,7 +54,6 @@ const Dashboard = ({ years, models }: DashboardProps) => {
               if (data.fetchYearlyPredictions.predictionsByRound.length === 0) {
                 return <StatusBar text="No data found" empty />;
               }
-
               return (
                 <LineChartMain
                   models={checkedModels}
@@ -78,7 +79,7 @@ const Dashboard = ({ years, models }: DashboardProps) => {
                 initialSelectedModels.map((modelName) => {
                   const labelName = modelName.replace(/_/g, ' ');
                   return (
-                    <label htmlFor={modelName} key={modelName} style={{ marginRight: '2rem' }}>
+                    <label htmlFor={modelName} key={modelName} style={{ margin: '0.5rem 0' }}>
                       <input
                         type="checkbox"
                         id={modelName}

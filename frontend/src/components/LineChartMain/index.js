@@ -1,6 +1,7 @@
 // @flow
 import React from 'react';
 import type { Node } from 'react';
+import styled from 'styled-components/macro';
 import {
   LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Label,
 } from 'recharts';
@@ -35,12 +36,22 @@ const dataTransformer = (previousDataSet: PreviousDataSet): NewDataSet => {
   return newDataSet;
 };
 
+export const LineChartMainStyled = styled.div`
+  .recharts-label, .recharts-cartesian-axis-tick-value{
+    tspan {
+      fill: ${props => props.theme.colors.textColor};
+    }
+  }
+
+
+`;
+
 const LineChartMain = ({ data, models }: Props): Node => {
   const dataTransformed = dataTransformer(data);
   const colorblindFriendlyPalette = ['#E69F00', '#56B4E9', '#CC79A7', '#009E73', '#0072B2', '#D55E00', '#F0E442'];
 
   return (
-    <div style={{ marginBottom: '2rem' }}>
+    <LineChartMainStyled style={{ marginBottom: '2rem' }}>
       <ResponsiveContainer width="100%" height={451}>
         <LineChart
           width={800}
@@ -56,11 +67,11 @@ const LineChartMain = ({ data, models }: Props): Node => {
           </XAxis>
           <YAxis label={{ value: 'Accuracy', angle: -90, position: 'insideLeft' }} />
           <Tooltip />
-          <Legend wrapperStyle={{ bottom: -20 }} />
+          <Legend wrapperStyle={{ bottom: -20, fontSize: '1.1rem' }} />
           {!isEmpty(models) && models.map((item, i) => <Line dataKey={item} type="monotone" stroke={colorblindFriendlyPalette[i]} fill={colorblindFriendlyPalette[i]} key={`model-${item}`} />)}
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </LineChartMainStyled>
   );
 };
 

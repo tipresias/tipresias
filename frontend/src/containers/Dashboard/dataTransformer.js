@@ -54,8 +54,8 @@ export const dataTransformer = (
     // isCorrect (form principalModel)
     const { isCorrect } = principleModelPrediction;
     acc[currentIndex][4] = isCorrect
-      ? { svg: true, text: 'correct', path: iconCheck }
-      : { svg: true, text: 'incorrect', path: iconCross };
+      ? { svg: true, text: 'prediction is correct', path: iconCheck }
+      : { svg: true, text: 'prediction is incorrect', path: iconCross };
     return acc;
   }, []);
   return newDataSet;

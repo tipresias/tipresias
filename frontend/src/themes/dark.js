@@ -10,5 +10,6 @@ export default {
     logoFilter: 'invert(1)',
     tableBorderColor: 'rgb(56, 68, 77)',
     divisionColor: 'rgb(56,68,77)',
+    tableIcon: 'saturate(3)',
   },
 };

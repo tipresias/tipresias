@@ -10,7 +10,6 @@ describe("HomePage", function(){
     });
 
     it("checks all models by defaults", () => {
-      cy.get('input[type=checkbox]').should('have.length', 4);
       cy.get('input[type=checkbox]').should('be.checked');
     });
 
@@ -39,10 +38,10 @@ describe("HomePage", function(){
       cy.get(".recharts-responsive-container").should('be.visible');
     });
 
-    it("refreshes when a model is unchecked", () => {
-      cy.get("[type=checkbox]").first().uncheck();
+    it("refreshes when models are unchecked", () => {
+      cy.get("[type=checkbox]").uncheck();
       cy.get(".recharts-responsive-container").should('be.visible');
-      cy.get(".recharts-default-legend").children().should('have.length', 3);
+      cy.get(".recharts-default-legend").should('not.be.visible');
     });
 
   });

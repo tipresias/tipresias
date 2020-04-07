@@ -82,7 +82,7 @@ Seed the DB with raw data: `docker-compose run --rm backend python3 manage.py se
 
 #### Run end-to-end browser tests
 
-- **Recommended:** `./scripts/browser_test.sh`
+- **Recommended:** `./scripts/browser_tests.sh`
   - Slower, but seeds test DB with random data, and is how tests are run in CI
 - `docker-compose run --rm browser_test npx cypress run`
   - Faster, but risks passing due to specific characteristics of local data, then failing in CI.
@@ -101,3 +101,10 @@ The app is deployed to Google Cloud with every merge/push to `master`. You can m
 ## Troubleshooting
 
 - If, while working on a branch, you're getting a weird error in one of the services unrelated to your current work, try pulling the associated images to make sure you have the latest version.
+- If you get errors in `frontend` related to missing packages, even after building a new image, try the following to clear its `node_modules` directory:
+  - `docker-compose stop`
+  - `docker container rm tipresias_frontend_1`
+  - `docker container rm tipresias_storybook_1`
+  - `docker container volume rm node_modules`
+  - `docker container create node_modules`
+  - `docker-compose build --no-cache frontend`

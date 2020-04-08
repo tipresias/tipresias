@@ -17,7 +17,7 @@ type Props = {
 
 type NewDataItem = {
   roundNumber: number,
-  [key: string]: number
+  [key: string]: string
 }
 
 type NewDataSet = Array<NewDataItem>
@@ -28,8 +28,9 @@ const dataTransformer = (previousDataSet: PreviousDataSet): NewDataSet => {
     acc[currentIndex] = acc[currentIndex] || {};
     acc[currentIndex].roundNumber = roundNumber;
     modelMetrics.forEach((item) => {
-      const { modelName } = item;
-      acc[currentIndex][modelName] = item.cumulativeAccuracy;
+      const { modelName, cumulativeAccuracy } = item;
+      const cumulativeAccuracyPercentage = cumulativeAccuracy * 100;
+      acc[currentIndex][modelName] = parseFloat(cumulativeAccuracyPercentage).toFixed(2);
     });
     return acc;
   }, []);
@@ -63,7 +64,7 @@ const LineChartMain = ({ data, models }: Props): Node => {
           <XAxis dataKey="roundNumber">
             <Label value="Rounds" offset={-10} position="insideBottom" />
           </XAxis>
-          <YAxis label={{ value: 'Accuracy', angle: -90, position: 'insideLeft' }} />
+          <YAxis label={{ value: 'Accuracy %', angle: -90, position: 'insideLeft' }} />
           <Tooltip />
           <Legend wrapperStyle={{ bottom: -20, fontSize: '1.1rem' }} />
           {!isEmpty(models) && models.map((item, i) => <Line dataKey={item} type="monotone" stroke={colorblindFriendlyPalette[i]} fill={colorblindFriendlyPalette[i]} key={`model-${item}`} />)}

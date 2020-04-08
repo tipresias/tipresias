@@ -310,6 +310,10 @@ class SeasonType(graphene.ObjectType):
 
         return (
             pd.DataFrame(query_set)
+            # We fill missing win probabilities with 0.5, because that's the equivalent
+            # of not picking a winner. 0 would represent an extreme prediction
+            # and result in large negative bits calculations.
+            .fillna({"predicted_win_probability": 0.5})
             .fillna(0)
             .assign(bits=_calculate_bits)
             .assign(

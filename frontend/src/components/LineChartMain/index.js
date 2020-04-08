@@ -13,6 +13,7 @@ type PreviousDataSet = Array<LineChartDataType>;
 type Props = {
   data: PreviousDataSet,
   models: Array<string>,
+  metric: string
 }
 
 type NewDataItem = {
@@ -22,15 +23,19 @@ type NewDataItem = {
 
 type NewDataSet = Array<NewDataItem>
 
-const dataTransformer = (previousDataSet: PreviousDataSet): NewDataSet => {
+const dataTransformer = (previousDataSet: PreviousDataSet, metric: string): NewDataSet => {
   const newDataSet = previousDataSet.reduce((acc, currentItem, currentIndex) => {
     const { roundNumber, modelMetrics } = currentItem;
     acc[currentIndex] = acc[currentIndex] || {};
     acc[currentIndex].roundNumber = roundNumber;
     modelMetrics.forEach((item) => {
-      const { modelName, cumulativeAccuracy } = item;
-      const cumulativeAccuracyPercentage = cumulativeAccuracy * 100;
-      acc[currentIndex][modelName] = parseFloat(cumulativeAccuracyPercentage).toFixed(2);
+      const { modelName } = item;
+      if (item[metric] < 1) {
+        const metricPercentage = item[metric] * 100;
+        acc[currentIndex][modelName] = parseFloat(metricPercentage).toFixed(2);
+      } else {
+        acc[currentIndex][modelName] = Math.round(item[metric]).toString();
+      }
     });
     return acc;
   }, []);
@@ -45,8 +50,8 @@ export const LineChartMainStyled = styled.div`
   }
 `;
 
-const LineChartMain = ({ data, models }: Props): Node => {
-  const dataTransformed = dataTransformer(data);
+const LineChartMain = ({ data, models, metric }: Props): Node => {
+  const dataTransformed = dataTransformer(data, metric);
   const colorblindFriendlyPalette = ['#E69F00', '#56B4E9', '#CC79A7', '#009E73', '#0072B2', '#D55E00', '#F0E442'];
 
   return (
@@ -64,7 +69,7 @@ const LineChartMain = ({ data, models }: Props): Node => {
           <XAxis dataKey="roundNumber">
             <Label value="Rounds" offset={-10} position="insideBottom" />
           </XAxis>
-          <YAxis label={{ value: 'Accuracy %', angle: -90, position: 'insideLeft' }} />
+          <YAxis label={{ value: metric, angle: -90, position: 'insideLeft' }} />
           <Tooltip />
           <Legend wrapperStyle={{ bottom: -20, fontSize: '1.1rem' }} />
           {!isEmpty(models) && models.map((item, i) => <Line dataKey={item} type="monotone" stroke={colorblindFriendlyPalette[i]} fill={colorblindFriendlyPalette[i]} key={`model-${item}`} />)}

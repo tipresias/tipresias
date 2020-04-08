@@ -22,13 +22,15 @@ import { dataTransformer } from './dataTransformer';
 import type { ModelType } from '../../types';
 
 type DashboardProps = {
+  metrics: Array<string>,
   models: Array<ModelType>,
   years: Array<number>
 };
 
 const Widget = styled.div`${WidgetStyles}`;
 
-const Dashboard = ({ years, models }: DashboardProps) => {
+
+const Dashboard = ({ years, models, metrics }: DashboardProps) => {
   const [defaultModel] = models.filter(item => item.isPrinciple);
 
   const latestYear = years[years.length - 1];
@@ -36,8 +38,11 @@ const Dashboard = ({ years, models }: DashboardProps) => {
 
   const initialSelectedModels = models.map(item => item.name);
   const [checkedModels, setSelectedModels] = useState(initialSelectedModels);
-  const mainWidgetTitle = 'Cumulative accuracy by round'; // todo: make this dinamyc depending on selections.
 
+  // const initialUnselectedMetrics = metrics.filter(item => item != metrics[0]);
+  const [currentMetric, setCurrentMetric] = useState(metrics[0]);
+
+  const mainWidgetTitle = `${currentMetric.replace(/cumulative/g, 'cumulative ')} by round`; // todo: make this dinamyc depending on selections.
   return (
     <ErrorBoundary>
       <DashboardContainerStyled>
@@ -58,6 +63,7 @@ const Dashboard = ({ years, models }: DashboardProps) => {
               return (
                 <LineChartMain
                   models={checkedModels}
+                  metric={currentMetric}
                   data={data.fetchYearlyPredictions.predictionsByRound}
                 />
               );
@@ -108,8 +114,8 @@ const Dashboard = ({ years, models }: DashboardProps) => {
             <fieldset style={{ display: 'flex', flexWrap: 'wrap' }}>
               <legend>Choose a metric:</legend>
               {
-                ['bits', 'accuracy', 'MAE'].map((metricName) => {
-                  const labelName = metricName.replace(/_/g, ' ');
+                metrics.map((metricName) => {
+                  const labelName = metricName.replace(/cumulative/g, '');
                   return (
                     <label htmlFor={metricName} key={metricName} style={{ margin: '0.5rem 0' }}>
                       <input
@@ -117,17 +123,10 @@ const Dashboard = ({ years, models }: DashboardProps) => {
                         id={metricName}
                         name={metricName}
                         value={metricName}
-                        checked={checkedModels.includes(metricName)}
+                        checked={metricName === currentMetric}
                         onChange={(event: SyntheticEvent<HTMLSelectElement>): void => {
-                          const checkedModel = event.currentTarget.value;
-                          if (checkedModels.includes(checkedModel)) {
-                            const updatedModels = checkedModels.filter(
-                              item => item !== checkedModel,
-                            );
-                            setSelectedModels(updatedModels);
-                          } else {
-                            setSelectedModels([...checkedModels, checkedModel]);
-                          }
+                          const checkedMetric = event.currentTarget.value;
+                          setCurrentMetric(checkedMetric);
                         }}
                       />
                       {labelName}

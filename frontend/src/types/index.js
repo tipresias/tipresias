@@ -24,6 +24,7 @@ export type ModelType = {
   isPrinciple: boolean
 }
 
+
 export type PredictionType = {
   mlModel: ModelType,
   predictedWinner: Object,

@@ -100,5 +100,15 @@ query {
     isPrinciple
     forCompetition
   }
+  fetchYearlyPredictions{
+    predictionsByRound{
+      roundNumber
+      modelMetrics{
+        cumulativeBits
+        cumulativeAccuracy
+        cumulativeMeanAbsoluteError
+      }
+    }
+  }
 }
 `;

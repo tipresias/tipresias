@@ -398,6 +398,20 @@ class TestSchema(TestCase):
                 self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
                 self.assertGreater(model_stats["cumulativeMarginDifference"], 0)
 
+        with self.subTest("when a model doesn't predict win probabilities"):
+            MLModel.objects.get(name="accurate_af").prediction_set.update(
+                predicted_win_probability=None
+            )
+
+            executed = self.client.execute(query)
+
+            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0][
+                "modelMetrics"
+            ]
+            cumulative_bits = data[0]["cumulativeBits"]
+
+            self.assertEqual(cumulative_bits, 0)
+
     def test_fetch_ml_models(self):
         N_MODELS = 3
 

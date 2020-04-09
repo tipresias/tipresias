@@ -39,16 +39,14 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
   const initialSelectedModels = models.map(item => item.name);
   const [checkedModels, setSelectedModels] = useState(initialSelectedModels);
 
-  // const initialUnselectedMetrics = metrics.filter(item => item != metrics[0]);
   const [currentMetric, setCurrentMetric] = useState(metrics[0]);
   const currentMetricLabel = currentMetric.replace(/cumulative/g, '');
-  const mainWidgetTitle = `Cumulative ${currentMetricLabel} by round`; // todo: make this dinamyc depending on selections.
+  const mainWidgetTitle = `Cumulative ${currentMetricLabel} by round`;
   return (
     <ErrorBoundary>
       <DashboardContainerStyled>
         <Widget gridColumn="1 / -1">
           <WidgetHeading>
-            {/* Cumulative accuracy by round */}
             {mainWidgetTitle}
             {year && <div className="WidgetHeading__selected-year">{`year: ${year}`}</div>}
           </WidgetHeading>

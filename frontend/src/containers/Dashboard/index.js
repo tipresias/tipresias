@@ -186,21 +186,29 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               const { roundNumber, modelMetrics } = predictionsByRound[0];
 
               // cumulativeCorrectCount
-              const { cumulativeCorrectCount } = modelMetrics.find(item => item.modelName === principleModel.name);
+              const { cumulativeCorrectCount } = modelMetrics.find(
+                item => item.modelName === principleModel.name,
+              );
 
               // bits
-              const { cumulativeBits } = modelMetrics.find(item => item.cumulativeBits !== 0) || { cumulativeBits: 0 };
+              const { cumulativeBits } = modelMetrics.find(
+                item => item.cumulativeBits !== 0,
+              ) || { cumulativeBits: 0 };
 
               // cumulativeMarginDifference
-              const { cumulativeMarginDifference } = modelMetrics.find(item => item.cumulativeMarginDifference !== 0);
+              const { cumulativeMarginDifference } = modelMetrics.find(
+                item => item.cumulativeMarginDifference !== 0,
+              ) || { cumulativeMarginDifference: 0 };
 
               // cumulativeMeanAbsoluteError
-              const { cumulativeMeanAbsoluteError } = modelMetrics.find(item => item.cumulativeMeanAbsoluteError !== 0);
+              const { cumulativeMeanAbsoluteError } = modelMetrics.find(
+                item => item.cumulativeMeanAbsoluteError !== 0,
+              ) || { cumulativeMeanAbsoluteError: 0 };
 
               return (
                 <Fragment>
                   <WidgetHeading>
-                    {'Performance metrics for Tipresias'}
+                    Performance metrics for Tipresias
                   </WidgetHeading>
                   <WidgetSubHeading>{`Round ${roundNumber},  Season ${seasonYear} `}</WidgetSubHeading>
                   <DefinitionList items={[

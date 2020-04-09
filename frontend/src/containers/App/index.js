@@ -27,6 +27,7 @@ const App = () => {
   if (loading) return <div>Loading Tipresias....</div>;
   if (error) return <div>Error: Something happened, try again later.</div>;
   if (data === undefined) return <p>Error: Data not defined.</p>;
+  const metrics = Object.keys(data.fetchYearlyPredictions.predictionsByRound[0].modelMetrics[0]);
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
@@ -52,7 +53,7 @@ const App = () => {
 
           </PageHeader>
           <MainStyled>
-            <Route exact path="/" render={() => <Dashboard years={data.fetchPredictionYears} models={data.fetchMlModels} />} />
+            <Route exact path="/" render={() => <Dashboard years={data.fetchPredictionYears} models={data.fetchMlModels} metrics={metrics} />} />
             <Route path="/glossary" component={Glossary} />
             <Route exact path="/about" component={About} />
           </MainStyled>

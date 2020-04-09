@@ -20,6 +20,7 @@ from django.db.models import (
     Avg,
     QuerySet,
 )
+from django.conf import settings
 import graphene
 import pandas as pd
 import numpy as np
@@ -86,19 +87,29 @@ class RoundType(graphene.ObjectType):
             default_value=None,
             description="Get predictions and metrics for a specific ML model",
         ),
+        for_competition_only=graphene.Boolean(
+          default_value=False,
+          description="Only get prediction metrics for ML models used in competitions"
+        )
     )
     matches = graphene.List(MatchType, default_value=[])
 
     @staticmethod
-    def resolve_model_metrics(root, _info, ml_model_name=None) -> List[ModelMetric]:
+    def resolve_model_metrics(
+        root, _info, ml_model_name=None, for_competition_only=False
+    ) -> List[ModelMetric]:
         """Calculate metrics related to the quality of models' predictions."""
+        model_filter = lambda name: (
+            (ml_model_name is None or name == ml_model_name) and
+            (not for_competition_only or name in settings.COMPETITION_ML_MODELS)
+        )
+
         model_metrics_to_dict = lambda df: [
             {
                 df.index.names[ML_MODEL_NAME_LVL]: ml_model_name_idx,
                 **df.loc[ml_model_name_idx, :].to_dict(),
             }
-            for ml_model_name_idx in df.index
-            if ml_model_name is None or ml_model_name_idx == ml_model_name
+            for ml_model_name_idx in df.index if model_filter(ml_model_name_idx)
         ]
 
         metric_dicts = root.get("model_metrics").pipe(model_metrics_to_dict)

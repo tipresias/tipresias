@@ -48,8 +48,7 @@ export const dataTransformer = (
           : prevValue
       ), 0,
     );
-    // acc[currentIndex][3] = predictedWinProbability.toString();
-    acc[currentIndex][3] = (Math.round(predictedWinProbability * 100) / 100).toString();
+    acc[currentIndex][3] = `${(Math.round(predictedWinProbability * 100)).toString()}%`;
 
     // isCorrect (form principalModel)
     const { isCorrect } = principleModelPrediction;

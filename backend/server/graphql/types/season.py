@@ -95,11 +95,13 @@ class RoundType(graphene.ObjectType):
     matches = graphene.List(MatchType, default_value=[])
 
     @staticmethod
-    def resolve_model_metrics(root, _info, ml_model_name=None, for_competition_only=False) -> List[ModelMetric]:
+    def resolve_model_metrics(
+        root, _info, ml_model_name=None, for_competition_only=False
+    ) -> List[ModelMetric]:
         """Calculate metrics related to the quality of models' predictions."""
         model_filter = lambda name: (
-          (ml_model_name is None or name == ml_model_name) and
-          (not for_competition_only or name in settings.COMPETITION_ML_MODELS)
+            (ml_model_name is None or name == ml_model_name) and
+            (not for_competition_only or name in settings.COMPETITION_ML_MODELS)
         )
 
         model_metrics_to_dict = lambda df: [

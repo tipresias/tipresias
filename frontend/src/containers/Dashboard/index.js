@@ -41,8 +41,8 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
 
   // const initialUnselectedMetrics = metrics.filter(item => item != metrics[0]);
   const [currentMetric, setCurrentMetric] = useState(metrics[0]);
-
-  const mainWidgetTitle = `${currentMetric.replace(/cumulative/g, 'cumulative ')} by round`; // todo: make this dinamyc depending on selections.
+  const currentMetricLabel = currentMetric.replace(/cumulative/g, '');
+  const mainWidgetTitle = `Cumulative ${currentMetricLabel} by round`; // todo: make this dinamyc depending on selections.
   return (
     <ErrorBoundary>
       <DashboardContainerStyled>
@@ -63,7 +63,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               return (
                 <LineChartMain
                   models={checkedModels}
-                  metric={currentMetric}
+                  metric={{ name: currentMetric, label: currentMetricLabel }}
                   data={data.fetchYearlyPredictions.predictionsByRound}
                 />
               );

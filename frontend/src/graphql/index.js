@@ -76,14 +76,15 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
 `;
 
 export const FETCH_LATEST_ROUND_STATS = gql`
-  query fetchYearlyPredictions($year: Int, $roundNumber: Int, $mlModelName: String){
+  query fetchYearlyPredictions($year: Int, $roundNumber: Int){
     fetchYearlyPredictions(year: $year){
       seasonYear
       predictionsByRound(roundNumber: $roundNumber){
         roundNumber
-        modelMetrics(mlModelName: $mlModelName){
+        modelMetrics(forCompetitionOnly: true){
           modelName
           cumulativeCorrectCount
+          cumulativeBits
           cumulativeMeanAbsoluteError
           cumulativeMarginDifference
         }

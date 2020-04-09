@@ -46,7 +46,11 @@ export const WidgetSubHeading = styled.h4`
 export const WidgetFooter = styled.div`
   padding: 1rem 0.5rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: space-evenly;
   flex-wrap: wrap;
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
 `;

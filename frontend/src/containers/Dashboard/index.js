@@ -31,7 +31,7 @@ const Widget = styled.div`${WidgetStyles}`;
 
 
 const Dashboard = ({ years, models, metrics }: DashboardProps) => {
-  const [defaultModel] = models.filter(item => item.isPrinciple);
+  const [principleModel] = models.filter(item => item.isPrinciple);
 
   const latestYear = years[years.length - 1];
   const [year, setYear] = useState(latestYear);
@@ -156,16 +156,16 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
 
               const { roundNumber } = data.fetchLatestRoundPredictions;
               const { matches } = data.fetchLatestRoundPredictions;
-              const rowsArray = dataTransformer(matches, defaultModel.name);
+              const rowsArray = dataTransformer(matches, principleModel.name);
 
               if (rowsArray.length === 0) {
                 return <StatusBar text="No data available." error />;
               }
-              const caption = `${defaultModel.name} predictions for matches of round ${roundNumber}, season ${latestYear}`;
+              const caption = `${principleModel.name} predictions for matches of round ${roundNumber}, season ${latestYear}`;
               return (
                 <Table
                   caption={caption}
-                  headers={['Date', 'Predicted Winner', 'Predicted margin', 'Win probability', 'is Correct?']}
+                  headers={['Date', 'Predicted Winner', 'Predicted margin', 'Win probability (%)', 'is Correct?']}
                   rows={rowsArray}
                 />
               );
@@ -176,7 +176,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
         <Widget gridColumn="1 / -2">
           <Query
             query={FETCH_LATEST_ROUND_STATS}
-            variables={{ latestYear, roundNumber: -1, mlModelName: defaultModel.name }}
+            variables={{ latestYear, roundNumber: -1 }}
           >
             {(response: any): Node => {
               const { loading, error, data } = response;
@@ -184,17 +184,23 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               if (error) return <StatusBar text={error.message} error />;
               const { seasonYear, predictionsByRound } = data.fetchYearlyPredictions;
               const { roundNumber, modelMetrics } = predictionsByRound[0];
-              const {
-                modelName,
-                cumulativeCorrectCount,
-                cumulativeMarginDifference,
-                cumulativeMeanAbsoluteError,
-              } = modelMetrics[0];
+
+              // cumulativeCorrectCount
+              const { cumulativeCorrectCount } = modelMetrics.find(item => item.modelName === principleModel.name);
+
+              // bits
+              const { cumulativeBits } = modelMetrics.find(item => item.cumulativeBits !== 0) || { cumulativeBits: 0 };
+
+              // cumulativeMarginDifference
+              const { cumulativeMarginDifference } = modelMetrics.find(item => item.cumulativeMarginDifference !== 0);
+
+              // cumulativeMeanAbsoluteError
+              const { cumulativeMeanAbsoluteError } = modelMetrics.find(item => item.cumulativeMeanAbsoluteError !== 0);
 
               return (
                 <Fragment>
                   <WidgetHeading>
-                    {`Performance metrics for ${modelName}`}
+                    {'Performance metrics for Tipresias'}
                   </WidgetHeading>
                   <WidgetSubHeading>{`Round ${roundNumber},  Season ${seasonYear} `}</WidgetSubHeading>
                   <DefinitionList items={[
@@ -205,17 +211,23 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
                     },
                     {
                       id: 2,
+                      key: 'Cumulative Bits',
+                      value: Math.round(cumulativeBits * 100) / 100,
+                    },
+                    {
+                      id: 3,
                       key: 'Cumulative Mean Absolute Error (MAE)',
                       value: Math.round(cumulativeMeanAbsoluteError * 100) / 100,
                     },
                     {
-                      id: 3,
+                      id: 4,
                       key: 'Cumulative Margin Difference',
                       value: Math.round(cumulativeMarginDifference * 100) / 100,
                     },
                   ]}
                   />
                 </Fragment>
+
               );
             }}
           </Query>

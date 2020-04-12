@@ -14,7 +14,7 @@
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",
     "graphql": "^14.6.0",
-    "graphql-tag": "^2.10.2",
+    "graphql-tag": "^2.10.3",
     "lodash": "^4.17.13",
     "lodash.template": "^4.5.0",
     "react": "^16.12.0",

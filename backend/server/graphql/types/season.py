@@ -41,13 +41,14 @@ GROUP_BY_LVL = 0
 class CumulativeMetricsByRoundType(graphene.ObjectType):
     """Cumulative performance metrics for the given model through the given round."""
 
-    ml_model__name = graphene.String(name="modelName")
+    ml_model__name = graphene.String(name="modelName", required=True)
     cumulative_correct_count = graphene.Int(
         description=(
             "Cumulative sum of correct tips made by the given model "
             "for the given season"
         ),
         default_value=0,
+        required=True,
     )
     cumulative_accuracy = graphene.Float(
         description=(
@@ -55,10 +56,12 @@ class CumulativeMetricsByRoundType(graphene.ObjectType):
             "for the given season."
         ),
         default_value=0,
+        required=True,
     )
     cumulative_mean_absolute_error = graphene.Float(
         description="Cumulative mean absolute error for the given season",
         default_value=0,
+        required=True,
     )
     cumulative_margin_difference = graphene.Int(
         description=(
@@ -66,31 +69,33 @@ class CumulativeMetricsByRoundType(graphene.ObjectType):
             "for the given season."
         ),
         default_value=0,
+        required=True,
     )
     cumulative_bits = graphene.Float(
-        description="Cumulative bits metric for the given season.", default_value=0
+        description="Cumulative bits metric for the given season.",
+        default_value=0,
+        required=True,
     )
 
 
 class RoundType(graphene.ObjectType):
     """Match and prediction data for a given season grouped by round."""
 
-    match__round_number = graphene.Int(name="roundNumber")
+    match__round_number = graphene.Int(name="roundNumber", required=True)
     model_metrics = graphene.List(
         CumulativeMetricsByRoundType,
         description=(
             "Cumulative performance metrics for predictions made by the given model "
             "through the given round"
         ),
-        default_value=pd.DataFrame(),
         ml_model_name=graphene.String(
-            default_value=None,
             description="Get predictions and metrics for a specific ML model",
         ),
         for_competition_only=graphene.Boolean(
-          default_value=False,
-          description="Only get prediction metrics for ML models used in competitions"
-        )
+            default_value=False,
+            description="Only get prediction metrics for ML models used in competitions",
+        ),
+        required=True,
     )
     matches = graphene.List(MatchType, default_value=[])
 
@@ -100,8 +105,8 @@ class RoundType(graphene.ObjectType):
     ) -> List[ModelMetric]:
         """Calculate metrics related to the quality of models' predictions."""
         model_filter = lambda name: (
-            (ml_model_name is None or name == ml_model_name) and
-            (not for_competition_only or name in settings.COMPETITION_ML_MODELS)
+            (ml_model_name is None or name == ml_model_name)
+            and (not for_competition_only or name in settings.COMPETITION_ML_MODELS)
         )
 
         model_metrics_to_dict = lambda df: [
@@ -109,7 +114,8 @@ class RoundType(graphene.ObjectType):
                 df.index.names[ML_MODEL_NAME_LVL]: ml_model_name_idx,
                 **df.loc[ml_model_name_idx, :].to_dict(),
             }
-            for ml_model_name_idx in df.index if model_filter(ml_model_name_idx)
+            for ml_model_name_idx in df.index
+            if model_filter(ml_model_name_idx)
         ]
 
         metric_dicts = root.get("model_metrics").pipe(model_metrics_to_dict)
@@ -251,21 +257,23 @@ def _calculate_tip_points():
 class SeasonType(graphene.ObjectType):
     """Match and prediction data grouped by season."""
 
-    season_year = graphene.Int()
+    season_year = graphene.Int(required=True)
 
     prediction_model_names = graphene.List(
-        graphene.String, description="All model names available for the given year"
+        graphene.String,
+        description="All model names available for the given year",
+        required=True,
     )
     predictions_by_round = graphene.List(
         RoundType,
         description="Match and prediction data grouped by round",
         round_number=graphene.Int(
-            default_value=None,
             description=(
                 "Optional filter when only one round of data is required. "
                 "-1 will return the last available round."
             ),
         ),
+        required=True,
     )
 
     @staticmethod

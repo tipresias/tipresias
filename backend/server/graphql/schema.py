@@ -17,12 +17,13 @@ class Query(graphene.ObjectType):
     """Base GraphQL Query type that contains all queries and their resolvers."""
 
     fetch_predictions = graphene.List(
-        PredictionType, year=graphene.Int(default_value=None)
+        PredictionType, year=graphene.Int(), required=True
     )
 
     fetch_prediction_years = graphene.List(
         graphene.Int,
         description="All years for which model predictions exist in the database",
+        required=True,
     )
 
     fetch_yearly_predictions = graphene.Field(
@@ -31,6 +32,7 @@ class Query(graphene.ObjectType):
             default_value=timezone.localtime().year,
             description=("Filter results by year."),
         ),
+        required=True,
     )
 
     fetch_latest_round_predictions = graphene.Field(
@@ -39,6 +41,7 @@ class Query(graphene.ObjectType):
             "Match info and predictions for the latest round for which data "
             "is available"
         ),
+        required=True,
     )
 
     fetch_ml_models = graphene.List(
@@ -52,6 +55,7 @@ class Query(graphene.ObjectType):
                 "(e.g. margin, win probability)."
             ),
         ),
+        required=True,
     )
 
     @staticmethod

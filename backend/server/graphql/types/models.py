@@ -34,11 +34,11 @@ class MatchType(DjangoObjectType):
         model = Match
 
     winner = graphene.Field(TeamType)
-    year = graphene.Int()
+    year = graphene.Int(required=True)
     home_team = graphene.Field(TeamType)
     away_team = graphene.Field(TeamType)
     predictions = graphene.List(
-        PredictionType, ml_model_name=graphene.String(default_value=None)
+        PredictionType, ml_model_name=graphene.String(default_value=None), required=True
     )
 
     @staticmethod
@@ -78,7 +78,8 @@ class MLModelType(DjangoObjectType):
         model = MLModel
 
     for_competition = graphene.Boolean(
-        description="Whether the model's predictions are used in any competitions."
+        description="Whether the model's predictions are used in any competitions.",
+        required=True,
     )
 
     is_principle = graphene.Boolean(
@@ -87,7 +88,8 @@ class MLModelType(DjangoObjectType):
             "among all the models used in competitions (i.e. all competition models "
             "predict winners, but only one's predictions are official "
             "predicted winners of Tipresias)."
-        )
+        ),
+        required=True,
     )
 
     @staticmethod

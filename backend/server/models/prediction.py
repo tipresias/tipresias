@@ -48,7 +48,10 @@ class Prediction(models.Model):
         predicted_margin, predicted_margin_winner = cls._calculate_predicted_margin(
             prediction_data, home_team, away_team
         )
-        predicted_win_probability, predicted_proba_winner = cls._calculate_predicted_win_probability(  # pylint: disable=line-too-long
+        (
+            predicted_win_probability,
+            predicted_proba_winner,
+        ) = cls._calculate_predicted_win_probability(  # pylint: disable=line-too-long
             prediction_data, home_team, away_team
         )
 

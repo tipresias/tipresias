@@ -6,7 +6,6 @@ import styled from 'styled-components/macro';
 import {
   FETCH_YEARLY_PREDICTIONS_QUERY,
   FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
-  FETCH_LATEST_ROUND_STATS,
 } from '../../graphql';
 import LineChartMain from '../../components/LineChartMain';
 import Select from '../../components/Select';
@@ -18,8 +17,15 @@ import ErrorBoundary from '../../components/ErrorBoundary';
 import {
   WidgetStyles, WidgetHeading, WidgetSubHeading, WidgetFooter, DashboardContainerStyled,
 } from './style';
-import { dataTransformer } from './dataTransformer';
-import type { ModelType } from '../../types';
+import { dataTransformerTable } from './dataTransformerTable';
+import { dataTransformerLineChart } from './dataTransformerLineChart';
+
+export type ModelType = {
+  name: string,
+  forCompetition: boolean,
+  isPrinciple: boolean
+}
+
 
 type DashboardProps = {
   metrics: Array<string>,
@@ -50,19 +56,24 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
             {mainWidgetTitle}
             {year && <div className="WidgetHeading__selected-year">{`year: ${year}`}</div>}
           </WidgetHeading>
-          <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year }}>
+          <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year, forCompetitionOnly: false }}>
             {(response: any): Node => {
               const { loading, error, data } = response;
               if (loading) return <ChartLoading text="Brrrrr ..." />;
               if (error) return <StatusBar text={error.message} error />;
-              if (data.fetchYearlyPredictions.predictionsByRound.length === 0) {
+              const { predictionsByRound } = data.fetchYearlyPredictions;
+
+              if (predictionsByRound.length === 0) {
                 return <StatusBar text="No data found" empty />;
               }
+              const metric = { name: currentMetric, label: currentMetricLabel };
+              const dataTransformed = dataTransformerLineChart(predictionsByRound, metric);
+
               return (
                 <LineChartMain
                   models={checkedModels}
-                  metric={{ name: currentMetric, label: currentMetricLabel }}
-                  data={data.fetchYearlyPredictions.predictionsByRound}
+                  metric={metric}
+                  data={dataTransformed}
                 />
               );
             }}
@@ -154,7 +165,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
 
               const { roundNumber } = data.fetchLatestRoundPredictions;
               const { matches } = data.fetchLatestRoundPredictions;
-              const rowsArray = dataTransformer(matches, principleModel.name);
+              const rowsArray = dataTransformerTable(matches, principleModel.name);
 
               if (rowsArray.length === 0) {
                 return <StatusBar text="No data available." error />;
@@ -173,8 +184,8 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
 
         <Widget gridColumn="1 / -2">
           <Query
-            query={FETCH_LATEST_ROUND_STATS}
-            variables={{ latestYear, roundNumber: -1 }}
+            query={FETCH_YEARLY_PREDICTIONS_QUERY}
+            variables={{ year: latestYear, roundNumber: -1, forCompetitionOnly: true }}
           >
             {(response: any): Node => {
               const { loading, error, data } = response;
@@ -184,9 +195,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               const { roundNumber, modelMetrics } = predictionsByRound[0];
 
               // cumulativeCorrectCount
-              const { cumulativeCorrectCount } = modelMetrics.find(
-                item => item.modelName === principleModel.name,
-              );
+              const { cumulativeCorrectCount } = modelMetrics.find(item => (item.modelName === principleModel.name));
 
               // bits
               const { cumulativeBits } = modelMetrics.find(

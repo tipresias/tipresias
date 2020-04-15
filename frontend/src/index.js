@@ -20,6 +20,7 @@ const client = new ApolloClient({
     addTypename: false,
   }),
 });
+// const client = new ApolloClient({});
 
 // const withApollo = Component => (
 //   <ApolloProvider client={client}>

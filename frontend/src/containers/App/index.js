@@ -27,7 +27,10 @@ const App = () => {
   if (loading) return <div>Loading Tipresias....</div>;
   if (error) return <div>Error: Something happened, try again later.</div>;
   if (data === undefined) return <p>Error: Data not defined.</p>;
-  const metrics = Object.keys(data.fetchYearlyPredictions.predictionsByRound[0].modelMetrics[0]);
+
+
+  const metrics = ['cumulativeAccuracy', 'cumulativeBits', 'cumulativeMeanAbsoluteError'];
+
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>

@@ -60,32 +60,17 @@ query fetchLatestRoundPredictions{
 `;
 
 export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
-  query fetchYearlyPredictions($year: Int){
+  query fetchYearlyPredictions($year: Int, $roundNumber: Int, $forCompetitionOnly: Boolean){
     fetchYearlyPredictions(year: $year){
-      predictionsByRound{
+      seasonYear
+      predictionsByRound (roundNumber: $roundNumber){
         roundNumber
-        modelMetrics{
+        modelMetrics(forCompetitionOnly: $forCompetitionOnly){
           modelName
           cumulativeAccuracy
           cumulativeBits
           cumulativeMeanAbsoluteError
-        }
-      }
-    }
-  }
-`;
-
-export const FETCH_LATEST_ROUND_STATS = gql`
-  query fetchYearlyPredictions($year: Int, $roundNumber: Int){
-    fetchYearlyPredictions(year: $year){
-      seasonYear
-      predictionsByRound(roundNumber: $roundNumber){
-        roundNumber
-        modelMetrics(forCompetitionOnly: true){
-          modelName
           cumulativeCorrectCount
-          cumulativeBits
-          cumulativeMeanAbsoluteError
           cumulativeMarginDifference
         }
       }
@@ -94,22 +79,12 @@ export const FETCH_LATEST_ROUND_STATS = gql`
 `;
 
 export const FETCH_MODELS_AND_YEARS_QUERY = gql`
-query {
+query fetchModelsAndYears {
   fetchPredictionYears
   fetchMlModels {
     name
     isPrinciple
     forCompetition
-  }
-  fetchYearlyPredictions{
-    predictionsByRound{
-      roundNumber
-      modelMetrics{
-        cumulativeBits
-        cumulativeAccuracy
-        cumulativeMeanAbsoluteError
-      }
-    }
   }
 }
 `;

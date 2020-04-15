@@ -1,13 +1,37 @@
+/* eslint-disable camelcase */
 // @flow
-import type { MatchesType, PredictionType } from '../../types';
 import images from '../../images';
+import type { fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
 
 const { iconCheck, iconCross } = images;
+
+export type ModelType = {
+  name: string,
+  forCompetition: boolean,
+  isPrinciple: boolean
+}
+
+// export type PredictionType = {
+//   mlModel: ModelType,
+//   predictedWinner: Object,
+//   predictedMargin: number,
+//   predictedWinProbability: number,
+//   isCorrect: boolean,
+// }
+
+// export type MatchType = {
+//   startDateTime: string,
+//   homeTeam: Object,
+//   awayTeam: Object,
+//   predictions: Array<PredictionType>
+// }
+
+export type MatchesType = Array<fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches>;
 
 type NewDataSet = Array<Array<string | Object>>;
 
 // eslint-disable-next-line import/prefer-default-export
-export const dataTransformer = (
+export const dataTransformerTable = (
   matches: MatchesType,
   principalModelName: string,
 ): NewDataSet => {

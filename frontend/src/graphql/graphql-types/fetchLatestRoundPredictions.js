@@ -23,13 +23,13 @@ export type fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_pred
   /**
    * Whether the model's predictions are used in any competitions.
    */
-  forCompetition: ?boolean,
+  forCompetition: boolean,
   /**
    * Whether the model is the principle model for predicting match winners among
    * all the models used in competitions (i.e. all competition models predict
    * winners, but only one's predictions are official predicted winners of Tipresias).
    */
-  isPrinciple: ?boolean,
+  isPrinciple: boolean,
 };
 
 export type fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions_predictedWinner = {
@@ -48,16 +48,16 @@ export type fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_pred
 
 export type fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches = {
   __typename: "MatchType",
-  year: ?number,
+  year: number,
   startDateTime: any,
   homeTeam: ?fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_homeTeam,
   awayTeam: ?fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_awayTeam,
-  predictions: ?Array<?fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions>,
+  predictions: Array<?fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions>,
 };
 
 export type fetchLatestRoundPredictions_fetchLatestRoundPredictions = {
   __typename: "RoundType",
-  roundNumber: ?number,
+  roundNumber: number,
   matches: ?Array<?fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches>,
 };
 
@@ -65,7 +65,7 @@ export type fetchLatestRoundPredictions = {
   /**
    * Match info and predictions for the latest round for which data is available
    */
-  fetchLatestRoundPredictions: ?fetchLatestRoundPredictions_fetchLatestRoundPredictions
+  fetchLatestRoundPredictions: fetchLatestRoundPredictions_fetchLatestRoundPredictions
 };/* @flow */
 /* eslint-disable */
 // @generated

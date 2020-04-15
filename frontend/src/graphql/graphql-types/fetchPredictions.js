@@ -23,7 +23,7 @@ export type fetchPredictions_fetchPredictions_match = {
   __typename: "MatchType",
   startDateTime: any,
   roundNumber: number,
-  year: ?number,
+  year: number,
   teammatchSet: Array<fetchPredictions_fetchPredictions_match_teammatchSet>,
 };
 
@@ -48,7 +48,7 @@ export type fetchPredictions_fetchPredictions = {
 };
 
 export type fetchPredictions = {
-  fetchPredictions: ?Array<?fetchPredictions_fetchPredictions>
+  fetchPredictions: Array<?fetchPredictions_fetchPredictions>
 };
 
 export type fetchPredictionsVariables = {

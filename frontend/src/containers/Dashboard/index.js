@@ -7,6 +7,8 @@ import {
   FETCH_YEARLY_PREDICTIONS_QUERY,
   FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
 } from '../../graphql';
+import type { fetchYearlyPredictions } from '../../graphql/graphql-types/fetchYearlyPredictions';
+import type { fetchLatestRoundPredictions } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
 import LineChartMain from '../../components/LineChartMain';
 import Select from '../../components/Select';
 import ChartLoading from '../../components/ChartLoading';
@@ -17,8 +19,8 @@ import ErrorBoundary from '../../components/ErrorBoundary';
 import {
   WidgetStyles, WidgetHeading, WidgetSubHeading, WidgetFooter, DashboardContainerStyled,
 } from './style';
-import { dataTransformerTable } from './dataTransformerTable';
-import { dataTransformerLineChart } from './dataTransformerLineChart';
+import dataTransformerTable from './dataTransformerTable';
+import dataTransformerLineChart from './dataTransformerLineChart';
 
 export type ModelType = {
   name: string,
@@ -26,15 +28,25 @@ export type ModelType = {
   isPrinciple: boolean
 }
 
-
 type DashboardProps = {
   metrics: Array<string>,
   models: Array<ModelType>,
   years: Array<number>
 };
 
-const Widget = styled.div`${WidgetStyles}`;
+interface fetchYearlyPredictionsResponse {
+  loading: any;
+  error: any;
+  data: fetchYearlyPredictions;
+}
 
+interface fetchLatestRoundPredictionsResponse {
+  loading: any;
+  error: any;
+  data: fetchLatestRoundPredictions;
+}
+
+const Widget = styled.div`${WidgetStyles}`;
 
 const Dashboard = ({ years, models, metrics }: DashboardProps) => {
   const [principleModel] = models.filter(item => item.isPrinciple);
@@ -57,17 +69,16 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
             {year && <div className="WidgetHeading__selected-year">{`year: ${year}`}</div>}
           </WidgetHeading>
           <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year, forCompetitionOnly: false }}>
-            {(response: any): Node => {
-              const { loading, error, data } = response;
+            {({ loading, error, data }: fetchYearlyPredictionsResponse): Node => {
               if (loading) return <ChartLoading text="Brrrrr ..." />;
               if (error) return <StatusBar text={error.message} error />;
-              const { predictionsByRound } = data.fetchYearlyPredictions;
+              const { predictionsByRound: predictionsByRoundData } = data.fetchYearlyPredictions;
 
-              if (predictionsByRound.length === 0) {
+              if (predictionsByRoundData.length === 0) {
                 return <StatusBar text="No data found" empty />;
               }
               const metric = { name: currentMetric, label: currentMetricLabel };
-              const dataTransformed = dataTransformerLineChart(predictionsByRound, metric);
+              const dataTransformed = dataTransformerLineChart(predictionsByRoundData, metric);
 
               return (
                 <LineChartMain
@@ -150,8 +161,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
         <Widget gridColumn="1 / -1" style={{ overflowX: 'scroll' }}>
           <WidgetHeading>Predictions</WidgetHeading>
           <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
-            {(response: any): Node => {
-              const { loading, error, data } = response;
+            {({ loading, error, data }: fetchLatestRoundPredictionsResponse): Node => {
               if (loading) return <p>Brrrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
               if (data.fetchLatestRoundPredictions.matches.length === 0) {
@@ -187,8 +197,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
             query={FETCH_YEARLY_PREDICTIONS_QUERY}
             variables={{ year: latestYear, roundNumber: -1, forCompetitionOnly: true }}
           >
-            {(response: any): Node => {
-              const { loading, error, data } = response;
+            {({ loading, error, data }: fetchYearlyPredictionsResponse): Node => {
               if (loading) return <p>Brrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
               const { seasonYear, predictionsByRound } = data.fetchYearlyPredictions;

@@ -47,7 +47,7 @@ export type fetchYearlyPredictions_fetchYearlyPredictions = {
   /**
    * Match and prediction data grouped by round
    */
-  predictionsByRound: Array<?fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound>,
+  predictionsByRound: Array<fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound>,
 };
 
 export type fetchYearlyPredictions = {

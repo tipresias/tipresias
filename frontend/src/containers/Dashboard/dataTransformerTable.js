@@ -31,7 +31,7 @@ export type MatchesType = Array<fetchLatestRoundPredictions_fetchLatestRoundPred
 type NewDataSet = Array<Array<string | Object>>;
 
 // eslint-disable-next-line import/prefer-default-export
-export const dataTransformerTable = (
+const dataTransformerTable = (
   matches: MatchesType,
   principalModelName: string,
 ): NewDataSet => {
@@ -83,3 +83,4 @@ export const dataTransformerTable = (
   }, []);
   return newDataSet;
 };
+export default dataTransformerTable;

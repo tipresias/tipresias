@@ -29,6 +29,7 @@ const dataTransformerLineChart = (
     acc[currentIndex] = acc[currentIndex] || {};
     acc[currentIndex].roundNumber = roundNumber;
     modelMetrics.forEach((item) => {
+      if (!item) return;
       // TODO check the ? in modelMetrics type,
       const { modelName } = item;
       // cumulativeAccuracy: %

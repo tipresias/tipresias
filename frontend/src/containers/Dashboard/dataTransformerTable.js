@@ -1,7 +1,12 @@
+/* eslint-disable consistent-return */
 /* eslint-disable camelcase */
 // @flow
 import images from '../../images';
-import type { fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
+import type {
+  fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches as MatchType,
+  fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions as PredictionType,
+} from '../../graphql/graphql-types/fetchLatestRoundPredictions';
+// import type { fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions as PredictionType } from '../../graphql/graphql-types/fetchPredictions';
 
 const { iconCheck, iconCross } = images;
 
@@ -11,26 +16,24 @@ export type ModelType = {
   isPrinciple: boolean
 }
 
-// export type PredictionType = {
-//   mlModel: ModelType,
-//   predictedWinner: Object,
-//   predictedMargin: number,
-//   predictedWinProbability: number,
-//   isCorrect: boolean,
-// }
-
-// export type MatchType = {
-//   startDateTime: string,
-//   homeTeam: Object,
-//   awayTeam: Object,
-//   predictions: Array<PredictionType>
-// }
-
-export type MatchesType = Array<fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches>;
+export type MatchesType = Array<MatchType>;
 
 type NewDataSet = Array<Array<string | Object>>;
 
-// eslint-disable-next-line import/prefer-default-export
+const getPredictedMargin = (
+  predictionsWithMargin: Array<PredictionType> | null,
+) => {
+  if (!predictionsWithMargin) return [];
+  return predictionsWithMargin.reduce(
+    (prevValue: number, currentItem: PredictionType) => {
+      if (!currentItem.predictedMargin) return 0;
+      return (
+        currentItem.predictedMargin > prevValue ? currentItem.predictedMargin : prevValue
+      );
+    }, 0,
+  );
+};
+
 const dataTransformerTable = (
   matches: MatchesType,
   principalModelName: string,
@@ -44,33 +47,33 @@ const dataTransformerTable = (
     acc[currentIndex][0] = date;
 
     // predicted Winner (form principalModel)
-    const [principleModelPrediction] = matchItem.predictions.filter(
-      (item: any) => item.mlModel.name === principalModelName,
+    const [predictionWithPrincipleModel] = matchItem.predictions.filter(
+      (item: any) => (item && item.mlModel.name === principalModelName)
+      ,
     );
-    const { predictedWinner } = principleModelPrediction;
-    acc[currentIndex][1] = predictedWinner.name;
+    if (!predictionWithPrincipleModel) { return []; }
+    acc[currentIndex][1] = predictionWithPrincipleModel.predictedWinner.name;
 
-    const marginForCompetition = matchItem.predictions.filter(
+    const predictionsWithMargin = matchItem.predictions.filter(
       (item: any) => item.mlModel.forCompetition === true && item.predictedMargin !== null,
     );
+
     // loop the array of predictions and choose the predictedmargin value that is higher
-    const predictedMargin = marginForCompetition.reduce(
-      (prevValue: number, currentItem: PredictionType) => (
-        currentItem.predictedMargin > prevValue ? currentItem.predictedMargin : prevValue
-      ), 0,
-    );
-    acc[currentIndex][2] = predictedMargin.toString();
+    acc[currentIndex][2] = getPredictedMargin(predictionsWithMargin);
 
     // predictedWinProbability
     const winProbabilityForCompetition = matchItem.predictions.filter(
       (item: any) => item.mlModel.forCompetition === true && item.predictedWinProbability !== null,
     );
-    const predictedWinProbability = winProbabilityForCompetition.reduce(
-      (prevValue: number, currentItem: PredictionType) => (
-        currentItem.predictedWinProbability > prevValue
+
+    const predictedWinProbability = winProbabilityForCompetition && winProbabilityForCompetition.reduce(
+      (prevValue: number, currentItem: PredictionType) => {
+        if (!currentItem.predictedWinProbability) return 0;
+        return currentItem.predictedWinProbability > prevValue
           ? currentItem.predictedWinProbability
-          : prevValue
-      ), 0,
+          : prevValue;
+      },
+      0,
     );
     acc[currentIndex][3] = `${(Math.round(predictedWinProbability * 100)).toString()}%`;
 

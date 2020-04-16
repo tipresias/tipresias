@@ -83,7 +83,7 @@ class RoundType(graphene.ObjectType):
 
     match__round_number = graphene.Int(name="roundNumber", required=True)
     model_metrics = graphene.List(
-        CumulativeMetricsByRoundType,
+        graphene.NonNull(CumulativeMetricsByRoundType),
         description=(
             "Cumulative performance metrics for predictions made by the given model "
             "through the given round"
@@ -97,7 +97,7 @@ class RoundType(graphene.ObjectType):
         ),
         required=True,
     )
-    matches = graphene.List(MatchType, default_value=[])
+    matches = graphene.List(graphene.NonNull(MatchType), default_value=[])
 
     @staticmethod
     def resolve_model_metrics(
@@ -260,12 +260,12 @@ class SeasonType(graphene.ObjectType):
     season_year = graphene.Int(required=True)
 
     prediction_model_names = graphene.List(
-        graphene.String,
+        graphene.NonNull(graphene.String),
         description="All model names available for the given year",
         required=True,
     )
     predictions_by_round = graphene.List(
-        RoundType,
+        graphene.NonNull(RoundType),
         description="Match and prediction data grouped by round",
         round_number=graphene.Int(
             description=(

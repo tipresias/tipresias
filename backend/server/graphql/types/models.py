@@ -38,7 +38,9 @@ class MatchType(DjangoObjectType):
     home_team = graphene.Field(TeamType)
     away_team = graphene.Field(TeamType)
     predictions = graphene.List(
-        PredictionType, ml_model_name=graphene.String(default_value=None), required=True
+        graphene.NonNull(PredictionType),
+        ml_model_name=graphene.String(default_value=None),
+        required=True,
     )
 
     @staticmethod

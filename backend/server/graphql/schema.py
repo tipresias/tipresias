@@ -17,11 +17,11 @@ class Query(graphene.ObjectType):
     """Base GraphQL Query type that contains all queries and their resolvers."""
 
     fetch_predictions = graphene.List(
-        PredictionType, year=graphene.Int(), required=True
+        graphene.NonNull(PredictionType), year=graphene.Int(), required=True
     )
 
     fetch_prediction_years = graphene.List(
-        graphene.Int,
+        graphene.NonNull(graphene.Int),
         description="All years for which model predictions exist in the database",
         required=True,
     )
@@ -45,7 +45,7 @@ class Query(graphene.ObjectType):
     )
 
     fetch_ml_models = graphene.List(
-        MLModelType,
+        graphene.NonNull(MLModelType),
         for_competition_only=graphene.Boolean(
             default_value=False,
             description=(

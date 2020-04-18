@@ -14,6 +14,7 @@ import { FETCH_MODELS_AND_YEARS_QUERY } from '../../graphql';
 import {
   AppContainerStyled, MainStyled, ToggleThemeButton,
 } from './style';
+import type { fetchModelsAndYears } from '../../graphql/graphql-types/fetchModelsAndYears';
 
 const isDarkModeStored = () => {
   const stored = localStorage.getItem('isDarkMode');
@@ -23,11 +24,14 @@ const isDarkModeStored = () => {
 const App = () => {
   const [isDarkMode, setIsDarkMode] = useState(isDarkModeStored());
 
-  const { data, loading, error } = useQuery(FETCH_MODELS_AND_YEARS_QUERY);
+  const { data, loading, error } = useQuery<fetchModelsAndYears>(FETCH_MODELS_AND_YEARS_QUERY);
   if (loading) return <div>Loading Tipresias....</div>;
   if (error) return <div>Error: Something happened, try again later.</div>;
   if (data === undefined) return <p>Error: Data not defined.</p>;
-  const metrics = Object.keys(data.fetchYearlyPredictions.predictionsByRound[0].modelMetrics[0]);
+
+
+  const metrics = ['cumulativeAccuracy', 'cumulativeBits', 'cumulativeMeanAbsoluteError'];
+
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>

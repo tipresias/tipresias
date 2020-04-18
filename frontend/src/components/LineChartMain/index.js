@@ -6,43 +6,14 @@ import {
   LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Label,
 } from 'recharts';
 import { isEmpty } from 'lodash';
-import type { LineChartDataType } from '../../types';
 
-type PreviousDataSet = Array<LineChartDataType>;
 
 type Props = {
-  data: PreviousDataSet,
+  data: Array<Object>,
   models: Array<string>,
   metric: {name: string, label: string}
 }
 
-type NewDataItem = {
-  roundNumber: number,
-  [key: string]: number
-}
-
-type NewDataSet = Array<NewDataItem>
-
-const dataTransformer = (previousDataSet: PreviousDataSet, metric: Object): NewDataSet => {
-  const newDataSet = previousDataSet.reduce((acc, currentItem, currentIndex) => {
-    const { roundNumber, modelMetrics } = currentItem;
-    acc[currentIndex] = acc[currentIndex] || {};
-    acc[currentIndex].roundNumber = roundNumber;
-    modelMetrics.forEach((item) => {
-      const { modelName } = item;
-      // cumulativeAccuracy: %
-      if (metric.name === 'cumulativeAccuracy') {
-        const metricPercentage = (item[metric.name] * 100);
-        acc[currentIndex][modelName] = parseFloat(metricPercentage.toFixed(2));
-      } else {
-        // bits and MAE: decimal
-        acc[currentIndex][modelName] = parseFloat(item[metric.name].toFixed(2));
-      }
-    });
-    return acc;
-  }, []);
-  return newDataSet;
-};
 export const LineChartMainStyled = styled.div`
   .recharts-label, .recharts-cartesian-axis-tick-value{
     tspan {
@@ -54,8 +25,6 @@ export const LineChartMainStyled = styled.div`
 const getYLabel = label => (label === 'Accuracy' ? `${label} %` : label);
 
 const LineChartMain = ({ data, models, metric }: Props): Node => {
-  const dataTransformed = dataTransformer(data, metric);
-
   const colorblindFriendlyPalette = ['#E69F00', '#56B4E9', '#CC79A7', '#009E73', '#0072B2', '#D55E00', '#F0E442'];
 
   return (
@@ -64,7 +33,7 @@ const LineChartMain = ({ data, models, metric }: Props): Node => {
         <LineChart
           width={800}
           height={800}
-          data={dataTransformed}
+          data={data}
           margin={{
             top: 5, right: 30, left: 20, bottom: 5,
           }}

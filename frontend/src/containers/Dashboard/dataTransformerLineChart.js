@@ -1,18 +1,12 @@
-/* eslint-disable camelcase */
 // @flow
 import type {
-  fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound as predictionsByRoundType,
+  fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound as RoundType,
 } from '../../graphql/graphql-types/fetchYearlyPredictions';
 
 export type rowType = {
   modelName: string,
   [key: string]: number
 }
-
-// export type LineChartDataType = {
-//   roundNumber: number,
-//   modelMetrics: Array<rowType>
-// }
 
 type NewDataItem = {
   roundNumber: number,
@@ -21,7 +15,7 @@ type NewDataItem = {
 type NewDataSet = Array<NewDataItem>
 
 const dataTransformerLineChart = (
-  predictionsByRound: Array<predictionsByRoundType>,
+  predictionsByRound: Array<RoundType>,
   metric: Object,
 ): NewDataSet => {
   const newDataSet = predictionsByRound.reduce((acc, currentItem, currentIndex) => {
@@ -30,7 +24,6 @@ const dataTransformerLineChart = (
     acc[currentIndex].roundNumber = roundNumber;
     modelMetrics.forEach((item) => {
       if (!item) return;
-      // TODO check the ? in modelMetrics type,
       const { modelName } = item;
       // cumulativeAccuracy: %
       if (metric.name === 'cumulativeAccuracy') {

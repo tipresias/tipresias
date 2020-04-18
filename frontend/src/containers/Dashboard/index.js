@@ -167,7 +167,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
         </Widget>
 
         <Widget gridColumn="1 / -1" style={{ overflowX: 'scroll' }}>
-          <WidgetHeading>Predictions</WidgetHeading>
+          <WidgetHeading>Tipresias&apos;s Predictions</WidgetHeading>
           <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
             {({ loading, error, data }: fetchLatestRoundPredictionsResponse): Node => {
               if (loading) return <p>Brrrrrr...</p>;
@@ -188,11 +188,11 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               if (rowsArray.length === 0) {
                 return <StatusBar text="No data available." error />;
               }
-              const caption = `${principleModel.name} predictions for matches of round ${roundNumber}, season ${latestYear}`;
+              const caption = `This Table shows prediction for matches of round number ${roundNumber} of season ${latestYear}`;
               return (
                 <Table
                   caption={caption}
-                  headers={['Date', 'Predicted Winner', 'Predicted margin', 'Win probability (%)', 'is Correct?']}
+                  headers={['Date', 'Predicted Winner', 'Predicted margin', 'Win probability (%)', 'Is prediction correct?']}
                   rows={rowsArray}
                 />
               );

@@ -1,25 +1,22 @@
-/* eslint-disable consistent-return */
-/* eslint-disable camelcase */
 // @flow
 import type {
   fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches as MatchType,
   fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions as PredictionType,
 } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
-import images from '../../images';
+import icons from '../../icons';
 
-const { iconCheck, iconCross } = images;
+const { iconCheck, iconCross } = icons;
 
 type MatchesType = Array<MatchType>;
-
-type RowType = Array<string | Object>;
+type svgIcon = { svg: boolean, text: string, path: string }
+type RowType = Array<string | svgIcon>;
 type DataTableType = Array<RowType>;
 
+// loop the array of predictions and choose the predictedmargin value that is higher
 const getPredictedMargin = (
-  predictionsWithMargin: Array<PredictionType> | null,
+  predictionsWithMargin: Array<PredictionType>,
 ) => {
-  // loop the array of predictions and choose the predictedmargin value that is higher
-  if (!predictionsWithMargin) return [];
-  return predictionsWithMargin.reduce(
+  const margin = predictionsWithMargin.reduce(
     (prevValue: number, currentItem: PredictionType) => {
       if (!currentItem.predictedMargin) return 0;
       return (
@@ -27,6 +24,7 @@ const getPredictedMargin = (
       );
     }, 0,
   );
+  return margin;
 };
 
 const dataTransformerTable = (
@@ -53,15 +51,14 @@ const dataTransformerTable = (
     const predictionsWithValidMargin = matchItem.predictions.filter(
       (item: any) => item.mlModel.forCompetition === true && item.predictedMargin !== null,
     );
-    acc[currentIndex][2] = getPredictedMargin(predictionsWithValidMargin);
+    acc[currentIndex][2] = getPredictedMargin(predictionsWithValidMargin).toString();
 
     // predictedWinProbability
     const winProbabilityForCompetition = matchItem.predictions.filter(
       (item: any) => item.mlModel.forCompetition === true && item.predictedWinProbability !== null,
     );
 
-    const predictedWinProbability = winProbabilityForCompetition
-    && winProbabilityForCompetition.reduce(
+    const predictedWinProbability = winProbabilityForCompetition.reduce(
       (prevValue: number, currentItem: PredictionType) => {
         if (!currentItem.predictedWinProbability) return 0;
         return currentItem.predictedWinProbability > prevValue

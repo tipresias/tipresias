@@ -97,7 +97,9 @@ class RoundType(graphene.ObjectType):
         ),
         required=True,
     )
-    matches = graphene.List(graphene.NonNull(MatchType), default_value=[])
+    matches = graphene.List(
+        graphene.NonNull(MatchType), default_value=[], required=True
+    )
 
     @staticmethod
     def resolve_model_metrics(

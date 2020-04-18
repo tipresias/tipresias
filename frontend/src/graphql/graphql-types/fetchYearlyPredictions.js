@@ -38,7 +38,7 @@ export type fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound = {
   /**
    * Cumulative performance metrics for predictions made by the given model through the given round
    */
-  modelMetrics: Array<?fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound_modelMetrics>,
+  modelMetrics: Array<fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound_modelMetrics>,
 };
 
 export type fetchYearlyPredictions_fetchYearlyPredictions = {

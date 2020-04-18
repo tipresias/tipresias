@@ -48,7 +48,7 @@ export type fetchPredictions_fetchPredictions = {
 };
 
 export type fetchPredictions = {
-  fetchPredictions: Array<?fetchPredictions_fetchPredictions>
+  fetchPredictions: Array<fetchPredictions_fetchPredictions>
 };
 
 export type fetchPredictionsVariables = {

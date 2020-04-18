@@ -26,8 +26,8 @@ export type fetchModelsAndYears = {
   /**
    * All years for which model predictions exist in the database
    */
-  fetchPredictionYears: Array<?number>,
-  fetchMlModels: Array<?fetchModelsAndYears_fetchMlModels>,
+  fetchPredictionYears: Array<number>,
+  fetchMlModels: Array<fetchModelsAndYears_fetchMlModels>,
 };/* @flow */
 /* eslint-disable */
 // @generated

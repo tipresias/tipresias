@@ -52,13 +52,13 @@ export type fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches = {
   startDateTime: any,
   homeTeam: ?fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_homeTeam,
   awayTeam: ?fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_awayTeam,
-  predictions: Array<?fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions>,
+  predictions: Array<fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions>,
 };
 
 export type fetchLatestRoundPredictions_fetchLatestRoundPredictions = {
   __typename: "RoundType",
   roundNumber: number,
-  matches: ?Array<?fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches>,
+  matches: ?Array<fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches>,
 };
 
 export type fetchLatestRoundPredictions = {

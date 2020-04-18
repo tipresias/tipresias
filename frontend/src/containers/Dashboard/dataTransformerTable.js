@@ -1,28 +1,23 @@
 /* eslint-disable consistent-return */
 /* eslint-disable camelcase */
 // @flow
-import images from '../../images';
 import type {
   fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches as MatchType,
   fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions as PredictionType,
 } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
-// import type { fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_predictions as PredictionType } from '../../graphql/graphql-types/fetchPredictions';
+import images from '../../images';
 
 const { iconCheck, iconCross } = images;
 
-export type ModelType = {
-  name: string,
-  forCompetition: boolean,
-  isPrinciple: boolean
-}
+type MatchesType = Array<MatchType>;
 
-export type MatchesType = Array<MatchType>;
-
-type NewDataSet = Array<Array<string | Object>>;
+type RowType = Array<string | Object>;
+type DataTableType = Array<RowType>;
 
 const getPredictedMargin = (
   predictionsWithMargin: Array<PredictionType> | null,
 ) => {
+  // loop the array of predictions and choose the predictedmargin value that is higher
   if (!predictionsWithMargin) return [];
   return predictionsWithMargin.reduce(
     (prevValue: number, currentItem: PredictionType) => {
@@ -37,7 +32,7 @@ const getPredictedMargin = (
 const dataTransformerTable = (
   matches: MatchesType,
   principalModelName: string,
-): NewDataSet => {
+): DataTableType => {
   const newDataSet = matches.reduce((acc, matchItem, currentIndex) => {
     if (matchItem.predictions.length === 0) return [];
 
@@ -54,19 +49,19 @@ const dataTransformerTable = (
     if (!predictionWithPrincipleModel) { return []; }
     acc[currentIndex][1] = predictionWithPrincipleModel.predictedWinner.name;
 
-    const predictionsWithMargin = matchItem.predictions.filter(
+    // predictedMargin
+    const predictionsWithValidMargin = matchItem.predictions.filter(
       (item: any) => item.mlModel.forCompetition === true && item.predictedMargin !== null,
     );
-
-    // loop the array of predictions and choose the predictedmargin value that is higher
-    acc[currentIndex][2] = getPredictedMargin(predictionsWithMargin);
+    acc[currentIndex][2] = getPredictedMargin(predictionsWithValidMargin);
 
     // predictedWinProbability
     const winProbabilityForCompetition = matchItem.predictions.filter(
       (item: any) => item.mlModel.forCompetition === true && item.predictedWinProbability !== null,
     );
 
-    const predictedWinProbability = winProbabilityForCompetition && winProbabilityForCompetition.reduce(
+    const predictedWinProbability = winProbabilityForCompetition
+    && winProbabilityForCompetition.reduce(
       (prevValue: number, currentItem: PredictionType) => {
         if (!currentItem.predictedWinProbability) return 0;
         return currentItem.predictedWinProbability > prevValue
@@ -78,7 +73,7 @@ const dataTransformerTable = (
     acc[currentIndex][3] = `${(Math.round(predictedWinProbability * 100)).toString()}%`;
 
     // isCorrect (form principalModel)
-    const { isCorrect } = principleModelPrediction;
+    const { isCorrect } = predictionWithPrincipleModel;
     acc[currentIndex][4] = isCorrect
       ? { svg: true, text: 'prediction is correct', path: iconCheck }
       : { svg: true, text: 'prediction is incorrect', path: iconCross };

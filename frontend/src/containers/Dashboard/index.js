@@ -68,7 +68,15 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
             {mainWidgetTitle}
             {year && <div className="WidgetHeading__selected-year">{`year: ${year}`}</div>}
           </WidgetHeading>
-          <Query query={FETCH_YEARLY_PREDICTIONS_QUERY} variables={{ year, forCompetitionOnly: false }}>
+          <Query
+            query={
+              FETCH_YEARLY_PREDICTIONS_QUERY
+            }
+            variables={{
+              year,
+              forCompetitionOnly: false,
+            }}
+          >
             {({ loading, error, data }: fetchYearlyPredictionsResponse): Node => {
               if (loading) return <ChartLoading text="Brrrrr ..." />;
               if (error) return <StatusBar text={error.message} error />;
@@ -203,8 +211,11 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               const { seasonYear, predictionsByRound } = data.fetchYearlyPredictions;
               const { roundNumber, modelMetrics } = predictionsByRound[0];
 
+
               // cumulativeCorrectCount
-              const { cumulativeCorrectCount } = modelMetrics.find(item => (item.modelName === principleModel.name));
+              const { cumulativeCorrectCount } = modelMetrics.find(
+                item => (item.modelName === principleModel.name),
+              ) || {};
 
               // bits
               const { cumulativeBits } = modelMetrics.find(
@@ -231,7 +242,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
                     {
                       id: 1,
                       key: 'Cumulative Correct Count',
-                      value: Math.round(cumulativeCorrectCount * 100) / 100,
+                      value: cumulativeCorrectCount ? Math.round(cumulativeCorrectCount * 100) / 100 : '-',
                     },
                     {
                       id: 2,
@@ -251,7 +262,6 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
                   ]}
                   />
                 </Fragment>
-
               );
             }}
           </Query>

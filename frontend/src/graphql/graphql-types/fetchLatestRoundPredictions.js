@@ -58,7 +58,7 @@ export type fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches = {
 export type fetchLatestRoundPredictions_fetchLatestRoundPredictions = {
   __typename: "RoundType",
   roundNumber: number,
-  matches: ?Array<fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches>,
+  matches: Array<fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches>,
 };
 
 export type fetchLatestRoundPredictions = {

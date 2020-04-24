@@ -11,10 +11,13 @@ import type { fetchYearlyPredictions } from '../../graphql/graphql-types/fetchYe
 import type { fetchLatestRoundPredictions } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
 import LineChartMain from '../../components/LineChartMain';
 import Select from '../../components/Select';
+import Checkbox from '../../components/Checkbox';
+import RadioButton from '../../components/RadioButton';
 import ChartLoading from '../../components/ChartLoading';
 import StatusBar from '../../components/StatusBar';
 import DefinitionList from '../../components/DefinitionList';
 import Table from '../../components/Table';
+import Fieldset from '../../components/Fieldset';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import {
   WidgetStyles, WidgetHeading, WidgetSubHeading, WidgetFooter, DashboardContainerStyled,
@@ -60,6 +63,24 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
   const [currentMetric, setCurrentMetric] = useState(metrics[0]);
   const currentMetricLabel = currentMetric.replace(/cumulative/g, '');
   const mainWidgetTitle = `Cumulative ${currentMetricLabel} by round`;
+
+  const onChangeModel = (event: SyntheticEvent<HTMLSelectElement>): void => {
+    const checkedModel = event.currentTarget.value;
+    if (checkedModels.includes(checkedModel)) {
+      const updatedModels = checkedModels.filter(
+        item => item !== checkedModel,
+      );
+      setSelectedModels(updatedModels);
+    } else {
+      setSelectedModels([...checkedModels, checkedModel]);
+    }
+  };
+
+  const onChangeMetric = (event: SyntheticEvent<HTMLSelectElement>): void => {
+    const checkedMetric = event.currentTarget.value;
+    setCurrentMetric(checkedMetric);
+  };
+
   return (
     <ErrorBoundary>
       <DashboardContainerStyled>
@@ -108,61 +129,39 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               }}
               options={years}
             />
-            <fieldset style={{ display: 'flex', flexWrap: 'wrap' }}>
-              <legend>Choose a model:</legend>
+            <Fieldset legend="Choose a model">
               {
-                initialSelectedModels.map((modelName) => {
-                  const labelName = modelName.replace(/_/g, ' ');
-                  return (
-                    <label htmlFor={modelName} key={modelName} style={{ margin: '0.5rem 0' }}>
-                      <input
-                        type="checkbox"
-                        id={modelName}
-                        name={modelName}
-                        value={modelName}
-                        checked={checkedModels.includes(modelName)}
-                        onChange={(event: SyntheticEvent<HTMLSelectElement>): void => {
-                          const checkedModel = event.currentTarget.value;
-                          if (checkedModels.includes(checkedModel)) {
-                            const updatedModels = checkedModels.filter(
-                              item => item !== checkedModel,
-                            );
-                            setSelectedModels(updatedModels);
-                          } else {
-                            setSelectedModels([...checkedModels, checkedModel]);
-                          }
-                        }}
-                      />
-                      {labelName}
-                    </label>
-                  );
-                })
+                initialSelectedModels.map(modelName => (
+                  <Checkbox
+                    id={modelName}
+                    key={modelName}
+                    label={modelName}
+                    name={modelName}
+                    value={modelName}
+                    isChecked={checkedModels.includes(modelName)}
+                    onChange={e => onChangeModel(e)}
+                  />
+                ))
               }
-            </fieldset>
-            <fieldset style={{ display: 'flex', flexWrap: 'wrap' }}>
-              <legend>Choose a metric:</legend>
+            </Fieldset>
+            <Fieldset legend="Choose a metric">
               {
                 metrics.map((metricName) => {
                   const labelName = metricName.replace(/cumulative/g, '');
                   return (
-                    <label htmlFor={metricName} key={metricName} style={{ margin: '0.5rem 0' }}>
-                      <input
-                        type="radio"
-                        id={metricName}
-                        name={metricName}
-                        value={metricName}
-                        checked={metricName === currentMetric}
-                        onChange={(event: SyntheticEvent<HTMLSelectElement>): void => {
-                          const checkedMetric = event.currentTarget.value;
-                          setCurrentMetric(checkedMetric);
-                        }}
-                      />
-                      {labelName}
-                    </label>
+                    <RadioButton
+                      key={metricName}
+                      id={metricName}
+                      name={metricName}
+                      value={metricName}
+                      label={labelName}
+                      isChecked={metricName === currentMetric}
+                      onChange={e => onChangeMetric(e)}
+                    />
                   );
                 })
               }
-            </fieldset>
+            </Fieldset>
           </WidgetFooter>
         </Widget>
 
@@ -175,7 +174,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               if (data.fetchLatestRoundPredictions.matches.length === 0) {
                 return (
                   <StatusBar
-                    text="No data found"
+                    text="No data available."
                     empty
                   />
                 );

@@ -61,15 +61,12 @@ const TextLink = styled.a`
   }
 `;
 
-const links = [
-  { url: '/about', text: 'About' },
-];
-
 type Props = {
-  children: Node;
+  links: Array<{url: string, text: string}>;
+  children?: Node;
 }
 
-const PageHeader = ({ children }: Props): Node => (
+const PageHeader = ({ links, children }: Props): Node => (
   <Header>
     <Link to="/">
       <Logo src={logo} alt="Tipresias" width="120" />
@@ -85,12 +82,17 @@ const PageHeader = ({ children }: Props): Node => (
             ),
           )
         }
-        <ListItem displayInMobile>
-          {children}
-        </ListItem>
+        {children && (
+          <ListItem displayInMobile>
+            {children}
+          </ListItem>
+        )}
       </ListStyled>
     </nav>
   </Header>
 );
 
+PageHeader.defaultProps = {
+  children: null,
+};
 export default PageHeader;

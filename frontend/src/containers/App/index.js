@@ -37,7 +37,7 @@ const App = () => {
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <Router>
         <AppContainerStyled>
-          <PageHeader>
+          <PageHeader links={[{ url: '/about', text: 'About' }]}>
             <ToggleThemeButton
               aria-pressed={isDarkMode}
               onClick={() => {

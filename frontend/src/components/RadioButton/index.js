@@ -10,7 +10,7 @@ type Props = {
   isChecked: boolean,
   onChange: (event: SyntheticEvent<HTMLSelectElement>) => void,
 }
-const Checkbox = ({
+const RadioButton = ({
   label,
   id,
   name,
@@ -20,7 +20,7 @@ const Checkbox = ({
 }: Props): Node => (
   <label htmlFor={id} style={{ margin: '0.5rem 0' }}>
     <input
-      type="checkbox"
+      type="radio"
       id={id}
       name={name}
       value={value}
@@ -31,4 +31,4 @@ const Checkbox = ({
   </label>
 );
 
-export default Checkbox;
+export default RadioButton;

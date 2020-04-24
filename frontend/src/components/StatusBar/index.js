@@ -24,9 +24,9 @@ const DefaultStatusStyled = styled.div`
 `;
 
 type Props = {
+  text: string,
   error?: boolean,
-  empty?: boolean,
-  text: string
+  empty?: boolean
 }
 
 const StatusBar = ({ error, empty, text }: Props): Node => {

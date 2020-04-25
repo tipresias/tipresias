@@ -9,7 +9,7 @@ docker-compose -f ${DOCKER_COMPOSE_FILE} stop
 docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
 
 #### SEED TEST DB ####
-./browser_test/wait-for-it.sh localhost:8000 -t 30 -- \
+./scripts/wait-for-it.sh localhost:8000 -t 30 -- \
   docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm \
     backend python3 server/tests/fixtures/seed_db.py
 
@@ -34,7 +34,7 @@ export DATABASE_NAME="test_${DATABASE_NAME}"
 docker-compose -f ${DOCKER_COMPOSE_FILE} stop backend
 docker-compose -f ${DOCKER_COMPOSE_FILE} up -d backend
 
-./browser_test/wait-for-it.sh localhost:8000 -t 30 -- \
+./scripts/wait-for-it.sh localhost:8000 -t 30 -- \
   docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm \
     browser_test npx cypress run
 

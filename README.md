@@ -10,6 +10,8 @@
 
 Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias, has, like Zeus before it, arisen to vanquish its father and claim its throne as the master of AFL footy tipping models.
 
+Check out the site, with a dashboard for model performance, at [tipresias.net](http://www.tipresias.net).
+
 ## Running things
 
 ### Setup

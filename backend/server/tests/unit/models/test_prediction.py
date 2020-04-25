@@ -1,5 +1,5 @@
 # pylint: disable=missing-docstring
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.test import TestCase
 from django.utils import timezone
@@ -185,3 +185,20 @@ class TestPrediction(TestCase):
             prediction.update_correctness()
 
             self.assertTrue(prediction.is_correct)
+
+        with self.subTest("when match hasn't been played yet"):
+            match_datetime = timezone.make_aware(datetime.today() + timedelta(days=5))
+            unplayed_match = Match.objects.create(
+                start_date_time=match_datetime,
+                round_number=5,
+                venue="Corporate Stadium",
+            )
+            prediction = Prediction(
+                match=unplayed_match,
+                ml_model=self.ml_model,
+                predicted_winner=self.away_team,
+                predicted_margin=50,
+            )
+            prediction.update_correctness()
+
+            self.assertEqual(prediction.is_correct, None)

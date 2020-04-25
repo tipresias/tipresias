@@ -21,7 +21,7 @@ class Prediction(models.Model):
     )
     predicted_margin = models.PositiveSmallIntegerField(blank=True, null=True)
     predicted_win_probability = models.FloatField(blank=True, null=True)
-    is_correct = models.BooleanField(default=False)
+    is_correct = models.BooleanField(null=True, blank=True)
 
     @classmethod
     def update_or_create_from_raw_data(
@@ -174,7 +174,7 @@ class Prediction(models.Model):
         self.full_clean()
         self.save()
 
-    def _calculate_whether_correct(self) -> bool:
+    def _calculate_whether_correct(self) -> Optional[bool]:
         """
         Calculate whether a prediction is correct.
 
@@ -182,8 +182,9 @@ class Prediction(models.Model):
         footy-tipping rules (i.e. draws count as correct).
         """
 
+        if not self.match.has_been_played:
+            return None
+
         # In footy tipping competitions its typical to grant everyone a correct tip
         # in the case of a draw
-        return self.match.has_been_played and (
-            self.match.is_draw or self.predicted_winner == self.match.winner
-        )
+        return self.match.is_draw or self.predicted_winner == self.match.winner

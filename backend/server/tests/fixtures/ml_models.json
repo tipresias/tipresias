@@ -3,44 +3,32 @@
     "model": "server.mlmodel",
     "pk": 1,
     "fields": {
-      "trained_to_match": null,
       "name": "benchmark_estimator",
-      "description": null,
-      "filepath": "/app/backend/machine_learning/ml_estimators/benchmark_estimator/benchmark_estimator.pkl",
-      "data_class_path": null
+      "description": null
     }
   },
   {
     "model": "server.mlmodel",
     "pk": 2,
     "fields": {
-      "trained_to_match": null,
       "name": "tipresias_2019",
-      "description": null,
-      "filepath": "/app/backend/machine_learning/ml_estimators/bagging_estimator/tipresias.pkl",
-      "data_class_path": null
+      "description": null
     }
   },
   {
     "model": "server.mlmodel",
     "pk": 3,
     "fields": {
-      "trained_to_match": null,
       "name": "tipresias_2020",
-      "description": null,
-      "filepath": "/app/backend/machine_learning/ml_estimators/stacking_estimator/tipresias.pkl",
-      "data_class_path": null
+      "description": null
     }
   },
   {
     "model": "server.mlmodel",
     "pk": 4,
     "fields": {
-      "trained_to_match": null,
       "name": "confidence_estimator",
-      "description": null,
-      "filepath": null,
-      "data_class_path": null
+      "description": null
     }
   }
 ]

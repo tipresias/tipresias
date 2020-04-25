@@ -16,7 +16,6 @@ class Migration(migrations.Migration):
                 blank=True,
                 max_length=500,
                 null=True,
-                validators=[server.models.ml_model.validate_module_path],
             ),
         ),
         migrations.AlterField(

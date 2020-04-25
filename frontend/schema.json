@@ -757,6 +757,38 @@
             "deprecationReason": null
           },
           {
+            "name": "isPrinciple",
+            "description": "Whether the model is the principle model for predicting match winners among\nall the models used in competitions (i.e. all competition models predict\nwinners, but only one's predictions are official predicted winners of Tipresias).",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "usedInCompetitions",
+            "description": "Whether the model's predictions are used in any competitions.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "predictionSet",
             "description": null,
             "args": [],
@@ -775,38 +807,6 @@
                     "ofType": null
                   }
                 }
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "forCompetition",
-            "description": "Whether the model's predictions are used in any competitions.",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "isPrinciple",
-            "description": "Whether the model is the principle model for predicting match winners among\nall the models used in competitions (i.e. all competition models predict\nwinners, but only one's predictions are official predicted winners of Tipresias).",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
               }
             },
             "isDeprecated": false,

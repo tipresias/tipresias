@@ -23,7 +23,7 @@ export type fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches_pred
   /**
    * Whether the model's predictions are used in any competitions.
    */
-  forCompetition: boolean,
+  usedInCompetitions: boolean,
   /**
    * Whether the model is the principle model for predicting match winners among
    * all the models used in competitions (i.e. all competition models predict

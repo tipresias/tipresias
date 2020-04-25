@@ -27,7 +27,7 @@ import dataTransformerLineChart from './dataTransformerLineChart';
 
 export type ModelType = {
   name: string,
-  forCompetition: boolean,
+  usedInCompetitions: boolean,
   isPrinciple: boolean
 }
 

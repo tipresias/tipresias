@@ -4,7 +4,10 @@
     "pk": 1,
     "fields": {
       "name": "benchmark_estimator",
-      "description": null
+      "description": null,
+      "prediction_type": "Margin",
+      "is_principle": false,
+      "used_in_competitions": false
     }
   },
   {
@@ -12,7 +15,10 @@
     "pk": 2,
     "fields": {
       "name": "tipresias_2019",
-      "description": null
+      "description": null,
+      "prediction_type": "Margin",
+      "is_principle": false,
+      "used_in_competitions": false
     }
   },
   {
@@ -20,7 +26,10 @@
     "pk": 3,
     "fields": {
       "name": "tipresias_2020",
-      "description": null
+      "description": null,
+      "prediction_type": "Margin",
+      "is_principle": true,
+      "used_in_competitions": true
     }
   },
   {
@@ -28,7 +37,10 @@
     "pk": 4,
     "fields": {
       "name": "confidence_estimator",
-      "description": null
+      "description": null,
+      "prediction_type": "Win Probability",
+      "is_principle": false,
+      "used_in_competitions": true
     }
   }
 ]

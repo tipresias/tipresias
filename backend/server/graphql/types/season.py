@@ -20,7 +20,6 @@ from django.db.models import (
     Avg,
     QuerySet,
 )
-from django.conf import settings
 import graphene
 import pandas as pd
 import numpy as np
@@ -78,6 +77,23 @@ class CumulativeMetricsByRoundType(graphene.ObjectType):
     )
 
 
+def _filter_by_model(
+    data_frame: pd.DataFrame,
+    ml_model_name: Optional[str] = None,
+    for_competition_only: bool = False,
+) -> pd.DataFrame:
+    name_filter = slice(ml_model_name) if ml_model_name is None else [ml_model_name]
+
+    competition_query = "(ml_model__used_in_competitions == True)"
+
+    if not for_competition_only:
+        competition_query = (
+            competition_query + " | (ml_model__used_in_competitions == False)"
+        )
+
+    return data_frame.query(competition_query).loc[name_filter, :]
+
+
 class RoundType(graphene.ObjectType):
     """Match and prediction data for a given season grouped by round."""
 
@@ -103,39 +119,51 @@ class RoundType(graphene.ObjectType):
 
     @staticmethod
     def resolve_model_metrics(
-        root, _info, ml_model_name=None, for_competition_only=False
+        root, _info, ml_model_name=None, for_competition_only=False,
     ) -> List[ModelMetric]:
         """Calculate metrics related to the quality of models' predictions."""
-        model_filter = lambda name: (
-            (ml_model_name is None or name == ml_model_name)
-            and (not for_competition_only or name in settings.COMPETITION_ML_MODELS)
-        )
-
         model_metrics_to_dict = lambda df: [
             {
                 df.index.names[ML_MODEL_NAME_LVL]: ml_model_name_idx,
                 **df.loc[ml_model_name_idx, :].to_dict(),
             }
             for ml_model_name_idx in df.index
-            if model_filter(ml_model_name_idx)
         ]
 
-        metric_dicts = root.get("model_metrics").pipe(model_metrics_to_dict)
+        metric_dicts = (
+            root.get("model_metrics")
+            .pipe(
+                partial(
+                    _filter_by_model,
+                    ml_model_name=ml_model_name,
+                    for_competition_only=for_competition_only,
+                )
+            )
+            .drop("ml_model__used_in_competitions", axis=1)
+            .pipe(model_metrics_to_dict)
+        )
 
         return [cast(ModelMetric, model_metrics) for model_metrics in metric_dicts]
 
 
-def _collect_data_by_round(query_set: QuerySet, data_frame: pd.DataFrame):
+def _collect_data_by_round(
+    query_set: QuerySet, data_frame: pd.DataFrame
+) -> List[RoundPrediction]:
     return [
-        {
-            data_frame.index.names[ROUND_NUMBER_LVL]: round_number_idx,
-            "model_metrics": data_frame.xs(round_number_idx, level=ROUND_NUMBER_LVL),
-            "matches": Match.objects.filter(
-                id__in=query_set.filter(
-                    match__round_number=round_number_idx
-                ).values_list("match", flat=True)
-            ),
-        }
+        cast(
+            RoundPrediction,
+            {
+                data_frame.index.names[ROUND_NUMBER_LVL]: round_number_idx,
+                "model_metrics": data_frame.xs(
+                    round_number_idx, level=ROUND_NUMBER_LVL
+                ),
+                "matches": Match.objects.filter(
+                    id__in=query_set.filter(
+                        match__round_number=round_number_idx
+                    ).values_list("match", flat=True)
+                ),
+            },
+        )
         for round_number_idx in data_frame.index.get_level_values(
             ROUND_NUMBER_LVL
         ).drop_duplicates()
@@ -318,6 +346,7 @@ class SeasonType(graphene.ObjectType):
                 "match__start_date_time",
                 "match__round_number",
                 "ml_model__name",
+                "ml_model__used_in_competitions",
                 "predicted_margin",
                 "predicted_win_probability",
                 "predicted_winner__name",

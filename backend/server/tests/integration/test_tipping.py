@@ -188,13 +188,13 @@ class TestTipperEndToEnd(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        MLModelFactory(name=settings.PRINCIPLE_ML_MODEL)
-
         for team_name in settings.TEAM_NAMES:
             TeamFactory(name=team_name)
 
     def setUp(self):
-        self.tipping = Tipper(ml_models=settings.PRINCIPLE_ML_MODEL, tip_submitters=[])
+        principle_model = MLModelFactory(is_principle=True, used_in_competitions=True)
+
+        self.tipping = Tipper(ml_models=principle_model.name, tip_submitters=[])
 
     def test_tip(self):
         self.assertEqual(Match.objects.count(), 0)

@@ -7,11 +7,11 @@ from typing import List, Union
 from django.core.management.base import BaseCommand
 from django.template.loader import get_template
 from django.utils import timezone
-from django.conf import settings
 import sendgrid
 from sendgrid.helpers.mail import Mail
 
 from server.models import Match
+from server.models.ml_model import PredictionType
 
 JAN = 1
 FIRST = 1
@@ -64,32 +64,42 @@ class Command(BaseCommand):
 
         self.__send_tips_email(prediction_rows, upcoming_round)
 
+        return None
+
     @staticmethod
     def __map_prediction_to_row(match: Match) -> List[Union[str, int]]:
         home_team = match.teammatch_set.get(at_home=True).team.name
         away_team = match.teammatch_set.get(at_home=False).team.name
 
-        match_predictions = match.prediction_set
+        match_predictions = match.prediction_set.filter(
+            ml_model__used_in_competitions=True
+        )
 
         margin_prediction = match_predictions.get(
-            ml_model__name=settings.PRINCIPLE_ML_MODEL
+            ml_model__prediction_type=PredictionType.MARGIN,
         )
         probability_prediction = match_predictions.get(
-            ml_model__name=settings.CONFIDENCE_ML_MODEL
+            ml_model__prediction_type=PredictionType.WIN_PROBABILITY,
         )
+
+        principle_predicted_winner = match_predictions.get(
+            ml_model__is_principle=True
+        ).predicted_winner.name
+        secondary_predicted_winner = match_predictions.get(
+            ml_model__is_principle=False
+        ).predicted_winner.name
 
         different_winner_label = (
             ""
-            if probability_prediction.predicted_winner.name
-            == margin_prediction.predicted_winner.name
-            else probability_prediction.predicted_winner.name
+            if principle_predicted_winner == secondary_predicted_winner
+            else secondary_predicted_winner
         )
 
         return [
             str(match.start_date_time),
             home_team,
             away_team,
-            margin_prediction.predicted_winner.name,
+            principle_predicted_winner,
             margin_prediction.predicted_margin,
             probability_prediction.predicted_win_probability,
             different_winner_label,

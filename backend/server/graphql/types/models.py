@@ -2,7 +2,6 @@
 
 import graphene
 from graphene_django.types import DjangoObjectType
-from django.conf import settings
 
 from server.models import Team, Prediction, Match, TeamMatch, MLModel
 

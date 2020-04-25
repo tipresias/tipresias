@@ -5,7 +5,6 @@ from dateutil import parser
 
 from django.test import TestCase
 from django.utils import timezone
-from django.conf import settings
 from graphene.test import Client
 import numpy as np
 from freezegun import freeze_time
@@ -13,6 +12,7 @@ from freezegun import freeze_time
 from server.graphql import schema
 from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
 from server.models import Match, MLModel
+from server.models.ml_model import PredictionType
 
 
 ROUND_COUNT = 4
@@ -27,7 +27,15 @@ class TestSchema(TestCase):
         self.maxDiff = None
         self.client = Client(schema)
 
-        ml_models = [MLModelFactory(name=model_name) for model_name in MODEL_NAMES]
+        ml_models = [
+            MLModelFactory(
+                name=model_name,
+                is_principle=(idx == 0),
+                used_in_competitions=True,
+                prediction_type=PredictionType.values[idx],
+            )
+            for idx, model_name in enumerate(MODEL_NAMES)
+        ]
 
         self.matches = [
             FullMatchFactory(
@@ -318,7 +326,7 @@ class TestSchema(TestCase):
     # Keeping this in a separate test, because it requires special setup
     # to properly test metric calculations
     def test_fetch_yearly_predictions_cumulative_metrics(self):
-        ml_models = list(MLModel.objects.all())
+        ml_models = list(MLModel.objects.filter(name__in=MODEL_NAMES))
         YEAR = TWENTY_SEVENTEEN
         MONTH = 6
 
@@ -337,12 +345,12 @@ class TestSchema(TestCase):
                 )
 
         query = """
-            query QueryType {
+            query($mlModelName: String) {
                 fetchYearlyPredictions(year: 2017) {
                     seasonYear
                     predictionsByRound(roundNumber: -1) {
                         roundNumber
-                        modelMetrics(mlModelName: "accurate_af") {
+                        modelMetrics(mlModelName: $mlModelName) {
                             modelName
                             cumulativeCorrectCount
                             cumulativeMeanAbsoluteError
@@ -355,30 +363,54 @@ class TestSchema(TestCase):
             }
             """
 
-        executed = self.client.execute(query)
+        with self.subTest("for a 'Margin' model"):
+            executed = self.client.execute(
+                query, variables={"mlModelName": "accurate_af"}
+            )
 
-        data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0][
-            "modelMetrics"
-        ]
+            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0][
+                "modelMetrics"
+            ]
 
-        self.assertEqual(len(data), 1)
-        model_stats = data[0]
-        self.assertEqual("accurate_af", model_stats["modelName"])
+            self.assertEqual(len(data), 1)
+            model_stats = data[0]
+            self.assertEqual("accurate_af", model_stats["modelName"])
 
-        self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
-        self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
-        self.assertGreater(model_stats["cumulativeMarginDifference"], 0)
-        self.assertGreater(model_stats["cumulativeAccuracy"], 0)
-        # Bits can be positive or negative, so we just want to make sure it's not 0,
-        # which would suggest a problem
-        self.assertNotEqual(model_stats["cumulativeBits"], 0)
+            self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
+            self.assertEqual(model_stats["cumulativeMeanAbsoluteError"], 0)
+            self.assertEqual(model_stats["cumulativeMarginDifference"], 0)
+            self.assertGreater(model_stats["cumulativeAccuracy"], 0)
+            # Bits can be positive or negative, so we just want to make sure it's not 0,
+            # which would suggest a problem
+            self.assertNotEqual(model_stats["cumulativeBits"], 0)
+
+        with self.subTest("for a 'Win Probability' model"):
+            executed = self.client.execute(
+                query, variables={"mlModelName": "predictanator"}
+            )
+
+            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0][
+                "modelMetrics"
+            ]
+
+            self.assertEqual(len(data), 1)
+            model_stats = data[0]
+            self.assertEqual("predictanator", model_stats["modelName"])
+
+            self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
+            self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
+            self.assertGreater(model_stats["cumulativeMarginDifference"], 0)
+            self.assertGreater(model_stats["cumulativeAccuracy"], 0)
+            self.assertEqual(model_stats["cumulativeBits"], 0)
 
         with self.subTest("when the last matches haven't been played yet"):
             DAY = 3
             fake_datetime = timezone.make_aware(datetime(YEAR, MONTH, DAY))
 
             with freeze_time(fake_datetime):
-                past_executed = self.client.execute(query)
+                past_executed = self.client.execute(
+                    query, variables={"mlModelName": "predictanator"}
+                )
 
                 data = past_executed["data"]["fetchYearlyPredictions"][
                     "predictionsByRound"
@@ -398,20 +430,6 @@ class TestSchema(TestCase):
                 self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
                 self.assertGreater(model_stats["cumulativeMarginDifference"], 0)
 
-        with self.subTest("when a model doesn't predict win probabilities"):
-            MLModel.objects.get(name="accurate_af").prediction_set.update(
-                predicted_win_probability=None
-            )
-
-            executed = self.client.execute(query)
-
-            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0][
-                "modelMetrics"
-            ]
-            cumulative_bits = data[0]["cumulativeBits"]
-
-            self.assertEqual(cumulative_bits, 0)
-
     def test_fetch_ml_models(self):
         N_MODELS = 3
 
@@ -422,7 +440,7 @@ class TestSchema(TestCase):
             query QueryType {
                 fetchMlModels {
                     name
-                    forCompetition
+                    usedInCompetitions
                 }
             }
         """
@@ -431,27 +449,26 @@ class TestSchema(TestCase):
         self.assertEqual(len(data), N_MODELS + len(MODEL_NAMES))
 
         with self.subTest("when forCompetitionsOnly is true"):
-            for name in settings.COMPETITION_ML_MODELS:
-                MLModelFactory(name=name)
+            for _ in range(4):
+                MLModelFactory()
 
             query = """
                 query QueryType {
                     fetchMlModels(forCompetitionOnly: true) {
                         name
-                        forCompetition
+                        usedInCompetitions
                         isPrinciple
                     }
                 }
             """
+
             data = self.client.execute(query)["data"]["fetchMlModels"]
 
-            self.assertEqual(len(data), len(settings.COMPETITION_ML_MODELS))
+            self.assertEqual(len(data), len(MODEL_NAMES))
+            self.assertLess(len(data), MLModel.objects.count())
 
             for model in data:
-                self.assertTrue(model["forCompetition"])
-
-            principle_model = [model for model in data if model["isPrinciple"]]
-            self.assertEqual(len(principle_model), 1)
+                self.assertTrue(model["usedInCompetitions"])
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

@@ -37,14 +37,14 @@ class Match(models.Model):
     venue = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
-        """
-        Meta class for including more-advanced attributes.
+        """Meta class for including more-advanced attributes & validations."""
 
-        In this case, we want to validate that there are no duplicate match records
-        across the DB, as indicated by the start time and venue.
-        """
-
-        unique_together = ("start_date_time", "venue")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["start_date_time", "venue"],
+                name="unique_start_date_time_and_venue",
+            )
+        ]
 
     @classmethod
     def get_or_create_from_raw_data(

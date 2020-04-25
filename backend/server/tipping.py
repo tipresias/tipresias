@@ -10,7 +10,6 @@ import numpy as np
 from splinter import Browser
 from splinter.driver import ElementAPI
 from django.utils import timezone
-from django.conf import settings
 from mypy_extensions import TypedDict
 
 from server.models import Match, TeamMatch, Prediction
@@ -495,7 +494,7 @@ class Tipper:
 
         latest_round_predictions = (
             Prediction.objects.filter(
-                ml_model__name__in=settings.COMPETITION_ML_MODELS,
+                ml_model__used_in_competitions=True,
                 match__start_date_time__gt=timezone.make_aware(
                     datetime(latest_year, JAN, FIRST)
                 ),

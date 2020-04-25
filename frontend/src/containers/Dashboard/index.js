@@ -109,14 +109,15 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               const metric = { name: currentMetric, label: currentMetricLabel };
               const dataTransformed = dataTransformerLineChart(predictionsByRoundData, metric);
 
-              const metriclabel = (currentMetricLabel === 'Accuracy' ? `${currentMetricLabel} %` : currentMetricLabel);
+              // @todo find a better way to add unit of measure for labels that need it. ie. accuracy
+              const yAxisLabel = (currentMetricLabel === 'Accuracy' ? `${currentMetricLabel} %` : currentMetricLabel);
 
               return (
                 <LineChartMain
                   models={checkedModels}
                   data={dataTransformed}
                   xAxis={{ dataKey: 'roundNumber', label: 'Rounds' }}
-                  yAxis={{ label: metriclabel }}
+                  yAxis={{ label: yAxisLabel }}
                 />
               );
             }}

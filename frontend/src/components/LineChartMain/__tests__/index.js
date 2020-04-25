@@ -2,7 +2,6 @@ import React from 'react';
 import { shallow } from 'enzyme';
 import LineChartMain from '../index';
 
-// @todo add test for LineChartMain
 describe('LineChartMain', () => {
   let MOCKED_PROPS;
   let wrapper;
@@ -41,8 +40,7 @@ describe('LineChartMain', () => {
     expect(wrapper.find('LineChart').prop('data')).toEqual(MOCKED_PROPS.data);
   });
 
-
-  it('renders X and Y  axis with the correct label', () => {
+  it('renders X and Y axis with the correct label', () => {
     expect(wrapper.find('XAxis').prop('label').value).toBe('Rounds');
     expect(wrapper.find('YAxis').prop('label').value).toBe('Accuracy %');
   });

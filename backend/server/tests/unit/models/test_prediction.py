@@ -139,6 +139,37 @@ class TestPrediction(TestCase):
             prediction.clean()
             self.assertEqual(66, prediction.predicted_margin)
 
+        with self.subTest("when predicted margin and win probability are None"):
+            prediction = Prediction(
+                match=self.match,
+                ml_model=self.ml_model,
+                predicted_winner=self.away_team,
+                predicted_margin=None,
+                predicted_win_probability=None,
+            )
+
+            with self.assertRaisesMessage(
+                ValidationError,
+                "Prediction must have a predicted_margin or predicted_win_probability.",
+            ):
+                prediction.clean()
+
+        with self.subTest("when predicted margin and win probability are both numbers"):
+            prediction = Prediction(
+                match=self.match,
+                ml_model=self.ml_model,
+                predicted_winner=self.away_team,
+                predicted_margin=23,
+                predicted_win_probability=0.23,
+            )
+
+            with self.assertRaisesMessage(
+                ValidationError,
+                "Prediction cannot have both a predicted_margin and "
+                "predicted_win_probability.",
+            ):
+                prediction.clean()
+
     def test_validation(self):
         with self.subTest("when predicted margin is negative"):
             prediction = Prediction(

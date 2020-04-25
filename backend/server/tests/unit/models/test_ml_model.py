@@ -21,6 +21,7 @@ class TestMLModel(TestCase):
             ):
                 duplicate_model.full_clean()
 
+    def test_clean(self):
         with self.subTest("when a principle model isn't used in competitions"):
             self.ml_model.is_principle = True
             self.ml_model.used_in_competitions = False

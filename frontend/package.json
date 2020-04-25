@@ -68,10 +68,5 @@
     "styledComponents": {
       "pure": true
     }
-  },
-  "jest": {
-    "snapshotSerializers": [
-      "enzyme-to-json/serializer"
-    ]
   }
 }

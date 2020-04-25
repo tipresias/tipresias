@@ -3,7 +3,7 @@ import { shallow } from 'enzyme';
 import Select from '../index';
 
 describe('select', () => {
-  it('renders', () => {
+  it.skip('renders', () => {
     // arrange
     const optionsMocked = ['item1', 'item2', 'item3'];
     const valueMocked = 'mocked_value';

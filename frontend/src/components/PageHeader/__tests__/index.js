@@ -2,9 +2,7 @@ import React from 'react';
 import shallowWithTheme from '../../../test-support/shallowWithTheme';
 import PageHeader from '../index';
 
-// @todo check why this packages are not working
-// import 'jest-styled-components';
-// import toJson from 'enzyme-to-json';
+// @todo check jest-styled-components and  enzyme-to-json why this packages are not working
 
 const TEST_THEME = {
   colors: {

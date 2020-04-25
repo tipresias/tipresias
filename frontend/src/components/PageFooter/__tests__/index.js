@@ -1,12 +1,19 @@
 import React from 'react';
-import { mount } from 'enzyme';
+import { StaticRouter } from 'react-router-dom';
+import mountWithTheme from '../../../test-support/mountWithTheme';
 import PageFooter from '../index';
-// @todo add theme wrapper
-describe('PageFooter', () => {
-  it.skip('renders PageFooter', () => {
-    const wrapper = mount(<PageFooter />);
-    console.log(wrapper.debug());
 
-    expect(wrapper).toMatchSnapshot();
+const TEST_THEME = {
+  colors: {
+    textColor: 'black',
+    logoFilter: 'inherit',
+  },
+};
+const PageFooterWithRouter = () => (<StaticRouter location="someLocation"><PageFooter /></StaticRouter>);
+
+describe('PageFooter', () => {
+  it('renders PageFooter', () => {
+    const wrapper = mountWithTheme(<PageFooterWithRouter />, TEST_THEME);
+    expect(wrapper.html()).toMatchSnapshot();
   });
 });

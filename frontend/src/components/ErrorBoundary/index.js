@@ -18,17 +18,16 @@ class ErrorBoundary extends React.Component {
   render() {
     const { errorInfo, error } = this.state;
     const { children } = this.props;
-
     if (errorInfo) {
       // Error path
       return (
         <div>
           <h2>Something went wrong.</h2>
-          <details style={{ whiteSpace: 'pre-wrap' }}>
+          <div>
             {error && error.toString()}
             <br />
-            {errorInfo.componentStack}
-          </details>
+            {errorInfo && errorInfo.componentStack}
+          </div>
         </div>
       );
     }

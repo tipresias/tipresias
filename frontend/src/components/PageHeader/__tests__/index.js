@@ -1,15 +1,30 @@
 import React from 'react';
-import { shallow } from 'enzyme';
+import shallowWithTheme from '../../../test-support/shallowWithTheme';
 import PageHeader from '../index';
+
+// @todo check why this packages are not working
+// import 'jest-styled-components';
+// import toJson from 'enzyme-to-json';
+
+const TEST_THEME = {
+  colors: {
+    textColor: 'white',
+    logoFilter: 'inherit',
+    widgetBorderColor: 'white',
+  },
+};
 
 describe('PageHeader', () => {
   it('renders PageHeader', () => {
-    const wrapper = shallow(<PageHeader links={[{ url: '/about', text: 'About' }]} />);
-    expect(wrapper).toMatchSnapshot();
+    const wrapper = shallowWithTheme(
+      <PageHeader links={[{ url: '/about', text: 'About' }]} />,
+      TEST_THEME,
+    );
+    expect(wrapper.find('PageHeader__ListStyled').children().length).toBe(1);
   });
 
   it('renders PageHeader with children', () => {
-    const wrapper = shallow(
+    const wrapper = shallowWithTheme(
       <PageHeader links={[{ url: '/about', text: 'About' }]}>
         <input
           className="favorite styled"
@@ -17,6 +32,7 @@ describe('PageHeader', () => {
           value="Add to favorites"
         />
       </PageHeader>,
+      TEST_THEME,
     );
     expect(wrapper.find('input[type="button"]').exists()).toBe(true);
   });

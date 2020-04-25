@@ -52,4 +52,10 @@ describe('LineChartMain', () => {
   it('renders a line per each model passed', () => {
     expect(wrapper.find('Line').length).toBe(4);
   });
+
+  it('does not render if data prop is empty', () => {
+    MOCKED_PROPS.data = null;
+    wrapper = shallow(<LineChartMain {...MOCKED_PROPS} />);
+    expect(wrapper.find('div').text()).toBe('No data available');
+  });
 });

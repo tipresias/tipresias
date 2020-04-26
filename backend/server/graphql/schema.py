@@ -5,7 +5,6 @@ from typing import List
 import graphene
 from django.db.models import QuerySet
 from django.utils import timezone
-from django.conf import settings
 import pandas as pd
 
 from server.models import Prediction, Match, MLModel
@@ -119,6 +118,6 @@ class Query(graphene.ObjectType):
         ml_models = MLModel.objects
 
         if for_competition_only:
-            return ml_models.filter(name__in=settings.COMPETITION_ML_MODELS)
+            return ml_models.filter(used_in_competitions=True)
 
         return ml_models.all()

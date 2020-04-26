@@ -49,13 +49,14 @@ const dataTransformerTable = (
 
     // predictedMargin
     const predictionsWithValidMargin = matchItem.predictions.filter(
-      (item: any) => item.mlModel.forCompetition === true && item.predictedMargin !== null,
+      (item: any) => item.mlModel.usedInCompetitions === true && item.predictedMargin !== null,
     );
     acc[currentIndex][2] = getPredictedMargin(predictionsWithValidMargin).toString();
 
     // predictedWinProbability
     const winProbabilityForCompetition = matchItem.predictions.filter(
-      (item: any) => item.mlModel.forCompetition === true && item.predictedWinProbability !== null,
+      (item: any) => item.mlModel.usedInCompetitions === true
+        && item.predictedWinProbability !== null,
     );
 
     const predictedWinProbability = winProbabilityForCompetition.reduce(

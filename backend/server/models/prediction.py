@@ -3,6 +3,8 @@
 from typing import Tuple, Optional
 
 from django.db import models, transaction
+from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 import numpy as np
 
 from server.types import CleanPredictionData
@@ -21,7 +23,7 @@ class Prediction(models.Model):
     )
     predicted_margin = models.PositiveSmallIntegerField(blank=True, null=True)
     predicted_win_probability = models.FloatField(blank=True, null=True)
-    is_correct = models.BooleanField(default=False)
+    is_correct = models.BooleanField(null=True, blank=True)
 
     @classmethod
     def update_or_create_from_raw_data(
@@ -160,8 +162,32 @@ class Prediction(models.Model):
         """
         Clean prediction records before saving them.
 
-        Round predicted_margin to the nearest integer and sets the minimum to 1.
+        - Round predicted_margin to the nearest integer.
+        - Set the minimum predicted margin to 1.
+        - Validate that the prediction includes predicted margin or
+            predicted win probability, but not both.
         """
+
+        if not any((self.predicted_margin, self.predicted_win_probability)):
+            raise ValidationError(
+                _(
+                    "Prediction must have a predicted_margin or "
+                    "predicted_win_probability."
+                )
+            )
+
+        # This validation is codifying an assumption made on the frontend
+        # that makes the logic for displaying the predictions table simpler.
+        # For now, this holds true of all Tipresias models, but may change
+        # in the future.
+        if all((self.predicted_margin, self.predicted_win_probability)):
+            raise ValidationError(
+                _(
+                    "Prediction cannot have both a predicted_margin and "
+                    "predicted_win_probability."
+                )
+            )
+
         if self.predicted_margin is not None:
             # Judgement call, but I want to avoid 0 predicted margin values
             # for the cases where the floating prediction is < 0.5,
@@ -174,7 +200,7 @@ class Prediction(models.Model):
         self.full_clean()
         self.save()
 
-    def _calculate_whether_correct(self) -> bool:
+    def _calculate_whether_correct(self) -> Optional[bool]:
         """
         Calculate whether a prediction is correct.
 
@@ -182,8 +208,9 @@ class Prediction(models.Model):
         footy-tipping rules (i.e. draws count as correct).
         """
 
+        if not self.match.has_been_played:
+            return None
+
         # In footy tipping competitions its typical to grant everyone a correct tip
         # in the case of a draw
-        return self.match.has_been_played and (
-            self.match.is_draw or self.predicted_winner == self.match.winner
-        )
+        return self.match.is_draw or self.predicted_winner == self.match.winner

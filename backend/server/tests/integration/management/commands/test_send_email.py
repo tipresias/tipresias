@@ -3,12 +3,12 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
-from django.conf import settings
 from faker import Faker
 import numpy as np
 from freezegun import freeze_time
 
 from server.management.commands import send_email
+from server.models.ml_model import PredictionType
 from server.tests.fixtures.data_factories import fake_match_results_data
 from server.tests.fixtures.factories import MLModelFactory, FullMatchFactory
 
@@ -25,7 +25,15 @@ class TestSendEmail(TestCase):
 
         # Save records in DB
         ml_models = [
-            MLModelFactory(name=name) for name in settings.COMPETITION_ML_MODELS
+            MLModelFactory(
+                prediction_type=PredictionType.MARGIN,
+                used_in_competitions=True,
+                is_principle=True,
+            ),
+            MLModelFactory(
+                prediction_type=PredictionType.WIN_PROBABILITY,
+                used_in_competitions=True,
+            ),
         ]
 
         for match_data in self.match_results_data.to_dict("records"):

@@ -46,6 +46,7 @@ script:
   - mv deploy_rsa ${HOME}/.ssh/google_compute_engine
 
   # Integration/system tests
+  - ./scripts/update_frontend_gql_types.sh docker-compose.ci.yml
   - ./backend/scripts/integration_tests.sh docker-compose.ci.yml
   - ./scripts/browser_tests.sh docker-compose.ci.yml
 after_script:

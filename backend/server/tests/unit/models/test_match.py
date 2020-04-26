@@ -218,7 +218,10 @@ class TestMatch(TestCase):
                 round_number=2,
             )
 
-            with self.assertRaises(ValidationError, msg="duplicate"):
+            with self.assertRaisesMessage(
+                ValidationError,
+                "{'__all__': ['Match with this Start date time and Venue already exists.']}",
+            ):
                 invalid_match.full_clean()
 
         with self.subTest("with a timezone-unaware start_date_time"):

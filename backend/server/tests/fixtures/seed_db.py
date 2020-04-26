@@ -27,6 +27,7 @@ django.setup()
 
 # pylint: disable=wrong-import-position
 from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
+from server.models.ml_model import PredictionType
 
 
 # There are two predictions per match in the FullMatchFactory, so keeping the MLModel
@@ -55,11 +56,18 @@ def main():
     assert settings.DATABASES["default"]["NAME"] != os.getenv("DATABASE_NAME")
 
     with transaction.atomic():
-        # The primary MLModel is referenced in various places, so we need
-        # at least one MLModel with that name
-        MLModelFactory(name=settings.PRINCIPLE_ML_MODEL)
+        # We need exactly one principle model, and one of each prediction type
+        # among competition models.
+        MLModelFactory(
+            is_principle=True,
+            used_in_competitions=True,
+            prediction_type=PredictionType.MARGIN,
+        )
+        MLModelFactory(
+            used_in_competitions=True, prediction_type=PredictionType.WIN_PROBABILITY
+        )
 
-        for _ in range(N_ML_MODELS - 1):
+        for _ in range(N_ML_MODELS - 2):
             MLModelFactory()
 
         for season, round_number, _match in seasons_rounds_matches:

@@ -1,11 +1,12 @@
 """Contains custom mypy TypedDicts that are used across the application."""
 
-from typing import Union, List
+from typing import Union
 from datetime import datetime
 
 from mypy_extensions import TypedDict
 from pandas import Timestamp
 from django.db.models import QuerySet
+import pandas as pd
 
 
 FixtureData = TypedDict(
@@ -81,9 +82,5 @@ ModelMetric = TypedDict(
 
 RoundPrediction = TypedDict(
     "RoundPrediction",
-    {
-        "match__round_number": int,
-        "model_metrics": List[ModelMetric],
-        "matches": QuerySet,
-    },
+    {"match__round_number": int, "model_metrics": pd.DataFrame, "matches": QuerySet},
 )

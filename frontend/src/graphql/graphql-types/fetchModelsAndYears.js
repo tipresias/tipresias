@@ -19,7 +19,7 @@ export type fetchModelsAndYears_fetchMlModels = {
   /**
    * Whether the model's predictions are used in any competitions.
    */
-  forCompetition: boolean,
+  usedInCompetitions: boolean,
 };
 
 export type fetchModelsAndYears = {

@@ -44,7 +44,7 @@ query fetchLatestRoundPredictions{
       predictions{
         mlModel{
           name
-          forCompetition
+          usedInCompetitions
           isPrinciple
         }
         predictedWinner{
@@ -84,7 +84,7 @@ query fetchModelsAndYears {
   fetchMlModels {
     name
     isPrinciple
-    forCompetition
+    usedInCompetitions
   }
 }
 `;

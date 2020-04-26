@@ -11,6 +11,7 @@ from django.conf import settings
 import numpy as np
 
 from server.models import Team, Prediction, Match, MLModel, TeamMatch
+from server.models.ml_model import PredictionType
 
 FAKE = Faker()
 TODAY = date.today()
@@ -116,8 +117,8 @@ class MLModelFactory(DjangoModelFactory):
 
     name = factory.Faker("company")
     description = factory.Faker("paragraph", nb_sentences=4)
-    filepath = "some/filepath/to/model.pkl"
-    data_class_path = ""
+    is_principle = False
+    used_in_competitions = False
 
 
 class PredictionFactory(DjangoModelFactory):
@@ -155,12 +156,20 @@ class PredictionFactory(DjangoModelFactory):
     predicted_winner = factory.LazyAttribute(
         lambda pred: pred.match.teammatch_set.all()[np.random.randint(0, 2)].team
     )
-    predicted_margin = factory.Faker("pyint", min_value=0, max_value=50)
+    predicted_margin = factory.LazyAttribute(
+        lambda pred: FAKE.pyint(min_value=0, max_value=50)
+        if pred.ml_model.prediction_type == PredictionType.MARGIN
+        else None
+    )
     # Doesn't give realistic win probabilities (i.e. between 0.5 and 1.0)
     # due to an open issue in faker: https://github.com/joke2k/faker/issues/1068
     # Since they're taking this as an opportunity to completely change the method,
     # they're going to wait for a major version rather than just permit floats...
-    predicted_win_probability = factory.Faker("pyfloat", min_value=0, max_value=1)
+    predicted_win_probability = factory.LazyAttribute(
+        lambda pred: FAKE.pyfloat(min_value=0, max_value=1)
+        if pred.ml_model.prediction_type == PredictionType.WIN_PROBABILITY
+        else None
+    )
     is_correct = factory.LazyAttribute(
         lambda pred: (
             pred.match.teammatch_set.order_by("-score").first().team

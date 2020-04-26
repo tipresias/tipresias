@@ -41,8 +41,6 @@ docker-compose -f ${DOCKER_COMPOSE_FILE} up -d backend
 EXIT_CODE=$?
 
 #### CLEANUP ####
-docker-compose -f ${DOCKER_COMPOSE_FILE} stop
-
 if [ ${EXIT_CODE} -eq 0 ]
 then
   exit ${EXIT_CODE}

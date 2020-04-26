@@ -789,6 +789,22 @@
             "deprecationReason": null
           },
           {
+            "name": "predictionType",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "MLModelPredictionType",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "predictionSet",
             "description": null,
             "args": [],
@@ -816,6 +832,29 @@
         "inputFields": null,
         "interfaces": [],
         "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "ENUM",
+        "name": "MLModelPredictionType",
+        "description": "An enumeration.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "MARGIN",
+            "description": "Margin",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "WIN_PROBABILITY",
+            "description": "Win Probability",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
         "possibleTypes": null
       },
       {

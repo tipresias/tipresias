@@ -4,7 +4,7 @@
   "private": true,
   "devDependencies": {
     "@cypress/code-coverage": "3.6.0",
-    "cypress": "4.4.1",
+    "cypress": "4.5.0",
     "istanbul-lib-coverage": "3.0.0",
     "nyc": "15.0.1"
   },

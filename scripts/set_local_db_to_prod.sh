@@ -6,13 +6,15 @@ FILE_ARG=${1:-""}
 
 if [ -z ${FILE_ARG} ]
 then
-  DB_FILE=prod_dump_`date +%Y-%m-%d"_"%H_%M_%S`.sql
+  PROJECT_DIR=${PWD}
+  DATABASE_FILE=prod_dump_`date +%Y-%m-%d"_"%H_%M_%S`.sql
 
-  # Requires objectCreator/objectViewer roles for the SQL service account
-  gcloud sql export sql ${PROJECT_ID}-db gs://${PROJECT_ID}_db_backups/${DB_FILE} --database ${DATABASE_NAME}
-  gsutil cp gs://${PROJECT_ID}_db_backups/${DB_FILE} $PWD/db/backups
+  ssh ${DATABASE_USER}@${DATABASE_HOST} "bash -s" -- \
+    < ./scripts/dump_prod_db.sh ${DATABASE_NAME} ${DATABASE_FILE} ${DATABASE_PASSWORD}
+  scp ${DATABASE_USER}@${DATABASE_HOST}:${DATABASE_FILE} ${PWD}/db/backups/${DATABASE_FILE}
+  ssh ${DATABASE_USER}@${DATABASE_HOST} rm ${DATABASE_FILE}
 else
-  DB_FILE=${FILE_ARG}
+  DATABASE_FILE=${FILE_ARG}
 fi
 
 docker-compose rm -s -v db
@@ -23,13 +25,5 @@ docker-compose up -d db
 # so we're sleeping instead
 sleep 4
 
-# Google Cloud SQL dumps include the following roles. PostGres raises errors
-# if they don't exist in the local DB.
-docker exec -t -u postgres tipresias_db_1 psql \
-  --command="CREATE ROLE cloudsqladmin" \
-  --dbname=${DATABASE_NAME}
-docker exec -t -u postgres tipresias_db_1 psql \
-  --command="CREATE ROLE cloudsqlsuperuser" \
-  --dbname=${DATABASE_NAME}
-cat $PWD/db/backups/${DB_FILE} \
+cat $PWD/db/backups/${DATABASE_FILE} \
   | docker exec -i tipresias_db_1 psql -U postgres -d ${DATABASE_NAME}

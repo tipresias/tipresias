@@ -10,7 +10,7 @@ import pandas as pd
 from mypy_extensions import TypedDict
 
 from server.models import Prediction, Match, MLModel
-from server.types import RoundPrediction
+from server.graphql.types.season import RoundModelMetrics
 from .types import (
     SeasonType,
     PredictionType,
@@ -48,11 +48,11 @@ class Query(graphene.ObjectType):
         required=True,
     )
 
-    fetch_yearly_predictions = graphene.Field(
+    fetch_season_model_metrics = graphene.Field(
         SeasonType,
-        year=graphene.Int(
+        season=graphene.Int(
             default_value=timezone.localtime().year,
-            description=("Filter results by year."),
+            description=("Filter metrics by season."),
         ),
         required=True,
     )
@@ -110,14 +110,14 @@ class Query(graphene.ObjectType):
         }
 
     @staticmethod
-    def resolve_fetch_yearly_predictions(_root, _info, year) -> QuerySet:
-        """Return all predictions from the given year."""
+    def resolve_fetch_season_model_metrics(_root, _info, season) -> QuerySet:
+        """Return all model performance metrics from the given season."""
         return Prediction.objects.filter(
-            match__start_date_time__year=year
+            match__start_date_time__year=season
         ).select_related("ml_model", "match")
 
     @staticmethod
-    def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPrediction:
+    def resolve_fetch_latest_round_predictions(_root, _info) -> RoundModelMetrics:
         """Return predictions and model metrics for the latest available round."""
         max_match = Match.objects.order_by("-start_date_time").first()
 

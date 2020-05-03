@@ -4,7 +4,7 @@ import type { Node } from 'react';
 import { Query } from '@apollo/react-components';
 import styled from 'styled-components/macro';
 import {
-  FETCH_YEARLY_PREDICTIONS_QUERY,
+  FETCH_SEASON_METRICS_QUERY,
   FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
 } from '../../graphql';
 import type { fetchYearlyPredictions } from '../../graphql/graphql-types/fetchYearlyPredictions';
@@ -91,23 +91,23 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
           </WidgetHeading>
           <Query
             query={
-              FETCH_YEARLY_PREDICTIONS_QUERY
+              FETCH_SEASON_METRICS_QUERY
             }
             variables={{
-              year,
+              season: year,
               forCompetitionOnly: false,
             }}
           >
             {({ loading, error, data }: fetchYearlyPredictionsResponse): Node => {
               if (loading) return <ChartLoading text="Brrrrr ..." />;
               if (error) return <StatusBar text={error.message} error />;
-              const { predictionsByRound: predictionsByRoundData } = data.fetchYearlyPredictions;
+              const { roundModelMetrics } = data.fetchSeasonModelMetrics;
 
-              if (predictionsByRoundData.length === 0) {
+              if (roundModelMetrics.length === 0) {
                 return <StatusBar text="No data found" empty />;
               }
               const metric = { name: currentMetric, label: currentMetricLabel };
-              const dataTransformed = dataTransformerLineChart(predictionsByRoundData, metric);
+              const dataTransformed = dataTransformerLineChart(roundModelMetrics, metric);
 
               // @todo find a better way to add
               // unit of measure for labels that need it. ie. accuracy
@@ -206,14 +206,14 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
 
         <Widget gridColumn="1 / -2">
           <Query
-            query={FETCH_YEARLY_PREDICTIONS_QUERY}
-            variables={{ year: latestYear, roundNumber: -1, forCompetitionOnly: true }}
+            query={FETCH_SEASON_METRICS_QUERY}
+            variables={{ season: latestYear, roundNumber: -1, forCompetitionOnly: true }}
           >
             {({ loading, error, data }: fetchYearlyPredictionsResponse): Node => {
               if (loading) return <p>Brrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
-              const { seasonYear, predictionsByRound } = data.fetchYearlyPredictions;
-              const { roundNumber, modelMetrics } = predictionsByRound[0];
+              const { season, roundModelMetrics } = data.fetchSeasonModelMetrics;
+              const { roundNumber, modelMetrics } = roundModelMetrics[0];
 
 
               // cumulativeCorrectCount
@@ -241,7 +241,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
                   <WidgetHeading>
                     Performance metrics for Tipresias
                   </WidgetHeading>
-                  <WidgetSubHeading>{`Round ${roundNumber},  Season ${seasonYear} `}</WidgetSubHeading>
+                  <WidgetSubHeading>{`Round ${roundNumber},  Season ${season} `}</WidgetSubHeading>
                   <DefinitionList items={[
                     {
                       id: 1,

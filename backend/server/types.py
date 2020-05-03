@@ -5,8 +5,6 @@ from datetime import datetime
 
 from mypy_extensions import TypedDict
 from pandas import Timestamp
-from django.db.models import QuerySet
-import pandas as pd
 
 
 FixtureData = TypedDict(
@@ -67,20 +65,3 @@ CleanPredictionData = TypedDict(
 )
 
 MlModel = TypedDict("MlModel", {"name": str, "filepath": str})
-
-ModelMetric = TypedDict(
-    "ModelMetric",
-    {
-        "ml_model__name": str,
-        "cumulative_correct_count": int,
-        "cumulative_accuracy": float,
-        "cumulative_mean_absolute_error": float,
-        "cumulative_margin_difference": int,
-        "cumulative_bits": float,
-    },
-)
-
-RoundPrediction = TypedDict(
-    "RoundPrediction",
-    {"match__round_number": int, "model_metrics": pd.DataFrame, "matches": QuerySet},
-)

@@ -32,34 +32,18 @@ export const FETCH_PREDICTIONS_QUERY = gql`
   }`;
 
 export const FETCH_LATEST_ROUND_PREDICTIONS_QUERY = gql`
-query fetchLatestRoundPredictions{
-  fetchLatestRoundPredictions {
-    roundNumber
-    matches {
-      year
-      startDateTime
-      homeTeam{
-        name
-      }
-      awayTeam{
-        name
-      }
-      predictions{
-        mlModel{
-          name
-          usedInCompetitions
-          isPrinciple
-        }
-        predictedWinner{
-          name
-        }
+  query fetchLatestRoundPredictions{
+    fetchLatestRoundPredictions {
+      roundNumber
+      matchPredictions {
+        startDateTime
+        predictedWinner
         predictedMargin
         predictedWinProbability
         isCorrect
       }
     }
   }
-}
 `;
 
 export const FETCH_SEASON_METRICS_QUERY = gql`

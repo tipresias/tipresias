@@ -300,12 +300,12 @@ class TestSchema(TestCase):
             query QueryType {
                 fetchLatestRoundPredictions {
                     roundNumber
-                    matches {
+                    matchPredictions {
                         startDateTime
-                        predictions { predictedWinner { name } predictedMargin }
-                        winner { name }
-                        homeTeam { name }
-                        awayTeam { name }
+                        predictedWinner
+                        predictedMargin
+                        predictedWinProbability
+                        isCorrect
                     }
                 }
             }
@@ -313,44 +313,31 @@ class TestSchema(TestCase):
         )
 
         data = executed["data"]["fetchLatestRoundPredictions"]
-        max_match_round = max([match.round_number for match in latest_matches])
 
+        max_match_round = max([match.round_number for match in latest_matches])
         self.assertEqual(data["roundNumber"], max_match_round)
 
         match_years = [
-            parser.parse(match["startDateTime"]).year for match in data["matches"]
+            parser.parse(pred["startDateTime"]).year
+            for pred in data["matchPredictions"]
         ]
-
         self.assertEqual(np.mean(match_years), year)
 
-        with self.subTest("with an mlModelName argument"):
-            executed_ml_name = self.client.execute(
-                """
-                query QueryType {
-                    fetchLatestRoundPredictions {
-                        roundNumber
-                        matches {
-                            startDateTime
-                            predictions(mlModelName: "accurate_af") {
-                                mlModel { name }
-                            }
-                        }
-                    }
-                }
-                """
-            )
-
-            data = executed_ml_name["data"]["fetchLatestRoundPredictions"]
-            predictions = itertools.chain.from_iterable(
-                [match["predictions"] for match in data["matches"]]
-            )
-            ml_model_names = [pred["mlModel"]["name"] for pred in predictions]
-
-            self.assertEqual(ml_model_names, ["accurate_af"])
+        principle_predicted_winners = Prediction.objects.filter(
+            match__start_date_time__year=year,
+            match__round_number=max_match_round,
+            ml_model__is_principle=True,
+        ).values_list("predicted_winner__name", flat=True)
+        query_predicted_winners = [
+            pred["predictedWinner"] for pred in data["matchPredictions"]
+        ]
+        self.assertEqual(
+            sorted(principle_predicted_winners), sorted(query_predicted_winners)
+        )
 
     # Keeping this in a separate test, because it requires special setup
     # to properly test metric calculations
-    def test_fetch_yearly_predictions_cumulative_metrics(self):
+    def test_fetch_season_model_metrics_cumulative_metrics(self):
         ml_models = list(MLModel.objects.filter(name__in=MODEL_NAMES))
         YEAR = TWENTY_SEVENTEEN
         MONTH = 6

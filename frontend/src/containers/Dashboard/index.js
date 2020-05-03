@@ -176,7 +176,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
             {({ loading, error, data }: fetchLatestRoundPredictionsResponse): Node => {
               if (loading) return <p>Brrrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
-              if (data.fetchLatestRoundPredictions.matches.length === 0) {
+              if (data.fetchLatestRoundPredictions.matchPredictions.length === 0) {
                 return (
                   <StatusBar
                     text="No data available."
@@ -186,8 +186,8 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               }
 
               const { roundNumber } = data.fetchLatestRoundPredictions;
-              const { matches } = data.fetchLatestRoundPredictions;
-              const rowsArray = dataTransformerTable(matches, principleModel.name);
+              const { matchPredictions } = data.fetchLatestRoundPredictions;
+              const rowsArray = dataTransformerTable(matchPredictions);
 
               if (rowsArray.length === 0) {
                 return <StatusBar text="No data available." error />;

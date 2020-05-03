@@ -17,12 +17,17 @@ from .types import (
     RoundType,
     MLModelType,
     SeasonPerformanceChartParametersType,
+    RoundPredictionType,
 )
 
 
 SeasonPerformanceChartParameters = TypedDict(
     "SeasonPerformanceChartParameters",
     {"available_seasons": List[int], "available_ml_models": List[MLModel]},
+)
+
+RoundPredictions = TypedDict(
+    "RoundPredictions", {"round_number": int, "match_predictions": QuerySet}
 )
 
 
@@ -58,9 +63,9 @@ class Query(graphene.ObjectType):
     )
 
     fetch_latest_round_predictions = graphene.Field(
-        RoundType,
+        RoundPredictionType,
         description=(
-            "Match info and predictions for the latest round for which data "
+            "Official Tipresias predictions for the latest round for which data "
             "is available"
         ),
         required=True,
@@ -117,23 +122,19 @@ class Query(graphene.ObjectType):
         ).select_related("ml_model", "match")
 
     @staticmethod
-    def resolve_fetch_latest_round_predictions(_root, _info) -> RoundModelMetrics:
+    def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPredictions:
         """Return predictions and model metrics for the latest available round."""
         max_match = Match.objects.order_by("-start_date_time").first()
 
-        matches = (
-            Match.objects.filter(
-                start_date_time__year=max_match.start_date_time.year,
-                round_number=max_match.round_number,
-            )
-            .prefetch_related("prediction_set", "teammatch_set")
-            .order_by("start_date_time")
-        )
+        prediction_query = Prediction.objects.filter(
+            match__start_date_time__year=max_match.start_date_time.year,
+            match__round_number=max_match.round_number,
+            ml_model__used_in_competitions=True,
+        ).order_by("match__start_date_time")
 
         return {
-            "match__round_number": max_match.round_number,
-            "model_metrics": pd.DataFrame(),
-            "matches": matches,
+            "round_number": max_match.round_number,
+            "match_predictions": prediction_query,
         }
 
     @staticmethod

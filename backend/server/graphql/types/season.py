@@ -2,6 +2,7 @@
 
 from typing import List, cast, Optional
 from functools import partial
+from datetime import datetime
 
 from django.utils import timezone
 from django.db.models import (
@@ -46,6 +47,21 @@ RoundModelMetrics = TypedDict(
     {"match__round_number": int, "model_metrics": pd.DataFrame, "matches": QuerySet},
 )
 
+RoundPredictions = TypedDict(
+    "RoundPredictions", {"round_number": int, "match_predictions": QuerySet}
+)
+
+MatchPredictions = TypedDict(
+    "MatchPredictions",
+    {
+        "match__start_date_time": datetime,
+        "predicted_winner__name": str,
+        "predicted_margin": int,
+        "predicted_win_probability": float,
+        "is_correct": bool,
+    },
+)
+
 
 ML_MODEL_NAME_LVL = 0
 # For regressors that might try to predict negative values or 0,
@@ -54,6 +70,57 @@ MIN_LOG_VAL = 1 * 10 ** -10
 
 ROUND_NUMBER_LVL = 0
 GROUP_BY_LVL = 0
+
+
+class MatchPredictionType(graphene.ObjectType):
+    """Official Tipresias predictions for a given match."""
+
+    match__start_date_time = graphene.NonNull(graphene.DateTime, name="startDateTime")
+    predicted_winner__name = graphene.NonNull(graphene.String, name="predictedWinner")
+    predicted_margin = graphene.NonNull(graphene.Int)
+    predicted_win_probability = graphene.NonNull(graphene.Float)
+    is_correct = graphene.Boolean()
+
+
+class RoundPredictionType(graphene.ObjectType):
+    """Official Tipresias predictions for a given round."""
+
+    round_number = graphene.NonNull(graphene.Int)
+    match_predictions = graphene.List(
+        graphene.NonNull(MatchPredictionType), required=True
+    )
+
+    @staticmethod
+    def resolve_match_predictions(root: RoundPredictions, _info) -> MatchPredictions:
+        """Return prediction data for matches in the given round."""
+
+        predictions = pd.DataFrame(
+            root["match_predictions"]
+            .prefetch_related("match", "ml_model", "match__teammatch_set")
+            .values(
+                "match__id",
+                "match__start_date_time",
+                "ml_model__is_principle",
+                "predicted_winner__name",
+                "predicted_margin",
+                "predicted_win_probability",
+                "is_correct",
+            )
+        )
+
+        principle_predictions = predictions.query(
+            "ml_model__is_principle == True"
+        ).set_index("match__id")
+        non_principle_predictions = (
+            predictions.query("ml_model__is_principle == False")
+            .fillna(0)
+            .groupby("match__id")[["predicted_margin", "predicted_win_probability"]]
+            .sum()
+        )
+
+        return principle_predictions.fillna(non_principle_predictions).to_dict(
+            "records"
+        )
 
 
 class SeasonPerformanceChartParametersType(graphene.ObjectType):

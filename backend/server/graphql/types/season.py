@@ -26,7 +26,7 @@ import numpy as np
 
 from server.types import ModelMetric, RoundPrediction
 from server.models import TeamMatch, Match
-from .models import MatchType
+from .models import MatchType, MLModelType
 
 ML_MODEL_NAME_LVL = 0
 # For regressors that might try to predict negative values or 0,
@@ -35,6 +35,26 @@ MIN_LOG_VAL = 1 * 10 ** -10
 
 ROUND_NUMBER_LVL = 0
 GROUP_BY_LVL = 0
+
+
+class SeasonPerformanceChartParametersType(graphene.ObjectType):
+    """
+    Parameters for displaying info and populating inputs for the performance chart.
+    """
+
+    available_seasons = graphene.List(
+        graphene.NonNull(graphene.Int),
+        description=(
+            "All season years for which model predictions exist in the database"
+        ),
+        required=True,
+    )
+
+    available_ml_models = graphene.List(
+        graphene.NonNull(MLModelType),
+        description="All ML models that have predictions in the database.",
+        required=True,
+    )
 
 
 class CumulativeMetricsByRoundType(graphene.ObjectType):

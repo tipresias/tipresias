@@ -11,7 +11,7 @@ from freezegun import freeze_time
 
 from server.graphql import schema
 from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
-from server.models import Match, MLModel
+from server.models import Match, MLModel, Prediction
 from server.models.ml_model import PredictionType
 
 
@@ -138,7 +138,7 @@ class TestSchema(TestCase):
             ]
             self.assertNotIn(predictionless_ml_model.name, query_ml_model_names)
 
-    def test_fetch_yearly_predictions(self):
+    def test_fetch_season_model_metrics(self):
         year = 2015
         ml_model_names = (
             Match.objects.filter(start_date_time__year=year)
@@ -160,33 +160,31 @@ class TestSchema(TestCase):
 
         executed = self.client.execute(
             """
-            query QueryType {
-                fetchYearlyPredictions(year: 2015) {
-                    seasonYear
-                    predictionModelNames
-                    predictionsByRound {
+            query($season: Int) {
+                fetchSeasonModelMetrics(season: $season) {
+                    season
+                    roundModelMetrics {
                         roundNumber
                         modelMetrics {
-                            modelName
+                            mlModel { name }
                             cumulativeCorrectCount
                             cumulativeAccuracy
                             cumulativeMeanAbsoluteError
                             cumulativeMarginDifference
                             cumulativeBits
                         }
-                        matches { predictions { isCorrect } }
                     }
                 }
             }
-            """
+            """,
+            variables={"season": year},
         )
 
-        data = executed["data"]["fetchYearlyPredictions"]
+        data = executed["data"]["fetchSeasonModelMetrics"]
 
-        self.assertEqual(set(data["predictionModelNames"]), set(ml_model_names))
-        self.assertEqual(data["seasonYear"], 2015)
+        self.assertEqual(data["season"], year)
 
-        predictions = data["predictionsByRound"]
+        predictions = data["roundModelMetrics"]
 
         for pred in predictions:
             for model_metric in pred["modelMetrics"]:
@@ -196,80 +194,83 @@ class TestSchema(TestCase):
         earlier_round = predictions[0]
         later_round = predictions[1]
 
-        self.assertLessEqual(earlier_round["roundNumber"], later_round["roundNumber"])
+        self.assertLess(earlier_round["roundNumber"], later_round["roundNumber"])
 
-        earlier_round_cum_counts = [
+        earlier_round_cum_correct = [
             prediction["cumulativeCorrectCount"]
             for prediction in earlier_round["modelMetrics"]
         ]
-        earlier_round_correct = [
-            prediction["isCorrect"]
-            for match in earlier_round["matches"]
-            for prediction in match["predictions"]
+        earlier_round_cum_accuracy = [
+            prediction["cumulativeAccuracy"]
+            for prediction in earlier_round["modelMetrics"]
         ]
+
+        earlier_round_correct = Prediction.objects.filter(
+            match__start_date_time__year=year,
+            match__round_number=earlier_round["roundNumber"],
+        ).values_list("is_correct", flat=True)
 
         # Regression tests to make sure cumulative counts and cumulative accuracy
         # are being calculated correctly
-        match_count = sum([len(round_n["matches"]) for round_n in predictions])
-        self.assertEqual(sum(earlier_round_cum_counts), sum(earlier_round_correct))
+        self.assertEqual(sum(earlier_round_cum_correct), sum(earlier_round_correct))
         self.assertEqual(
-            sum(earlier_round_cum_counts) / match_count,
-            sum(earlier_round_correct) / match_count,
+            sum(earlier_round_cum_accuracy) / len(earlier_round_cum_accuracy),
+            sum(earlier_round_correct) / len(earlier_round_correct),
         )
 
-        later_round_cum_counts = [
+        later_round_cum_correct = [
             prediction["cumulativeCorrectCount"]
             for prediction in later_round["modelMetrics"]
         ]
-        later_round_correct = [
-            prediction["isCorrect"]
-            for match in later_round["matches"]
-            for prediction in match["predictions"]
-        ]
+        later_round_correct = Prediction.objects.filter(
+            match__start_date_time__year=year,
+            match__round_number=later_round["roundNumber"],
+        ).values_list("is_correct", flat=True)
 
         # Regression test to make sure cumulative counts are being calculated correctly
         self.assertEqual(
-            sum(earlier_round_correct + later_round_correct),
-            sum(later_round_cum_counts),
+            sum(earlier_round_correct) + sum(later_round_correct),
+            sum(later_round_cum_correct),
         )
 
-        self.assertLessEqual(sum(earlier_round_cum_counts), sum(later_round_cum_counts))
+        self.assertLessEqual(
+            sum(earlier_round_cum_correct), sum(later_round_cum_correct)
+        )
 
         with self.subTest("with mlModelName argument 'predictanator'"):
             executed = self.client.execute(
                 """
                 query QueryType {
-                    fetchYearlyPredictions(year: 2015) {
-                        predictionsByRound {
-                            modelMetrics(mlModelName: "predictanator") { modelName }
-                            matches { predictions { isCorrect } }
+                    fetchSeasonModelMetrics(season: 2015) {
+                        roundModelMetrics {
+                            modelMetrics(mlModelName: "predictanator") {
+                                mlModel { name }
+                            }
                         }
                     }
                 }
                 """
             )
 
-            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0]
+            data = executed["data"]["fetchSeasonModelMetrics"]["roundModelMetrics"][0]
 
             self.assertEqual(len(data["modelMetrics"]), 1)
-            self.assertEqual(data["modelMetrics"][0]["modelName"], "predictanator")
-            # matches and predictions associations are unaffected
-            # by the modelMetrics argument (predictions has its own argument
-            # for mlModelName)
-            self.assertEqual(len(data["matches"][0]["predictions"]), len(ml_models))
+            self.assertEqual(
+                data["modelMetrics"][0]["mlModel"]["name"], "predictanator"
+            )
 
         with self.subTest("with roundNumber argument of -1"):
             executed = self.client.execute(
                 """
                 query QueryType {
-                    fetchYearlyPredictions(year: 2015) {
-                        predictionsByRound(roundNumber: -1) { roundNumber }
+                    fetchSeasonModelMetrics(season: 2015) {
+                        roundModelMetrics(roundNumber: -1) { roundNumber }
                     }
                 }
                 """
             )
 
-            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"]
+            data = executed["data"]["fetchSeasonModelMetrics"]["roundModelMetrics"]
 
             self.assertEqual(len(data), 1)
             self.assertEqual(
@@ -370,12 +371,12 @@ class TestSchema(TestCase):
 
         query = """
             query($mlModelName: String) {
-                fetchYearlyPredictions(year: 2017) {
-                    seasonYear
-                    predictionsByRound(roundNumber: -1) {
+                fetchSeasonModelMetrics(season: 2017) {
+                    season
+                    roundModelMetrics(roundNumber: -1) {
                         roundNumber
                         modelMetrics(mlModelName: $mlModelName) {
-                            modelName
+                            mlModel { name }
                             cumulativeCorrectCount
                             cumulativeMeanAbsoluteError
                             cumulativeMarginDifference
@@ -392,13 +393,13 @@ class TestSchema(TestCase):
                 query, variables={"mlModelName": "accurate_af"}
             )
 
-            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0][
+            data = executed["data"]["fetchSeasonModelMetrics"]["roundModelMetrics"][0][
                 "modelMetrics"
             ]
 
             self.assertEqual(len(data), 1)
             model_stats = data[0]
-            self.assertEqual("accurate_af", model_stats["modelName"])
+            self.assertEqual("accurate_af", model_stats["mlModel"]["name"])
 
             self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
             self.assertEqual(model_stats["cumulativeMeanAbsoluteError"], 0)
@@ -413,13 +414,13 @@ class TestSchema(TestCase):
                 query, variables={"mlModelName": "predictanator"}
             )
 
-            data = executed["data"]["fetchYearlyPredictions"]["predictionsByRound"][0][
+            data = executed["data"]["fetchSeasonModelMetrics"]["roundModelMetrics"][0][
                 "modelMetrics"
             ]
 
             self.assertEqual(len(data), 1)
             model_stats = data[0]
-            self.assertEqual("predictanator", model_stats["modelName"])
+            self.assertEqual("predictanator", model_stats["mlModel"]["name"])
 
             self.assertGreater(model_stats["cumulativeCorrectCount"], 0)
             self.assertGreater(model_stats["cumulativeMeanAbsoluteError"], 0)
@@ -436,8 +437,8 @@ class TestSchema(TestCase):
                     query, variables={"mlModelName": "predictanator"}
                 )
 
-                data = past_executed["data"]["fetchYearlyPredictions"][
-                    "predictionsByRound"
+                data = past_executed["data"]["fetchSeasonModelMetrics"][
+                    "roundModelMetrics"
                 ][0]
 
                 max_match_round = (

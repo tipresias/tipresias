@@ -62,14 +62,14 @@ query fetchLatestRoundPredictions{
 }
 `;
 
-export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
-  query fetchYearlyPredictions($year: Int, $roundNumber: Int, $forCompetitionOnly: Boolean){
-    fetchYearlyPredictions(year: $year){
-      seasonYear
-      predictionsByRound (roundNumber: $roundNumber){
+export const FETCH_SEASON_METRICS_QUERY = gql`
+  query($season: Int, $roundNumber: Int, $forCompetitionOnly: Boolean) {
+    fetchSeasonModelMetrics(season: $season){
+      season
+      roundModelMetrics(roundNumber: $roundNumber) {
         roundNumber
-        modelMetrics(forCompetitionOnly: $forCompetitionOnly){
-          modelName
+        modelMetrics(forCompetitionOnly: $forCompetitionOnly) {
+          mlModel { name }
           cumulativeAccuracy
           cumulativeBits
           cumulativeMeanAbsoluteError

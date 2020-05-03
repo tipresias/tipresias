@@ -81,13 +81,15 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
   }
 `;
 
-export const FETCH_MODELS_AND_YEARS_QUERY = gql`
-query fetchModelsAndYears {
-  fetchPredictionYears
-  fetchMlModels {
-    name
-    isPrinciple
-    usedInCompetitions
+export const FETCH_CHART_PARAMETERS_QUERY = gql`
+  query fetchSeasonPerformanceChartParameters {
+    fetchSeasonPerformanceChartParameters {
+      availableSeasons
+      availableMlModels {
+        name
+        isPrinciple
+        usedInCompetitions
+      }
+    }
   }
-}
 `;

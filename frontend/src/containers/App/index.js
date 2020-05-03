@@ -10,7 +10,7 @@ import PageFooter from '../../components/PageFooter';
 import Dashboard from '../Dashboard';
 import Glossary from '../Glossary';
 import About from '../About';
-import { FETCH_MODELS_AND_YEARS_QUERY } from '../../graphql';
+import { FETCH_CHART_PARAMETERS_QUERY } from '../../graphql';
 import {
   AppContainerStyled, MainStyled, ToggleThemeButton,
 } from './style';
@@ -24,10 +24,17 @@ const isDarkModeStored = () => {
 const App = () => {
   const [isDarkMode, setIsDarkMode] = useState(isDarkModeStored());
 
-  const { data, loading, error } = useQuery<fetchModelsAndYears>(FETCH_MODELS_AND_YEARS_QUERY);
+  const { data, loading, error } = useQuery<fetchModelsAndYears>(FETCH_CHART_PARAMETERS_QUERY);
   if (loading) return <div>Loading Tipresias....</div>;
   if (error) return <div>Error: Something happened, try again later.</div>;
   if (data === undefined) return <p>Error: Data not defined.</p>;
+
+  const {
+    fetchSeasonPerformanceChartParameters: {
+      availableSeasons,
+      availableMlModels,
+    },
+  } = data;
 
 
   const metrics = ['cumulativeAccuracy', 'cumulativeBits', 'cumulativeMeanAbsoluteError'];
@@ -57,7 +64,17 @@ const App = () => {
 
           </PageHeader>
           <MainStyled>
-            <Route exact path="/" render={() => <Dashboard years={data.fetchPredictionYears} models={data.fetchMlModels} metrics={metrics} />} />
+            <Route
+              exact
+              path="/"
+              render={() => (
+                <Dashboard
+                  years={availableSeasons}
+                  models={availableMlModels}
+                  metrics={metrics}
+                />
+              )}
+            />
             <Route path="/glossary" component={Glossary} />
             <Route exact path="/about" component={About} />
           </MainStyled>

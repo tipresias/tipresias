@@ -1,8 +1,9 @@
 """Factory classes for generating realistic DB records for tests."""
 
 from datetime import date, datetime
-import pytz
+import random
 
+import pytz
 import factory
 from factory.django import DjangoModelFactory
 from faker import Faker
@@ -166,7 +167,7 @@ class PredictionFactory(DjangoModelFactory):
     # Since they're taking this as an opportunity to completely change the method,
     # they're going to wait for a major version rather than just permit floats...
     predicted_win_probability = factory.LazyAttribute(
-        lambda pred: FAKE.pyfloat(min_value=0, max_value=1)
+        lambda pred: random.uniform(0.51, 0.99)
         if pred.ml_model.prediction_type == PredictionType.WIN_PROBABILITY
         else None
     )

@@ -46,6 +46,19 @@ export const FETCH_LATEST_ROUND_PREDICTIONS_QUERY = gql`
   }
 `;
 
+export const FETCH_LATEST_ROUND_METRICS_QUERY = gql`
+  query fetchLatestRoundMetrics {
+    fetchLatestRoundMetrics {
+      season
+      roundNumber
+      cumulativeBits
+      cumulativeMeanAbsoluteError
+      cumulativeCorrectCount
+      cumulativeMarginDifference
+    }
+  }
+`;
+
 export const FETCH_SEASON_METRICS_QUERY = gql`
   query($season: Int, $roundNumber: Int, $forCompetitionOnly: Boolean) {
     fetchSeasonModelMetrics(season: $season){

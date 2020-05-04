@@ -1,6 +1,5 @@
 # pylint: disable=missing-docstring
 from datetime import datetime
-import itertools
 from dateutil import parser
 
 from django.test import TestCase
@@ -213,9 +212,18 @@ class TestSchema(TestCase):
         # Regression tests to make sure cumulative counts and cumulative accuracy
         # are being calculated correctly
         self.assertEqual(sum(earlier_round_cum_correct), sum(earlier_round_correct))
+
+        earlier_round_aggregate_accuracy = sum(earlier_round_cum_accuracy) / len(
+            earlier_round_cum_accuracy
+        )
+        ealier_round_calculated_accuracy = sum(earlier_round_correct) / len(
+            earlier_round_correct
+        )
+
         self.assertEqual(
-            sum(earlier_round_cum_accuracy) / len(earlier_round_cum_accuracy),
-            sum(earlier_round_correct) / len(earlier_round_correct),
+            # Rounding to avoid discrepancies at the nth digit of a calculated float.
+            round(earlier_round_aggregate_accuracy, 4),
+            round(ealier_round_calculated_accuracy, 4),
         )
 
         later_round_cum_correct = [
@@ -481,6 +489,76 @@ class TestSchema(TestCase):
 
             for model in data:
                 self.assertTrue(model["usedInCompetitions"])
+
+    def test_fetch_latest_round_metrics(self):
+        ml_models = list(MLModel.objects.filter(name__in=MODEL_NAMES))
+        YEAR = TWENTY_SEVENTEEN
+        MONTH = 6
+
+        for round_n in range(ROUND_COUNT):
+            for match_n in range(MATCH_COUNT):
+                FullMatchFactory(
+                    year=YEAR,
+                    round_number=(round_n + 1),
+                    start_date_time=timezone.make_aware(
+                        datetime(YEAR, MONTH, (round_n % 29) + 1, match_n * 5)
+                    ),
+                    prediction__ml_model=ml_models[0],
+                    prediction__force_correct=True,
+                    prediction_two__ml_model=ml_models[1],
+                    prediction_two__force_correct=True,
+                )
+
+        query = """
+            query {
+                fetchLatestRoundMetrics {
+                    season
+                    roundNumber
+                    cumulativeCorrectCount
+                    cumulativeAccuracy
+                    cumulativeMeanAbsoluteError
+                    cumulativeMarginDifference
+                    cumulativeBits
+                }
+            }
+        """
+
+        executed = self.client.execute(query)
+        data = executed["data"]["fetchLatestRoundMetrics"]
+
+        self.assertEqual(data["season"], YEAR)
+        self.assertEqual(data["roundNumber"], ROUND_COUNT)
+
+        self.assertGreater(data["cumulativeCorrectCount"], 0)
+        self.assertGreater(data["cumulativeMeanAbsoluteError"], 0)
+        self.assertGreater(data["cumulativeMarginDifference"], 0)
+        self.assertGreater(data["cumulativeAccuracy"], 0)
+        # Bits can be positive or negative, so we just want to make sure it's not 0,
+        # which would suggest a problem
+        self.assertNotEqual(data["cumulativeBits"], 0)
+
+        with self.subTest("when the last matches haven't been played yet"):
+            DAY = 3
+            fake_datetime = timezone.make_aware(datetime(YEAR, MONTH, DAY))
+
+            with freeze_time(fake_datetime):
+                past_executed = self.client.execute(
+                    query, variables={"mlModelName": "predictanator"}
+                )
+
+                data = past_executed["data"]["fetchLatestRoundMetrics"]
+
+                max_match_round = (
+                    Match.objects.all().order_by("-round_number").first().round_number
+                )
+                self.assertLess(data["roundNumber"], max_match_round)
+                # Last played match will be from day before, because "now" and the
+                # start time for "today's match" are equal
+                self.assertEqual(data["roundNumber"], DAY - 1)
+
+                self.assertGreater(data["cumulativeCorrectCount"], 0)
+                self.assertGreater(data["cumulativeMeanAbsoluteError"], 0)
+                self.assertGreater(data["cumulativeMarginDifference"], 0)
 
     def _assert_correct_prediction_results(self, results, expected_results):
         # graphene returns OrderedDicts instead of dicts, which makes asserting

@@ -2,32 +2,16 @@
 
 from typing import List, cast, Optional
 from functools import partial
-from datetime import datetime
 
-from django.utils import timezone
-from django.db.models import (
-    Case,
-    When,
-    Value,
-    IntegerField,
-    Subquery,
-    OuterRef,
-    Max,
-    Min,
-    Func,
-    F,
-    Sum,
-    Window,
-    Avg,
-    QuerySet,
-)
+from django.db.models import QuerySet
 import graphene
 import pandas as pd
-import numpy as np
 from mypy_extensions import TypedDict
 
-from server.models import TeamMatch, Match, MLModel
-from .models import MatchType, MLModelType
+from server.models import MLModel
+from server.types import RoundModelMetrics, MatchPredictions
+from server.graphql import cumulative_calculations
+from .models import MLModelType
 
 
 ModelMetric = TypedDict(
@@ -42,34 +26,12 @@ ModelMetric = TypedDict(
     },
 )
 
-RoundModelMetrics = TypedDict(
-    "RoundModelMetrics",
-    {"match__round_number": int, "model_metrics": pd.DataFrame, "matches": QuerySet},
-)
-
 RoundPredictions = TypedDict(
     "RoundPredictions", {"round_number": int, "match_predictions": QuerySet}
 )
 
-MatchPredictions = TypedDict(
-    "MatchPredictions",
-    {
-        "match__start_date_time": datetime,
-        "predicted_winner__name": str,
-        "predicted_margin": int,
-        "predicted_win_probability": float,
-        "is_correct": bool,
-    },
-)
-
 
 ML_MODEL_NAME_LVL = 0
-# For regressors that might try to predict negative values or 0,
-# we need a slightly positive minimum to not get errors when calculating logarithms
-MIN_LOG_VAL = 1 * 10 ** -10
-
-ROUND_NUMBER_LVL = 0
-GROUP_BY_LVL = 0
 
 
 class MatchPredictionType(graphene.ObjectType):
@@ -94,32 +56,23 @@ class RoundPredictionType(graphene.ObjectType):
     def resolve_match_predictions(root: RoundPredictions, _info) -> MatchPredictions:
         """Return prediction data for matches in the given round."""
 
-        predictions = pd.DataFrame(
-            root["match_predictions"]
-            .prefetch_related("match", "ml_model", "match__teammatch_set")
-            .values(
-                "match__id",
-                "match__start_date_time",
-                "ml_model__is_principle",
-                "predicted_winner__name",
-                "predicted_margin",
-                "predicted_win_probability",
-                "is_correct",
+        return (
+            pd.DataFrame(
+                root["match_predictions"]
+                .prefetch_related("match", "ml_model", "match__teammatch_set")
+                .values(
+                    "match__id",
+                    "match__start_date_time",
+                    "ml_model__is_principle",
+                    "ml_model__used_in_competitions",
+                    "predicted_winner__name",
+                    "predicted_margin",
+                    "predicted_win_probability",
+                    "is_correct",
+                )
             )
-        )
-
-        principle_predictions = predictions.query(
-            "ml_model__is_principle == True"
-        ).set_index("match__id")
-        non_principle_predictions = (
-            predictions.query("ml_model__is_principle == False")
-            .fillna(0)
-            .groupby("match__id")[["predicted_margin", "predicted_win_probability"]]
-            .sum()
-        )
-
-        return principle_predictions.fillna(non_principle_predictions).to_dict(
-            "records"
+            .pipe(cumulative_calculations.consolidate_competition_predictions)
+            .to_dict("records")
         )
 
 
@@ -227,13 +180,10 @@ class RoundType(graphene.ObjectType):
         ),
         required=True,
     )
-    matches = graphene.List(
-        graphene.NonNull(MatchType), default_value=[], required=True
-    )
 
     @staticmethod
     def resolve_model_metrics(
-        root, _info, ml_model_name=None, for_competition_only=False,
+        root: RoundModelMetrics, _info, ml_model_name=None, for_competition_only=False,
     ) -> List[ModelMetric]:
         """Calculate metrics related to the quality of models' predictions."""
         model_metrics_to_dict = lambda df: [
@@ -245,7 +195,7 @@ class RoundType(graphene.ObjectType):
         ]
 
         metric_dicts = (
-            root.get("model_metrics")
+            root["model_metrics"]
             .pipe(
                 partial(
                     _filter_by_model,
@@ -260,142 +210,23 @@ class RoundType(graphene.ObjectType):
         return [cast(ModelMetric, model_metrics) for model_metrics in metric_dicts]
 
 
-def _collect_data_by_round(
-    query_set: QuerySet, data_frame: pd.DataFrame
-) -> List[RoundModelMetrics]:
+def _group_data_by_round(data_frame: pd.DataFrame) -> List[RoundModelMetrics]:
     return [
         cast(
             RoundModelMetrics,
             {
-                data_frame.index.names[ROUND_NUMBER_LVL]: round_number_idx,
+                data_frame.index.names[
+                    cumulative_calculations.ROUND_NUMBER_LVL
+                ]: round_number_idx,
                 "model_metrics": data_frame.xs(
-                    round_number_idx, level=ROUND_NUMBER_LVL
-                ),
-                "matches": Match.objects.filter(
-                    id__in=query_set.filter(
-                        match__round_number=round_number_idx
-                    ).values_list("match", flat=True)
+                    round_number_idx, level=cumulative_calculations.ROUND_NUMBER_LVL
                 ),
             },
         )
         for round_number_idx in data_frame.index.get_level_values(
-            ROUND_NUMBER_LVL
+            cumulative_calculations.ROUND_NUMBER_LVL
         ).drop_duplicates()
     ]
-
-
-def _filter_by_round(data_frame: pd.DataFrame, round_number: Optional[int] = None):
-    if round_number is None:
-        return data_frame
-
-    round_number_filter = (
-        data_frame.index.get_level_values(ROUND_NUMBER_LVL).max()
-        if round_number == -1
-        else round_number
-    )
-
-    return data_frame.loc[(round_number_filter, slice(None)), :]
-
-
-def _calculate_cumulative_bits(data_frame: pd.DataFrame):
-    return (
-        data_frame.groupby("ml_model__name")
-        .expanding()["bits"]
-        .sum()
-        .rename("cumulative_bits")
-        .reset_index(level=GROUP_BY_LVL, drop=True)
-    )
-
-
-# Raw bits calculations per http://probabilistic-footy.monash.edu/~footy/about.shtml
-def _calculate_bits(data_frame: pd.DataFrame):
-    positive_pred = lambda y_pred: (
-        np.maximum(y_pred, np.repeat(MIN_LOG_VAL, len(y_pred)))
-    )
-    draw_bits = lambda y_pred: (
-        1 + (0.5 * np.log2(positive_pred(y_pred * (1 - y_pred))))
-    )
-    win_bits = lambda y_pred: 1 + np.log2(positive_pred(y_pred))
-    loss_bits = lambda y_pred: 1 + np.log2(positive_pred(1 - y_pred))
-
-    return np.where(
-        data_frame["match__margin"] == 0,
-        draw_bits(data_frame["predicted_win_probability"]),
-        np.where(
-            data_frame["match__winner__name"] == data_frame["predicted_winner__name"],
-            win_bits(data_frame["predicted_win_probability"]),
-            loss_bits(data_frame["predicted_win_probability"]),
-        ),
-    )
-
-
-# TODO: I've migrated the simple calculations over to SQL, but calculations
-# based on margin_diff are difficult, because Django doesn't allow an annotation
-# based on an aggregation (margin_diff uses Max/Min), and `Window` can't be used
-# in an `aggregate` call. I may need to resort to raw SQL, but that would probably
-# still require figuring out why the ORM doesn't like this combination.
-def _calculate_cumulative_mae(data_frame: pd.DataFrame):
-    return (
-        data_frame.groupby("ml_model__name")
-        .expanding()["absolute_margin_diff"]
-        .mean()
-        .round(2)
-        .rename("cumulative_mean_absolute_error")
-        .reset_index(level=GROUP_BY_LVL, drop=True)
-    )
-
-
-def _calculate_cumulative_margin_difference(data_frame: pd.DataFrame):
-    return (
-        data_frame.groupby("ml_model__name")
-        .expanding()["absolute_margin_diff"]
-        .sum()
-        .rename("cumulative_margin_difference")
-        .reset_index(level=GROUP_BY_LVL, drop=True)
-    )
-
-
-def _calculate_cumulative_accuracy():
-    return Window(
-        expression=Avg("tip_point"),
-        partition_by=F("ml_model_id"),
-        order_by=F("match__start_date_time").asc(),
-    )
-
-
-def _calculate_cumulative_correct():
-    return Window(
-        expression=Sum("tip_point"),
-        partition_by=F("ml_model_id"),
-        order_by=F("match__start_date_time").asc(),
-    )
-
-
-def _calculate_absolute_margin_difference():
-    return Case(
-        When(
-            is_correct=True,
-            then=Func(F("predicted_margin") - F("match__margin"), function="ABS"),
-        ),
-        default=(F("predicted_margin") + F("match__margin")),
-        output_field=IntegerField(),
-    )
-
-
-def _get_match_winner_name():
-    return Subquery(
-        TeamMatch.objects.filter(match_id=OuterRef("match_id"))
-        .order_by("-score")
-        .values_list("team__name")[:1]
-    )
-
-
-def _calculate_tip_points():
-    return Case(
-        When(is_correct=True, then=Value(1)),
-        default=Value(0),
-        output_field=IntegerField(),
-    )
 
 
 class SeasonType(graphene.ObjectType):
@@ -429,54 +260,19 @@ class SeasonType(graphene.ObjectType):
         prediction_query_set, _info, round_number: Optional[int] = None
     ) -> List[RoundModelMetrics]:
         """Return model performance metrics for the season grouped by round."""
-        sorted_query_set = prediction_query_set.order_by("match__start_date_time")
-
-        query_set = (
-            sorted_query_set
-            # We don't want to include unplayed matches, which would impact
-            # mean-based metrics like accuracy and MAE
-            .filter(match__start_date_time__lt=timezone.localtime())
-            .annotate(
-                tip_point=_calculate_tip_points(),
-                match__winner__name=_get_match_winner_name(),
-                match__margin=(
-                    Max("match__teammatch__score") - Min("match__teammatch__score")
-                ),
-                absolute_margin_diff=_calculate_absolute_margin_difference(),
-                cumulative_correct_count=_calculate_cumulative_correct(),
-                cumulative_accuracy=_calculate_cumulative_accuracy(),
-            )
-            .values(
-                "match__start_date_time",
-                "match__round_number",
-                "ml_model__name",
-                "ml_model__used_in_competitions",
-                "predicted_margin",
-                "predicted_win_probability",
-                "predicted_winner__name",
-                "match__winner__name",
-                "match__margin",
-                "absolute_margin_diff",
-                "cumulative_correct_count",
-                "cumulative_accuracy",
-            )
+        metric_values = cumulative_calculations.query_database_for_prediction_metrics(
+            prediction_query_set
+        ).values(
+            *cumulative_calculations.REQUIRED_VALUES_FOR_METRICS,
+            "ml_model__used_in_competitions"
         )
 
         return (
-            pd.DataFrame(query_set)
-            # We fill missing win probabilities with 0.5, because that's the equivalent
-            # of not picking a winner. 0 would represent an extreme prediction
-            # and result in large negative bits calculations.
-            .fillna({"predicted_win_probability": 0.5})
-            .fillna(0)
-            .assign(bits=_calculate_bits)
-            .assign(
-                cumulative_margin_difference=_calculate_cumulative_margin_difference,
-                cumulative_bits=_calculate_cumulative_bits,
-                cumulative_mean_absolute_error=_calculate_cumulative_mae,
+            cumulative_calculations.calculate_cumulative_metrics(metric_values)
+            .pipe(
+                partial(
+                    cumulative_calculations.filter_by_round, round_number=round_number
+                )
             )
-            .groupby(["match__round_number", "ml_model__name"])
-            .last()
-            .pipe(partial(_filter_by_round, round_number=round_number))
-            .pipe(partial(_collect_data_by_round, sorted_query_set))
+            .pipe(_group_data_by_round)
         )

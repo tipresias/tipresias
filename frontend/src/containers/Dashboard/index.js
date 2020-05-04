@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 import {
   FETCH_SEASON_METRICS_QUERY,
   FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
+  FETCH_LATEST_ROUND_METRICS_QUERY,
 } from '../../graphql';
 import type { fetchYearlyPredictions } from '../../graphql/graphql-types/fetchYearlyPredictions';
 import type { fetchLatestRoundPredictions } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
@@ -205,36 +206,19 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
         </Widget>
 
         <Widget gridColumn="1 / -2">
-          <Query
-            query={FETCH_SEASON_METRICS_QUERY}
-            variables={{ season: latestYear, roundNumber: -1, forCompetitionOnly: true }}
-          >
+          <Query query={FETCH_LATEST_ROUND_METRICS_QUERY}>
             {({ loading, error, data }: fetchYearlyPredictionsResponse): Node => {
               if (loading) return <p>Brrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
-              const { season, roundModelMetrics } = data.fetchSeasonModelMetrics;
-              const { roundNumber, modelMetrics } = roundModelMetrics[0];
 
-
-              // cumulativeCorrectCount
-              const { cumulativeCorrectCount } = modelMetrics.find(
-                item => (item.modelName === principleModel.name),
-              ) || {};
-
-              // bits
-              const { cumulativeBits } = modelMetrics.find(
-                item => item.cumulativeBits !== 0,
-              ) || { cumulativeBits: 0 };
-
-              // cumulativeMarginDifference
-              const { cumulativeMarginDifference } = modelMetrics.find(
-                item => item.cumulativeMarginDifference !== 0,
-              ) || { cumulativeMarginDifference: 0 };
-
-              // cumulativeMeanAbsoluteError
-              const { cumulativeMeanAbsoluteError } = modelMetrics.find(
-                item => item.cumulativeMeanAbsoluteError !== 0,
-              ) || { cumulativeMeanAbsoluteError: 0 };
+              const {
+                season,
+                roundNumber,
+                cumulativeCorrectCount,
+                cumulativeBits,
+                cumulativeMarginDifference,
+                cumulativeMeanAbsoluteError,
+              } = data.fetchLatestRoundMetrics;
 
               return (
                 <Fragment>

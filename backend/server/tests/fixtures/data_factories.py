@@ -41,7 +41,7 @@ class CyclicalTeamNames:
         self.team_names = team_names
         self.cyclical_team_names = (name for name in self.team_names)
 
-    def next(self) -> str:
+    def next_team(self) -> str:
         """Return the next team name or start over from the beginning."""
         try:
             return next(self.cyclical_team_names)
@@ -80,7 +80,7 @@ def _matches_by_round(row_count: int, year: int) -> List[MatchData]:
     team_names = CyclicalTeamNames()
 
     return [
-        _raw_match_data(year, (team_names.next(), team_names.next()))
+        _raw_match_data(year, (team_names.next_team(), team_names.next_team()))
         for _ in range(row_count)
     ]
 
@@ -122,7 +122,7 @@ def _fixture_by_round(row_count: int, year: int) -> List[FixtureData]:
     team_names = CyclicalTeamNames()
 
     return [
-        _fixture_data(year, (team_names.next(), team_names.next()))
+        _fixture_data(year, (team_names.next_team(), team_names.next_team()))
         for idx in range(row_count)
     ]
 

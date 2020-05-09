@@ -47,7 +47,11 @@ export const FETCH_LATEST_ROUND_PREDICTIONS_QUERY = gql`
 `;
 
 export const FETCH_SEASON_METRICS_QUERY = gql`
-  query($season: Int, $roundNumber: Int, $forCompetitionOnly: Boolean) {
+  query fetchSeasonModelMetrics(
+    $season: Int,
+    $roundNumber: Int,
+    $forCompetitionOnly: Boolean
+  ) {
     fetchSeasonModelMetrics(season: $season){
       season
       roundModelMetrics(roundNumber: $roundNumber) {

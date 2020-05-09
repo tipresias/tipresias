@@ -1,18 +1,18 @@
 // @flow
 import type {
-  fetchLatestRoundPredictions_fetchLatestRoundPredictions_matches as MatchType,
+  fetchLatestRoundPredictions_fetchLatestRoundPredictions_matchPredictions as MatchPredictionType,
 } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
 import icons from '../../icons';
 
 const { iconCheck, iconCross } = icons;
 
-type MatchesType = Array<MatchType>;
+type MatchPredictionsType = Array<MatchPredictionType>;
 type svgIcon = { svg: boolean, text: string, path: string }
 type RowType = Array<string | svgIcon>;
 type DataTableType = Array<RowType>;
 
 const dataTransformerTable = (
-  matchPredictions: MatchesType,
+  matchPredictions: MatchPredictionsType,
 ): DataTableType => {
   const newDataSet = matchPredictions.reduce((acc, {
     startDateTime, predictedWinner, predictedMargin, predictedWinProbability, isCorrect,

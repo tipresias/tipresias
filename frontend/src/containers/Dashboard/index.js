@@ -7,7 +7,7 @@ import {
   FETCH_SEASON_METRICS_QUERY,
   FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
 } from '../../graphql';
-import type { fetchYearlyPredictions } from '../../graphql/graphql-types/fetchYearlyPredictions';
+import type { fetchSeasonModelMetrics } from '../../graphql/graphql-types/fetchSeasonModelMetrics';
 import type { fetchLatestRoundPredictions } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
 import LineChartMain from '../../components/LineChartMain';
 import Select from '../../components/Select';
@@ -37,10 +37,10 @@ type DashboardProps = {
   years: Array<number>
 };
 
-interface fetchYearlyPredictionsResponse {
+interface fetchSeasonModelMetricsResponse {
   loading: any;
   error: any;
-  data: fetchYearlyPredictions;
+  data: fetchSeasonModelMetrics;
 }
 
 interface fetchLatestRoundPredictionsResponse {
@@ -98,7 +98,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
               forCompetitionOnly: false,
             }}
           >
-            {({ loading, error, data }: fetchYearlyPredictionsResponse): Node => {
+            {({ loading, error, data }: fetchSeasonModelMetricsResponse): Node => {
               if (loading) return <ChartLoading text="Brrrrr ..." />;
               if (error) return <StatusBar text={error.message} error />;
               const { roundModelMetrics } = data.fetchSeasonModelMetrics;
@@ -209,7 +209,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
             query={FETCH_SEASON_METRICS_QUERY}
             variables={{ season: latestYear, roundNumber: -1, forCompetitionOnly: true }}
           >
-            {({ loading, error, data }: fetchYearlyPredictionsResponse): Node => {
+            {({ loading, error, data }: fetchSeasonModelMetricsResponse): Node => {
               if (loading) return <p>Brrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
               const { season, roundModelMetrics } = data.fetchSeasonModelMetrics;
@@ -218,7 +218,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
 
               // cumulativeCorrectCount
               const { cumulativeCorrectCount } = modelMetrics.find(
-                item => (item.modelName === principleModel.name),
+                item => (item.mlModel.name === principleModel.name),
               ) || {};
 
               // bits

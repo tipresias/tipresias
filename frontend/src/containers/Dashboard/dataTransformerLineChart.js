@@ -1,7 +1,9 @@
 // @flow
+
 import type {
-  fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound as RoundType,
-} from '../../graphql/graphql-types/fetchYearlyPredictions';
+  fetchSeasonModelMetrics_fetchSeasonModelMetrics_roundModelMetrics
+  as RoundType,
+} from '../../graphql/graphql-types/fetchSeasonModelMetrics';
 
 export type rowType = {
   modelName: string,

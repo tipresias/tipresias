@@ -2,10 +2,13 @@
 
 #### SETUP ####
 DOCKER_COMPOSE_FILE="${1:-docker-compose.yml}"
+
+DEFAULT_DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+DEFAULT_NODE_ENV=${NODE_ENV}
+
 export DJANGO_SETTINGS_MODULE=project.settings.test
 export NODE_ENV=test
 
-docker-compose -f ${DOCKER_COMPOSE_FILE} stop
 docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
 
 #### SEED TEST DB ####
@@ -19,7 +22,14 @@ EXIT_CODE=$?
 
 if [ ${EXIT_CODE} != 0 ]
 then
+  # Need to stop before exiting to reset to non-test env vars
   docker-compose -f ${DOCKER_COMPOSE_FILE} stop
+
+  export DJANGO_SETTINGS_MODULE=${DEFAULT_DJANGO_SETTINGS_MODULE}
+  export NODE_ENV=${DEFAULT_NODE_ENV}
+
+  docker-compose up -d
+
   exit ${EXIT_CODE}
 fi
 
@@ -27,8 +37,9 @@ fi
 
 # There's probably a better way to do this, but we change the default DB name
 # to test_$DATABASE_NAME, which the app will then use as the default DB
-# for the browser tests.
-export DATABASE_NAME="test_${DATABASE_NAME}"
+# for the browser tests. This follows Django's naming convention for test DBs.
+DEFAULT_DATABASE_NAME=${DATABASE_NAME}
+export DATABASE_NAME="test_${DEFAULT_DATABASE_NAME}"
 
 # Restarting backend for the new env var to be used
 docker-compose -f ${DOCKER_COMPOSE_FILE} stop backend
@@ -41,11 +52,21 @@ docker-compose -f ${DOCKER_COMPOSE_FILE} up -d backend
 EXIT_CODE=$?
 
 #### CLEANUP ####
+# Need to stop before exiting to reset to non-test env vars
+docker-compose -f ${DOCKER_COMPOSE_FILE} stop
+
+export DJANGO_SETTINGS_MODULE=${DEFAULT_DJANGO_SETTINGS_MODULE}
+export NODE_ENV=${DEFAULT_NODE_ENV}
+export DATABASE_NAME=${DEFAULT_DATABASE_NAME}
+
+docker-compose up -d
+
 if [ ${EXIT_CODE} -eq 0 ]
 then
   exit ${EXIT_CODE}
 fi
 
+#### UPLOAD SCREENSHOTS ####
 LOCAL_DIR=${PWD}/browser_test/cypress/screenshots
 BUCKET_DIR=`date +%Y-%m-%d"_"%H_%M_%S`
 

@@ -6,6 +6,7 @@ import FETCH_PREDICTIONS_QUERY from '../../../graphql';
 import App from '../index';
 import Select from '../../../components/Select';
 
+// TODO: These specs are out of date. There is a ticket to update/fix them.
 jest.mock('../../../components/LineChartMain', () => MockComponent);
 jest.mock('../../../components/StatusBar', () => MockComponent);
 jest.mock('../../../components/ChartLoading', () => MockComponent);

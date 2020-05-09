@@ -1,6 +1,9 @@
 import { gql } from 'apollo-boost';
 // eslint-disable-next-line import/prefer-default-export
 
+// TODO: This query is no longer used, but is included in the specs
+// for the App component, which are out of date.
+// Update the tests and delete this.
 export const FETCH_PREDICTIONS_QUERY = gql`
   query fetchPredictions($year: Int){
     fetchPredictions(year: $year) {
@@ -78,13 +81,15 @@ export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
   }
 `;
 
-export const FETCH_MODELS_AND_YEARS_QUERY = gql`
-query fetchModelsAndYears {
-  fetchPredictionYears
-  fetchMlModels {
-    name
-    isPrinciple
-    usedInCompetitions
+export const FETCH_CHART_PARAMETERS_QUERY = gql`
+  query fetchSeasonPerformanceChartParameters {
+    fetchSeasonPerformanceChartParameters {
+      availableSeasons
+      availableMlModels {
+        name
+        isPrinciple
+        usedInCompetitions
+      }
+    }
   }
-}
 `;

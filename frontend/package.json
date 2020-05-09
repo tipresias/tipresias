@@ -2,6 +2,14 @@
   "name": "tipresias",
   "version": "0.1.0",
   "private": true,
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test:eslint": "yarn run eslint 'src/**/*.js' --ext .jsx --ext .js",
+    "test:flow": "yarn flow",
+    "test:unit": "react-app-rewired test --env=jsdom",
+    "storybook": "start-storybook"
+  },
   "dependencies": {
     "@apollo/react-components": "^3.1.5",
     "@apollo/react-hoc": "^3.1.5",
@@ -24,14 +32,6 @@
     "react-scripts": "3.4.1",
     "recharts": "^1.8.5",
     "styled-components": "^4.4.1"
-  },
-  "scripts": {
-    "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
-    "test:eslint": "yarn run eslint 'src/**/*.js' --ext .jsx --ext .js",
-    "test:flow": "yarn flow",
-    "test:unit": "react-app-rewired test --env=jsdom",
-    "storybook": "start-storybook"
   },
   "devDependencies": {
     "@apollo/react-testing": "^3.1.4",

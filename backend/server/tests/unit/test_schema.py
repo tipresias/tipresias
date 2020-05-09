@@ -27,7 +27,7 @@ class TestSchema(TestCase):
         self.maxDiff = None
         self.client = Client(schema)
 
-        ml_models = [
+        self.ml_models = [
             MLModelFactory(
                 name=model_name,
                 is_principle=(idx == 0),
@@ -44,8 +44,8 @@ class TestSchema(TestCase):
                 start_date_time=timezone.make_aware(
                     datetime(year, 6, (round_n % 29) + 1, match_n * 5)
                 ),
-                prediction__ml_model=ml_models[0],
-                prediction_two__ml_model=ml_models[1],
+                prediction__ml_model=self.ml_models[0],
+                prediction_two__ml_model=self.ml_models[1],
             )
             for year in range(*YEAR_RANGE)
             for round_n in range(ROUND_COUNT)
@@ -103,16 +103,40 @@ class TestSchema(TestCase):
                 executed["data"]["fetchPredictions"], expected_predictions
             )
 
-    def test_fetch_prediction_years(self):
+    def test_fetch_season_performance_chart_parameters(self):
         expected_years = list({match.start_date_time.year for match in self.matches})
 
         executed = self.client.execute(
             """
-            query QueryType { fetchPredictionYears }
+            query QueryType {
+                fetchSeasonPerformanceChartParameters {
+                    availableSeasons
+                    availableMlModels {
+                        name
+                    }
+                }
+            }
             """
         )
 
-        self.assertEqual(expected_years, executed["data"]["fetchPredictionYears"])
+        data = executed["data"]["fetchSeasonPerformanceChartParameters"]
+
+        self.assertEqual(expected_years, data["availableSeasons"])
+
+        db_ml_model_names = [model.name for model in self.ml_models]
+        query_ml_model_names = [model["name"] for model in data["availableMlModels"]]
+        self.assertEqual(sorted(db_ml_model_names), sorted(query_ml_model_names))
+
+        with self.subTest("with an MLModel without any predictions"):
+            predictionless_ml_model = MLModel(name="no_predictions")
+            predictionless_ml_model.save()
+
+            data = executed["data"]["fetchSeasonPerformanceChartParameters"]
+
+            query_ml_model_names = [
+                model["name"] for model in data["availableMlModels"]
+            ]
+            self.assertNotIn(predictionless_ml_model.name, query_ml_model_names)
 
     def test_fetch_yearly_predictions(self):
         year = 2015

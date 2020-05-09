@@ -1,6 +1,5 @@
 # pylint: disable=missing-docstring
 from datetime import datetime
-import itertools
 from dateutil import parser
 
 from django.test import TestCase

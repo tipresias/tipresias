@@ -6,15 +6,12 @@ import graphene
 from django.db.models import QuerySet
 from django.utils import timezone
 from django.db.models import Count
-import pandas as pd
 from mypy_extensions import TypedDict
 
 from server.models import Prediction, Match, MLModel
-from server.graphql.types.season import RoundModelMetrics
 from .types import (
     SeasonType,
     PredictionType,
-    RoundType,
     MLModelType,
     SeasonPerformanceChartParametersType,
     RoundPredictionType,

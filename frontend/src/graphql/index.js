@@ -32,44 +32,32 @@ export const FETCH_PREDICTIONS_QUERY = gql`
   }`;
 
 export const FETCH_LATEST_ROUND_PREDICTIONS_QUERY = gql`
-query fetchLatestRoundPredictions{
-  fetchLatestRoundPredictions {
-    roundNumber
-    matches {
-      year
-      startDateTime
-      homeTeam{
-        name
-      }
-      awayTeam{
-        name
-      }
-      predictions{
-        mlModel{
-          name
-          usedInCompetitions
-          isPrinciple
-        }
-        predictedWinner{
-          name
-        }
+  query fetchLatestRoundPredictions{
+    fetchLatestRoundPredictions {
+      roundNumber
+      matchPredictions {
+        startDateTime
+        predictedWinner
         predictedMargin
         predictedWinProbability
         isCorrect
       }
     }
   }
-}
 `;
 
-export const FETCH_YEARLY_PREDICTIONS_QUERY = gql`
-  query fetchYearlyPredictions($year: Int, $roundNumber: Int, $forCompetitionOnly: Boolean){
-    fetchYearlyPredictions(year: $year){
-      seasonYear
-      predictionsByRound (roundNumber: $roundNumber){
+export const FETCH_SEASON_METRICS_QUERY = gql`
+  query fetchSeasonModelMetrics(
+    $season: Int,
+    $roundNumber: Int,
+    $forCompetitionOnly: Boolean
+  ) {
+    fetchSeasonModelMetrics(season: $season){
+      season
+      roundModelMetrics(roundNumber: $roundNumber) {
         roundNumber
-        modelMetrics(forCompetitionOnly: $forCompetitionOnly){
-          modelName
+        modelMetrics(forCompetitionOnly: $forCompetitionOnly) {
+          mlModel { name }
           cumulativeAccuracy
           cumulativeBits
           cumulativeMeanAbsoluteError

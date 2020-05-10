@@ -6,23 +6,25 @@ import graphene
 from django.db.models import QuerySet
 from django.utils import timezone
 from django.db.models import Count
-import pandas as pd
 from mypy_extensions import TypedDict
 
 from server.models import Prediction, Match, MLModel
-from server.types import RoundPrediction
 from .types import (
     SeasonType,
     PredictionType,
-    RoundType,
     MLModelType,
     SeasonPerformanceChartParametersType,
+    RoundPredictionType,
 )
 
 
 SeasonPerformanceChartParameters = TypedDict(
     "SeasonPerformanceChartParameters",
     {"available_seasons": List[int], "available_ml_models": List[MLModel]},
+)
+
+RoundPredictions = TypedDict(
+    "RoundPredictions", {"round_number": int, "match_predictions": QuerySet}
 )
 
 
@@ -48,19 +50,19 @@ class Query(graphene.ObjectType):
         required=True,
     )
 
-    fetch_yearly_predictions = graphene.Field(
+    fetch_season_model_metrics = graphene.Field(
         SeasonType,
-        year=graphene.Int(
+        season=graphene.Int(
             default_value=timezone.localtime().year,
-            description=("Filter results by year."),
+            description=("Filter metrics by season."),
         ),
         required=True,
     )
 
     fetch_latest_round_predictions = graphene.Field(
-        RoundType,
+        RoundPredictionType,
         description=(
-            "Match info and predictions for the latest round for which data "
+            "Official Tipresias predictions for the latest round for which data "
             "is available"
         ),
         required=True,
@@ -110,30 +112,26 @@ class Query(graphene.ObjectType):
         }
 
     @staticmethod
-    def resolve_fetch_yearly_predictions(_root, _info, year) -> QuerySet:
-        """Return all predictions from the given year."""
+    def resolve_fetch_season_model_metrics(_root, _info, season) -> QuerySet:
+        """Return all model performance metrics from the given season."""
         return Prediction.objects.filter(
-            match__start_date_time__year=year
+            match__start_date_time__year=season
         ).select_related("ml_model", "match")
 
     @staticmethod
-    def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPrediction:
+    def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPredictions:
         """Return predictions and model metrics for the latest available round."""
         max_match = Match.objects.order_by("-start_date_time").first()
 
-        matches = (
-            Match.objects.filter(
-                start_date_time__year=max_match.start_date_time.year,
-                round_number=max_match.round_number,
-            )
-            .prefetch_related("prediction_set", "teammatch_set")
-            .order_by("start_date_time")
-        )
+        prediction_query = Prediction.objects.filter(
+            match__start_date_time__year=max_match.start_date_time.year,
+            match__round_number=max_match.round_number,
+            ml_model__used_in_competitions=True,
+        ).order_by("match__start_date_time")
 
         return {
-            "match__round_number": max_match.round_number,
-            "model_metrics": pd.DataFrame(),
-            "matches": matches,
+            "round_number": max_match.round_number,
+            "match_predictions": prediction_query,
         }
 
     @staticmethod

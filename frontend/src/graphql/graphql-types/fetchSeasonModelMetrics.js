@@ -4,12 +4,17 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: fetchYearlyPredictions
+// GraphQL query operation: fetchSeasonModelMetrics
 // ====================================================
 
-export type fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound_modelMetrics = {
-  __typename: "CumulativeMetricsByRoundType",
-  modelName: string,
+export type fetchSeasonModelMetrics_fetchSeasonModelMetrics_roundModelMetrics_modelMetrics_mlModel = {
+  __typename: "MLModelType",
+  name: string,
+};
+
+export type fetchSeasonModelMetrics_fetchSeasonModelMetrics_roundModelMetrics_modelMetrics = {
+  __typename: "ModelMetricsByRoundType",
+  mlModel: fetchSeasonModelMetrics_fetchSeasonModelMetrics_roundModelMetrics_modelMetrics_mlModel,
   /**
    * Cumulative mean of correct tips (i.e. accuracy) made by the given model for the given season.
    */
@@ -32,30 +37,30 @@ export type fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound_mod
   cumulativeMarginDifference: number,
 };
 
-export type fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound = {
+export type fetchSeasonModelMetrics_fetchSeasonModelMetrics_roundModelMetrics = {
   __typename: "RoundType",
   roundNumber: number,
   /**
-   * Cumulative performance metrics for predictions made by the given model through the given round
+   * Performance metrics for predictions made by the given model through the given round
    */
-  modelMetrics: Array<fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound_modelMetrics>,
+  modelMetrics: Array<fetchSeasonModelMetrics_fetchSeasonModelMetrics_roundModelMetrics_modelMetrics>,
 };
 
-export type fetchYearlyPredictions_fetchYearlyPredictions = {
+export type fetchSeasonModelMetrics_fetchSeasonModelMetrics = {
   __typename: "SeasonType",
-  seasonYear: number,
+  season: number,
   /**
-   * Match and prediction data grouped by round
+   * Model performance metrics grouped by round
    */
-  predictionsByRound: Array<fetchYearlyPredictions_fetchYearlyPredictions_predictionsByRound>,
+  roundModelMetrics: Array<fetchSeasonModelMetrics_fetchSeasonModelMetrics_roundModelMetrics>,
 };
 
-export type fetchYearlyPredictions = {
-  fetchYearlyPredictions: fetchYearlyPredictions_fetchYearlyPredictions
+export type fetchSeasonModelMetrics = {
+  fetchSeasonModelMetrics: fetchSeasonModelMetrics_fetchSeasonModelMetrics
 };
 
-export type fetchYearlyPredictionsVariables = {
-  year?: ?number,
+export type fetchSeasonModelMetricsVariables = {
+  season?: ?number,
   roundNumber?: ?number,
   forCompetitionOnly?: ?boolean,
 };/* @flow */

@@ -2,6 +2,7 @@
 
 from typing import List, cast, Optional
 from functools import partial
+from datetime import datetime
 
 from django.utils import timezone
 from django.db.models import (
@@ -23,10 +24,44 @@ from django.db.models import (
 import graphene
 import pandas as pd
 import numpy as np
+from mypy_extensions import TypedDict
 
-from server.types import ModelMetric, RoundPrediction
-from server.models import TeamMatch, Match
+from server.models import TeamMatch, Match, MLModel
 from .models import MatchType, MLModelType
+
+
+ModelMetric = TypedDict(
+    "ModelMetric",
+    {
+        "ml_model__name": str,
+        "cumulative_correct_count": int,
+        "cumulative_accuracy": float,
+        "cumulative_mean_absolute_error": float,
+        "cumulative_margin_difference": int,
+        "cumulative_bits": float,
+    },
+)
+
+RoundModelMetrics = TypedDict(
+    "RoundModelMetrics",
+    {"match__round_number": int, "model_metrics": pd.DataFrame, "matches": QuerySet},
+)
+
+RoundPredictions = TypedDict(
+    "RoundPredictions", {"round_number": int, "match_predictions": QuerySet}
+)
+
+MatchPredictions = TypedDict(
+    "MatchPredictions",
+    {
+        "match__start_date_time": datetime,
+        "predicted_winner__name": str,
+        "predicted_margin": int,
+        "predicted_win_probability": float,
+        "is_correct": bool,
+    },
+)
+
 
 ML_MODEL_NAME_LVL = 0
 # For regressors that might try to predict negative values or 0,
@@ -35,6 +70,57 @@ MIN_LOG_VAL = 1 * 10 ** -10
 
 ROUND_NUMBER_LVL = 0
 GROUP_BY_LVL = 0
+
+
+class MatchPredictionType(graphene.ObjectType):
+    """Official Tipresias predictions for a given match."""
+
+    match__start_date_time = graphene.NonNull(graphene.DateTime, name="startDateTime")
+    predicted_winner__name = graphene.NonNull(graphene.String, name="predictedWinner")
+    predicted_margin = graphene.NonNull(graphene.Int)
+    predicted_win_probability = graphene.NonNull(graphene.Float)
+    is_correct = graphene.Boolean()
+
+
+class RoundPredictionType(graphene.ObjectType):
+    """Official Tipresias predictions for a given round."""
+
+    round_number = graphene.NonNull(graphene.Int)
+    match_predictions = graphene.List(
+        graphene.NonNull(MatchPredictionType), required=True
+    )
+
+    @staticmethod
+    def resolve_match_predictions(root: RoundPredictions, _info) -> MatchPredictions:
+        """Return prediction data for matches in the given round."""
+
+        predictions = pd.DataFrame(
+            root["match_predictions"]
+            .prefetch_related("match", "ml_model", "match__teammatch_set")
+            .values(
+                "match__id",
+                "match__start_date_time",
+                "ml_model__is_principle",
+                "predicted_winner__name",
+                "predicted_margin",
+                "predicted_win_probability",
+                "is_correct",
+            )
+        )
+
+        principle_predictions = predictions.query(
+            "ml_model__is_principle == True"
+        ).set_index("match__id")
+        non_principle_predictions = (
+            predictions.query("ml_model__is_principle == False")
+            .fillna(0)
+            .groupby("match__id")[["predicted_margin", "predicted_win_probability"]]
+            .sum()
+        )
+
+        return principle_predictions.fillna(non_principle_predictions).to_dict(
+            "records"
+        )
 
 
 class SeasonPerformanceChartParametersType(graphene.ObjectType):
@@ -57,10 +143,10 @@ class SeasonPerformanceChartParametersType(graphene.ObjectType):
     )
 
 
-class CumulativeMetricsByRoundType(graphene.ObjectType):
-    """Cumulative performance metrics for the given model through the given round."""
+class ModelMetricsByRoundType(graphene.ObjectType):
+    """Performance metrics for the given model through the given round."""
 
-    ml_model__name = graphene.String(name="modelName", required=True)
+    ml_model = graphene.NonNull(MLModelType)
     cumulative_correct_count = graphene.Int(
         description=(
             "Cumulative sum of correct tips made by the given model "
@@ -96,6 +182,12 @@ class CumulativeMetricsByRoundType(graphene.ObjectType):
         required=True,
     )
 
+    @staticmethod
+    def resolve_ml_model(root, _info):
+        """Fetch MLModel record based on requested MLModel name."""
+
+        return MLModel.objects.get(name=root["ml_model__name"])
+
 
 def _filter_by_model(
     data_frame: pd.DataFrame,
@@ -117,11 +209,11 @@ def _filter_by_model(
 class RoundType(graphene.ObjectType):
     """Match and prediction data for a given season grouped by round."""
 
-    match__round_number = graphene.Int(name="roundNumber", required=True)
+    match__round_number = graphene.NonNull(graphene.Int, name="roundNumber")
     model_metrics = graphene.List(
-        graphene.NonNull(CumulativeMetricsByRoundType),
+        graphene.NonNull(ModelMetricsByRoundType),
         description=(
-            "Cumulative performance metrics for predictions made by the given model "
+            "Performance metrics for predictions made by the given model "
             "through the given round"
         ),
         ml_model_name=graphene.String(
@@ -129,7 +221,9 @@ class RoundType(graphene.ObjectType):
         ),
         for_competition_only=graphene.Boolean(
             default_value=False,
-            description="Only get prediction metrics for ML models used in competitions",
+            description=(
+                "Only get prediction metrics for ML models used in competitions"
+            ),
         ),
         required=True,
     )
@@ -168,10 +262,10 @@ class RoundType(graphene.ObjectType):
 
 def _collect_data_by_round(
     query_set: QuerySet, data_frame: pd.DataFrame
-) -> List[RoundPrediction]:
+) -> List[RoundModelMetrics]:
     return [
         cast(
-            RoundPrediction,
+            RoundModelMetrics,
             {
                 data_frame.index.names[ROUND_NUMBER_LVL]: round_number_idx,
                 "model_metrics": data_frame.xs(
@@ -305,18 +399,13 @@ def _calculate_tip_points():
 
 
 class SeasonType(graphene.ObjectType):
-    """Match and prediction data grouped by season."""
+    """Model performance metrics grouped by season."""
 
-    season_year = graphene.Int(required=True)
+    season = graphene.NonNull(graphene.Int)
 
-    prediction_model_names = graphene.List(
-        graphene.NonNull(graphene.String),
-        description="All model names available for the given year",
-        required=True,
-    )
-    predictions_by_round = graphene.List(
+    round_model_metrics = graphene.List(
         graphene.NonNull(RoundType),
-        description="Match and prediction data grouped by round",
+        description="Model performance metrics grouped by round",
         round_number=graphene.Int(
             description=(
                 "Optional filter when only one round of data is required. "
@@ -327,25 +416,20 @@ class SeasonType(graphene.ObjectType):
     )
 
     @staticmethod
-    def resolve_season_year(root, _info) -> int:
+    def resolve_season(prediction_query_set, _info) -> int:
         """Return the year for the given season."""
         # Have to use list indexing to get first instead of .first(),
         # because the latter raises a weird SQL error
-        return root.distinct("match__start_date_time__year")[
+        return prediction_query_set.distinct("match__start_date_time__year")[
             0
         ].match.start_date_time.year
 
     @staticmethod
-    def resolve_prediction_model_names(root, _info) -> List[str]:
-        """Return the names of all models that have predictions for the given season."""
-        return root.distinct("ml_model__name").values_list("ml_model__name", flat=True)
-
-    @staticmethod
-    def resolve_predictions_by_round(
-        root, _info, round_number: Optional[int] = None
-    ) -> List[RoundPrediction]:
-        """Return predictions for the season grouped by round."""
-        sorted_query_set = root.order_by("match__start_date_time")
+    def resolve_round_model_metrics(
+        prediction_query_set, _info, round_number: Optional[int] = None
+    ) -> List[RoundModelMetrics]:
+        """Return model performance metrics for the season grouped by round."""
+        sorted_query_set = prediction_query_set.order_by("match__start_date_time")
 
         query_set = (
             sorted_query_set

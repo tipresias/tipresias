@@ -87,12 +87,12 @@
             "deprecationReason": null
           },
           {
-            "name": "fetchYearlyPredictions",
+            "name": "fetchSeasonModelMetrics",
             "description": null,
             "args": [
               {
-                "name": "year",
-                "description": "Filter results by year.",
+                "name": "season",
+                "description": "Filter metrics by season.",
                 "type": {
                   "kind": "SCALAR",
                   "name": "Int",
@@ -115,14 +115,14 @@
           },
           {
             "name": "fetchLatestRoundPredictions",
-            "description": "Match info and predictions for the latest round for which data is available",
+            "description": "Official Tipresias predictions for the latest round for which data is available",
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
                 "kind": "OBJECT",
-                "name": "RoundType",
+                "name": "RoundPredictionType",
                 "ofType": null
               }
             },
@@ -945,10 +945,10 @@
       {
         "kind": "OBJECT",
         "name": "SeasonType",
-        "description": "Match and prediction data grouped by season.",
+        "description": "Model performance metrics grouped by season.",
         "fields": [
           {
-            "name": "seasonYear",
+            "name": "season",
             "description": null,
             "args": [],
             "type": {
@@ -964,32 +964,8 @@
             "deprecationReason": null
           },
           {
-            "name": "predictionModelNames",
-            "description": "All model names available for the given year",
-            "args": [],
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "String",
-                    "ofType": null
-                  }
-                }
-              }
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "predictionsByRound",
-            "description": "Match and prediction data grouped by round",
+            "name": "roundModelMetrics",
+            "description": "Model performance metrics grouped by round",
             "args": [
               {
                 "name": "roundNumber",
@@ -1051,7 +1027,7 @@
           },
           {
             "name": "modelMetrics",
-            "description": "Cumulative performance metrics for predictions made by the given model through the given round",
+            "description": "Performance metrics for predictions made by the given model through the given round",
             "args": [
               {
                 "name": "mlModelName",
@@ -1085,7 +1061,7 @@
                   "name": null,
                   "ofType": {
                     "kind": "OBJECT",
-                    "name": "CumulativeMetricsByRoundType",
+                    "name": "ModelMetricsByRoundType",
                     "ofType": null
                   }
                 }
@@ -1126,19 +1102,19 @@
       },
       {
         "kind": "OBJECT",
-        "name": "CumulativeMetricsByRoundType",
-        "description": "Cumulative performance metrics for the given model through the given round.",
+        "name": "ModelMetricsByRoundType",
+        "description": "Performance metrics for the given model through the given round.",
         "fields": [
           {
-            "name": "modelName",
+            "name": "mlModel",
             "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "SCALAR",
-                "name": "String",
+                "kind": "OBJECT",
+                "name": "MLModelType",
                 "ofType": null
               }
             },
@@ -1221,6 +1197,144 @@
                 "name": "Float",
                 "ofType": null
               }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "RoundPredictionType",
+        "description": "Official Tipresias predictions for a given round.",
+        "fields": [
+          {
+            "name": "roundNumber",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "matchPredictions",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "MatchPredictionType",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "MatchPredictionType",
+        "description": "Official Tipresias predictions for a given match.",
+        "fields": [
+          {
+            "name": "startDateTime",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "predictedWinner",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "predictedMargin",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "predictedWinProbability",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Float",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "isCorrect",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null

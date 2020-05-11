@@ -18,7 +18,7 @@
     "apollo": "^2.27.4",
     "apollo-boost": "0.4.7",
     "apollo-cache-inmemory": "^1.6.5",
-    "apollo-client": "^2.6.8",
+    "apollo-client": "^2.6.9",
     "d3": "^5.16.0",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",

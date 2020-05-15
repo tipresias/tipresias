@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 import {
   FETCH_SEASON_METRICS_QUERY,
   FETCH_LATEST_ROUND_PREDICTIONS_QUERY,
+  FETCH_LATEST_ROUND_METRICS_QUERY,
 } from '../../graphql';
 import type { fetchSeasonModelMetrics } from '../../graphql/graphql-types/fetchSeasonModelMetrics';
 import type { fetchLatestRoundPredictions } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
@@ -52,8 +53,6 @@ interface fetchLatestRoundPredictionsResponse {
 const Widget = styled.div`${WidgetStyles}`;
 
 const Dashboard = ({ years, models, metrics }: DashboardProps) => {
-  const [principleModel] = models.filter(item => item.isPrinciple);
-
   const latestYear = years[years.length - 1];
   const [year, setYear] = useState(latestYear);
 
@@ -205,36 +204,18 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
         </Widget>
 
         <Widget gridColumn="1 / -2">
-          <Query
-            query={FETCH_SEASON_METRICS_QUERY}
-            variables={{ season: latestYear, roundNumber: -1, forCompetitionOnly: true }}
-          >
-            {({ loading, error, data }: fetchSeasonModelMetricsResponse): Node => {
+          <Query query={FETCH_LATEST_ROUND_METRICS_QUERY}>
+            {({ loading, error, data }: fetchLatestRoundMetrics): Node => {
               if (loading) return <p>Brrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
-              const { season, roundModelMetrics } = data.fetchSeasonModelMetrics;
-              const { roundNumber, modelMetrics } = roundModelMetrics[0];
-
-
-              // cumulativeCorrectCount
-              const { cumulativeCorrectCount } = modelMetrics.find(
-                item => (item.mlModel.name === principleModel.name),
-              ) || {};
-
-              // bits
-              const { cumulativeBits } = modelMetrics.find(
-                item => item.cumulativeBits !== 0,
-              ) || { cumulativeBits: 0 };
-
-              // cumulativeMarginDifference
-              const { cumulativeMarginDifference } = modelMetrics.find(
-                item => item.cumulativeMarginDifference !== 0,
-              ) || { cumulativeMarginDifference: 0 };
-
-              // cumulativeMeanAbsoluteError
-              const { cumulativeMeanAbsoluteError } = modelMetrics.find(
-                item => item.cumulativeMeanAbsoluteError !== 0,
-              ) || { cumulativeMeanAbsoluteError: 0 };
+              const {
+                season,
+                roundNumber,
+                cumulativeBits,
+                cumulativeMeanAbsoluteError,
+                cumulativeCorrectCount,
+                cumulativeMarginDifference,
+              } = data.fetchLatestRoundMetrics;
 
               return (
                 <Fragment>

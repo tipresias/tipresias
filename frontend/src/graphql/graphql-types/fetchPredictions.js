@@ -44,7 +44,7 @@ export type fetchPredictions_fetchPredictions = {
   mlModel: fetchPredictions_fetchPredictions_mlModel,
   predictedWinner: fetchPredictions_fetchPredictions_predictedWinner,
   predictedMargin: ?number,
-  isCorrect: boolean,
+  isCorrect: ?boolean,
 };
 
 export type fetchPredictions = {

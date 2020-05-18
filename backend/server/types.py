@@ -65,3 +65,26 @@ CleanPredictionData = TypedDict(
 )
 
 MlModel = TypedDict("MlModel", {"name": str, "filepath": str})
+
+RoundMetrics = TypedDict(
+    "RoundMetrics",
+    {
+        "match__start_date_time": datetime,
+        "match__round_number": int,
+        "ml_model__name": str,
+        "predicted_margin": int,
+        "predicted_win_probability": float,
+        "predicted_winner__name": str,
+        "ml_model__is_principle": bool,
+        "ml_model__used_in_competitions": bool,
+        "match__winner__name": str,
+        "match__margin": int,
+        "absolute_margin_diff": int,
+        "bits": float,
+        "cumulative_correct_count": int,
+        "cumulative_accuracy": float,
+        "cumulative_mean_absolute_error": float,
+        "cumulative_margin_difference": int,
+        "cumulative_bits": float,
+    },
+)

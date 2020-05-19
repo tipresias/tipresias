@@ -26,7 +26,7 @@ import pandas as pd
 import numpy as np
 from mypy_extensions import TypedDict
 
-from server.models import TeamMatch, Match, MLModel
+from server.models import TeamMatch, MLModel
 from .models import MatchType, MLModelType
 
 
@@ -43,8 +43,7 @@ ModelMetric = TypedDict(
 )
 
 RoundModelMetrics = TypedDict(
-    "RoundModelMetrics",
-    {"match__round_number": int, "model_metrics": pd.DataFrame, "matches": QuerySet},
+    "RoundModelMetrics", {"match__round_number": int, "model_metrics": pd.DataFrame},
 )
 
 RoundPredictions = TypedDict(
@@ -227,9 +226,6 @@ class RoundType(graphene.ObjectType):
         ),
         required=True,
     )
-    matches = graphene.List(
-        graphene.NonNull(MatchType), default_value=[], required=True
-    )
 
     @staticmethod
     def resolve_model_metrics(
@@ -260,9 +256,7 @@ class RoundType(graphene.ObjectType):
         return [cast(ModelMetric, model_metrics) for model_metrics in metric_dicts]
 
 
-def _collect_data_by_round(
-    query_set: QuerySet, data_frame: pd.DataFrame
-) -> List[RoundModelMetrics]:
+def _collect_data_by_round(data_frame: pd.DataFrame) -> List[RoundModelMetrics]:
     return [
         cast(
             RoundModelMetrics,
@@ -270,11 +264,6 @@ def _collect_data_by_round(
                 data_frame.index.names[ROUND_NUMBER_LVL]: round_number_idx,
                 "model_metrics": data_frame.xs(
                     round_number_idx, level=ROUND_NUMBER_LVL
-                ),
-                "matches": Match.objects.filter(
-                    id__in=query_set.filter(
-                        match__round_number=round_number_idx
-                    ).values_list("match", flat=True)
                 ),
             },
         )
@@ -429,10 +418,9 @@ class SeasonType(graphene.ObjectType):
         prediction_query_set, _info, round_number: Optional[int] = None
     ) -> List[RoundModelMetrics]:
         """Return model performance metrics for the season grouped by round."""
-        sorted_query_set = prediction_query_set.order_by("match__start_date_time")
 
         query_set = (
-            sorted_query_set
+            prediction_query_set.order_by("match__start_date_time")
             # We don't want to include unplayed matches, which would impact
             # mean-based metrics like accuracy and MAE
             .filter(match__start_date_time__lt=timezone.localtime())
@@ -478,5 +466,5 @@ class SeasonType(graphene.ObjectType):
             .groupby(["match__round_number", "ml_model__name"])
             .last()
             .pipe(partial(_filter_by_round, round_number=round_number))
-            .pipe(partial(_collect_data_by_round, sorted_query_set))
+            .pipe(_collect_data_by_round)
         )

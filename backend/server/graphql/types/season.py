@@ -4,30 +4,15 @@ from typing import List, cast, Optional
 from functools import partial
 from datetime import datetime
 
-from django.utils import timezone
-from django.db.models import (
-    Case,
-    When,
-    Value,
-    IntegerField,
-    Subquery,
-    OuterRef,
-    Max,
-    Min,
-    Func,
-    F,
-    Sum,
-    Window,
-    Avg,
-    QuerySet,
-)
+from django.db.models import QuerySet
 import graphene
 import pandas as pd
 import numpy as np
 from mypy_extensions import TypedDict
 
-from server.models import TeamMatch, MLModel
-from .models import MatchType, MLModelType
+from server.models import MLModel
+from server.graphql.calculations import cumulative_metrics_query
+from .models import MLModelType
 
 
 ModelMetric = TypedDict(
@@ -344,49 +329,6 @@ def _calculate_cumulative_margin_difference(data_frame: pd.DataFrame):
     )
 
 
-def _calculate_cumulative_accuracy():
-    return Window(
-        expression=Avg("tip_point"),
-        partition_by=F("ml_model_id"),
-        order_by=F("match__start_date_time").asc(),
-    )
-
-
-def _calculate_cumulative_correct():
-    return Window(
-        expression=Sum("tip_point"),
-        partition_by=F("ml_model_id"),
-        order_by=F("match__start_date_time").asc(),
-    )
-
-
-def _calculate_absolute_margin_difference():
-    return Case(
-        When(
-            is_correct=True,
-            then=Func(F("predicted_margin") - F("match__margin"), function="ABS"),
-        ),
-        default=(F("predicted_margin") + F("match__margin")),
-        output_field=IntegerField(),
-    )
-
-
-def _get_match_winner_name():
-    return Subquery(
-        TeamMatch.objects.filter(match_id=OuterRef("match_id"))
-        .order_by("-score")
-        .values_list("team__name")[:1]
-    )
-
-
-def _calculate_tip_points():
-    return Case(
-        When(is_correct=True, then=Value(1)),
-        default=Value(0),
-        output_field=IntegerField(),
-    )
-
-
 class SeasonType(graphene.ObjectType):
     """Model performance metrics grouped by season."""
 
@@ -419,39 +361,10 @@ class SeasonType(graphene.ObjectType):
     ) -> List[RoundModelMetrics]:
         """Return model performance metrics for the season grouped by round."""
 
-        query_set = (
-            prediction_query_set.order_by("match__start_date_time")
-            # We don't want to include unplayed matches, which would impact
-            # mean-based metrics like accuracy and MAE
-            .filter(match__start_date_time__lt=timezone.localtime())
-            .annotate(
-                tip_point=_calculate_tip_points(),
-                match__winner__name=_get_match_winner_name(),
-                match__margin=(
-                    Max("match__teammatch__score") - Min("match__teammatch__score")
-                ),
-                absolute_margin_diff=_calculate_absolute_margin_difference(),
-                cumulative_correct_count=_calculate_cumulative_correct(),
-                cumulative_accuracy=_calculate_cumulative_accuracy(),
-            )
-            .values(
-                "match__start_date_time",
-                "match__round_number",
-                "ml_model__name",
-                "ml_model__used_in_competitions",
-                "predicted_margin",
-                "predicted_win_probability",
-                "predicted_winner__name",
-                "match__winner__name",
-                "match__margin",
-                "absolute_margin_diff",
-                "cumulative_correct_count",
-                "cumulative_accuracy",
-            )
-        )
+        metric_values = cumulative_metrics_query(prediction_query_set)
 
         return (
-            pd.DataFrame(query_set)
+            pd.DataFrame(metric_values)
             # We fill missing win probabilities with 0.5, because that's the equivalent
             # of not picking a winner. 0 would represent an extreme prediction
             # and result in large negative bits calculations.

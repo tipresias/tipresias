@@ -515,7 +515,6 @@ class TestSchema(TestCase):
         """
 
         executed = self.client.execute(query)
-        print(executed)
         data = executed["data"]["fetchLatestRoundMetrics"]
 
         self.assertEqual(data["season"], YEAR)

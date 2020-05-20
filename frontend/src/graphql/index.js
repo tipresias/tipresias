@@ -69,6 +69,19 @@ export const FETCH_SEASON_METRICS_QUERY = gql`
   }
 `;
 
+export const FETCH_LATEST_ROUND_METRICS_QUERY = gql`
+  query fetchLatestRoundMetrics {
+    fetchLatestRoundMetrics {
+      season
+      roundNumber
+      cumulativeBits
+      cumulativeMeanAbsoluteError
+      cumulativeCorrectCount
+      cumulativeMarginDifference
+    }
+  }
+`;
+
 export const FETCH_CHART_PARAMETERS_QUERY = gql`
   query fetchSeasonPerformanceChartParameters {
     fetchSeasonPerformanceChartParameters {

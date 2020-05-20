@@ -10,6 +10,7 @@ import {
 } from '../../graphql';
 import type { fetchSeasonModelMetrics } from '../../graphql/graphql-types/fetchSeasonModelMetrics';
 import type { fetchLatestRoundPredictions } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
+import type { fetchLatestRoundMetrics } from '../../graphql/graphql-types/fetchLatestRoundMetrics';
 import LineChartMain from '../../components/LineChartMain';
 import Select from '../../components/Select';
 import Checkbox from '../../components/Checkbox';
@@ -48,6 +49,12 @@ interface fetchLatestRoundPredictionsResponse {
   loading: any;
   error: any;
   data: fetchLatestRoundPredictions;
+}
+
+interface fetchLatestRoundMetricsResponse {
+  loading: any;
+  error: any;
+  data: fetchLatestRoundMetrics;
 }
 
 const Widget = styled.div`${WidgetStyles}`;
@@ -205,7 +212,7 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
 
         <Widget gridColumn="1 / -2">
           <Query query={FETCH_LATEST_ROUND_METRICS_QUERY}>
-            {({ loading, error, data }: fetchLatestRoundMetrics): Node => {
+            {({ loading, error, data }: fetchLatestRoundMetricsResponse): Node => {
               if (loading) return <p>Brrrrr...</p>;
               if (error) return <StatusBar text={error.message} error />;
               const {

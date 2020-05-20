@@ -213,8 +213,8 @@ class TestSchema(TestCase):
         # are being calculated correctly
         self.assertEqual(sum(earlier_round_cum_correct), sum(earlier_round_correct))
         self.assertEqual(
-            sum(earlier_round_cum_accuracy) / len(earlier_round_cum_accuracy),
-            sum(earlier_round_correct) / len(earlier_round_correct),
+            round(sum(earlier_round_cum_accuracy) / len(earlier_round_cum_accuracy), 4),
+            round(sum(earlier_round_correct) / len(earlier_round_correct), 4),
         )
 
         later_round_cum_correct = [

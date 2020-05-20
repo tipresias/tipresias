@@ -11,7 +11,10 @@ import numpy as np
 from mypy_extensions import TypedDict
 
 from server.models import MLModel
-from server.graphql.calculations import cumulative_metrics_query
+from server.graphql.calculations import (
+    cumulative_metrics_query,
+    calculate_cumulative_metrics,
+)
 from .models import MLModelType
 
 
@@ -362,22 +365,6 @@ class SeasonType(graphene.ObjectType):
         """Return model performance metrics for the season grouped by round."""
 
         metric_values = cumulative_metrics_query(prediction_query_set)
-
-        return (
-            pd.DataFrame(metric_values)
-            # We fill missing win probabilities with 0.5, because that's the equivalent
-            # of not picking a winner. 0 would represent an extreme prediction
-            # and result in large negative bits calculations.
-            .fillna({"predicted_win_probability": 0.5})
-            .fillna(0)
-            .assign(bits=_calculate_bits)
-            .assign(
-                cumulative_margin_difference=_calculate_cumulative_margin_difference,
-                cumulative_bits=_calculate_cumulative_bits,
-                cumulative_mean_absolute_error=_calculate_cumulative_mae,
-            )
-            .groupby(["match__round_number", "ml_model__name"])
-            .last()
-            .pipe(partial(_filter_by_round, round_number=round_number))
-            .pipe(_collect_data_by_round)
+        return calculate_cumulative_metrics(metric_values, round_number).pipe(
+            _collect_data_by_round
         )

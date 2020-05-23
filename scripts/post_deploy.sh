@@ -3,15 +3,7 @@
 set -euo pipefail
 
 # This script runs the following commands:
-MIGRATE_DB="
-  docker run \
-    --rm \
-    -e DJANGO_SETTINGS_MODULE=project.settings.production \
-    -e SECRET_KEY=${SECRET_KEY} \
-    -e DATABASE_URL=${DATABASE_URL} \
-    gcr.io/${PROJECT_ID}/${PROJECT_ID}-app \
-    python3 manage.py migrate
-"
+MIGRATE_DB="docker exec ${PROJECT_ID}_app python3 manage.py migrate"
 
 # Re remove exited containers & prune images in order to avoid running out of disk space
 REMOVE_STALE_CONTAINERS="
@@ -21,17 +13,11 @@ REMOVE_STALE_CONTAINERS="
 "
 PRUNE_IMAGES="yes | docker image prune"
 
-# We pass a blank ssh config file to avoid locale errors that result
-# from ssh trying to transmit LC_* env vars.
-touch ssh_config
-
-gcloud compute ssh \
-  --project=${PROJECT_ID} \
-  --zone=australia-southeast1-b \
-  --ssh-flag="-F ./ssh_config" \
-  --command="
+# We use 'ssh' instead of 'doctl compute ssh' to be able to bypass key checking.
+ssh -i ~/.ssh/deploy_rsa -oStrictHostKeyChecking=no \
+  ${DIGITAL_OCEAN_USER}@${PRODUCTION_HOST} \
+  "
     ${MIGRATE_DB}
     ${REMOVE_STALE_CONTAINERS}
     ${PRUNE_IMAGES}
-  " \
-  ${PROJECT_ID}-app
+  "

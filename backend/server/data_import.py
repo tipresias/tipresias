@@ -10,6 +10,7 @@ import pytz
 import pandas as pd
 import requests
 from django.utils import timezone
+from django.conf import settings
 
 from server.types import MlModel
 
@@ -73,7 +74,7 @@ def _fetch_data(
 ) -> List[Dict[str, Any]]:
     params = params or {}
 
-    if os.getenv("PYTHON_ENV") == "production" or bool(os.getenv("CI")):
+    if settings.ENVIRONMENT == "production" or bool(os.getenv("CI")):
         service_host = DATA_SCIENCE_SERVICE
         headers = {"Authorization": f'Bearer {os.getenv("GCPF_TOKEN")}'}
     else:

@@ -15,10 +15,7 @@ from server.types import MlModel
 
 ParamValue = Union[str, int, datetime]
 
-LOCAL_DATA_SCIENCE_SERVICE = "http://data_science:8008"
-DATA_SCIENCE_SERVICE = os.getenv(
-    "DATA_SCIENCE_SERVICE", default=LOCAL_DATA_SCIENCE_SERVICE
-)
+DATA_SCIENCE_SERVICE = os.environ["DATA_SCIENCE_SERVICE"]
 
 
 def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
@@ -73,12 +70,8 @@ def _fetch_data(
 ) -> List[Dict[str, Any]]:
     params = params or {}
 
-    if os.getenv("PYTHON_ENV") == "production" or bool(os.getenv("CI")):
-        service_host = DATA_SCIENCE_SERVICE
-        headers = {"Authorization": f'Bearer {os.getenv("GCPF_TOKEN")}'}
-    else:
-        service_host = LOCAL_DATA_SCIENCE_SERVICE
-        headers = {}
+    service_host = DATA_SCIENCE_SERVICE
+    headers = {"Authorization": f'Bearer {os.environ["GCPF_TOKEN"]}'}
 
     service_url = urljoin(service_host, path)
     clean_params = {

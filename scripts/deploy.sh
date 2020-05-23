@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 set -euo pipefail
 
 APP_DIR=/var/www/${PROJECT_ID}

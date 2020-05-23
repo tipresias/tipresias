@@ -20,9 +20,8 @@ Check out the site, with a dashboard for model performance, at [tipresias.net](h
 
 - Install [`direnv`](https://direnv.net/)
   - Loads env vars from `.env`, which is convenient
-- `brew cask install google-cloud-sdk` (on Mac)
-  - For interacting with production resources (e.g. ssh into the prod server, dumping prod DB data)
 - Install Docker
+- Optional: install `doctl`, the DigitalOcean CLI tool (just a convenient way to interact with DO resources)
 
 #### Set up development environment and the app itself
 
@@ -32,24 +31,16 @@ Check out the site, with a dashboard for model performance, at [tipresias.net](h
 - To set up the app:
   - Create the `node_modules` volume: `docker volume create tipresias_node_modules`
   - To build and run the app: `docker-compose up --build`
-  - Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
-- To use Google Cloud SDK:
-  - `gcloud auth login` (redirects you to log into your Google account in the browser)
-  - `gcloud config set project ${PROJECT_ID}`
 
-#### Generate data for `data_science`
-
-The following are only required for using functionality from `tip` or `seed_db` Django commands:
-  - Generate data set files: `docker-compose run --rm data_science ./scripts/generate_data_sets.sh`
-  - Generate trained model files: `docker-compose run --rm data_science python3 scripts/save_default_models.py`
-
-#### Seed data
+#### Seed the database
 
 **Recommended:** `./scripts/set_local_db_to_prod.sh`
   - Downloads the production database and loads it on local
 
-Seed the DB with raw data: `docker-compose run --rm backend python3 manage.py seed_db`
-  - This takes a very long time, so it's recommended that you reset the DB as described below if possible
+Seed the DB with raw data:
+  - Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
+  - Run `docker-compose run --rm backend python3 manage.py seed_db`
+    - This takes a very long time, so it's recommended that you reset the DB as described below if possible
 
 ### Run the app
 
@@ -59,11 +50,12 @@ Seed the DB with raw data: `docker-compose run --rm backend python3 manage.py se
 #### Useful commands
 
 - To `ssh` into the server, run `./scripts/ssh.sh`.
+  - To run a command instead of opening a bash session, you can add a string as an argument.
 - To run the tipping command, run `./scripts/tip.sh`.
 
 ### A note on architecture
 
-- `tipresias` depends on two micro-services: [`bird-signs`](https://github.com/tipresias/bird-signs) for raw data and [`augury`](https://github.com/tipresias/augury) for machine-learning functionality (i.e. generating model predictions). In the dev environment, this is managed via docker-compose, which uses the images of these services; in production, the app calls relevant Google Cloud functions. If one of these services isn't working on local, try pulling the latest image, as something might have changed.
+- `tipresias` depends on two micro-services: [`bird-signs`](https://github.com/tipresias/bird-signs) for raw data and [`augury`](https://github.com/tipresias/augury) for machine-learning functionality (i.e. generating model predictions).
 
 ### Testing
 
@@ -102,7 +94,6 @@ The app is deployed to Google Cloud with every merge/push to `master`. You can m
 
 ## Troubleshooting
 
-- If, while working on a branch, you're getting a weird error in one of the services unrelated to your current work, try pulling the associated images to make sure you have the latest version.
 - If you get errors in `frontend` related to missing packages, even after building a new image, try the following to clear its `node_modules` directory:
   - `docker-compose stop`
   - `docker container rm tipresias_frontend_1 tipresias_storybook_1`

@@ -17,7 +17,7 @@ services:
       - DATABASE_HOST=db
       - DATABASE_NAME=${DATABASE_NAME:-tipresias}
       - GRAPHIQL=True
-    command: ./scripts/wait-for-it.sh data_science:8008 -t 30 -- python3 manage.py runserver 0.0.0.0:8000
+    command: python3 manage.py runserver 0.0.0.0:8000
   frontend:
     build: ./frontend
     volumes:
@@ -40,47 +40,20 @@ services:
     ports:
       - "3333:3333"
     command: yarn run storybook -h 0.0.0.0 -p 3333 --quiet
-  data_science:
-    image: cfranklin11/tipresias_data_science:latest
-    volumes:
-      - ./data_science/data:/app/data
-    ports:
-      - "8008:8008"
-    stdin_open: true
-    tty: true
-    depends_on:
-      - afl_data
-    env_file: .env
-    environment:
-      - PYTHONPATH=./src
-    command: python3 app.py
-  afl_data:
-    image: cfranklin11/tipresias_afl_data:latest
-    ports:
-      - "8080:8080"
-    depends_on:
-      - browser
-    stdin_open: true
-    tty: true
-    command: Rscript app.R
-  browser:
-    image: selenium/standalone-chrome:3.141.59
-    ports:
-      - "4444:4444"
-  db:
-    image: postgres:11.6
-    environment:
-      - POSTGRES_DB=$DATABASE_NAME
-  browser_test:
-    build: ./browser_test
-    depends_on:
-      - frontend
-    volumes:
-      - ./browser_test:/app
-      - /app/node_modules
-    # Need to use 'host' network mode to avoid cross-host errors
-    # from Webpack server
-    network_mode: "host"
+    browser_test:
+      build: ./browser_test
+      depends_on:
+        - frontend
+      volumes:
+        - ./browser_test:/app
+        - /app/node_modules
+        # Need to use 'host' network mode to avoid cross-host errors
+        # from Webpack server
+      network_mode: "host"
+    db:
+      image: postgres:11.6
+      environment:
+        - POSTGRES_DB=$DATABASE_NAME
 volumes:
   tipresias_node_modules:
     external: true

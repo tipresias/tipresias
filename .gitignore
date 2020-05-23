@@ -94,6 +94,11 @@ env.bak/
 venv.bak/
 .env.prod
 
+# Secrets
+*_rsa
+keyfile.json
+secrets.tar
+
 # Spyder project settings
 .spyderproject
 .spyproject

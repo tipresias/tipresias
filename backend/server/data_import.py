@@ -71,7 +71,7 @@ def _fetch_data(
     params = params or {}
 
     service_host = DATA_SCIENCE_SERVICE
-    headers = {"Authorization": f'Bearer {os.environ["GCPF_TOKEN"]}'}
+    headers = {"Authorization": f'Bearer {os.environ["DATA_SCIENCE_SERVICE_TOKEN"]}'}
 
     service_url = urljoin(service_host, path)
     clean_params = {

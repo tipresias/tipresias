@@ -53,6 +53,10 @@ EXIT_CODE=$?
 
 #### CLEANUP ####
 # Need to stop before exiting to reset to non-test env vars
+docker-compose run --rm tipresias_db_1 psql \
+  -U postgres \
+  -d ${DATABASE_NAME} \
+  --command "DROP DATABASE ${DATABASE_NAME}"
 docker-compose -f ${DOCKER_COMPOSE_FILE} stop
 
 export DJANGO_SETTINGS_MODULE=${DEFAULT_DJANGO_SETTINGS_MODULE}

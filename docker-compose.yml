@@ -10,7 +10,6 @@ services:
     tty: true
     depends_on:
       - db
-      - data_science
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-project.settings.development}
@@ -40,20 +39,20 @@ services:
     ports:
       - "3333:3333"
     command: yarn run storybook -h 0.0.0.0 -p 3333 --quiet
-    browser_test:
-      build: ./browser_test
-      depends_on:
-        - frontend
-      volumes:
-        - ./browser_test:/app
-        - /app/node_modules
-        # Need to use 'host' network mode to avoid cross-host errors
-        # from Webpack server
-      network_mode: "host"
-    db:
-      image: postgres:11.6
-      environment:
-        - POSTGRES_DB=$DATABASE_NAME
+  browser_test:
+    build: ./browser_test
+    depends_on:
+      - frontend
+    volumes:
+      - ./browser_test:/app
+      - /app/node_modules
+      # Need to use 'host' network mode to avoid cross-host errors
+      # from Webpack server
+    network_mode: "host"
+  db:
+    image: postgres:11.6
+    environment:
+      - POSTGRES_DB=$DATABASE_NAME
 volumes:
   tipresias_node_modules:
     external: true

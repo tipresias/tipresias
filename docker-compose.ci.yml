@@ -17,7 +17,7 @@ services:
       - CI=true
       - DATABASE_NAME=$DATABASE_NAME
       - DATA_SCIENCE_SERVICE=$DATA_SCIENCE_SERVICE
-      - GCPF_TOKEN=$GCPF_TOKEN
+      - DATA_SCIENCE_SERVICE_TOKEN=$DATA_SCIENCE_SERVICE_TOKEN
     command: python3 manage.py runserver 0.0.0.0:8000
   frontend:
     image: cfranklin11/tipresias_frontend:latest

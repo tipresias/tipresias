@@ -197,7 +197,7 @@ class TestTipperEndToEnd(TestCase):
             is_principle=True, used_in_competitions=True, name="tipresias_2020"
         )
 
-        self.tipping = Tipper(ml_models=principle_model.name, tip_submitters=[])
+        self.tipping = Tipper(ml_models=[principle_model.name], tip_submitters=[])
 
     def test_tip(self):
         self.assertEqual(Match.objects.count(), 0)

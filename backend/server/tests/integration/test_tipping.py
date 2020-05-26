@@ -192,7 +192,10 @@ class TestTipperEndToEnd(TestCase):
             TeamFactory(name=team_name)
 
     def setUp(self):
-        principle_model = MLModelFactory(is_principle=True, used_in_competitions=True)
+        # Need to use real model name to be able to get prediction data
+        principle_model = MLModelFactory(
+            is_principle=True, used_in_competitions=True, name="tipresias_2020"
+        )
 
         self.tipping = Tipper(ml_models=principle_model.name, tip_submitters=[])
 

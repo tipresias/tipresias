@@ -40,6 +40,7 @@
     "@babel/preset-env": "^7.9.6",
     "@babel/preset-flow": "^7.9.0",
     "@babel/preset-react": "^7.9.4",
+    "@storybook/cli": "^5.3.19",
     "@storybook/react": "5.3.18",
     "babel-cli": "^6.26.0",
     "babel-plugin-istanbul": "^6.0.0",

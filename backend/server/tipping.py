@@ -200,9 +200,11 @@ class FootyTipsSubmitter:
         self, predicted_winners: List[PredictedWinner]
     ) -> Dict[str, int]:
         return {
+            # We round predicted_margin, because the margin input for footytips
+            # only accepts integers.
             self._translate_team_name(
                 predicted_winner["predicted_winner__name"]
-            ): predicted_winner["predicted_margin"]
+            ): round(predicted_winner["predicted_margin"])
             for predicted_winner in predicted_winners
             if predicted_winner["predicted_margin"] is not None
         }

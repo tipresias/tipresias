@@ -138,6 +138,7 @@ class TestMatch(TestCase):
         match_result = match_results.iloc[0, :]
 
         match = FullMatchFactory(
+            with_predictions=True,
             home_team_match__score=0,
             away_team_match__score=0,
             start_date_time=match_result["date"],

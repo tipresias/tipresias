@@ -59,7 +59,12 @@ class TestSendEmail(TestCase):
                 "home_team_match__score": match_data["home_score"],
                 "away_team_match__score": match_data["away_score"],
             }
-            FullMatchFactory(**match_attrs, **prediction_attrs, **team_match_attrs)
+            FullMatchFactory(
+                with_predictions=True,
+                **match_attrs,
+                **prediction_attrs,
+                **team_match_attrs,
+            )
 
         self.send_email_command = send_email.Command()
 

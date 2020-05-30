@@ -38,6 +38,7 @@ class TestSchema(TestCase):
 
         self.matches = [
             FullMatchFactory(
+                with_predictions=True,
                 year=year,
                 round_number=((round_n % 23) + 1),
                 start_date_time=timezone.make_aware(
@@ -150,6 +151,7 @@ class TestSchema(TestCase):
         # Have to make sure at least one match has a different round_number to compare
         # later rounds to earlier ones
         FullMatchFactory(
+            with_predictions=True,
             year=year,
             round_number=50,
             start_date_time=timezone.make_aware(datetime(year, 10, 31)),
@@ -283,6 +285,7 @@ class TestSchema(TestCase):
 
         latest_matches = [
             FullMatchFactory(
+                with_predictions=True,
                 year=year,
                 round_number=((round_n % 23) + 1),
                 start_date_time=timezone.make_aware(
@@ -344,6 +347,7 @@ class TestSchema(TestCase):
         for round_n in range(ROUND_COUNT):
             for match_n in range(MATCH_COUNT):
                 FullMatchFactory(
+                    with_predictions=True,
                     year=YEAR,
                     round_number=(round_n + 1),
                     start_date_time=timezone.make_aware(
@@ -489,6 +493,7 @@ class TestSchema(TestCase):
         for round_n in range(ROUND_COUNT):
             for match_n in range(MATCH_COUNT):
                 FullMatchFactory(
+                    with_predictions=True,
                     year=YEAR,
                     round_number=(round_n + 1),
                     start_date_time=timezone.make_aware(

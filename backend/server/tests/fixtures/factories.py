@@ -188,10 +188,22 @@ class FullMatchFactory(MatchFactory):
     functionality.
     """
 
+    class Params:
+        """
+        Params for modifying the factory's default attributes.
+
+        Params:
+        -------
+        with_predictions: A factory trait that, when present, creates ML model
+            predictions associated with the match.
+        """
+
+        with_predictions = factory.Trait(
+            prediction=factory.RelatedFactory(PredictionFactory, "match"),
+            prediction_two=factory.RelatedFactory(PredictionFactory, "match"),
+        )
+
     # TeamMatchFactory calls must come before PredictionFactory calls,
     # so predictions can refer to associated teams for predicted_winner.
     home_team_match = factory.RelatedFactory(TeamMatchFactory, "match", at_home=True)
     away_team_match = factory.RelatedFactory(TeamMatchFactory, "match", at_home=False)
-
-    prediction = factory.RelatedFactory(PredictionFactory, "match")
-    prediction_two = factory.RelatedFactory(PredictionFactory, "match")

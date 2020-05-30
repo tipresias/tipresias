@@ -21,12 +21,15 @@ from django.views.generic import TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from graphene_django.views import GraphQLView
 
+from server import views
+
 urlpatterns = [  # pylint: disable=C0103
     path("admin/", admin.site.urls),
     re_path(
         "^graphql",
         csrf_exempt(GraphQLView.as_view(graphiql=(os.getenv("GRAPHIQL") or False))),
     ),
+    path("predictions", csrf_exempt(views.predictions), name="predictions"),
 ]
 
 if settings.ENVIRONMENT == "production":

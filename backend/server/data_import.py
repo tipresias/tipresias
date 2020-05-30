@@ -36,15 +36,15 @@ def _make_request(
 
     response = requests.get(url, params=params, headers=headers)
 
-    if response.status_code != 200:
-        raise Exception(
-            f"Bad response from application when requesting {url}:\n"
-            f"Status: {response.status_code}\n"
-            f"Headers: {response.headers}\n"
-            f"Body: {response.text}"
-        )
+    if 200 <= response.status_code < 300:
+        return response
 
-    return response
+    raise Exception(
+        f"Bad response from application when requesting {url}:\n"
+        f"Status: {response.status_code}\n"
+        f"Headers: {response.headers}\n"
+        f"Body: {response.text}"
+    )
 
 
 def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
@@ -85,7 +85,7 @@ def _fetch_data(
     return response.json().get("data")
 
 
-def fetch_prediction_data(
+def request_predictions(
     year_range: Tuple[int, int],
     round_number: Optional[int] = None,
     ml_models: Optional[List[str]] = None,
@@ -108,16 +108,14 @@ def fetch_prediction_data(
     year_range_param = "-".join((str(min_year), str(max_year)))
     ml_model_param = None if ml_models is None else ",".join(ml_models)
 
-    return pd.DataFrame(
-        _fetch_data(
-            "predictions",
-            {
-                "year_range": year_range_param,
-                "round_number": round_number,
-                "ml_models": ml_model_param,
-                "train_models": train_models,
-            },
-        )
+    return _fetch_data(
+        "predictions",
+        {
+            "year_range": year_range_param,
+            "round_number": round_number,
+            "ml_models": ml_model_param,
+            "train_models": train_models,
+        },
     )
 
 

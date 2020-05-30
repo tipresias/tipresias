@@ -1,18 +1,14 @@
 # pylint: disable=missing-docstring
-import copy
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
-from unittest import skip
 
 from django.test import TestCase
 from django.utils import timezone
-from django.conf import settings
 from freezegun import freeze_time
 import pandas as pd
 
 from server.models import Match, TeamMatch, Prediction
 from server.tipping import Tipper
-from server import data_import
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import MLModelFactory, TeamFactory
 
@@ -33,16 +29,6 @@ class TestTipper(TestCase):
 
     @patch("server.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
-        # Mock update_or_create_from_raw_data to make assertions on calls
-        update_or_create_from_raw_data = copy.copy(
-            Prediction.update_or_create_from_raw_data
-        )
-        Prediction.update_or_create_from_raw_data = Mock(
-            side_effect=self.__update_or_create_from_raw_data(
-                update_or_create_from_raw_data
-            )
-        )
-
         (
             fixture_return_values,
             prediction_return_values,
@@ -75,22 +61,17 @@ class TestTipper(TestCase):
             with self.subTest("with no existing match records in DB"):
                 self.assertEqual(Match.objects.count(), 0)
                 self.assertEqual(TeamMatch.objects.count(), 0)
-                self.assertEqual(Prediction.objects.count(), 0)
 
                 self.tipping.tip(verbose=0)
 
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
-                self.assertEqual(Prediction.objects.count(), ROW_COUNT)
 
             with self.subTest("with the match records already saved in the DB"):
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
-                self.assertEqual(Prediction.objects.count(), ROW_COUNT)
 
                 self.tipping.tip(verbose=0)
-
-                Prediction.update_or_create_from_raw_data.assert_called()
 
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
@@ -111,16 +92,6 @@ class TestTipper(TestCase):
                     ).count(),
                     0,
                 )
-                self.assertGreater(
-                    Prediction.objects.filter(
-                        match__start_date_time__lt=right_now, is_correct=True
-                    ).count(),
-                    0,
-                )
-
-    @staticmethod
-    def __update_or_create_from_raw_data(update_or_create_from_raw_data):
-        return update_or_create_from_raw_data
 
     def __build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):
@@ -182,51 +153,3 @@ class TestTipper(TestCase):
     def __build_teams(match_data):
         TeamFactory(name=match_data["home_team"])
         TeamFactory(name=match_data["away_team"])
-
-
-class TestTipperEndToEnd(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
-        for team_name in settings.TEAM_NAMES:
-            TeamFactory(name=team_name)
-
-    def setUp(self):
-        # Need to use real model name to be able to get prediction data
-        principle_model = MLModelFactory(
-            is_principle=True, used_in_competitions=True, name="tipresias_2020"
-        )
-
-        self.tipping = Tipper(ml_models=[principle_model.name], tip_submitters=[])
-
-    # The current production architecture for Augury is resulting in RemoteDisconnected
-    # errors raised by the HTTP client, despite everything running smoothly in Augury
-    # and it working when called via Postman.
-    # I suspect it's due to my trying to keep the connection open well past any
-    # reasonable amount of time for an HTTP request, so I'll work on making it a
-    # background job instead.
-    @skip("Won't work until we generate predictions as a background job.")
-    def test_tip(self):
-        self.assertEqual(Match.objects.count(), 0)
-        self.assertEqual(TeamMatch.objects.count(), 0)
-        self.assertEqual(Prediction.objects.count(), 0)
-
-        self.tipping.tip(verbose=0)
-
-        match_count = Match.objects.count()
-        future_match_count = Match.objects.filter(
-            start_date_time__gt=timezone.localtime()
-        ).count()
-
-        start_date = datetime.today()
-        end_date = datetime(start_date.year, 12, 31)
-        fixture_data = data_import.fetch_fixture_data(str(start_date), str(end_date))
-
-        # Sometimes the fixtures haven't been updated yet. This mostly happens
-        # during finals and the off-season
-        if fixture_data.any().any():
-            self.assertGreater(match_count, 0)
-
-        self.assertEqual(TeamMatch.objects.count(), match_count * 2)
-        self.assertEqual(Prediction.objects.count(), future_match_count)

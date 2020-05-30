@@ -78,7 +78,10 @@ def main():
                 season == date.today().year and round_number > N_ROUNDS_PER_SEASON / 2
             )
             FullMatchFactory(
-                year=season, round_number=round_number, future=future_match
+                with_predictions=True,
+                year=season,
+                round_number=round_number,
+                future=future_match,
             )
 
 

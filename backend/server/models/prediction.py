@@ -3,6 +3,7 @@
 from typing import Tuple, Optional
 
 from django.db import models, transaction
+from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 import numpy as np
@@ -21,7 +22,9 @@ class Prediction(models.Model):
     predicted_winner = models.ForeignKey(
         Team, on_delete=models.CASCADE, related_name="predicted_wins"
     )
-    predicted_margin = models.PositiveSmallIntegerField(blank=True, null=True)
+    predicted_margin = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0.0)]
+    )
     predicted_win_probability = models.FloatField(blank=True, null=True)
     is_correct = models.BooleanField(null=True, blank=True)
 
@@ -76,8 +79,8 @@ class Prediction(models.Model):
             raise ValueError(
                 "Prediction data should have yielded a unique match, with duplicates "
                 "returned from the DB, but we got the following instead:\n"
-                f"{matches.values('round_number', 'start_date_time')}\n\n"
-                f"{prediction_data}"
+                f"Matches: {matches.values('round_number', 'start_date_time')}\n\n"
+                f"Prediction: {prediction_data}"
             )
 
         match = matches.first()
@@ -85,7 +88,7 @@ class Prediction(models.Model):
         matching_prediction_attributes = {"match": match, "ml_model": ml_model}
 
         with transaction.atomic():
-            prediction, was_created = cls.objects.update_or_create(
+            prediction, _ = cls.objects.update_or_create(
                 **matching_prediction_attributes,
                 defaults={
                     "predicted_margin": predicted_margin,
@@ -94,11 +97,7 @@ class Prediction(models.Model):
                 },
             )
 
-            if was_created:
-                prediction.full_clean()
-            else:
-                prediction.clean()
-
+            prediction.full_clean()
             prediction.save()
             cls.update_correctness(prediction)
 
@@ -114,7 +113,12 @@ class Prediction(models.Model):
 
         # predicted_margin is always positive as it's always associated
         # with predicted_winner
-        predicted_margin = np.mean(np.abs([home_margin, away_margin]))
+        if (home_margin > 0 and away_margin > 0) or (
+            home_margin < 0 and away_margin < 0
+        ):
+            predicted_margin = abs(home_margin - away_margin)
+        else:
+            predicted_margin = np.mean(np.abs([home_margin, away_margin]))
 
         if home_margin > away_margin:
             predicted_winner = Team.objects.get(name=home_team)
@@ -168,7 +172,7 @@ class Prediction(models.Model):
             predicted win probability, but not both.
         """
 
-        if not any((self.predicted_margin, self.predicted_win_probability)):
+        if self.predicted_margin is None and self.predicted_win_probability is None:
             raise ValidationError(
                 _(
                     "Prediction must have a predicted_margin or "
@@ -180,7 +184,10 @@ class Prediction(models.Model):
         # that makes the logic for displaying the predictions table simpler.
         # For now, this holds true of all Tipresias models, but may change
         # in the future.
-        if all((self.predicted_margin, self.predicted_win_probability)):
+        if (
+            self.predicted_margin is not None
+            and self.predicted_win_probability is not None
+        ):
             raise ValidationError(
                 _(
                     "Prediction cannot have both a predicted_margin and "

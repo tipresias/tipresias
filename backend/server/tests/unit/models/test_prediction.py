@@ -34,7 +34,7 @@ class TestPrediction(TestCase):
         self.assertEqual(Prediction.objects.count(), 1)
 
         prediction = Prediction.objects.first()
-        self.assertIsInstance(prediction.predicted_margin, int)
+        self.assertIsInstance(prediction.predicted_margin, float)
         self.assertIsNone(prediction.predicted_win_probability)
 
         with self.subTest("when prediction record already exists"):
@@ -98,6 +98,53 @@ class TestPrediction(TestCase):
             )
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 1)
+            self.assertEqual(
+                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+            )
+
+        with self.subTest("when predicted margins are both positive"):
+            predicted_winning_margin = 20.6
+            predicted_losing_margin = 10.6
+            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+
+            Prediction.update_or_create_from_raw_data(
+                home_away_df.to_dict("records")[0]
+            )
+            prediction = Prediction.objects.first()
+            self.assertEqual(prediction.predicted_margin, 10)
+            self.assertEqual(
+                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+            )
+
+        with self.subTest("when predicted margins are both negative"):
+            predicted_winning_margin = -10.6
+            predicted_losing_margin = -20.6
+            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+
+            Prediction.update_or_create_from_raw_data(
+                home_away_df.to_dict("records")[0]
+            )
+            prediction = Prediction.objects.first()
+            self.assertEqual(prediction.predicted_margin, 10)
+            self.assertEqual(
+                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+            )
+
+        with self.subTest("when the calculated predicted_margin rounds up"):
+            predicted_winning_margin = 5.8
+            predicted_losing_margin = -5.7
+            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+
+            Prediction.update_or_create_from_raw_data(
+                home_away_df.to_dict("records")[0]
+            )
+            prediction = Prediction.objects.first()
+            # It rounds to integer rather than dropping the decimal
+            # (i.e. always rounding down)
+            self.assertEqual(prediction.predicted_margin, 6)
             self.assertEqual(
                 home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
             )

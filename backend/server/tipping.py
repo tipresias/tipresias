@@ -361,9 +361,6 @@ class Tipper:
             end_date=timezone.make_aware(datetime(year, 12, 31)),
         )
 
-        if not fixture_data_frame.any().any():
-            return fixture_data_frame
-
         return fixture_data_frame
 
     def _select_upcoming_matches(

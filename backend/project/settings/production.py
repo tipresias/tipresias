@@ -8,12 +8,14 @@ from project.settings.common import *
 DEBUG = False
 ENVIRONMENT = "production"
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = os.environ["SECRET_KEY"]
+API_TOKEN = os.environ["API_TOKEN"]
 
 ALLOWED_HOSTS = [
     "tipresias.herokuapp.com",
     ".tipresias.net",
     os.environ.get("PRODUCTION_HOST"),
+    os.environ.get("DATA_SCIENCE_SERVICE"),
 ]
 
 INSTALLED_APPS.append("whitenoise.runserver_nostatic")

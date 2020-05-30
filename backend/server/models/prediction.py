@@ -79,8 +79,8 @@ class Prediction(models.Model):
             raise ValueError(
                 "Prediction data should have yielded a unique match, with duplicates "
                 "returned from the DB, but we got the following instead:\n"
-                f"{matches.values('round_number', 'start_date_time')}\n\n"
-                f"{prediction_data}"
+                f"Matches: {matches.values('round_number', 'start_date_time')}\n\n"
+                f"Prediction: {prediction_data}"
             )
 
         match = matches.first()

@@ -36,15 +36,15 @@ def _make_request(
 
     response = requests.get(url, params=params, headers=headers)
 
-    if response.status_code != 200:
-        raise Exception(
-            f"Bad response from application when requesting {url}:\n"
-            f"Status: {response.status_code}\n"
-            f"Headers: {response.headers}\n"
-            f"Body: {response.text}"
-        )
+    if 200 <= response.status_code < 300:
+        return response
 
-    return response
+    raise Exception(
+        f"Bad response from application when requesting {url}:\n"
+        f"Status: {response.status_code}\n"
+        f"Headers: {response.headers}\n"
+        f"Body: {response.text}"
+    )
 
 
 def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:

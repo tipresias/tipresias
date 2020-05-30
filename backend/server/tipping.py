@@ -15,7 +15,6 @@ from mypy_extensions import TypedDict
 from server.models import Match, TeamMatch, Prediction
 from server.types import FixtureData
 from server import data_import
-from server.helpers import pivot_team_matches_to_matches
 from project.settings.data_config import TEAM_TRANSLATIONS
 
 
@@ -344,7 +343,7 @@ class Tipper:
 
         upcoming_round_year = upcoming_matches["date"].max().year
 
-        self._make_predictions(upcoming_round_year, upcoming_round)
+        self._request_predictions(upcoming_round_year, upcoming_round)
         self._backfill_match_results()
 
         for submitter in self.tip_submitters:
@@ -449,20 +448,16 @@ class Tipper:
 
         return TeamMatch.get_or_create_from_raw_data(match, match_data)
 
-    def _make_predictions(self, year: int, round_number: int) -> None:
+    def _request_predictions(self, year: int, round_number: int) -> None:
         if self.verbose == 1:
-            print("Saving prediction records...")
+            print("Requesting prediction records...")
 
-        predictions = self.data_importer.fetch_prediction_data(
+        self.data_importer.request_predictions(
             (year, year + 1), round_number=round_number, ml_models=self.ml_models
         )
-        home_away_df = pivot_team_matches_to_matches(predictions)
-
-        for pred in home_away_df.replace({np.nan: None}).to_dict("records"):
-            Prediction.update_or_create_from_raw_data(pred)
 
         if self.verbose == 1:
-            print("Predictions saved!\n")
+            print("Predictions requested! They will be sent shortly.\n")
 
     def _backfill_match_results(self) -> None:
         if self.verbose == 1:

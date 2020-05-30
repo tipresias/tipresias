@@ -85,7 +85,7 @@ def _fetch_data(
     return response.json().get("data")
 
 
-def fetch_prediction_data(
+def request_predictions(
     year_range: Tuple[int, int],
     round_number: Optional[int] = None,
     ml_models: Optional[List[str]] = None,
@@ -108,16 +108,14 @@ def fetch_prediction_data(
     year_range_param = "-".join((str(min_year), str(max_year)))
     ml_model_param = None if ml_models is None else ",".join(ml_models)
 
-    return pd.DataFrame(
-        _fetch_data(
-            "predictions",
-            {
-                "year_range": year_range_param,
-                "round_number": round_number,
-                "ml_models": ml_model_param,
-                "train_models": train_models,
-            },
-        )
+    return _fetch_data(
+        "predictions",
+        {
+            "year_range": year_range_param,
+            "round_number": round_number,
+            "ml_models": ml_model_param,
+            "train_models": train_models,
+        },
     )
 
 

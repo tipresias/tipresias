@@ -15,7 +15,6 @@ from server.tests.fixtures.factories import (
     TeamFactory,
     FullMatchFactory,
     PredictionFactory,
-    MLModelFactory,
 )
 
 
@@ -28,6 +27,8 @@ FAKE = Faker()
 
 
 class TestTipper(TestCase):
+    fixtures = ["ml_models.json"]
+
     @patch("server.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         (fixture_return_values, match_results_return_values,) = zip(
@@ -112,8 +113,6 @@ class TestTipper(TestCase):
                 self.assertEqual(Prediction.objects.count(), 0)
 
     def test_submit_tips(self):
-        MLModelFactory(is_principle=True, used_in_competitions=True)
-
         for _ in range(ROW_COUNT):
             FullMatchFactory(future=True)
 

@@ -8,9 +8,9 @@ import numpy as np
 from freezegun import freeze_time
 
 from server.management.commands import send_email
-from server.models.ml_model import PredictionType
+from server.models import MLModel
 from server.tests.fixtures.data_factories import fake_match_results_data
-from server.tests.fixtures.factories import MLModelFactory, FullMatchFactory
+from server.tests.fixtures.factories import FullMatchFactory
 
 FAKE = Faker()
 ROW_COUNT = 10
@@ -18,22 +18,18 @@ PREDICTION_YEAR = 2016
 
 
 class TestSendEmail(TestCase):
+    fixtures = ["ml_models.json"]
+
     def setUp(self):
         self.match_results_data = fake_match_results_data(
             ROW_COUNT, (PREDICTION_YEAR, PREDICTION_YEAR + 1)
         )
 
-        # Save records in DB
         ml_models = [
-            MLModelFactory(
-                prediction_type=PredictionType.MARGIN,
-                used_in_competitions=True,
-                is_principle=True,
-            ),
-            MLModelFactory(
-                prediction_type=PredictionType.WIN_PROBABILITY,
-                used_in_competitions=True,
-            ),
+            MLModel.objects.get(is_principle=True),
+            MLModel.objects.filter(
+                is_principle=False, used_in_competitions=True
+            ).first(),
         ]
 
         for match_data in self.match_results_data.to_dict("records"):

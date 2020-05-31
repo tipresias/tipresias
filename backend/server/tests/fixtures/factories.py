@@ -1,6 +1,6 @@
 """Factory classes for generating realistic DB records for tests."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import pytz
 
 import factory
@@ -36,25 +36,23 @@ class TeamFactory(DjangoModelFactory):
     name = factory.Sequence(lambda n: settings.TEAM_NAMES[n % len(settings.TEAM_NAMES)])
 
 
-def fake_future_datetime(match_factory):
+def fake_future_datetime(match_factory) -> datetime:
     """Return a realistic future datetime value for a match's start_date_time."""
+    if TODAY.month == 12 and TODAY.day == 31:
+        raise ValueError("Watcha doin?! It's New Year's Eve: get drunk or something.")
+
     # Running tests on 28 Feb of a leap year breaks them, because the given year
-    # generally won't be a leap year (e.g. 2018-2-29 doesn't exist).
-    # Running tests at the end of a normal month also breaks them, because 2020-5-32
-    # doesn't exist either.
-    # So we make the future data the first of next month.
+    # generally won't be a leap year (e.g. 2018-2-29 doesn't exist),
+    # so we retry with two days in the future (e.g. 2018-3-1).
     try:
+        tomorrow = TODAY + timedelta(days=1)
         datetime_start = timezone.make_aware(
-            datetime(match_factory.year, TODAY.month, TODAY.day + 1)
+            datetime(match_factory.year, tomorrow.month, tomorrow.day)
         )
     except ValueError:
-        if TODAY.month == 12 and TODAY.day == 31:
-            raise ValueError(
-                "Watcha doin?! It's New Year's Eve: get drunk or something."
-            )
-
+        tomorrow = TODAY + timedelta(days=2)
         datetime_start = timezone.make_aware(
-            datetime(match_factory.year, TODAY.month + 1, 1)
+            datetime(match_factory.year, tomorrow.month, tomorrow.day)
         )
 
     return FAKE.date_time_between_dates(

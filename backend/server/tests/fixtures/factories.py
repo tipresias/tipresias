@@ -39,15 +39,22 @@ class TeamFactory(DjangoModelFactory):
 def fake_future_datetime(match_factory):
     """Return a realistic future datetime value for a match's start_date_time."""
     # Running tests on 28 Feb of a leap year breaks them, because the given year
-    # generally won't be a leap year (e.g. 2018-2-29 doesn't exist),
-    # so we retry with two days in the future (e.g. 2018-3-1).
+    # generally won't be a leap year (e.g. 2018-2-29 doesn't exist).
+    # Running tests at the end of a normal month also breaks them, because 2020-5-32
+    # doesn't exist either.
+    # So we make the future data the first of next month.
     try:
         datetime_start = timezone.make_aware(
             datetime(match_factory.year, TODAY.month, TODAY.day + 1)
         )
     except ValueError:
+        if TODAY.month == 12 and TODAY.day == 31:
+            raise ValueError(
+                "Watcha doin?! It's New Year's Eve: get drunk or something."
+            )
+
         datetime_start = timezone.make_aware(
-            datetime(match_factory.year, TODAY.month, TODAY.day + 2)
+            datetime(match_factory.year, TODAY.month + 1, 1)
         )
 
     return FAKE.date_time_between_dates(

@@ -296,9 +296,10 @@ class Tipper:
     def __init__(  # pylint: disable=dangerous-default-value
         self,
         fetch_data: bool = True,
-        data_importer=data_import,
+        data_importer=None,
         tip_submitters: List[Any] = [FootyTipsSubmitter(), MonashSubmitter()],
         ml_models: Optional[List[str]] = None,
+        verbose: int = 1,
     ) -> None:
         """
         Instantiate a Tipping object.
@@ -309,25 +310,18 @@ class Tipper:
         data_importer: Module used for importing data from remote sources.
         ml_models: A list of names of models to use when making tipping predictions.
         submit_tips: Whether to submit the tips to the relevant competition websites.
+        verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.fetch_data = fetch_data
-        self.data_importer = data_importer
+        self.data_importer: Any = data_importer or data_import
         self.tip_submitters = tip_submitters
         self.ml_models = ml_models
 
         self._right_now = timezone.localtime()
-        self.verbose: int = 0
+        self.verbose = verbose
 
-    def tip(self, verbose=1) -> None:
-        """
-        Fetch and save predictions, then submit tips to competitions.
-
-        Params:
-        -------
-        verbose: How much information to print. 1 prints all messages; 0 prints none.
-        """
-        self.verbose = verbose  # pylint: disable=W0201
-
+    def update_match_data(self) -> None:
+        """Fetch and save predictions, then submit tips to competitions."""
         fixture_data_frame = self._fetch_fixture_data(self._right_now.year)
         upcoming_round, upcoming_matches = self._select_upcoming_matches(
             fixture_data_frame
@@ -341,14 +335,43 @@ class Tipper:
             upcoming_matches.replace({np.nan: None}).to_dict("records"), upcoming_round
         )
 
-        upcoming_round_year = upcoming_matches["date"].max().year
-
-        self._request_predictions(upcoming_round_year, upcoming_round)
         self._backfill_match_results()
 
-        for submitter in self.tip_submitters:
-            submitter.verbose = self.verbose
-            submitter.submit_tips(self._get_predicted_winners_for_latest_round())
+        # for submitter in self.tip_submitters:
+        #     submitter.verbose = self.verbose
+        #     submitter.submit_tips(self._get_predicted_winners_for_latest_round())
+
+        return None
+
+    def request_predictions(self) -> None:
+        """Request prediction data from Augury service for upcoming matches."""
+        next_match = (
+            Match.objects.filter(start_date_time__gt=self._right_now)
+            .order_by("start_date_time")
+            .first()
+        )
+
+        if next_match is None:
+            print("There are no upcoming matches to predict.")
+            return None
+
+        upcoming_round = next_match.round_number
+        upcoming_season = next_match.start_date_time.year
+
+        if self.verbose == 1:
+            print(
+                "Requesting prediction records for round "
+                f"{upcoming_round}, {upcoming_season}..."
+            )
+
+        self.data_importer.request_predictions(
+            (upcoming_season, upcoming_season + 1),
+            round_number=upcoming_round,
+            ml_models=self.ml_models,
+        )
+
+        if self.verbose == 1:
+            print("Predictions requested! They will be sent shortly.\n")
 
         return None
 
@@ -444,17 +467,6 @@ class Tipper:
         match = Match.get_or_create_from_raw_data(match_data)
 
         return TeamMatch.get_or_create_from_raw_data(match, match_data)
-
-    def _request_predictions(self, year: int, round_number: int) -> None:
-        if self.verbose == 1:
-            print("Requesting prediction records...")
-
-        self.data_importer.request_predictions(
-            (year, year + 1), round_number=round_number, ml_models=self.ml_models
-        )
-
-        if self.verbose == 1:
-            print("Predictions requested! They will be sent shortly.\n")
 
     def _backfill_match_results(self) -> None:
         if self.verbose == 1:

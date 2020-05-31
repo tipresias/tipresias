@@ -10,7 +10,11 @@ import pandas as pd
 from server.models import Match, TeamMatch, Prediction
 from server.tipping import Tipper
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
-from server.tests.fixtures.factories import MLModelFactory, TeamFactory
+from server.tests.fixtures.factories import (
+    MLModelFactory,
+    TeamFactory,
+    FullMatchFactory,
+)
 
 
 ROW_COUNT = 5
@@ -38,8 +42,8 @@ class TestTipper(TestCase):
         # We have 2 subtests in 2016 and 1 in 2017, which requires 3 fixture
         # and prediction data imports, but only 1 match results data import,
         # because it doesn't get called until 2017
-        mock_data_import.fetch_prediction_data = Mock(
-            side_effect=prediction_return_values[:1] + prediction_return_values
+        mock_data_import.request_predictions = Mock(
+            side_effect=self._request_predictions
         )
         mock_data_import.fetch_fixture_data = Mock(
             side_effect=fixture_return_values[:1] + fixture_return_values
@@ -48,12 +52,11 @@ class TestTipper(TestCase):
             return_value=match_results_return_values[0]
         )
 
-        # Not fetching data, because it takes forever
         self.tipping = Tipper(
-            fetch_data=False, data_importer=mock_data_import, tip_submitters=[]
+            data_importer=mock_data_import, tip_submitters=[], verbose=0,
         )
 
-    def test_tip(self):
+    def test_update_match_data(self):
         with freeze_time(TIP_DATES[0]):
             right_now = timezone.localtime()
             self.tipping._right_now = right_now  # pylint: disable=protected-access
@@ -62,7 +65,7 @@ class TestTipper(TestCase):
                 self.assertEqual(Match.objects.count(), 0)
                 self.assertEqual(TeamMatch.objects.count(), 0)
 
-                self.tipping.tip(verbose=0)
+                self.tipping.update_match_data()
 
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
@@ -71,7 +74,7 @@ class TestTipper(TestCase):
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
-                self.tipping.tip(verbose=0)
+                self.tipping.update_match_data()
 
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
@@ -84,7 +87,7 @@ class TestTipper(TestCase):
                 self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
                 self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)
 
-                self.tipping.tip(verbose=0)
+                self.tipping.update_match_data()
 
                 self.assertEqual(
                     TeamMatch.objects.filter(
@@ -92,6 +95,28 @@ class TestTipper(TestCase):
                     ).count(),
                     0,
                 )
+
+    def test_request_predictions(self):
+        with freeze_time(TIP_DATES[0]):
+            right_now = timezone.localtime()
+            self.tipping._right_now = right_now  # pylint: disable=protected-access
+
+            with self.subTest("with no existing match records in DB"):
+                self.assertEqual(Match.objects.count(), 0)
+
+                self.tipping.request_predictions()
+
+                self.tipping.data_importer.request_predictions.assert_not_called()
+                self.assertEqual(Prediction.objects.count(), 0)
+
+            with self.subTest("with upcoming match records saved in the DB"):
+                for _ in range(ROW_COUNT):
+                    FullMatchFactory(future=True)
+
+                self.tipping.request_predictions()
+
+                self.tipping.data_importer.request_predictions.assert_called()
+                self.assertEqual(Prediction.objects.count(), 0)
 
     def __build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):
@@ -153,3 +178,16 @@ class TestTipper(TestCase):
     def __build_teams(match_data):
         TeamFactory(name=match_data["home_team"])
         TeamFactory(name=match_data["away_team"])
+
+    @staticmethod
+    def _request_predictions(
+        year_range,
+        round_number=None,
+        ml_models=None,
+        train_models=False,  # pylint: disable=unused-argument
+    ):
+        return {
+            "ml_models": ml_models,
+            "round_number": round_number,
+            "year_range": list(year_range),
+        }

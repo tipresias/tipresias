@@ -44,10 +44,11 @@ COPY --from=frontend /app/frontend/build /app/frontend/build
 # Collect static files
 RUN mkdir staticfiles \
   && DJANGO_SETTINGS_MODULE=project.settings.production \
-  # SECRET_KEY is only included here to avoid raising an error
-  # when generating static files. Be sure to add a real SECRET_KEY
+  # SECRET_KEY and API_TOKEN are only included here to avoid raising an error
+  # when generating static files. Be sure to add a real SECRET_KEY and API_TOKEN
   # config/env variable in prod.
   SECRET_KEY=somethingsupersecret \
+  API_TOKEN=notarealtoken \
   python3 manage.py collectstatic --noinput
 
 # Gunicorn needs to be run from the backend directory to be able find the wsgi

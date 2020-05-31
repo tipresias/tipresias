@@ -9,6 +9,7 @@ import pandas as pd
 
 from server.helpers import pivot_team_matches_to_matches
 from server.models import Prediction
+from server.tipping import Tipper
 
 
 def predictions(request: HttpRequest):
@@ -30,5 +31,7 @@ def predictions(request: HttpRequest):
 
     for pred in home_away_df.replace({np.nan: None}).to_dict("records"):
         Prediction.update_or_create_from_raw_data(pred)
+
+    Tipper().submit_tips()
 
     return HttpResponse(status=200)

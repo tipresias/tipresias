@@ -17,7 +17,6 @@ from server.tests.fixtures.factories import FullMatchFactory
 
 
 ONE_YEAR_RANGE = (2014, 2015)
-N_ML_MODELS = 3
 
 
 class TestMatch(TestCase):

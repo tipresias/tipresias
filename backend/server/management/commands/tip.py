@@ -15,4 +15,6 @@ class Command(BaseCommand):
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
         """Run 'tip' command."""
-        Tipper().tip(verbose=verbose)
+        tipper = Tipper(verbose=verbose)
+        tipper.update_match_data()
+        tipper.request_predictions()

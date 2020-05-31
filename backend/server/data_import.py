@@ -10,10 +10,15 @@ import pytz
 import pandas as pd
 import requests
 from django.utils import timezone
+from mypy_extensions import TypedDict
 
 from server.types import MlModel
 
 ParamValue = Union[str, int, datetime]
+PredictionData = TypedDict(
+    "PredictionData",
+    {"ml_models": List[str], "round_number": int, "year_range": List[int]},
+)
 
 DATA_SCIENCE_SERVICE = os.environ["DATA_SCIENCE_SERVICE"]
 
@@ -67,7 +72,7 @@ def _clean_param_value(param_value: ParamValue) -> str:
 
 def _fetch_data(
     path: str, params: Optional[Dict[str, Any]] = None
-) -> List[Dict[str, Any]]:
+) -> Union[List[Dict[str, Any]], PredictionData]:
     params = params or {}
 
     service_host = DATA_SCIENCE_SERVICE
@@ -90,7 +95,7 @@ def request_predictions(
     round_number: Optional[int] = None,
     ml_models: Optional[List[str]] = None,
     train_models: Optional[bool] = False,
-) -> pd.DataFrame:
+) -> PredictionData:
     """
     Fetch prediction data from machine_learning module.
 
@@ -108,14 +113,17 @@ def request_predictions(
     year_range_param = "-".join((str(min_year), str(max_year)))
     ml_model_param = None if ml_models is None else ",".join(ml_models)
 
-    return _fetch_data(
-        "predictions",
-        {
-            "year_range": year_range_param,
-            "round_number": round_number,
-            "ml_models": ml_model_param,
-            "train_models": train_models,
-        },
+    return cast(
+        PredictionData,
+        _fetch_data(
+            "predictions",
+            {
+                "year_range": year_range_param,
+                "round_number": round_number,
+                "ml_models": ml_model_param,
+                "train_models": train_models,
+            },
+        ),
     )
 
 
@@ -157,7 +165,7 @@ def fetch_match_results_data(
     end_date: Timezone-aware date-time that determines the latest date
         for which to fetch data.
     fetch_data: Whether to fetch fresh data. Non-fresh data goes up to end
-        of 2016 season.
+        of previous season.
 
     Returns:
     --------

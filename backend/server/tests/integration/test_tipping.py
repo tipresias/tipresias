@@ -1,19 +1,21 @@
 # pylint: disable=missing-docstring
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 
 from django.test import TestCase
 from django.utils import timezone
 from freezegun import freeze_time
 import pandas as pd
+from faker import Faker
 
-from server.models import Match, TeamMatch, Prediction
-from server.tipping import Tipper
-from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
+from server.models import Match, TeamMatch, Prediction, MLModel
+from server.tipping import Tipper, FootyTipsSubmitter
+from server.tests.fixtures.data_factories import fake_fixture_data
 from server.tests.fixtures.factories import (
-    MLModelFactory,
     TeamFactory,
     FullMatchFactory,
+    PredictionFactory,
+    MLModelFactory,
 )
 
 
@@ -22,22 +24,15 @@ TIP_DATES = [
     timezone.make_aware(datetime(2016, 1, 1)),
     timezone.make_aware(datetime(2017, 1, 1)),
 ]
+FAKE = Faker()
 
 
 class TestTipper(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
-        MLModelFactory(name="test_estimator")
-
     @patch("server.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
-        (
-            fixture_return_values,
-            prediction_return_values,
-            match_results_return_values,
-        ) = zip(*[self.__build_imported_data_mocks(tip_date) for tip_date in TIP_DATES])
+        (fixture_return_values, match_results_return_values,) = zip(
+            *[self._build_imported_data_mocks(tip_date) for tip_date in TIP_DATES]
+        )
 
         # We have 2 subtests in 2016 and 1 in 2017, which requires 3 fixture
         # and prediction data imports, but only 1 match results data import,
@@ -52,9 +47,7 @@ class TestTipper(TestCase):
             return_value=match_results_return_values[0]
         )
 
-        self.tipping = Tipper(
-            data_importer=mock_data_import, tip_submitters=[], verbose=0,
-        )
+        self.tipping = Tipper(data_importer=mock_data_import, verbose=0,)
 
     def test_update_match_data(self):
         with freeze_time(TIP_DATES[0]):
@@ -118,7 +111,33 @@ class TestTipper(TestCase):
                 self.tipping.data_importer.request_predictions.assert_called()
                 self.assertEqual(Prediction.objects.count(), 0)
 
-    def __build_imported_data_mocks(self, tip_date):
+    def test_submit_tips(self):
+        MLModelFactory(is_principle=True, used_in_competitions=True)
+
+        for _ in range(ROW_COUNT):
+            FullMatchFactory(future=True)
+
+        mock_submitter = FootyTipsSubmitter(browser=None)
+        mock_submitter.submit_tips = MagicMock()
+
+        with self.subTest("when there are no predictions to submit"):
+            self.tipping.submit_tips(tip_submitters=[mock_submitter])
+
+            # It doesn't try to submit any tips
+            mock_submitter.submit_tips.assert_not_called()
+
+        ml_model = MLModel.objects.get(is_principle=True)
+
+        for match in Match.objects.all():
+            # Need to use competition models for the predictions to get queried
+            PredictionFactory(match=match, ml_model=ml_model)
+
+        self.tipping.submit_tips(tip_submitters=[mock_submitter, mock_submitter])
+
+        # It submits tips to all competitions
+        self.assertEqual(mock_submitter.submit_tips.call_count, 2)
+
+    def _build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):
             tomorrow = timezone.localtime() + timedelta(days=1)
             year = tomorrow.year
@@ -126,56 +145,34 @@ class TestTipper(TestCase):
             # Mock footywire fixture data
             fixture_data = fake_fixture_data(ROW_COUNT, (year, year + 1))
 
-            prediction_match_data, _ = zip(
+            match_results_data, _ = zip(
                 *[
                     (
-                        self.__build_prediction_and_match_results_data(match_data),
-                        self.__build_teams(match_data),
+                        self._build_match_results_data(match_data),
+                        self._build_teams(match_data),
                     )
                     for match_data in fixture_data.to_dict("records")
                 ]
             )
 
-            prediction_data, match_results_data = zip(*prediction_match_data)
-
         return (
             fixture_data,
-            pd.concat(prediction_data),
             pd.DataFrame(list(match_results_data)),
         )
 
-    def __build_prediction_and_match_results_data(self, match_data):
-        match_predictions = fake_prediction_data(
-            match_data=match_data, ml_model_name="test_estimator"
-        )
-
-        return (
-            match_predictions,
-            self.__build_match_results_data(match_data, match_predictions),
-        )
-
     @staticmethod
-    def __build_match_results_data(match_data, match_predictions):
-        home_team_prediction = (
-            match_predictions.query("at_home == 1").iloc[0, :].to_dict()
-        )
-        away_team_prediction = (
-            match_predictions.query("at_home == 0").iloc[0, :].to_dict()
-        )
-
-        # Making all predictions correct, because trying to get fancy with it
-        # resulted in flakiness that was difficult to fix
+    def _build_match_results_data(match_data):
         return {
             "year": match_data["year"],
             "round_number": match_data["round_number"],
             "home_team": match_data["home_team"],
             "away_team": match_data["away_team"],
-            "home_score": home_team_prediction["predicted_margin"] + 50,
-            "away_score": away_team_prediction["predicted_margin"] + 50,
+            "home_score": FAKE.pyint(min_value=0, max_value=200),
+            "away_score": FAKE.pyint(min_value=0, max_value=200),
         }
 
     @staticmethod
-    def __build_teams(match_data):
+    def _build_teams(match_data):
         TeamFactory(name=match_data["home_team"])
         TeamFactory(name=match_data["away_team"])
 

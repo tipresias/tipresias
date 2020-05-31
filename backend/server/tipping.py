@@ -58,6 +58,7 @@ class MonashSubmitter:
         competitions: Names of the different Monash competitions.
             Based on the option value of the select input for logging into
             a competition.
+        browser: Selenium browser for navigating competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.competitions = competitions
@@ -74,7 +75,6 @@ class MonashSubmitter:
         predicted_winners: A dict where the keys are team names and the values
             are their predicted margins. Only includes predicted winners.
         """
-
         if self.verbose == 1:
             print("Submitting tips to probabilistic-footy.monash.edu...")
 
@@ -168,6 +168,7 @@ class FootyTipsSubmitter:
 
         Params:
         -------
+        browser: Selenium browser for navigating competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.browser = browser
@@ -297,7 +298,6 @@ class Tipper:
         self,
         fetch_data: bool = True,
         data_importer=None,
-        tip_submitters: List[Any] = [FootyTipsSubmitter(), MonashSubmitter()],
         ml_models: Optional[List[str]] = None,
         verbose: int = 1,
     ) -> None:
@@ -309,12 +309,10 @@ class Tipper:
         fetch_data: Whether to fetch up-to-date data or load saved data files.
         data_importer: Module used for importing data from remote sources.
         ml_models: A list of names of models to use when making tipping predictions.
-        submit_tips: Whether to submit the tips to the relevant competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.fetch_data = fetch_data
         self.data_importer: Any = data_importer or data_import
-        self.tip_submitters = tip_submitters
         self.ml_models = ml_models
 
         self._right_now = timezone.localtime()
@@ -337,10 +335,6 @@ class Tipper:
 
         self._backfill_match_results()
 
-        # for submitter in self.tip_submitters:
-        #     submitter.verbose = self.verbose
-        #     submitter.submit_tips(self._get_predicted_winners_for_latest_round())
-
         return None
 
     def request_predictions(self) -> None:
@@ -352,7 +346,8 @@ class Tipper:
         )
 
         if next_match is None:
-            print("There are no upcoming matches to predict.")
+            if self.verbose == 1:
+                print("There are no upcoming matches to predict.")
             return None
 
         upcoming_round = next_match.round_number
@@ -374,6 +369,27 @@ class Tipper:
             print("Predictions requested! They will be sent shortly.\n")
 
         return None
+
+    def submit_tips(self, tip_submitters: Optional[List[Any]] = None) -> None:
+        """
+        Submit tips to the given competitions.
+
+        Params:
+        -------
+        tip_submitters: List of submitter objects that handle submitting tips
+            to competition websites.
+        """
+        tip_submitters = tip_submitters or [
+            FootyTipsSubmitter(verbose=self.verbose),
+            MonashSubmitter(verbose=self.verbose),
+        ]
+
+        predicted_winners = self._get_predicted_winners_for_latest_round()
+
+        if any(predicted_winners):
+            for submitter in tip_submitters:
+                submitter.verbose = self.verbose
+                submitter.submit_tips(predicted_winners)
 
     def _fetch_fixture_data(self, year: int) -> pd.DataFrame:
         if self.verbose == 1:
@@ -492,8 +508,7 @@ class Tipper:
 
         return None
 
-    @staticmethod
-    def _get_predicted_winners_for_latest_round() -> List[PredictedWinner]:
+    def _get_predicted_winners_for_latest_round(self) -> List[PredictedWinner]:
         latest_match = Match.objects.latest("start_date_time")
         latest_year = latest_match.start_date_time.year
         latest_round = latest_match.round_number
@@ -515,8 +530,7 @@ class Tipper:
             )
         )
 
-        assert any(
-            latest_round_predictions
-        ), f"No predictions found for round {latest_round}."
+        if not any(latest_round_predictions) and self.verbose == 1:
+            print(f"No predictions found for round {latest_round}.")
 
         return latest_round_predictions

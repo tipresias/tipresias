@@ -26,7 +26,7 @@ def _home_away_data_frame(data_frame: pd.DataFrame, team_type: str) -> pd.DataFr
         .drop("at_home", axis=1)
         .rename(columns=_replace_team_col_names(team_type))
         .rename(columns=_replace_metric_col_names(team_type))
-        .reset_index()
+        .reset_index(drop=True)
     )
 
 

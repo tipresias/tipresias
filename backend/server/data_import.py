@@ -9,6 +9,7 @@ import pytz
 
 import pandas as pd
 import requests
+from django.conf import settings
 from django.utils import timezone
 from mypy_extensions import TypedDict
 
@@ -20,7 +21,11 @@ PredictionData = TypedDict(
     {"ml_models": List[str], "round_number": int, "year_range": List[int]},
 )
 
-DATA_SCIENCE_SERVICE = os.environ["DATA_SCIENCE_SERVICE"]
+DATA_SCIENCE_SERVICE = (
+    os.environ["DATA_SCIENCE_SERVICE"]
+    if settings.ENVIRONMENT == "production"
+    else "http://host.docker.internal:8008"
+)
 
 
 def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:

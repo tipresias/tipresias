@@ -46,7 +46,7 @@
     "babel-cli": "^6.26.0",
     "babel-plugin-istanbul": "^6.0.0",
     "customize-cra": "^0.9.1",
-    "enzyme-to-json": "^3.4.4",
+    "enzyme-to-json": "^3.5.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-airbnb-base": "^14.1.0",
     "eslint-plugin-flowtype": "^5.1.0",

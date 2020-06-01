@@ -78,23 +78,26 @@ class MonashSubmitter:
         if self.verbose == 1:
             print("Submitting tips to probabilistic-footy.monash.edu...")
 
-        for comp in self.competitions:
-            assert comp in SUPPORTED_MONASH_COMPS
+        try:
+            for comp in self.competitions:
+                assert comp in SUPPORTED_MONASH_COMPS
 
-            # Need to revisit home page for each competition, because submitting tips
-            # doesn't redirect back to it.
-            self.browser.visit(
-                "http://probabilistic-footy.monash.edu/~footy/tips.shtml"
-            )
-            self._login(comp)
-            self._fill_in_tipping_form(
-                self._transform_into_tipping_input(predicted_winners, comp)
-            )
+                # Need to revisit home page for each competition, because submitting tips
+                # doesn't redirect back to it.
+                self.browser.visit(
+                    "http://probabilistic-footy.monash.edu/~footy/tips.shtml"
+                )
+                self._login(comp)
+                self._fill_in_tipping_form(
+                    self._transform_into_tipping_input(predicted_winners, comp)
+                )
 
-            self._submit_form()
+                self._submit_form()
 
-            if self.verbose == 1:
-                print("Tips submitted!")
+                if self.verbose == 1:
+                    print("Tips submitted!")
+        finally:
+            self.browser.quit()
 
     @staticmethod
     def _transform_into_tipping_input(
@@ -186,15 +189,18 @@ class FootyTipsSubmitter:
         if self.verbose == 1:
             print("Submitting tips to footytips.com.au...")
 
-        self._log_in()
+        try:
+            self._log_in()
 
-        self._fill_in_tipping_form(
-            self._transform_into_tipping_input(predicted_winners)
-        )
-        self._submit_form()
+            self._fill_in_tipping_form(
+                self._transform_into_tipping_input(predicted_winners)
+            )
+            self._submit_form()
 
-        if self.verbose == 1:
-            print("Tips submitted!")
+            if self.verbose == 1:
+                print("Tips submitted!")
+        finally:
+            self.browser.quit()
 
     def _transform_into_tipping_input(
         self, predicted_winners: List[PredictedWinner]

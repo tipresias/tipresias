@@ -246,11 +246,14 @@ class FootyTipsSubmitter:
         # Have to use second login form, because the first is some invisible Angular
         # something something
         login_form = self.browser.find_by_name("frmLogin")[1]
-        login_form.find_by_name("userLogin").fill(os.getenv("FOOTY_TIPS_USERNAME", ""))
-        login_form.find_by_name("userPassword").fill(
-            os.getenv("FOOTY_TIPS_PASSWORD", "")
-        )
+        login_form.find_by_name("userLogin").fill(os.environ["FOOTY_TIPS_USERNAME"])
+        login_form.find_by_name("userPassword").fill(os.environ["FOOTY_TIPS_PASSWORD"])
         login_form.find_by_id("signin-ft").click()
+
+        if self.browser.is_text_present("Welcome to ESPNfootytips", wait_time=1):
+            raise ValueError(
+                "Either the username or password was incorrect and we failed to log in."
+            )
 
     def _fill_in_tipping_form(self, predicted_winners: Dict[str, int]):
         match_elements = self.browser.find_by_css(".tipping-container")
@@ -278,7 +281,7 @@ class FootyTipsSubmitter:
             self._select_predicted_winner(predicted_winner, match_element)
             self._fill_in_predicted_margin(predicted_margin, match_element)
 
-            return None
+        return None
 
     @staticmethod
     def _get_match_prediction(

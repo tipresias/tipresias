@@ -97,7 +97,7 @@ class TestPrediction(TestCase):
                 home_away_df.to_dict("records")[0]
             )
             prediction = Prediction.objects.first()
-            self.assertEqual(prediction.predicted_margin, 1)
+            self.assertEqual(prediction.predicted_margin, 0.4)
             self.assertEqual(
                 home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
             )
@@ -142,9 +142,7 @@ class TestPrediction(TestCase):
                 home_away_df.to_dict("records")[0]
             )
             prediction = Prediction.objects.first()
-            # It rounds to integer rather than dropping the decimal
-            # (i.e. always rounding down)
-            self.assertEqual(prediction.predicted_margin, 6)
+            self.assertEqual(prediction.predicted_margin, 5.75)
             self.assertEqual(
                 home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
             )
@@ -164,28 +162,6 @@ class TestPrediction(TestCase):
             self.assertIsNone(prediction.predicted_margin)
 
     def test_clean(self):
-        with self.subTest("when predicted margin rounds to 0"):
-            prediction = Prediction(
-                match=self.match,
-                ml_model=self.ml_model,
-                predicted_winner=self.away_team,
-                predicted_margin=0.2,
-            )
-
-            prediction.clean()
-            self.assertEqual(1, prediction.predicted_margin)
-
-        with self.subTest("when predicted margin is a float"):
-            prediction = Prediction(
-                match=self.match,
-                ml_model=self.ml_model,
-                predicted_winner=self.away_team,
-                predicted_margin=65.7,
-            )
-
-            prediction.clean()
-            self.assertEqual(66, prediction.predicted_margin)
-
         with self.subTest("when predicted margin and win probability are None"):
             prediction = Prediction(
                 match=self.match,

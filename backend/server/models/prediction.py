@@ -195,12 +195,6 @@ class Prediction(models.Model):
                 )
             )
 
-        if self.predicted_margin is not None:
-            # Judgement call, but I want to avoid 0 predicted margin values
-            # for the cases where the floating prediction is < 0.5,
-            # because we're never predicting a draw
-            self.predicted_margin = round(self.predicted_margin) or 1
-
     def update_correctness(self):
         """Update the correct attribute based on associated team_match scores."""
         self.is_correct = self._calculate_whether_correct()

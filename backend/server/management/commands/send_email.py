@@ -95,13 +95,18 @@ class Command(BaseCommand):
             else secondary_predicted_winner
         )
 
+        display_predicted_margin = round(margin_prediction.predicted_margin, 2)
+        display_predicted_win_probability = (
+            str(round(probability_prediction.predicted_win_probability * 100, 2)) + "%"
+        )
+
         return [
             str(match.start_date_time),
             home_team,
             away_team,
             principle_predicted_winner,
-            margin_prediction.predicted_margin,
-            probability_prediction.predicted_win_probability,
+            display_predicted_margin,
+            display_predicted_win_probability,
             different_winner_label,
         ]
 

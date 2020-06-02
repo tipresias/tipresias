@@ -119,18 +119,27 @@ class MonashSubmitter:
     def _login(self, competition: str) -> None:
         login_form = self.browser.find_by_css("form")
 
-        login_form.find_by_name("name").fill(os.getenv("MONASH_USERNAME", ""))
-        login_form.find_by_name("passwd").fill(os.getenv("MONASH_PASSWORD", ""))
-        login_form.select("comp", competition)
+        login_form.find_by_name("name").fill(os.environ["MONASH_USERNAME"])
+        login_form.find_by_name("passwd").fill(os.environ["MONASH_PASSWORD"])
+
+        if self.browser.is_text_present("Sorry, the alias", wait_time=1):
+            raise ValueError("Tried to use incorrect username and couldn't log in")
+
+        if self.browser.is_text_present("Wrong passwd", wait_time=1):
+            raise ValueError("Tried to use incorrect passowrd and couldn't log in")
+
+        login_form.select(value=competition)
         # There's a round number select, but we don't need to change it,
         # because it defaults to the upcoming/current round on page load.
         login_form.find_by_css("input[type=submit]").click()
 
     def _fill_in_tipping_form(self, predicted_winners: Dict[str, Union[int, float]]):
-        tip_table = self.browser.find_by_css("form table")
+        tip_table = self.browser.find_by_css("form tbody")
         table_rows = tip_table.find_by_css("tr")
 
-        assert len(table_rows) == len(predicted_winners), (
+        # They put the column labels in tbody instead of thead, so we subtract 1
+        # from row count to get match count.
+        assert len(table_rows) - 1 == len(predicted_winners), (
             "The number of predicted winners doesn't match the number of matches. "
             "Check the given predicted winners below:\n"
             f"{predicted_winners}"
@@ -138,6 +147,13 @@ class MonashSubmitter:
 
         for table_row in table_rows:
             self._enter_prediction(predicted_winners, table_row)
+
+        empty_predictions = self.browser.find_by_css("input[value=0], input[value=0.5]")
+
+        assert not any(empty_predictions), (
+            f"Found {len(empty_predictions)} empty prediction inputs "
+            f"on {self.browser.url}"
+        )
 
     def _enter_prediction(self, predicted_winners, table_row) -> None:
         for row_input in table_row.find_by_css("input"):
@@ -149,6 +165,15 @@ class MonashSubmitter:
                 predicted_winner = row_input.text
 
             if row_input.value.isnumeric():
+                # This is probably a one-off, but as of 2020-06-02,
+                # Monash haven't updated their fixture to the post-Covid-break version,
+                # so a number of team-match combos don't match the new fixture,
+                # resulting in empty predicted winners.
+                # There's nothing we can do about it, so we just move on
+                # to avoid an error.
+                if predicted_winner is None:
+                    continue
+
                 row_input.fill(predicted_winners[predicted_winner])
 
     @staticmethod

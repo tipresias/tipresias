@@ -87,7 +87,7 @@ def request_predictions(
     round_number: Optional[int] = None,
     ml_models: Optional[List[str]] = None,
     train_models: Optional[bool] = False,
-) -> PredictionData:
+) -> None:
     """
     Fetch prediction data from machine_learning module.
 
@@ -105,8 +105,7 @@ def request_predictions(
     year_range_param = "-".join((str(min_year), str(max_year)))
     ml_model_param = None if ml_models is None else ",".join(ml_models)
 
-    return cast(
-        PredictionData,
+    try:
         _fetch_data(
             "predictions",
             {
@@ -115,8 +114,11 @@ def request_predictions(
                 "ml_models": ml_model_param,
                 "train_models": train_models,
             },
-        ),
-    )
+        )
+    except requests.exceptions.ConnectionError:
+        # We catch ConnectionError, because generating data for predictions takes
+        # so long that the connection always gets terminated.
+        pass
 
 
 def fetch_fixture_data(start_date: datetime, end_date: datetime) -> pd.DataFrame:

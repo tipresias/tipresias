@@ -36,27 +36,6 @@ def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
     return data_frame["date"].map(lambda dt: timezone.localtime(parser.parse(dt)))
 
 
-def _make_request(
-    url: str,
-    params: Optional[Dict[str, Any]] = None,
-    headers: Optional[Dict[str, str]] = None,
-) -> requests.Response:
-    params = params or {}
-    headers = headers or {}
-
-    response = requests.get(url, params=params, headers=headers)
-
-    if 200 <= response.status_code < 300:
-        return response
-
-    raise Exception(
-        f"Bad response from application when requesting {url}:\n"
-        f"Status: {response.status_code}\n"
-        f"Headers: {response.headers}\n"
-        f"Body: {response.text}"
-    )
-
-
 def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
     if not isinstance(param_value, datetime):
         return None
@@ -90,9 +69,17 @@ def _fetch_data(
         if value is not None
     }
 
-    response = _make_request(service_url, params=clean_params, headers=headers)
+    response = requests.get(service_url, params=clean_params, headers=headers)
 
-    return response.json().get("data")
+    if 200 <= response.status_code < 300:
+        return response.json().get("data")
+
+    raise Exception(
+        f"Bad response from application when requesting {service_url}:\n"
+        f"Status: {response.status_code}\n"
+        f"Headers: {response.headers}\n"
+        f"Body: {response.text}"
+    )
 
 
 def request_predictions(

@@ -36,27 +36,6 @@ def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
     return data_frame["date"].map(lambda dt: timezone.localtime(parser.parse(dt)))
 
 
-def _make_request(
-    url: str,
-    params: Optional[Dict[str, Any]] = None,
-    headers: Optional[Dict[str, str]] = None,
-) -> requests.Response:
-    params = params or {}
-    headers = headers or {}
-
-    response = requests.get(url, params=params, headers=headers)
-
-    if 200 <= response.status_code < 300:
-        return response
-
-    raise Exception(
-        f"Bad response from application when requesting {url}:\n"
-        f"Status: {response.status_code}\n"
-        f"Headers: {response.headers}\n"
-        f"Body: {response.text}"
-    )
-
-
 def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
     if not isinstance(param_value, datetime):
         return None
@@ -90,9 +69,17 @@ def _fetch_data(
         if value is not None
     }
 
-    response = _make_request(service_url, params=clean_params, headers=headers)
+    response = requests.get(service_url, params=clean_params, headers=headers)
 
-    return response.json().get("data")
+    if 200 <= response.status_code < 300:
+        return response.json().get("data")
+
+    raise Exception(
+        f"Bad response from application when requesting {service_url}:\n"
+        f"Status: {response.status_code}\n"
+        f"Headers: {response.headers}\n"
+        f"Body: {response.text}"
+    )
 
 
 def request_predictions(
@@ -100,7 +87,7 @@ def request_predictions(
     round_number: Optional[int] = None,
     ml_models: Optional[List[str]] = None,
     train_models: Optional[bool] = False,
-) -> PredictionData:
+) -> None:
     """
     Fetch prediction data from machine_learning module.
 
@@ -118,8 +105,7 @@ def request_predictions(
     year_range_param = "-".join((str(min_year), str(max_year)))
     ml_model_param = None if ml_models is None else ",".join(ml_models)
 
-    return cast(
-        PredictionData,
+    try:
         _fetch_data(
             "predictions",
             {
@@ -128,8 +114,11 @@ def request_predictions(
                 "ml_models": ml_model_param,
                 "train_models": train_models,
             },
-        ),
-    )
+        )
+    except requests.exceptions.ConnectionError:
+        # We catch ConnectionError, because generating data for predictions takes
+        # so long that the connection always gets terminated.
+        pass
 
 
 def fetch_fixture_data(start_date: datetime, end_date: datetime) -> pd.DataFrame:

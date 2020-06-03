@@ -35,7 +35,6 @@ FIRST_ROUND = 1
 JAN = 1
 FIRST = 1
 
-
 # There's also a 'gaussian' competition, but I don't participate in that one,
 # so leaving it out for now.
 SUPPORTED_MONASH_COMPS = ["normal", "info"]
@@ -47,7 +46,7 @@ class MonashSubmitter:
     def __init__(  # pylint: disable=dangerous-default-value
         self,
         competitions: List[str] = ["normal", "info"],
-        browser=Browser("firefox", headless=True),
+        browser=None,
         verbose: int = 1,
     ):
         """
@@ -62,7 +61,7 @@ class MonashSubmitter:
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.competitions = competitions
-        self.browser = browser
+        self.browser = browser or Browser("firefox", headless=True)
         self.verbose = verbose
 
     def submit_tips(  # pylint: disable=dangerous-default-value
@@ -162,7 +161,7 @@ class MonashSubmitter:
 class FootyTipsSubmitter:
     """Submits tips to the tipping competition on footytips.com.au."""
 
-    def __init__(self, browser=Browser("firefox", headless=True), verbose: int = 1):
+    def __init__(self, browser=None, verbose: int = 1):
         """
         Instantiate a FootyTipsSubmitter object.
 
@@ -171,7 +170,7 @@ class FootyTipsSubmitter:
         browser: Selenium browser for navigating competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
-        self.browser = browser
+        self.browser = browser or Browser("firefox", headless=True)
         self.verbose = verbose
 
     def submit_tips(self, predicted_winners: List[PredictedWinner]) -> None:

@@ -34,4 +34,4 @@ def predictions(request: HttpRequest):
 
     Tipper().submit_tips()
 
-    return HttpResponse(status=200)
+    return HttpResponse("Success", status=200)

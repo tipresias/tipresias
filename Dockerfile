@@ -57,4 +57,4 @@ WORKDIR /app/backend
 
 EXPOSE ${PORT:-80}
 
-CMD gunicorn project.wsgi -b 0.0.0.0:80
+CMD gunicorn -b 0.0.0.0:80 -w 3 -t 600 --log-file=- --access-logfile=- project.wsgi

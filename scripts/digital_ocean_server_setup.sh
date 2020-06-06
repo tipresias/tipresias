@@ -7,6 +7,7 @@ set -euo pipefail
 
 # Name of the user to create and grant sudo privileges
 USERNAME=$1
+APP_NAME=$2
 
 # Whether to copy over the root user's `authorized_keys` file to the new sudo
 # user.
@@ -73,13 +74,15 @@ fi
 ufw allow OpenSSH
 ufw --force enable
 
-# Set up Docker
-usermod -aG docker ${USERNAME}
-su - ${USERNAME}
+y | apt-get update && apt-get install fail2ban
 
 # Create directory for the app
-APP_DIR=/var/www/tipresias
+APP_DIR=/var/www/${APP_NAME}
 
 chown ${USER}: /var
 mkdir --parents ${APP_DIR}
 chown ${USER}: ${APP_DIR}
+
+# Set up Docker
+groupadd docker
+usermod -aG docker ${USERNAME}

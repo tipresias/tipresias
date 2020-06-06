@@ -5,9 +5,13 @@ set -euo pipefail
 APP_DIR=/var/www/${PROJECT_ID}
 DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_app:latest
 PORT=80
+TRAVIS=${TRAVIS:-""}
 
-sudo chmod 600 ~/.ssh/deploy_rsa
-sudo chmod 755 ~/.ssh
+if [ "${TRAVIS}" ]
+then
+  sudo chmod 600 ~/.ssh/deploy_rsa
+  sudo chmod 755 ~/.ssh
+fi
 
 docker pull ${DOCKER_IMAGE}
 docker build --cache-from ${DOCKER_IMAGE} -t ${DOCKER_IMAGE} .

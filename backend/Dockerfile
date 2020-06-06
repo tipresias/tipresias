@@ -28,4 +28,4 @@ COPY . .
 # Make port 8000 available for the app
 EXPOSE 8000
 
-CMD python3 manage.py runserver 0.0.0.0:8000
+CMD gunicorn -b 0.0.0.0:80000 -w 3 -t 600 --log-file=- --access-logfile=- project.wsgi

@@ -10,11 +10,12 @@ from faker import Faker
 
 from server.models import Match, TeamMatch, Prediction, MLModel
 from server.tipping import Tipper, FootyTipsSubmitter
-from server.tests.fixtures.data_factories import fake_fixture_data
+from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import (
     TeamFactory,
     FullMatchFactory,
     PredictionFactory,
+    MLModelFactory,
 )
 
 
@@ -27,19 +28,23 @@ FAKE = Faker()
 
 
 class TestTipper(TestCase):
-    fixtures = ["ml_models.json"]
-
     @patch("server.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
-        (fixture_return_values, match_results_return_values,) = zip(
-            *[self._build_imported_data_mocks(tip_date) for tip_date in TIP_DATES]
+        self.ml_model = MLModelFactory(
+            name="test_estimator", is_principle=True, used_in_competitions=True
         )
+
+        (
+            fixture_return_values,
+            prediction_return_values,
+            match_results_return_values,
+        ) = zip(*[self._build_imported_data_mocks(tip_date) for tip_date in TIP_DATES])
 
         # We have 2 subtests in 2016 and 1 in 2017, which requires 3 fixture
         # and prediction data imports, but only 1 match results data import,
         # because it doesn't get called until 2017
-        mock_data_import.request_predictions = Mock(
-            side_effect=self._request_predictions
+        mock_data_import.fetch_prediction_data = Mock(
+            side_effect=prediction_return_values[:1] + prediction_return_values
         )
         mock_data_import.fetch_fixture_data = Mock(
             side_effect=fixture_return_values[:1] + fixture_return_values
@@ -61,6 +66,7 @@ class TestTipper(TestCase):
 
                 self.tipping.update_match_data()
 
+                # It creates records
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
@@ -70,6 +76,7 @@ class TestTipper(TestCase):
 
                 self.tipping.update_match_data()
 
+                # It updates existing records
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
@@ -90,7 +97,7 @@ class TestTipper(TestCase):
                     0,
                 )
 
-    def test_request_predictions(self):
+    def test_update_or_create_predictions(self):
         with freeze_time(TIP_DATES[0]):
             right_now = timezone.localtime()
             self.tipping._right_now = right_now  # pylint: disable=protected-access
@@ -98,19 +105,21 @@ class TestTipper(TestCase):
             with self.subTest("with no existing match records in DB"):
                 self.assertEqual(Match.objects.count(), 0)
 
-                self.tipping.request_predictions()
+                self.tipping.update_match_predictions()
 
-                self.tipping.data_importer.request_predictions.assert_not_called()
+                # It doesn't fetch predictions
+                self.tipping.data_importer.fetch_prediction_data.assert_not_called()
+                # It doesn't create prediction records
                 self.assertEqual(Prediction.objects.count(), 0)
 
             with self.subTest("with upcoming match records saved in the DB"):
-                for _ in range(ROW_COUNT):
-                    FullMatchFactory(future=True)
+                self.tipping.update_match_data()
+                self.tipping.update_match_predictions()
 
-                self.tipping.request_predictions()
-
-                self.tipping.data_importer.request_predictions.assert_called()
-                self.assertEqual(Prediction.objects.count(), 0)
+                # It fetches predictions
+                self.tipping.data_importer.fetch_prediction_data.assert_called()
+                # It creates prediction records
+                self.assertEqual(Prediction.objects.count(), ROW_COUNT)
 
     def test_submit_tips(self):
         for _ in range(ROW_COUNT):
@@ -144,46 +153,55 @@ class TestTipper(TestCase):
             # Mock footywire fixture data
             fixture_data = fake_fixture_data(ROW_COUNT, (year, year + 1))
 
-            match_results_data, _ = zip(
+            prediction_match_data, _ = zip(
                 *[
                     (
-                        self._build_match_results_data(match_data),
+                        self._build_prediction_and_match_results_data(match_data),
                         self._build_teams(match_data),
                     )
                     for match_data in fixture_data.to_dict("records")
                 ]
             )
 
+            prediction_data, match_results_data = zip(*prediction_match_data)
+
         return (
             fixture_data,
+            pd.concat(prediction_data),
             pd.DataFrame(list(match_results_data)),
         )
 
+    def _build_prediction_and_match_results_data(self, match_data):
+        match_predictions = fake_prediction_data(
+            match_data=match_data, ml_model_name=self.ml_model.name
+        )
+
+        return (
+            match_predictions,
+            self._build_match_results_data(match_data, match_predictions),
+        )
+
     @staticmethod
-    def _build_match_results_data(match_data):
+    def _build_match_results_data(match_data, match_predictions):
+        home_team_prediction = (
+            match_predictions.query("at_home == 1").iloc[0, :].to_dict()
+        )
+        away_team_prediction = (
+            match_predictions.query("at_home == 0").iloc[0, :].to_dict()
+        )
+
+        # Making all predictions correct, because trying to get fancy with it
+        # resulted in flakiness that was difficult to fix
         return {
             "year": match_data["year"],
             "round_number": match_data["round_number"],
             "home_team": match_data["home_team"],
             "away_team": match_data["away_team"],
-            "home_score": FAKE.pyint(min_value=0, max_value=200),
-            "away_score": FAKE.pyint(min_value=0, max_value=200),
+            "home_score": home_team_prediction["predicted_margin"] + 50,
+            "away_score": away_team_prediction["predicted_margin"] + 50,
         }
 
     @staticmethod
     def _build_teams(match_data):
         TeamFactory(name=match_data["home_team"])
         TeamFactory(name=match_data["away_team"])
-
-    @staticmethod
-    def _request_predictions(
-        year_range,
-        round_number=None,
-        ml_models=None,
-        train_models=False,  # pylint: disable=unused-argument
-    ):
-        return {
-            "ml_models": ml_models,
-            "round_number": round_number,
-            "year_range": list(year_range),
-        }

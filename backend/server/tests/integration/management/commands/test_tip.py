@@ -40,7 +40,7 @@ class TestTip(TestCase):
         # It creates upcoming match records
         self.assertEqual(Match.objects.count(), ROW_COUNT)
         # It requests predictions
-        mock_data_import.request_predictions.assert_called()
+        mock_data_import.fetch_predictions.assert_called()
         self.assertEqual(Prediction.objects.count(), 0)
 
     def _stub_import_methods(self, mock_data_import):
@@ -52,9 +52,7 @@ class TestTip(TestCase):
         # We have 2 subtests in 2016 and 1 in 2017, which requires 3 fixture
         # and prediction data imports, but only 1 match results data import,
         # because it doesn't get called until 2017
-        mock_data_import.request_predictions = Mock(
-            side_effect=self._request_predictions
-        )
+        mock_data_import.fetch_predictions = Mock(side_effect=self._fetch_predictions)
         mock_data_import.fetch_fixture_data = Mock(return_value=fixture_return_values)
         mock_data_import.fetch_match_results_data = Mock(
             return_value=match_results_return_values
@@ -101,7 +99,7 @@ class TestTip(TestCase):
         factories.TeamFactory(name=match_data["away_team"])
 
     @staticmethod
-    def _request_predictions(
+    def _fetch_predictions(
         year_range,
         round_number=None,
         ml_models=None,

@@ -241,7 +241,7 @@ class FootyTipsSubmitter:
         }
 
     def _log_in(self):
-        self.browser.visit("https://www.footytips.com.au/tipping/afl/")
+        self.browser.visit("https://www.footytips.com.au/home")
 
         # Have to use second login form, because the first is some invisible Angular
         # something something

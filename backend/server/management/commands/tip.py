@@ -18,3 +18,4 @@ class Command(BaseCommand):
         tipper = Tipper(verbose=verbose)
         tipper.update_match_data()
         tipper.update_match_predictions()
+        tipper.submit_tips()

@@ -14,7 +14,15 @@ class Command(BaseCommand):
     """
 
     def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
-        """Run 'tip' command."""
+        """
+        Run 'tip' command for end-to-end tipping process.
+
+        This includes:
+        1. Updating data for upcoming matches & backfilling past match data.
+        2. Updating or creating predictions for upcoming matches.
+        3. Submitting tips to competition websites
+            (footytips.com.au & Monash by default).
+        """
         tipper = Tipper(verbose=verbose)
         tipper.update_match_data()
         tipper.update_match_predictions()

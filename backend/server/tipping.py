@@ -15,6 +15,7 @@ from mypy_extensions import TypedDict
 from server.models import Match, TeamMatch, Prediction
 from server.types import FixtureData
 from server import data_import
+from server.helpers import pivot_team_matches_to_matches
 from project.settings.data_config import TEAM_TRANSLATIONS
 
 
@@ -370,7 +371,7 @@ class Tipper:
 
         return None
 
-    def request_predictions(self) -> None:
+    def update_match_predictions(self) -> None:
         """Request prediction data from Augury service for upcoming matches."""
         next_match = (
             Match.objects.filter(start_date_time__gt=self._right_now)
@@ -388,18 +389,23 @@ class Tipper:
 
         if self.verbose == 1:
             print(
-                "Requesting prediction records for round "
+                "Fetching predictions for round "
                 f"{upcoming_round}, {upcoming_season}..."
             )
 
-        self.data_importer.request_predictions(
+        prediction_data = self.data_importer.fetch_prediction_data(
             (upcoming_season, upcoming_season + 1),
             round_number=upcoming_round,
             ml_models=self.ml_models,
         )
 
         if self.verbose == 1:
-            print("Predictions requested! They will be sent shortly.\n")
+            print("Predictions received!")
+
+        home_away_df = pivot_team_matches_to_matches(prediction_data)
+
+        for pred in home_away_df.replace({np.nan: None}).to_dict("records"):
+            Prediction.update_or_create_from_raw_data(pred)
 
         return None
 

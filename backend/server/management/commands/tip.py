@@ -17,4 +17,4 @@ class Command(BaseCommand):
         """Run 'tip' command."""
         tipper = Tipper(verbose=verbose)
         tipper.update_match_data()
-        tipper.request_predictions()
+        tipper.update_match_predictions()

@@ -150,7 +150,10 @@ class MonashSubmitter:
         for table_row in table_rows:
             self._enter_prediction(predicted_winners, table_row)
 
-        empty_predictions = self.browser.find_by_css("input[value=0], input[value=0.5]")
+        empty_predictions = [
+            input_element.value == "0" or input_element.value == "0.5"
+            for input_element in tip_table.find_by_css("input[type='text']")
+        ]
 
         assert not any(empty_predictions), (
             f"Found {len(empty_predictions)} empty prediction inputs "
@@ -158,25 +161,34 @@ class MonashSubmitter:
         )
 
     def _enter_prediction(self, predicted_winners, table_row) -> None:
-        for row_input in table_row.find_by_css("input"):
-            predicted_winner = None
-            team_name = self._translate_team_name(row_input.text)
+        predicted_winner = None
+
+        # We need to get team names from label text and enter predictions into inputs,
+        # so we loop through all of them
+        for row_label_or_input in table_row.find_by_css("label,input"):
+            team_name = self._translate_team_name(row_label_or_input.text)
 
             if team_name in predicted_winners.keys():
-                row_input.click()
-                predicted_winner = row_input.text
+                row_label_or_input.click()
+                predicted_winner = team_name
 
-            if row_input.value.isnumeric():
-                # This is probably a one-off, but as of 2020-06-02,
-                # Monash haven't updated their fixture to the post-Covid-break version,
-                # so a number of team-match combos don't match the new fixture,
-                # resulting in empty predicted winners.
-                # There's nothing we can do about it, so we just move on
-                # to avoid an error.
-                if predicted_winner is None:
-                    continue
+            # Have to try/except converting to float, because apparently isnumeric
+            # returns False for float strings.
+            try:
+                float(row_label_or_input.value)
+            except ValueError:
+                continue
 
-                row_input.fill(predicted_winners[predicted_winner])
+            # This is probably a one-off, but as of 2020-06-02,
+            # Monash haven't updated their fixture to the post-Covid-break version,
+            # so a number of team-match combos don't match the new fixture,
+            # resulting in empty predicted winners.
+            # There's nothing we can do about it, so we just move on
+            # to avoid an error.
+            if predicted_winner is None:
+                continue
+
+            row_label_or_input.fill(str(predicted_winners[predicted_winner]))
 
     @staticmethod
     def _translate_team_name(element_text: str) -> str:

@@ -428,8 +428,11 @@ class Tipper:
             to competition websites.
         """
         tip_submitters = tip_submitters or [
-            FootyTipsSubmitter(verbose=self.verbose),
             MonashSubmitter(verbose=self.verbose),
+            # Better to but FootyTipsSubmitter last, because the site has a lot
+            # of javascript, and is more prone to errors. They also send an email,
+            # so we get confirmation of tips submission.
+            FootyTipsSubmitter(verbose=self.verbose),
         ]
 
         predicted_winners = self._get_predicted_winners_for_latest_round()

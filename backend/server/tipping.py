@@ -40,6 +40,8 @@ FIRST = 1
 # so leaving it out for now.
 SUPPORTED_MONASH_COMPS = ["normal", "info"]
 
+FOOTY_TIPS_FORM_URL = "https://www.footytips.com.au/tipping/afl/"
+
 
 class MonashSubmitter:
     """Submits tips to one or more of the Monash footy tipping competitions."""
@@ -241,7 +243,9 @@ class FootyTipsSubmitter:
         }
 
     def _log_in(self):
-        self.browser.visit("https://www.footytips.com.au/home")
+        # We try to navigate directly to the tipping page, because we will be
+        # redirected there once we log in, minimising the number of steps
+        self.browser.visit(FOOTY_TIPS_FORM_URL)
 
         # Have to use second login form, because the first is some invisible Angular
         # something something
@@ -250,13 +254,18 @@ class FootyTipsSubmitter:
         login_form.find_by_name("userPassword").fill(os.environ["FOOTY_TIPS_PASSWORD"])
         login_form.find_by_id("signin-ft").click()
 
-        if self.browser.is_text_present("Welcome to ESPNfootytips", wait_time=1):
+        if self.browser.is_text_present("Welcome to ESPNfootytips", wait_time=5):
             raise ValueError(
                 "Either the username or password was incorrect and we failed to log in."
             )
 
     def _fill_in_tipping_form(self, predicted_winners: Dict[str, int]):
         match_elements = self.browser.find_by_css(".tipping-container")
+
+        assert self.browser.url == FOOTY_TIPS_FORM_URL, (
+            f"Something went wrong with logging in. We are on {self.browser.url}, "
+            f"but should be on {FOOTY_TIPS_FORM_URL}."
+        )
 
         assert len(match_elements) == len(predicted_winners), (
             "The number of predicted winners doesn't match the number of matches. "

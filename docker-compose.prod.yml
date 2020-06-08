@@ -1,0 +1,13 @@
+version: "3.2"
+services:
+  app:
+    image: cfranklin11/tipresias_app:latest
+    ports:
+      - "80:80"
+    stdin_open: true
+    tty: true
+    env_file: .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=project.settings.production
+      - DATABASE_NAME=${DATABASE_NAME:-tipresias}
+      - Node_ENV=production

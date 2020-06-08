@@ -13,23 +13,19 @@ then
   sudo chmod 755 ~/.ssh
 fi
 
-docker pull ${DOCKER_IMAGE}
-docker build --cache-from ${DOCKER_IMAGE} -t ${DOCKER_IMAGE} .
-docker push ${DOCKER_IMAGE}
+# docker pull ${DOCKER_IMAGE}
+# docker build --cache-from ${DOCKER_IMAGE} -t ${DOCKER_IMAGE} .
+# docker push ${DOCKER_IMAGE}
+
+scp -i ~/.ssh/deploy_rsa -oStrictHostKeyChecking=no \
+  docker-compose.prod.yml \
+  ${DIGITAL_OCEAN_USER}@${PRODUCTION_HOST}:${APP_DIR}/docker-compose.yml
 
 RUN_APP="
   cd ${APP_DIR} \
     && docker pull ${DOCKER_IMAGE} \
-    && docker stop ${PROJECT_ID}_app \
-    && docker container rm ${PROJECT_ID}_app \
-    && docker run \
-      -d \
-      --env-file .env \
-      -p ${PORT}:${PORT} \
-      -e DJANGO_SETTINGS_MODULE=project.settings.production \
-      -e NODE_ENV=production \
-      --name ${PROJECT_ID}_app \
-      ${DOCKER_IMAGE}
+    && docker-compose stop \
+    && docker-compose up -d
 "
 
 # We use 'ssh' instead of 'doctl compute ssh' to be able to bypass key checking.

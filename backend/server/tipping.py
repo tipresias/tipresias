@@ -124,16 +124,16 @@ class MonashSubmitter:
         login_form.find_by_name("name").fill(os.environ["MONASH_USERNAME"])
         login_form.find_by_name("passwd").fill(os.environ["MONASH_PASSWORD"])
 
+        login_form.select(value=competition)
+        # There's a round number select, but we don't need to change it,
+        # because it defaults to the upcoming/current round on page load.
+        login_form.find_by_css("input[type=submit]").click()
+
         if self.browser.is_text_present("Sorry, the alias", wait_time=1):
             raise ValueError("Tried to use incorrect username and couldn't log in")
 
         if self.browser.is_text_present("Wrong passwd", wait_time=1):
             raise ValueError("Tried to use incorrect passowrd and couldn't log in")
-
-        login_form.select(value=competition)
-        # There's a round number select, but we don't need to change it,
-        # because it defaults to the upcoming/current round on page load.
-        login_form.find_by_css("input[type=submit]").click()
 
     def _fill_in_tipping_form(self, predicted_winners: Dict[str, Union[int, float]]):
         tip_table = self.browser.find_by_css("form tbody")

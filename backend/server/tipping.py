@@ -137,11 +137,11 @@ class MonashSubmitter:
 
     def _fill_in_tipping_form(self, predicted_winners: Dict[str, Union[int, float]]):
         tip_table = self.browser.find_by_css("form tbody")
-        table_rows = tip_table.find_by_css("tr")
-
         # They put the column labels in tbody instead of thead, so we subtract 1
         # from row count to get match count.
-        assert len(table_rows) - 1 == len(predicted_winners), (
+        table_rows = tip_table.find_by_css("tr")[1:]
+
+        assert len(table_rows) == len(predicted_winners), (
             "The number of predicted winners doesn't match the number of matches. "
             "Check the given predicted winners below:\n"
             f"{predicted_winners}"

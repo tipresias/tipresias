@@ -53,7 +53,7 @@ EXIT_CODE=$?
 
 #### CLEANUP ####
 # Need to stop before exiting to reset to non-test env vars
-docker-compose run --rm tipresias_db_1 psql \
+docker-compose exec db psql
   -U postgres \
   -d ${DATABASE_NAME} \
   --command "DROP DATABASE ${DATABASE_NAME}"

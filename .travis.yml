@@ -48,7 +48,10 @@ script:
   - ./scripts/update_frontend_gql_types.sh docker-compose.ci.yml
   - ./backend/scripts/integration_tests.sh docker-compose.ci.yml
   - ./scripts/browser_tests.sh docker-compose.ci.yml
-after_script:
+  # Code coverage
+  # Running code coverage commands in scripts instead of after_script,
+  # because after_script silently fails, and I don't check codeclimate often enough
+  # to catch problems early.
   # Only way I could get it to work was running format-coverage from each app's root.
   # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,
   # and the --prefix option is to turn absolute paths into relative paths,

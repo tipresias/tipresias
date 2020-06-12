@@ -56,7 +56,7 @@ after_script:
   # Also, trying to run the code coverage tool inside docker was more trouble than it's worth.
   - cd ./backend && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.backend.json && cd ..
   # Need to move coverage files to frontend, because filenames are relative to frontend root
-  - mv ./browser_test/coverage ./frontend
+  - sudo chmod 755 ./browser_test && sudo mv ./browser_test/coverage ./frontend
   - cd ./frontend && ../cc-test-reporter format-coverage -t lcov -o ../coverage/codeclimate.frontend.json && cd ..
   - ./cc-test-reporter sum-coverage ./coverage/codeclimate.*.json -p 2
   - if [[ "$TRAVIS_TEST_RESULT" == 0 ]]; then ./cc-test-reporter upload-coverage; fi

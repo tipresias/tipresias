@@ -228,7 +228,9 @@ class FootyTipsSubmitter:
         browser: Selenium browser for navigating competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
-        self.browser = browser or Browser("firefox", headless=True)
+        self.browser = browser or Browser(
+            "firefox", headless=True, profile_preferences={"javascript.enabled": False}
+        )
         self.verbose = verbose
 
     def submit_tips(self, predicted_winners: List[PredictedWinner]) -> None:

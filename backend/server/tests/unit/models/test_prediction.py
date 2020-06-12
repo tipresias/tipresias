@@ -29,6 +29,49 @@ class TestPrediction(TestCase):
         data = fake_prediction_data(self.match, ml_model_name=self.ml_model.name)
         home_away_df = pivot_team_matches_to_matches(pd.DataFrame(data))
 
+        with self.subTest("when future_only is True"):
+            with self.subTest("and the match has already been played"):
+                self.assertLess(self.match.start_date_time, timezone.now())
+                self.assertEqual(Prediction.objects.count(), 0)
+
+                Prediction.update_or_create_from_raw_data(
+                    home_away_df.to_dict("records")[0], future_only=True
+                )
+
+                # It doesn't create a prediction
+                self.assertEqual(Prediction.objects.count(), 0)
+
+            with self.subTest("and the match hasn't been played yet"):
+                future_match = Match.objects.create(
+                    start_date_time=(timezone.now() + timedelta(days=1)),
+                    round_number=5,
+                    venue="Corporate Stadium",
+                )
+                future_home_team = Team.objects.create(name="Collingwood")
+                future_away_team = Team.objects.create(name="GWS")
+
+                future_match.teammatch_set.create(
+                    team=future_home_team, at_home=True, score=0
+                )
+                future_match.teammatch_set.create(
+                    team=future_away_team, at_home=False, score=0
+                )
+
+                future_data = fake_prediction_data(
+                    future_match, ml_model_name=self.ml_model.name
+                )
+                future_home_away_df = pivot_team_matches_to_matches(
+                    pd.DataFrame(future_data)
+                )
+
+                Prediction.update_or_create_from_raw_data(
+                    future_home_away_df.to_dict("records")[0], future_only=True
+                )
+
+                # It creates a prediction
+                self.assertEqual(Prediction.objects.count(), 1)
+
+        Prediction.objects.all().delete()
         self.assertEqual(Prediction.objects.count(), 0)
         Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
         self.assertEqual(Prediction.objects.count(), 1)

@@ -426,7 +426,7 @@ class Tipper:
         home_away_df = pivot_team_matches_to_matches(prediction_data)
 
         for pred in home_away_df.replace({np.nan: None}).to_dict("records"):
-            Prediction.update_or_create_from_raw_data(pred)
+            Prediction.update_or_create_from_raw_data(pred, future_only=True)
 
         return None
 

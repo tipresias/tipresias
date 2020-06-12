@@ -118,6 +118,21 @@ class MonashSubmitter:
             if predicted_winner[competition_prediction_type] is not None
         }
 
+    @staticmethod
+    def _clean_numeric_input(
+        competition_prediction_type: PredictionType, prediction_value: float
+    ) -> str:
+        # Margin inputs are integers only, so float entries get converted to integers
+        # directly instead of rounded (e.g. 5.7 becomes 5)
+        prediction_number = (
+            prediction_value
+            if competition_prediction_type == "predicted_win_probability"
+            else round(prediction_value)
+        )
+
+        # Numeric value inputs are of type "text"
+        return str(prediction_number)
+
     def _login(self, competition: str) -> None:
         login_form = self.browser.find_by_css("form")
 
@@ -188,7 +203,7 @@ class MonashSubmitter:
             if predicted_winner is None:
                 continue
 
-            row_label_or_input.fill(str(predicted_winners[predicted_winner]))
+            row_label_or_input.fill(predicted_winners[predicted_winner])
 
     @staticmethod
     def _translate_team_name(element_text: str) -> str:
@@ -426,7 +441,7 @@ class Tipper:
         home_away_df = pivot_team_matches_to_matches(prediction_data)
 
         for pred in home_away_df.replace({np.nan: None}).to_dict("records"):
-            Prediction.update_or_create_from_raw_data(pred)
+            Prediction.update_or_create_from_raw_data(pred, future_only=True)
 
         return None
 

@@ -5,6 +5,7 @@ from typing import Tuple, Optional
 from django.db import models, transaction
 from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 import numpy as np
 
@@ -30,7 +31,7 @@ class Prediction(models.Model):
 
     @classmethod
     def update_or_create_from_raw_data(
-        cls, prediction_data: CleanPredictionData
+        cls, prediction_data: CleanPredictionData, future_only=False
     ) -> None:
         """
         Convert raw prediction data to a Prediction model instance.
@@ -84,6 +85,10 @@ class Prediction(models.Model):
             )
 
         match = matches.first()
+
+        if future_only and match.start_date_time < timezone.now():
+            return None
+
         ml_model = MLModel.objects.get(name=prediction_data["ml_model"])
         matching_prediction_attributes = {"match": match, "ml_model": ml_model}
 

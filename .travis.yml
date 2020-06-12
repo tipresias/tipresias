@@ -48,7 +48,10 @@ script:
   - ./scripts/update_frontend_gql_types.sh docker-compose.ci.yml
   - ./backend/scripts/integration_tests.sh docker-compose.ci.yml
   - ./scripts/browser_tests.sh docker-compose.ci.yml
-after_script:
+  # Code coverage
+  # Running code coverage commands in scripts instead of after_script,
+  # because after_script silently fails, and I don't check codeclimate often enough
+  # to catch problems early.
   # Only way I could get it to work was running format-coverage from each app's root.
   # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,
   # and the --prefix option is to turn absolute paths into relative paths,
@@ -56,7 +59,7 @@ after_script:
   # Also, trying to run the code coverage tool inside docker was more trouble than it's worth.
   - cd ./backend && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.backend.json && cd ..
   # Need to move coverage files to frontend, because filenames are relative to frontend root
-  - mv ./browser_test/coverage ./frontend
+  - sudo chmod 755 ./browser_test && sudo mv ./browser_test/coverage ./frontend
   - cd ./frontend && ../cc-test-reporter format-coverage -t lcov -o ../coverage/codeclimate.frontend.json && cd ..
   - ./cc-test-reporter sum-coverage ./coverage/codeclimate.*.json -p 2
   - if [[ "$TRAVIS_TEST_RESULT" == 0 ]]; then ./cc-test-reporter upload-coverage; fi

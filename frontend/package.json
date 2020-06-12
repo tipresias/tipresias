@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
+    "build": "react-scripts build",
     "test:eslint": "yarn run eslint 'src/**/*.js' --ext .jsx --ext .js",
     "test:flow": "yarn flow",
     "test:unit": "react-app-rewired test --env=jsdom",

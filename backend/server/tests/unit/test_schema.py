@@ -1,5 +1,5 @@
 # pylint: disable=missing-docstring
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser
 
 from django.test import TestCase
@@ -297,8 +297,7 @@ class TestSchema(TestCase):
             for round_n in range(ROUND_COUNT)
         ]
 
-        executed = self.client.execute(
-            """
+        query_string = """
             query QueryType {
                 fetchLatestRoundPredictions {
                     roundNumber
@@ -311,8 +310,9 @@ class TestSchema(TestCase):
                     }
                 }
             }
-            """
-        )
+        """
+
+        executed = self.client.execute(query_string)
 
         data = executed["data"]["fetchLatestRoundPredictions"]
 
@@ -336,6 +336,27 @@ class TestSchema(TestCase):
         self.assertEqual(
             sorted(principle_predicted_winners), sorted(query_predicted_winners)
         )
+
+        with self.subTest("for unplayed matches"):
+            max_round_number = max([match.round_number for match in latest_matches])
+
+            for _ in range(MATCH_COUNT):
+                FullMatchFactory(
+                    with_predictions=True,
+                    future=True,
+                    round_number=max_round_number + 1,
+                    prediction__ml_model=ml_models[0],
+                    prediction_two__ml_model=ml_models[1],
+                )
+
+        executed = self.client.execute(query_string)
+        data = executed["data"]["fetchLatestRoundPredictions"]
+
+        # It has isCorrect values of null/None
+        unique_is_correct_values = {
+            pred["isCorrect"] for pred in data["matchPredictions"]
+        }
+        self.assertEqual(set([None]), unique_is_correct_values)
 
     # Keeping this in a separate test, because it requires special setup
     # to properly test metric calculations

@@ -3,6 +3,7 @@
 from typing import List, cast, Optional
 from functools import partial
 from datetime import datetime
+import math
 
 from django.db.models import QuerySet
 import graphene
@@ -105,9 +106,17 @@ class RoundPredictionType(graphene.ObjectType):
             .sum()
         )
 
-        return principle_predictions.fillna(non_principle_predictions).to_dict(
-            "records"
-        )
+        competition_predictions = principle_predictions.fillna(
+            non_principle_predictions
+        ).to_dict("records")
+
+        # to_dict converts None to Python's NaN, which boolean coerces to True,
+        # making is_correct True for all future matches
+        for pred in competition_predictions:
+            if math.isnan(pred["is_correct"]):
+                pred["is_correct"] = None
+
+        return competition_predictions
 
 
 class SeasonPerformanceChartParametersType(graphene.ObjectType):

@@ -109,7 +109,11 @@ class TeamMatchFactory(DjangoModelFactory):
     team = factory.SubFactory(TeamFactory)
     match = factory.SubFactory(MatchFactory)
     at_home = factory.Faker("pybool")
-    score = factory.Faker("pyint", min_value=50, max_value=150)
+    score = factory.LazyAttribute(
+        lambda team_match: FAKE.pyint(min_value=50, max_value=150)
+        if team_match.match.start_date_time < timezone.now()
+        else 0
+    )
 
 
 class MLModelFactory(DjangoModelFactory):
@@ -177,7 +181,9 @@ class PredictionFactory(DjangoModelFactory):
     )
     is_correct = factory.LazyAttribute(
         lambda pred: (
-            pred.match.teammatch_set.order_by("-score").first().team
+            None
+            if pred.match.start_date_time > timezone.now()
+            else pred.match.teammatch_set.order_by("-score").first().team
             == pred.predicted_winner
         )
     )

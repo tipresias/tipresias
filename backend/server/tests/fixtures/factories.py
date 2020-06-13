@@ -155,6 +155,12 @@ class PredictionFactory(DjangoModelFactory):
             )
         )
 
+        force_incorrect = factory.Trait(
+            predicted_winner=factory.LazyAttribute(
+                lambda pred: pred.match.teammatch_set.order_by("score").first().team
+            )
+        )
+
     match = factory.SubFactory(MatchFactory)
     # Can't use SubFactory for associated MLModel, because it's not realistic to have
     # one model per prediction, and in cases where there are a lot of predictions,
@@ -175,7 +181,7 @@ class PredictionFactory(DjangoModelFactory):
     # Since they're taking this as an opportunity to completely change the method,
     # they're going to wait for a major version rather than just permit floats...
     predicted_win_probability = factory.LazyAttribute(
-        lambda pred: FAKE.pyfloat(min_value=0, max_value=1)
+        lambda pred: np.random.uniform(0.5, 1.0)
         if pred.ml_model.prediction_type == PredictionType.WIN_PROBABILITY
         else None
     )

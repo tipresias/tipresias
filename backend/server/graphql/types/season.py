@@ -1,6 +1,6 @@
 """Match and prediction data grouped by season."""
 
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Callable
 from functools import partial
 from datetime import datetime
 import math
@@ -70,6 +70,21 @@ class MatchPredictionType(graphene.ObjectType):
     is_correct = graphene.Boolean()
 
 
+def _invert_contradicting_predictions(
+    non_principle_prediction_label: str,
+) -> Callable[[pd.DataFrame], np.array]:
+    if non_principle_prediction_label == "predicted_margin":
+        invert_values = lambda arr: arr * -1
+    else:
+        invert_values = lambda arr: 1 - arr
+
+    return lambda df: np.where(
+        df["predictions_agree"],
+        df[non_principle_prediction_label],
+        invert_values(df[non_principle_prediction_label]),
+    )
+
+
 class RoundPredictionType(graphene.ObjectType):
     """Official Tipresias predictions for a given round."""
 
@@ -102,13 +117,39 @@ class RoundPredictionType(graphene.ObjectType):
         non_principle_predictions = (
             predictions.query("ml_model__is_principle == False")
             .fillna(0)
-            .groupby("match__id")[["predicted_margin", "predicted_win_probability"]]
-            .sum()
+            .set_index("match__id")
+            .loc[
+                :,
+                [
+                    "predicted_winner__name",
+                    "predicted_margin",
+                    "predicted_win_probability",
+                ],
+            ]
         )
 
-        competition_predictions = principle_predictions.fillna(
-            non_principle_predictions
-        ).to_dict("records")
+        non_principle_prediction_type = MLModel.objects.get(
+            is_principle=False, used_in_competitions=True
+        ).prediction_type
+        non_principle_prediction_label = "predicted_" + (
+            non_principle_prediction_type.lower().replace(" ", "_")
+        )
+
+        competition_predictions = (
+            principle_predictions.fillna(non_principle_predictions)
+            .assign(
+                predictions_agree=lambda df: df["predicted_winner__name"]
+                == non_principle_predictions["predicted_winner__name"]
+            )
+            .assign(
+                **{
+                    f"{non_principle_prediction_label}": _invert_contradicting_predictions(
+                        non_principle_prediction_label
+                    )
+                }
+            )
+            .to_dict("records")
+        )
 
         # to_dict converts None to Python's NaN, which boolean coerces to True,
         # making is_correct True for all future matches

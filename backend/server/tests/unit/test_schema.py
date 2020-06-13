@@ -1,5 +1,5 @@
 # pylint: disable=missing-docstring
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil import parser
 
 from django.test import TestCase
@@ -281,18 +281,20 @@ class TestSchema(TestCase):
 
     def test_fetch_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
-        year = TWENTY_SEVENTEEN
+        latest_year = TWENTY_SEVENTEEN
 
         latest_matches = [
             FullMatchFactory(
                 with_predictions=True,
-                year=year,
+                year=latest_year,
                 round_number=((round_n % 23) + 1),
                 start_date_time=timezone.make_aware(
-                    datetime(year, 6, (round_n % 29) + 1)
+                    datetime(latest_year, 6, (round_n % 29) + 1)
                 ),
                 prediction__ml_model=ml_models[0],
+                prediction__force_correct=True,
                 prediction_two__ml_model=ml_models[1],
+                prediction_two__force_incorrect=True,
             )
             for round_n in range(ROUND_COUNT)
         ]
@@ -313,20 +315,22 @@ class TestSchema(TestCase):
         """
 
         executed = self.client.execute(query_string)
-
         data = executed["data"]["fetchLatestRoundPredictions"]
 
+        # It returns predictions from the last available round
         max_match_round = max([match.round_number for match in latest_matches])
         self.assertEqual(data["roundNumber"], max_match_round)
 
+        # It returns predictions from the last available season
         match_years = [
             parser.parse(pred["startDateTime"]).year
             for pred in data["matchPredictions"]
         ]
-        self.assertEqual(np.mean(match_years), year)
+        self.assertEqual(np.mean(match_years), latest_year)
 
+        # It uses predicted winners from the principle model only
         principle_predicted_winners = Prediction.objects.filter(
-            match__start_date_time__year=year,
+            match__start_date_time__year=latest_year,
             match__round_number=max_match_round,
             ml_model__is_principle=True,
         ).values_list("predicted_winner__name", flat=True)
@@ -336,6 +340,25 @@ class TestSchema(TestCase):
         self.assertEqual(
             sorted(principle_predicted_winners), sorted(query_predicted_winners)
         )
+
+        # When models disagree, it inverts predictions from non-principle models
+        non_principle_prediction_type = MLModel.objects.get(
+            is_principle=False, used_in_competitions=True
+        ).prediction_type
+
+        if non_principle_prediction_type == "Margin":
+            non_principle_prediction_label = "predictedMargin"
+            draw_prediction = 0
+        else:
+            non_principle_prediction_label = "predictedWinProbability"
+            draw_prediction = 0.5
+
+        predicted_losses = [
+            pred[non_principle_prediction_label] < draw_prediction
+            for pred in data["matchPredictions"]
+        ]
+
+        self.assertTrue(all(predicted_losses))
 
         with self.subTest("for unplayed matches"):
             max_round_number = max([match.round_number for match in latest_matches])
@@ -349,14 +372,14 @@ class TestSchema(TestCase):
                     prediction_two__ml_model=ml_models[1],
                 )
 
-        executed = self.client.execute(query_string)
-        data = executed["data"]["fetchLatestRoundPredictions"]
+            executed = self.client.execute(query_string)
+            data = executed["data"]["fetchLatestRoundPredictions"]
 
-        # It has isCorrect values of null/None
-        unique_is_correct_values = {
-            pred["isCorrect"] for pred in data["matchPredictions"]
-        }
-        self.assertEqual(set([None]), unique_is_correct_values)
+            # It returns isCorrect values of null/None
+            unique_is_correct_values = {
+                pred["isCorrect"] for pred in data["matchPredictions"]
+            }
+            self.assertEqual(set([None]), unique_is_correct_values)
 
     # Keeping this in a separate test, because it requires special setup
     # to properly test metric calculations

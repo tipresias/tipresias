@@ -399,7 +399,7 @@ class TestSchema(TestCase):
             }
             """
 
-        with self.subTest("for a 'Margin' model"):
+        with self.subTest("for a 'Win Probability' model"):
             executed = self.client.execute(
                 query, variables={"mlModelName": "accurate_af"}
             )
@@ -420,7 +420,7 @@ class TestSchema(TestCase):
             # which would suggest a problem
             self.assertNotEqual(model_stats["cumulativeBits"], 0)
 
-        with self.subTest("for a 'Win Probability' model"):
+        with self.subTest("for a 'Margin' model"):
             executed = self.client.execute(
                 query, variables={"mlModelName": "predictanator"}
             )

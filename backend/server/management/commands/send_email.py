@@ -82,16 +82,16 @@ class Command(BaseCommand):
             ml_model__prediction_type=PredictionType.WIN_PROBABILITY,
         )
 
-        principle_predicted_winner = match_predictions.get(
-            ml_model__is_principle=True
+        principal_predicted_winner = match_predictions.get(
+            ml_model__is_principal=True
         ).predicted_winner.name
         secondary_predicted_winner = match_predictions.get(
-            ml_model__is_principle=False
+            ml_model__is_principal=False
         ).predicted_winner.name
 
         different_winner_label = (
             ""
-            if principle_predicted_winner == secondary_predicted_winner
+            if principal_predicted_winner == secondary_predicted_winner
             else secondary_predicted_winner
         )
 
@@ -104,7 +104,7 @@ class Command(BaseCommand):
             str(match.start_date_time),
             home_team,
             away_team,
-            principle_predicted_winner,
+            principal_predicted_winner,
             display_predicted_margin,
             display_predicted_win_probability,
             different_winner_label,

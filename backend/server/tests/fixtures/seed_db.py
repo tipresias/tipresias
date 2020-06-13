@@ -56,10 +56,10 @@ def main():
     assert settings.DATABASES["default"]["NAME"] != os.getenv("DATABASE_NAME")
 
     with transaction.atomic():
-        # We need exactly one principle model, and one of each prediction type
+        # We need exactly one principal model, and one of each prediction type
         # among competition models.
         MLModelFactory(
-            is_principle=True,
+            is_principal=True,
             used_in_competitions=True,
             prediction_type=PredictionType.MARGIN,
         )

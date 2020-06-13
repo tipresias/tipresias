@@ -26,9 +26,9 @@ class TestSendEmail(TestCase):
         )
 
         ml_models = [
-            MLModel.objects.get(is_principle=True),
+            MLModel.objects.get(is_principal=True),
             MLModel.objects.filter(
-                is_principle=False, used_in_competitions=True
+                is_principal=False, used_in_competitions=True
             ).first(),
         ]
 

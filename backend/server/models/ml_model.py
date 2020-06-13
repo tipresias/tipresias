@@ -24,7 +24,7 @@ class MLModel(models.Model):
     -----------
     name: Name of the model.
     description: Optional description to provide more information about the model.
-    is_principle: Whether the model's predicted winners represent the official
+    is_principal: Whether the model's predicted winners represent the official
         predicted winners of Tipresias.
     used_in_competitions: Whether the model's predictions are submitted for competitions.
     """
@@ -34,9 +34,9 @@ class MLModel(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                fields=["is_principle"],
-                condition=models.Q(is_principle=True),
-                name="one_principle_model",
+                fields=["is_principal"],
+                condition=models.Q(is_principal=True),
+                name="one_principal_model",
             ),
             # This isn't a hard rule, but the assumption of this constraint is built
             # into some model-selection logic, and it doesn't make much sense
@@ -51,7 +51,7 @@ class MLModel(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(null=True, blank=True)
-    is_principle = models.BooleanField(default=False)
+    is_principal = models.BooleanField(default=False)
     used_in_competitions = models.BooleanField(default=False)
     prediction_type = models.CharField(
         max_length=100,
@@ -64,5 +64,5 @@ class MLModel(models.Model):
     def clean(self):
         """Perform field cleaning and model validation."""
 
-        if self.is_principle and not self.used_in_competitions:
-            raise ValidationError(_("A principle model must be used for competitions."))
+        if self.is_principal and not self.used_in_competitions:
+            raise ValidationError(_("A principal model must be used for competitions."))

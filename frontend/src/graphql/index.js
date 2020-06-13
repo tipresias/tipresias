@@ -88,7 +88,7 @@ export const FETCH_CHART_PARAMETERS_QUERY = gql`
       availableSeasons
       availableMlModels {
         name
-        isPrinciple
+        isPrincipal
         usedInCompetitions
       }
     }

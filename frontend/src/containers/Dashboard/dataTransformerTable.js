@@ -4,12 +4,22 @@ import type {
 } from '../../graphql/graphql-types/fetchLatestRoundPredictions';
 import icons from '../../icons';
 
-const { iconCheck, iconCross } = icons;
+const { iconCheck, iconCross, iconQuestion } = icons;
 
 type MatchPredictionsType = Array<MatchPredictionType>;
 type svgIcon = { svg: boolean, text: string, path: string }
 type RowType = Array<string | svgIcon>;
 type DataTableType = Array<RowType>;
+
+const determineResultIcon = (isCorrect: ?boolean) => {
+  if (isCorrect) {
+    return { svg: true, text: 'prediction was correct', path: iconCheck };
+  }
+
+  return isCorrect === false
+    ? { svg: true, text: 'prediction was incorrect', path: iconCross }
+    : { svg: true, text: 'result is unknown', path: iconQuestion };
+};
 
 const dataTransformerTable = (
   matchPredictions: MatchPredictionsType,
@@ -23,9 +33,7 @@ const dataTransformerTable = (
     const formattedWinProbability = `
       ${(Math.round(predictedWinProbability * 100)).toString()}%
     `;
-    const resultIcon = isCorrect
-      ? { svg: true, text: 'prediction is correct', path: iconCheck }
-      : { svg: true, text: 'prediction is incorrect', path: iconCross };
+    const resultIcon = determineResultIcon(isCorrect);
 
     acc[currentIndex] = [
       date,

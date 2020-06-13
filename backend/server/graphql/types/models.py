@@ -83,9 +83,9 @@ class MLModelType(DjangoObjectType):
         required=True,
     )
 
-    is_principle = graphene.Boolean(
+    is_principal = graphene.Boolean(
         description=(
-            "Whether the model is the principle model for predicting match winners "
+            "Whether the model is the principal model for predicting match winners "
             "among all the models used in competitions (i.e. all competition models "
             "predict winners, but only one's predictions are official "
             "predicted winners of Tipresias)."

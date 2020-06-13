@@ -26,7 +26,7 @@ class TestUrls(TestCase):
         mock_tipper.submit_tips = MagicMock()
         mock_tipper_class.return_value = mock_tipper
 
-        ml_model = MLModel.objects.get(is_principle=True)
+        ml_model = MLModel.objects.get(is_principal=True)
         matches = [factories.FullMatchFactory() for _ in range(N_MATCHES)]
         prediction_data = pd.concat(
             [

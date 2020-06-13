@@ -1,8 +1,9 @@
 """Match and prediction data grouped by season."""
 
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Callable
 from functools import partial
 from datetime import datetime
+import math
 
 from django.db.models import QuerySet
 import graphene
@@ -69,6 +70,21 @@ class MatchPredictionType(graphene.ObjectType):
     is_correct = graphene.Boolean()
 
 
+def _invert_contradicting_predictions(
+    non_principal_prediction_label: str,
+) -> Callable[[pd.DataFrame], np.array]:
+    if non_principal_prediction_label == "predicted_margin":
+        invert_values = lambda arr: arr * -1
+    else:
+        invert_values = lambda arr: 1 - arr
+
+    return lambda df: np.where(
+        df["predictions_agree"],
+        df[non_principal_prediction_label],
+        invert_values(df[non_principal_prediction_label]),
+    )
+
+
 class RoundPredictionType(graphene.ObjectType):
     """Official Tipresias predictions for a given round."""
 
@@ -87,7 +103,7 @@ class RoundPredictionType(graphene.ObjectType):
             .values(
                 "match__id",
                 "match__start_date_time",
-                "ml_model__is_principle",
+                "ml_model__is_principal",
                 "predicted_winner__name",
                 "predicted_margin",
                 "predicted_win_probability",
@@ -95,19 +111,53 @@ class RoundPredictionType(graphene.ObjectType):
             )
         )
 
-        principle_predictions = predictions.query(
-            "ml_model__is_principle == True"
+        principal_predictions = predictions.query(
+            "ml_model__is_principal == True"
         ).set_index("match__id")
-        non_principle_predictions = (
-            predictions.query("ml_model__is_principle == False")
+        non_principal_predictions = (
+            predictions.query("ml_model__is_principal == False")
             .fillna(0)
-            .groupby("match__id")[["predicted_margin", "predicted_win_probability"]]
-            .sum()
+            .set_index("match__id")
+            .loc[
+                :,
+                [
+                    "predicted_winner__name",
+                    "predicted_margin",
+                    "predicted_win_probability",
+                ],
+            ]
         )
 
-        return principle_predictions.fillna(non_principle_predictions).to_dict(
-            "records"
+        non_principal_prediction_type = MLModel.objects.get(
+            is_principal=False, used_in_competitions=True
+        ).prediction_type
+        non_principal_prediction_label = "predicted_" + (
+            non_principal_prediction_type.lower().replace(" ", "_")
         )
+
+        competition_predictions = (
+            principal_predictions.fillna(non_principal_predictions)
+            .assign(
+                predictions_agree=lambda df: df["predicted_winner__name"]
+                == non_principal_predictions["predicted_winner__name"]
+            )
+            .assign(
+                **{
+                    f"{non_principal_prediction_label}": _invert_contradicting_predictions(
+                        non_principal_prediction_label
+                    )
+                }
+            )
+            .to_dict("records")
+        )
+
+        # to_dict converts None to Python's NaN, which boolean coerces to True,
+        # making is_correct True for all future matches
+        for pred in competition_predictions:
+            if math.isnan(pred["is_correct"]):
+                pred["is_correct"] = None
+
+        return competition_predictions
 
 
 class SeasonPerformanceChartParametersType(graphene.ObjectType):

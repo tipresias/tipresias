@@ -17,7 +17,7 @@ class TestViews(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.ml_model = factories.MLModelFactory(
-            name="test_estimator", is_principle=True, used_in_competitions=True
+            name="test_estimator", is_principal=True, used_in_competitions=True
         )
         self.matches = [factories.FullMatchFactory() for _ in range(N_MATCHES)]
         self.views = views

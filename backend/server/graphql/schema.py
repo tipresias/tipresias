@@ -85,12 +85,12 @@ class RoundMetricsType(graphene.ObjectType):
 def _consolidate_competition_model_metrics(model_metrics: pd.DataFrame) -> RoundMetrics:
     assert model_metrics["ml_model__used_in_competitions"].all()
 
-    principle_data = (
-        model_metrics.query("ml_model__is_principle == True")
+    principal_data = (
+        model_metrics.query("ml_model__is_principal == True")
         .reset_index(drop=False)
         .set_index("match__id")
         # We replace previously-filled values with NaNs to make it easier to fill
-        # missing principle metrics with metrics from the other competition models.
+        # missing principal metrics with metrics from the other competition models.
         # It's okay if we NaNify a legitimate 0/0.5, because the other model(s)
         # will just fill the NaN with the same neutral value.
         .replace(
@@ -111,8 +111,8 @@ def _consolidate_competition_model_metrics(model_metrics: pd.DataFrame) -> Round
         )
     )
 
-    non_principle_data = (
-        model_metrics.query("ml_model__is_principle == False")
+    non_principal_data = (
+        model_metrics.query("ml_model__is_principal == False")
         .fillna(0)
         .replace(
             to_replace={"predicted_win_probability": 0.5},
@@ -125,7 +125,7 @@ def _consolidate_competition_model_metrics(model_metrics: pd.DataFrame) -> Round
         .sum()
     )
 
-    consolidated_metrics = principle_data.fillna(non_principle_data).to_dict("records")
+    consolidated_metrics = principal_data.fillna(non_principal_data).to_dict("records")
 
     assert len(consolidated_metrics) == 1, (
         "Latest round predictions should be in the form of a single data set "
@@ -269,7 +269,7 @@ class Query(graphene.ObjectType):
         additional_metric_values = [
             "match__start_date_time__year",
             "match__id",
-            "ml_model__is_principle",
+            "ml_model__is_principal",
         ]
         metric_values = cumulative_metrics_query(
             prediction_query_set, additional_metric_values,

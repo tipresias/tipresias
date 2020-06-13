@@ -75,7 +75,7 @@ RoundMetrics = TypedDict(
         "predicted_margin": int,
         "predicted_win_probability": float,
         "predicted_winner__name": str,
-        "ml_model__is_principle": bool,
+        "ml_model__is_principal": bool,
         "ml_model__used_in_competitions": bool,
         "match__winner__name": str,
         "match__margin": int,

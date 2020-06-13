@@ -30,7 +30,7 @@ import dataTransformerLineChart from './dataTransformerLineChart';
 export type ModelType = {
   name: string,
   usedInCompetitions: boolean,
-  isPrinciple: boolean
+  isPrincipal: boolean
 }
 
 type DashboardProps = {

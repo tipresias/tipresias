@@ -6,7 +6,7 @@
       "name": "benchmark_estimator",
       "description": null,
       "prediction_type": "Margin",
-      "is_principle": false,
+      "is_principal": false,
       "used_in_competitions": false
     }
   },
@@ -17,7 +17,7 @@
       "name": "tipresias_2019",
       "description": null,
       "prediction_type": "Margin",
-      "is_principle": false,
+      "is_principal": false,
       "used_in_competitions": false
     }
   },
@@ -28,7 +28,7 @@
       "name": "tipresias_2020",
       "description": null,
       "prediction_type": "Margin",
-      "is_principle": true,
+      "is_principal": true,
       "used_in_competitions": true
     }
   },
@@ -39,7 +39,7 @@
       "name": "confidence_estimator",
       "description": null,
       "prediction_type": "Win Probability",
-      "is_principle": false,
+      "is_principal": false,
       "used_in_competitions": true
     }
   }

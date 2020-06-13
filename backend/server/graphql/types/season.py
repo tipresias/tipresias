@@ -71,17 +71,17 @@ class MatchPredictionType(graphene.ObjectType):
 
 
 def _invert_contradicting_predictions(
-    non_principle_prediction_label: str,
+    non_principal_prediction_label: str,
 ) -> Callable[[pd.DataFrame], np.array]:
-    if non_principle_prediction_label == "predicted_margin":
+    if non_principal_prediction_label == "predicted_margin":
         invert_values = lambda arr: arr * -1
     else:
         invert_values = lambda arr: 1 - arr
 
     return lambda df: np.where(
         df["predictions_agree"],
-        df[non_principle_prediction_label],
-        invert_values(df[non_principle_prediction_label]),
+        df[non_principal_prediction_label],
+        invert_values(df[non_principal_prediction_label]),
     )
 
 
@@ -103,7 +103,7 @@ class RoundPredictionType(graphene.ObjectType):
             .values(
                 "match__id",
                 "match__start_date_time",
-                "ml_model__is_principle",
+                "ml_model__is_principal",
                 "predicted_winner__name",
                 "predicted_margin",
                 "predicted_win_probability",
@@ -111,11 +111,11 @@ class RoundPredictionType(graphene.ObjectType):
             )
         )
 
-        principle_predictions = predictions.query(
-            "ml_model__is_principle == True"
+        principal_predictions = predictions.query(
+            "ml_model__is_principal == True"
         ).set_index("match__id")
-        non_principle_predictions = (
-            predictions.query("ml_model__is_principle == False")
+        non_principal_predictions = (
+            predictions.query("ml_model__is_principal == False")
             .fillna(0)
             .set_index("match__id")
             .loc[
@@ -128,23 +128,23 @@ class RoundPredictionType(graphene.ObjectType):
             ]
         )
 
-        non_principle_prediction_type = MLModel.objects.get(
-            is_principle=False, used_in_competitions=True
+        non_principal_prediction_type = MLModel.objects.get(
+            is_principal=False, used_in_competitions=True
         ).prediction_type
-        non_principle_prediction_label = "predicted_" + (
-            non_principle_prediction_type.lower().replace(" ", "_")
+        non_principal_prediction_label = "predicted_" + (
+            non_principal_prediction_type.lower().replace(" ", "_")
         )
 
         competition_predictions = (
-            principle_predictions.fillna(non_principle_predictions)
+            principal_predictions.fillna(non_principal_predictions)
             .assign(
                 predictions_agree=lambda df: df["predicted_winner__name"]
-                == non_principle_predictions["predicted_winner__name"]
+                == non_principal_predictions["predicted_winner__name"]
             )
             .assign(
                 **{
-                    f"{non_principle_prediction_label}": _invert_contradicting_predictions(
-                        non_principle_prediction_label
+                    f"{non_principal_prediction_label}": _invert_contradicting_predictions(
+                        non_principal_prediction_label
                     )
                 }
             )

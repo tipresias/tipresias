@@ -29,7 +29,7 @@ class TestSchema(TestCase):
         self.ml_models = [
             MLModelFactory(
                 name=model_name,
-                is_principle=(idx == 0),
+                is_principal=(idx == 0),
                 used_in_competitions=True,
                 prediction_type=PredictionType.values[idx],
             )
@@ -328,33 +328,33 @@ class TestSchema(TestCase):
         ]
         self.assertEqual(np.mean(match_years), latest_year)
 
-        # It uses predicted winners from the principle model only
-        principle_predicted_winners = Prediction.objects.filter(
+        # It uses predicted winners from the principal model only
+        principal_predicted_winners = Prediction.objects.filter(
             match__start_date_time__year=latest_year,
             match__round_number=max_match_round,
-            ml_model__is_principle=True,
+            ml_model__is_principal=True,
         ).values_list("predicted_winner__name", flat=True)
         query_predicted_winners = [
             pred["predictedWinner"] for pred in data["matchPredictions"]
         ]
         self.assertEqual(
-            sorted(principle_predicted_winners), sorted(query_predicted_winners)
+            sorted(principal_predicted_winners), sorted(query_predicted_winners)
         )
 
-        # When models disagree, it inverts predictions from non-principle models
-        non_principle_prediction_type = MLModel.objects.get(
-            is_principle=False, used_in_competitions=True
+        # When models disagree, it inverts predictions from non-principal models
+        non_principal_prediction_type = MLModel.objects.get(
+            is_principal=False, used_in_competitions=True
         ).prediction_type
 
-        if non_principle_prediction_type == "Margin":
-            non_principle_prediction_label = "predictedMargin"
+        if non_principal_prediction_type == "Margin":
+            non_principal_prediction_label = "predictedMargin"
             draw_prediction = 0
         else:
-            non_principle_prediction_label = "predictedWinProbability"
+            non_principal_prediction_label = "predictedWinProbability"
             draw_prediction = 0.5
 
         predicted_losses = [
-            pred[non_principle_prediction_label] < draw_prediction
+            pred[non_principal_prediction_label] < draw_prediction
             for pred in data["matchPredictions"]
         ]
 
@@ -516,7 +516,7 @@ class TestSchema(TestCase):
                     fetchMlModels(forCompetitionOnly: true) {
                         name
                         usedInCompetitions
-                        isPrinciple
+                        isPrincipal
                     }
                 }
             """

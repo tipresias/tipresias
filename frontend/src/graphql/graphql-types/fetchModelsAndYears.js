@@ -11,11 +11,11 @@ export type fetchModelsAndYears_fetchMlModels = {
   __typename: "MLModelType",
   name: string,
   /**
-   * Whether the model is the principle model for predicting match winners among
+   * Whether the model is the principal model for predicting match winners among
    * all the models used in competitions (i.e. all competition models predict
    * winners, but only one's predictions are official predicted winners of Tipresias).
    */
-  isPrinciple: boolean,
+  isPrincipal: boolean,
   /**
    * Whether the model's predictions are used in any competitions.
    */

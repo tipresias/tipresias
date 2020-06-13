@@ -126,7 +126,7 @@ class MLModelFactory(DjangoModelFactory):
 
     name = factory.Faker("company")
     description = factory.Faker("paragraph", nb_sentences=4)
-    is_principle = False
+    is_principal = False
     used_in_competitions = False
 
 

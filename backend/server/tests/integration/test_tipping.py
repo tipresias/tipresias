@@ -31,7 +31,7 @@ class TestTipper(TestCase):
     @patch("server.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         self.ml_model = MLModelFactory(
-            name="test_estimator", is_principle=True, used_in_competitions=True
+            name="test_estimator", is_principal=True, used_in_competitions=True
         )
 
         (
@@ -134,7 +134,7 @@ class TestTipper(TestCase):
             # It doesn't try to submit any tips
             mock_submitter.submit_tips.assert_not_called()
 
-        ml_model = MLModel.objects.get(is_principle=True)
+        ml_model = MLModel.objects.get(is_principal=True)
 
         for match in Match.objects.all():
             # Need to use competition models for the predictions to get queried

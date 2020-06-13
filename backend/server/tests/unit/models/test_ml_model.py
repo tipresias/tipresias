@@ -22,38 +22,38 @@ class TestMLModel(TestCase):
                 duplicate_model.full_clean()
 
     def test_clean(self):
-        with self.subTest("when a principle model isn't used in competitions"):
-            self.ml_model.is_principle = True
+        with self.subTest("when a principal model isn't used in competitions"):
+            self.ml_model.is_principal = True
             self.ml_model.used_in_competitions = False
 
             with self.assertRaisesMessage(
-                ValidationError, "A principle model must be used for competitions."
+                ValidationError, "A principal model must be used for competitions."
             ):
                 self.ml_model.full_clean()
 
-    def test_one_principle_model(self):
+    def test_one_principal_model(self):
         """
-        Test validation rule for having only one principle model.
+        Test validation rule for having only one principal model.
 
         We run this in its own test method, because raising DB-level errors as part
         of a subtest tends to break things, because Django wraps each test method
         in an atomic transaction.
         """
-        self.ml_model.is_principle = True
+        self.ml_model.is_principal = True
         self.ml_model.used_in_competitions = True
         self.ml_model.save()
 
         duplicate_model = MLModel(
             name="say_hello_to_the_new_boss",
-            is_principle=True,
+            is_principal=True,
             used_in_competitions=True,
             prediction_type="Win Probability",
         )
 
         with self.assertRaisesMessage(
             utils.IntegrityError,
-            'duplicate key value violates unique constraint "one_principle_model"\n'
-            "DETAIL:  Key (is_principle)=(t) already exists.\n",
+            'duplicate key value violates unique constraint "one_principal_model"\n'
+            "DETAIL:  Key (is_principal)=(t) already exists.\n",
         ):
             duplicate_model.full_clean()
             duplicate_model.save()

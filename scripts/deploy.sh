@@ -13,9 +13,9 @@ then
   sudo chmod 755 ~/.ssh
 fi
 
-# docker pull ${DOCKER_IMAGE}
-# docker build --cache-from ${DOCKER_IMAGE} -t ${DOCKER_IMAGE} .
-# docker push ${DOCKER_IMAGE}
+docker pull ${DOCKER_IMAGE}
+docker build --cache-from ${DOCKER_IMAGE} -t ${DOCKER_IMAGE} .
+docker push ${DOCKER_IMAGE}
 
 scp -i ~/.ssh/deploy_rsa -oStrictHostKeyChecking=no \
   docker-compose.prod.yml \

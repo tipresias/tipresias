@@ -18,6 +18,8 @@ from .team import Team
 class Prediction(models.Model):
     """Model for ML model predictions for each match."""
 
+    created_at = models.DateTimeField(auto_now_add=True, null=False, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, null=False, blank=False)
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     ml_model = models.ForeignKey(MLModel, on_delete=models.CASCADE)
     predicted_winner = models.ForeignKey(

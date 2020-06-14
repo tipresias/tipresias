@@ -19,7 +19,7 @@ splinter==0.13.0
 selenium==3.141.0
 
 # Testing/Linting
-pylint==2.5.2
+pylint==2.5.3
 pylint-django
 pydocstyle==5.0.2
 black

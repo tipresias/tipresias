@@ -121,6 +121,43 @@ class TestTipper(TestCase):
                 # It creates prediction records
                 self.assertEqual(Prediction.objects.count(), ROW_COUNT)
 
+            next_match = (
+                Match.objects.filter(start_date_time__gt=right_now)
+                .order_by("start_date_time")
+                .first()
+            )
+
+        with self.subTest("with played matches in the current round"):
+            with freeze_time(next_match.start_date_time + timedelta(days=1)):
+                right_now = timezone.localtime()
+                self.tipping._right_now = right_now  # pylint: disable=protected-access
+
+                next_match = (
+                    Match.objects.filter(start_date_time__gt=right_now)
+                    .order_by("start_date_time")
+                    .first()
+                )
+
+                played_matches = Match.objects.filter(
+                    start_date_time__lt=right_now, round_number=next_match.round_number
+                )
+                self.assertGreater(played_matches.count(), 0)
+
+                past_predictions = played_matches.values(
+                    "prediction__id", "prediction__updated_at"
+                )
+
+                self.tipping.update_match_predictions()
+
+                # It doesn't update predictions for played matches
+                for pred in past_predictions:
+                    # breakpoint()
+                    record_updated_at = Prediction.objects.get(
+                        id=pred["prediction__id"]
+                    ).updated_at
+
+                    self.assertEqual(pred["prediction__updated_at"], record_updated_at)
+
     def test_submit_tips(self):
         for _ in range(ROW_COUNT):
             FullMatchFactory(future=True)

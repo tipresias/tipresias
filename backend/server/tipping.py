@@ -46,9 +46,9 @@ FOOTY_TIPS_FORM_URL = "https://www.footytips.com.au/tipping/afl/"
 class MonashSubmitter:
     """Submits tips to one or more of the Monash footy tipping competitions."""
 
-    def __init__(  # pylint: disable=dangerous-default-value
+    def __init__(
         self,
-        competitions: List[str] = ["normal", "info"],
+        competitions: Optional[List[str]] = None,
         browser=None,
         verbose: int = 1,
     ):
@@ -63,7 +63,7 @@ class MonashSubmitter:
         browser: Selenium browser for navigating competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
-        self.competitions = competitions
+        self.competitions = competitions or ["normal", "info"],
         self.browser = browser or Browser("firefox", headless=True)
         self.verbose = verbose
 

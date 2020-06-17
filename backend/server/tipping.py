@@ -23,7 +23,7 @@ PredictedWinner = TypedDict(
     "PredictedWinner",
     {
         "predicted_winner__name": str,
-        "predicted_margin": int,
+        "predicted_margin": float,
         "predicted_win_probability": float,
     },
 )
@@ -47,10 +47,7 @@ class MonashSubmitter:
     """Submits tips to one or more of the Monash footy tipping competitions."""
 
     def __init__(
-        self,
-        competitions: Optional[List[str]] = None,
-        browser=None,
-        verbose: int = 1,
+        self, competitions: Optional[List[str]] = None, browser=None, verbose: int = 1,
     ):
         """
         Instantiate a MonashSubmitter object.
@@ -63,19 +60,16 @@ class MonashSubmitter:
         browser: Selenium browser for navigating competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
-        self.competitions = competitions or ["normal", "info"],
+        self.competitions = competitions or ["normal", "info"]
         self.browser = browser or Browser("firefox", headless=True)
         self.verbose = verbose
 
-    def submit_tips(  # pylint: disable=dangerous-default-value
-        self, predicted_winners: List[PredictedWinner],
-    ) -> None:
+    def submit_tips(self, predicted_winners: List[PredictedWinner]) -> None:
         """Submit tips to probabilistic-footy.monash.edu.
 
         Params:
         -------
-        predicted_winners: A dict where the keys are team names and the values
-            are their predicted margins. Only includes predicted winners.
+        predicted_winners: A dict of predicted winners and their predicted results.
         """
         if self.verbose == 1:
             print("Submitting tips to probabilistic-footy.monash.edu...")
@@ -101,34 +95,31 @@ class MonashSubmitter:
         finally:
             self.browser.quit()
 
-    @staticmethod
     def _transform_into_tipping_input(
-        predicted_winners: List[PredictedWinner], competition
-    ) -> Dict[str, Union[int, float]]:
+        self, predicted_winners: List[PredictedWinner], competition
+    ) -> Dict[str, str]:
         PREDICTION_TYPE = {"normal": "margin", "info": "win_probability"}
         competition_prediction_type = cast(
             PredictionType, f"predicted_{PREDICTION_TYPE[competition]}",
         )
 
         return {
-            predicted_winner["predicted_winner__name"]: predicted_winner[
-                competition_prediction_type
-            ]
+            predicted_winner["predicted_winner__name"]: self._clean_numeric_input(
+                competition_prediction_type, predicted_winner
+            )
             for predicted_winner in predicted_winners
-            if predicted_winner[competition_prediction_type] is not None
         }
 
     @staticmethod
     def _clean_numeric_input(
-        competition_prediction_type: PredictionType, prediction_value: float
+        competition_prediction_type: PredictionType, predicted_winner: PredictedWinner
     ) -> str:
+        prediction_number = predicted_winner[competition_prediction_type]
+
         # Margin inputs are integers only, so float entries get converted to integers
         # directly instead of rounded (e.g. 5.7 becomes 5)
-        prediction_number = (
-            prediction_value
-            if competition_prediction_type == "predicted_win_probability"
-            else round(prediction_value)
-        )
+        if competition_prediction_type == "predicted_margin":
+            prediction_number = round(prediction_number)
 
         # Numeric value inputs are of type "text"
         return str(prediction_number)
@@ -150,7 +141,7 @@ class MonashSubmitter:
         if self.browser.is_text_present("Wrong passwd", wait_time=1):
             raise ValueError("Tried to use incorrect passowrd and couldn't log in")
 
-    def _fill_in_tipping_form(self, predicted_winners: Dict[str, Union[int, float]]):
+    def _fill_in_tipping_form(self, predicted_winners: Dict[str, str]):
         tip_table = self.browser.find_by_css("form tbody")
         # They put the column labels in tbody instead of thead, so we subtract 1
         # from row count to get match count.
@@ -175,7 +166,7 @@ class MonashSubmitter:
             f"on {self.browser.url}"
         )
 
-    def _enter_prediction(self, predicted_winners, table_row) -> None:
+    def _enter_prediction(self, predicted_winners: Dict[str, str], table_row) -> None:
         predicted_winner = None
 
         # We need to get team names from label text and enter predictions into inputs,

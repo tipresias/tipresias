@@ -108,6 +108,7 @@ class MonashSubmitter:
                 competition_prediction_type, predicted_winner
             )
             for predicted_winner in predicted_winners
+            if predicted_winner[competition_prediction_type] is not None
         }
 
     @staticmethod

@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Tuple, Union, Literal, cast, Any
 import os
 from warnings import warn
+import re
 
 import pandas as pd
 import numpy as np
@@ -11,6 +12,7 @@ from splinter import Browser
 from splinter.driver import ElementAPI
 from django.utils import timezone
 from mypy_extensions import TypedDict
+import mechanicalsoup
 
 from server.models import Match, TeamMatch, Prediction
 from server.types import FixtureData
@@ -61,7 +63,7 @@ class MonashSubmitter:
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.competitions = competitions or ["normal", "info"]
-        self.browser = browser or Browser("firefox", headless=True)
+        self.browser = browser or mechanicalsoup.StatefulBrowser()
         self.verbose = verbose
 
     def submit_tips(self, predicted_winners: List[PredictedWinner]) -> None:
@@ -74,26 +76,19 @@ class MonashSubmitter:
         if self.verbose == 1:
             print("Submitting tips to probabilistic-footy.monash.edu...")
 
-        try:
-            for comp in self.competitions:
-                assert comp in SUPPORTED_MONASH_COMPS
+        for comp in self.competitions:
+            assert comp in SUPPORTED_MONASH_COMPS
 
-                # Need to revisit home page for each competition, because submitting tips
-                # doesn't redirect back to it.
-                self.browser.visit(
-                    "http://probabilistic-footy.monash.edu/~footy/tips.shtml"
-                )
-                self._login(comp)
-                self._fill_in_tipping_form(
-                    self._transform_into_tipping_input(predicted_winners, comp)
-                )
+            # Need to revisit home page for each competition, because submitting tips
+            # doesn't redirect back to it.
+            self.browser.open("http://probabilistic-footy.monash.edu/~footy/tips.shtml")
+            self._login(comp)
+            self._submit_tipping_form(
+                self._transform_into_tipping_input(predicted_winners, comp)
+            )
 
-                self._submit_form()
-
-                if self.verbose == 1:
-                    print("Tips submitted!")
-        finally:
-            self.browser.quit()
+            if self.verbose == 1:
+                print(f"{comp} tips submitted!")
 
     def _transform_into_tipping_input(
         self, predicted_winners: List[PredictedWinner], competition
@@ -126,27 +121,37 @@ class MonashSubmitter:
         return str(prediction_number)
 
     def _login(self, competition: str) -> None:
-        login_form = self.browser.find_by_css("form")
+        login_form = self.browser.select_form()
 
-        login_form.find_by_name("name").fill(os.environ["MONASH_USERNAME"])
-        login_form.find_by_name("passwd").fill(os.environ["MONASH_PASSWORD"])
+        login_form.set_input(
+            {
+                "name": os.environ["MONASH_USERNAME"],
+                "passwd": os.environ["MONASH_PASSWORD"],
+            }
+        )
 
-        login_form.select(value=competition)
+        login_form.set_select({"comp": competition})
         # There's a round number select, but we don't need to change it,
         # because it defaults to the upcoming/current round on page load.
-        login_form.find_by_css("input[type=submit]").click()
+        self.browser.submit_selected()
 
-        if self.browser.is_text_present("Sorry, the alias", wait_time=1):
+        if (
+            self.browser.get_current_page().find(text=re.compile("Sorry, the alias"))
+            is not None
+        ):
             raise ValueError("Tried to use incorrect username and couldn't log in")
 
-        if self.browser.is_text_present("Wrong passwd", wait_time=1):
-            raise ValueError("Tried to use incorrect passowrd and couldn't log in")
+        if self.browser.get_current_page().find(text=re.compile("Wrong passwd")):
+            raise ValueError("Tried to use incorrect password and couldn't log in")
 
-    def _fill_in_tipping_form(self, predicted_winners: Dict[str, str]):
-        tip_table = self.browser.find_by_css("form tbody")
-        # They put the column labels in tbody instead of thead, so we subtract 1
-        # from row count to get match count.
-        table_rows = tip_table.find_by_css("tr")[1:]
+    def _submit_tipping_form(self, predicted_winners: Dict[str, str]):
+        self.browser.select_form()
+
+        # They put the column label row in tbody instead of thead, so we select all
+        # rows in the table and subtract 1 from row count to get match count.
+        # Also, MechanicalSoup can't find the 'tbody' element for some reason.
+        tip_table = self.browser.get_current_page().find("form")
+        table_rows = tip_table.find_all("tr")[1:]
 
         assert len(table_rows) == len(predicted_winners), (
             "The number of predicted winners doesn't match the number of matches. "
@@ -159,7 +164,7 @@ class MonashSubmitter:
 
         empty_predictions = [
             input_element.value == "0" or input_element.value == "0.5"
-            for input_element in tip_table.find_by_css("input[type='text']")
+            for input_element in tip_table.select("input[type='text']")
         ]
 
         assert not any(empty_predictions), (
@@ -167,22 +172,25 @@ class MonashSubmitter:
             f"on {self.browser.url}"
         )
 
+        self.browser.submit_selected()
+
     def _enter_prediction(self, predicted_winners: Dict[str, str], table_row) -> None:
         predicted_winner = None
 
         # We need to get team names from label text and enter predictions into inputs,
         # so we loop through all of them
-        for row_label_or_input in table_row.find_by_css("label,input"):
-            team_name = self._translate_team_name(row_label_or_input.text)
+        for row_label_or_input in table_row.select("label,input"):
+            element_team_name = self._translate_team_name(row_label_or_input.text)
 
-            if team_name in predicted_winners.keys():
-                row_label_or_input.click()
-                predicted_winner = team_name
+            if element_team_name in predicted_winners.keys():
+                team_input = row_label_or_input.find("input")
+                self.browser[team_input["name"]] = team_input["value"]
+                predicted_winner = element_team_name
 
             # Have to try/except converting to float, because apparently isnumeric
             # returns False for float strings.
             try:
-                float(row_label_or_input.value)
+                float(row_label_or_input.get("value", ""))
             except ValueError:
                 continue
 
@@ -195,7 +203,9 @@ class MonashSubmitter:
             if predicted_winner is None:
                 continue
 
-            row_label_or_input.fill(predicted_winners[predicted_winner])
+            self.browser[row_label_or_input["name"]] = predicted_winners[
+                predicted_winner
+            ]
 
     @staticmethod
     def _translate_team_name(element_text: str) -> str:
@@ -203,9 +213,6 @@ class MonashSubmitter:
             return TEAM_TRANSLATIONS[element_text]
 
         return element_text
-
-    def _submit_form(self):
-        self.browser.find_by_css("input[type=submit]").click()
 
 
 class FootyTipsSubmitter:

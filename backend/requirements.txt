@@ -17,6 +17,7 @@ gunicorn
 # Browser automation
 splinter==0.13.0
 selenium==3.141.0
+MechanicalSoup
 
 # Testing/Linting
 pylint==2.5.3

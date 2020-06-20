@@ -23,7 +23,7 @@ docker-compose up -d db
 # Not ideal, but wait-for-it was listening for the port to be ready, but that
 # wasn't enough time for the DB to be ready to accept commands,
 # so we're sleeping instead
-sleep 4
+sleep 5
 
 cat $PWD/db/backups/${DATABASE_FILE} \
   | docker exec -i tipresias_db_1 psql -U postgres -d ${DATABASE_NAME}

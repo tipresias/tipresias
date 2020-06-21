@@ -24,6 +24,6 @@ class Command(BaseCommand):
             (footytips.com.au & Monash by default).
         """
         tipper = Tipper(verbose=verbose)
-        tipper.update_match_data()
+        tipper.fetch_upcoming_fixture()
         tipper.update_match_predictions()
         tipper.submit_tips()

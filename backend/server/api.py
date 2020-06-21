@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from server.models import Match, TeamMatch
 from server.types import FixtureData
+from data import data_import
 
 
 FIRST_ROUND = 1
@@ -17,7 +18,7 @@ def _build_match(match_data: FixtureData) -> Tuple[TeamMatch, TeamMatch]:
     return TeamMatch.get_or_create_from_raw_data(match, match_data)
 
 
-def update_match_data(
+def update_fixture_data(
     fixture_data: List[FixtureData], upcoming_round: int, verbose=1
 ) -> None:
     """
@@ -75,5 +76,31 @@ def update_match_data(
 
     if verbose == 1:
         print("Match data saved!\n")
+
+    return None
+
+
+def backfill_recent_match_results(verbose=1) -> None:
+    """Updates scores for all played matches without score data."""
+    if verbose == 1:
+        print("Filling in results for recent matches...")
+
+    earliest_date_without_results = Match.earliest_date_without_results()
+
+    if earliest_date_without_results is None:
+        if verbose == 1:
+            print("No played matches are missing results.")
+
+        return None
+
+    match_results = data_import.fetch_match_results_data(
+        earliest_date_without_results, timezone.now(), fetch_data=True
+    )
+
+    if not any(match_results):
+        print("Results data is not yet available to update match records.")
+        return None
+
+    Match.update_results(match_results)
 
     return None

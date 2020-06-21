@@ -59,8 +59,8 @@ class TestTipper(TestCase):
 
         self.tipping = Tipper(data_importer=mock_data_import, verbose=0,)
 
-    @patch("server.api.update_match_data")
-    def test_update_match_data(self, mock_api_update_match_data):
+    @patch("server.api.update_fixture_data")
+    def test_fetch_upcoming_fixture(self, mock_api_update_fixture_data):
         with freeze_time(TIP_DATES[0]):
             right_now = timezone.localtime()
             self.tipping._right_now = right_now  # pylint: disable=protected-access
@@ -68,45 +68,27 @@ class TestTipper(TestCase):
             self.assertEqual(Match.objects.count(), 0)
             self.assertEqual(TeamMatch.objects.count(), 0)
 
-            self.tipping.update_match_data()
+            self.tipping.fetch_upcoming_fixture()
 
             # It passes fixture data to server.api
             future_fixture_data = self.fixture_return_values[0].query(
                 "date > @right_now"
             )
             min_future_round = future_fixture_data["round_number"].min()
-            mock_api_update_match_data.assert_called_with(
+            mock_api_update_fixture_data.assert_called_with(
                 future_fixture_data.to_dict("records"), min_future_round
             )
 
-        with freeze_time(TIP_DATES[1]):
-            with self.subTest("with scoreless matches from ealier rounds"):
-                right_now = timezone.localtime()
-                self.tipping._right_now = right_now  # pylint: disable=protected-access
-
-                self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
-                self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)
-
-                self.tipping.update_match_data()
-
-                # It updates scores for past matches
-                self.assertEqual(
-                    TeamMatch.objects.filter(
-                        match__start_date_time__lt=right_now, score=0
-                    ).count(),
-                    0,
-                )
-
         with freeze_time(TIP_DATES[2]):
-            mock_api_update_match_data.reset_mock()
+            mock_api_update_fixture_data.reset_mock()
 
             with self.subTest("with no future matches"):
                 right_now = timezone.localtime()
                 self.tipping._right_now = right_now  # pylint: disable=protected-access
 
-                self.tipping.update_match_data()
+                self.tipping.fetch_upcoming_fixture()
 
-                mock_api_update_match_data.assert_not_called()
+                mock_api_update_fixture_data.assert_not_called()
 
     def test_update_or_create_predictions(self):
         with freeze_time(TIP_DATES[0]):

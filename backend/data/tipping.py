@@ -388,20 +388,18 @@ class Tipper:
         self._right_now = timezone.localtime()
         self.verbose = verbose
 
-    def update_match_data(self) -> None:
+    def fetch_upcoming_fixture(self) -> None:
         """Fetch fixture data and send upcoming match data to the Server API."""
         fixture_data_frame = self._fetch_fixture_data(self._right_now.year)
         upcoming_round, upcoming_matches = self._select_upcoming_matches(
             fixture_data_frame
         )
 
-        self._backfill_match_results()
-
         if upcoming_round is None or upcoming_matches is None:
             return None
 
         match_records = upcoming_matches.replace({np.nan: None}).to_dict("records")
-        api.update_match_data(match_records, upcoming_round)
+        api.update_fixture_data(match_records, upcoming_round)
 
         return None
 
@@ -509,30 +507,6 @@ class Tipper:
         )
 
         return upcoming_round, fixture_for_upcoming_round
-
-    def _backfill_match_results(self) -> None:
-        if self.verbose == 1:
-            print("Filling in results for recent matches...")
-
-        earliest_date_without_results = Match.earliest_date_without_results()
-
-        if earliest_date_without_results is None:
-            if self.verbose == 1:
-                print("No played matches are missing results.")
-
-            return None
-
-        match_results = self.data_importer.fetch_match_results_data(
-            earliest_date_without_results, self._right_now, fetch_data=self.fetch_data
-        )
-
-        if not any(match_results):
-            print("Results data is not yet available to update match records.")
-            return None
-
-        Match.update_results(match_results)
-
-        return None
 
     def _get_predicted_winners_for_latest_round(self) -> List[PredictedWinner]:
         latest_match = Match.objects.latest("start_date_time")

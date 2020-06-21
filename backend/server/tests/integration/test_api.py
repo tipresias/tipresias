@@ -1,5 +1,6 @@
 # pylint: disable=missing-docstring
 
+from unittest.mock import patch
 from datetime import datetime, timedelta
 
 from freezegun import freeze_time
@@ -31,7 +32,7 @@ class TestApi(TestCase):
 
         self.api = api
 
-    def test_update_match_data(self):
+    def test_update_fixture_data(self):
         with freeze_time(TIP_DATES[0]):
             right_now = timezone.now()  # pylint: disable=unused-variable
             min_future_round = (
@@ -45,7 +46,7 @@ class TestApi(TestCase):
                 self.assertEqual(Match.objects.count(), 0)
                 self.assertEqual(TeamMatch.objects.count(), 0)
 
-                self.api.update_match_data(
+                self.api.update_fixture_data(
                     future_fixture_data, min_future_round, verbose=0
                 )
 
@@ -57,7 +58,7 @@ class TestApi(TestCase):
                 self.assertEqual(Match.objects.count(), ROW_COUNT)
                 self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
 
-                self.api.update_match_data(
+                self.api.update_fixture_data(
                     future_fixture_data, min_future_round, verbose=0
                 )
 
@@ -78,11 +79,33 @@ class TestApi(TestCase):
                 with self.assertRaisesRegex(
                     AssertionError, "Expected future matches only"
                 ):
-                    self.api.update_match_data(
+                    self.api.update_fixture_data(
                         self.fixture_data[0].to_dict("records"),
                         min_future_round,
                         verbose=0,
                     )
+
+    @patch("data.data_import.fetch_match_results_data")
+    def test_backfill_recent_match_results(self, mock_fetch_match_results_data):
+        mock_fetch_match_results_data.return_value = self.match_results_data[0]
+
+        for fixture_datum in self.fixture_data[0].to_dict("records"):
+            match = Match.get_or_create_from_raw_data(fixture_datum)
+            TeamMatch.get_or_create_from_raw_data(match, fixture_datum)
+
+        with freeze_time(TIP_DATES[1]):
+            self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
+            self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)
+
+            self.api.backfill_recent_match_results(verbose=0)
+
+            # It updates scores for past matches
+            self.assertEqual(
+                TeamMatch.objects.filter(
+                    match__start_date_time__lt=timezone.now(), score=0
+                ).count(),
+                0,
+            )
 
     def _build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):

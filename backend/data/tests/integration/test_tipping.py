@@ -90,7 +90,7 @@ class TestTipper(TestCase):
 
                 mock_api_update_fixture_data.assert_not_called()
 
-    def test_update_or_create_predictions(self):
+    def test_update_match_predictions(self):
         with freeze_time(TIP_DATES[0]):
             right_now = timezone.localtime()
             self.tipping._right_now = right_now  # pylint: disable=protected-access

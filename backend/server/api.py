@@ -1,13 +1,16 @@
 """Functions for use by other apps or services to modify Server DB records."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from django.utils import timezone
+from mypy_extensions import TypedDict
 
 from server.models import Match, TeamMatch
 from server.types import FixtureData
 from data import data_import
 
+
+MatchDict = TypedDict("MatchDict", {"season": int, "round_number": int},)
 
 FIRST_ROUND = 1
 
@@ -104,3 +107,20 @@ def backfill_recent_match_results(verbose=1) -> None:
     Match.update_results(match_results)
 
     return None
+
+
+def fetch_next_match() -> Optional[MatchDict]:
+    """Get the record for the next match to be played."""
+    next_match = (
+        Match.objects.filter(start_date_time__gt=timezone.now())
+        .order_by("start_date_time")
+        .first()
+    )
+
+    if next_match is None:
+        return None
+
+    return {
+        "round_number": next_match.round_number,
+        "season": next_match.start_date_time.year,
+    }

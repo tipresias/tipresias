@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from freezegun import freeze_time
 from django.test import TestCase
 from django.utils import timezone
+from django.forms.models import model_to_dict
 import pandas as pd
 
 from server.models import Match, TeamMatch, Prediction
@@ -106,6 +107,29 @@ class TestApi(TestCase):
                 ).count(),
                 0,
             )
+
+    def test_fetch_next_match(self):
+        factories.MatchFactory(year=timezone.now().year - 1)
+
+        with self.subTest("without any future matches"):
+            next_match = self.api.fetch_next_match()
+
+            # It returns None
+            self.assertEqual(next_match, None)
+
+        next_match_record = factories.MatchFactory(future=True)
+        factories.MatchFactory(year=timezone.now().year + 1)
+
+        next_match = self.api.fetch_next_match()
+
+        # It returns the next match to be played
+        self.assertEqual(
+            next_match,
+            {
+                "round_number": next_match_record.round_number,
+                "season": next_match_record.start_date_time.year,
+            },
+        )
 
     def _build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):

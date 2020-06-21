@@ -405,19 +405,15 @@ class Tipper:
 
     def update_match_predictions(self) -> None:
         """Request prediction data from Augury service for upcoming matches."""
-        next_match = (
-            Match.objects.filter(start_date_time__gt=self._right_now)
-            .order_by("start_date_time")
-            .first()
-        )
+        next_match = api.fetch_next_match()
 
         if next_match is None:
             if self.verbose == 1:
                 print("There are no upcoming matches to predict.")
             return None
 
-        upcoming_round = next_match.round_number
-        upcoming_season = next_match.start_date_time.year
+        upcoming_round = next_match["round_number"]
+        upcoming_season = next_match["season"]
 
         if self.verbose == 1:
             print(

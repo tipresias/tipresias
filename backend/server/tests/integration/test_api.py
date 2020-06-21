@@ -6,9 +6,9 @@ from datetime import datetime, timedelta
 from freezegun import freeze_time
 from django.test import TestCase
 from django.utils import timezone
-from django.forms.models import model_to_dict
 import pandas as pd
 
+from data.helpers import pivot_team_matches_to_matches
 from server.models import Match, TeamMatch, Prediction
 from server import api
 from server.tests.fixtures import data_factories, factories
@@ -130,6 +130,30 @@ class TestApi(TestCase):
                 "season": next_match_record.start_date_time.year,
             },
         )
+
+    def test_update_future_match_predictions(self):
+        for fixture_datum in self.fixture_data[0].to_dict("records"):
+            match = Match.get_or_create_from_raw_data(fixture_datum)
+            TeamMatch.get_or_create_from_raw_data(match, fixture_datum)
+
+        prediction_data = pivot_team_matches_to_matches(self.prediction_data[0])
+
+        with self.subTest("when the predictions are for past matches"):
+            with freeze_time(TIP_DATES[1]):
+                self.assertEqual(Prediction.objects.count(), 0)
+
+                self.api.update_future_match_predictions(
+                    prediction_data.to_dict("records")
+                )
+
+                # It doesn't create any prediction records
+                self.assertEqual(Prediction.objects.count(), 0)
+
+        with freeze_time(TIP_DATES[0]):
+            self.api.update_future_match_predictions(prediction_data.to_dict("records"))
+
+            # It creates prediction records
+            self.assertEqual(Prediction.objects.count(), ROW_COUNT)
 
     def _build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):

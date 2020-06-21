@@ -5,8 +5,8 @@ from typing import List, Tuple, Optional
 from django.utils import timezone
 from mypy_extensions import TypedDict
 
-from server.models import Match, TeamMatch
-from server.types import FixtureData
+from server.models import Match, TeamMatch, Prediction
+from server.types import FixtureData, CleanPredictionData
 from data import data_import
 
 
@@ -124,3 +124,9 @@ def fetch_next_match() -> Optional[MatchDict]:
         "round_number": next_match.round_number,
         "season": next_match.start_date_time.year,
     }
+
+
+def update_future_match_predictions(predictions: List[CleanPredictionData]) -> None:
+    """Update or create prediction records for upcoming matches."""
+    for pred in predictions:
+        Prediction.update_or_create_from_raw_data(pred, future_only=True)

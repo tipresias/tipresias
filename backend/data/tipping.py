@@ -407,6 +407,8 @@ class Tipper:
         """Request prediction data from Augury service for upcoming matches."""
         next_match = api.fetch_next_match()
 
+        breakpoint()
+
         if next_match is None:
             if self.verbose == 1:
                 print("There are no upcoming matches to predict.")
@@ -431,9 +433,9 @@ class Tipper:
             print("Predictions received!")
 
         home_away_df = pivot_team_matches_to_matches(prediction_data)
+        predictions = home_away_df.replace({np.nan: None}).to_dict("records")
 
-        for pred in home_away_df.replace({np.nan: None}).to_dict("records"):
-            Prediction.update_or_create_from_raw_data(pred, future_only=True)
+        api.update_future_match_predictions(predictions)
 
         return None
 

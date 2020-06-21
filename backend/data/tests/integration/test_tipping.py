@@ -90,68 +90,46 @@ class TestTipper(TestCase):
 
                 mock_api_update_fixture_data.assert_not_called()
 
-    def test_update_match_predictions(self):
-        with freeze_time(TIP_DATES[0]):
-            right_now = timezone.localtime()
-            self.tipping._right_now = right_now  # pylint: disable=protected-access
+    @patch("server.api")
+    def test_update_match_predictions(self, mock_api):
+        mock_api.update_future_match_predictions = MagicMock()
 
-            with self.subTest("with no existing match records in DB"):
-                self.assertEqual(Match.objects.count(), 0)
+        with self.subTest("with no future match records available"):
+            mock_api.fetch_next_match = MagicMock(return_value=None)
 
-                self.tipping.update_match_predictions()
+            self.tipping.update_match_predictions()
 
-                # It doesn't fetch predictions
-                self.tipping.data_importer.fetch_prediction_data.assert_not_called()
-                # It doesn't create prediction records
-                self.assertEqual(Prediction.objects.count(), 0)
+            # It doesn't fetch predictions
+            self.tipping.data_importer.fetch_prediction_data.assert_not_called()
+            # It doesn't send predictions to server API
+            mock_api.update_future_match_predictions.assert_not_called()
 
-            with self.subTest("with upcoming match records saved in the DB"):
-                for fixture_datum in self.fixture_return_values[0].to_dict("records"):
-                    match = Match.get_or_create_from_raw_data(fixture_datum)
-                    TeamMatch.get_or_create_from_raw_data(match, fixture_datum)
-
-                self.tipping.update_match_predictions()
-
-                # It fetches predictions
-                self.tipping.data_importer.fetch_prediction_data.assert_called()
-                # It creates prediction records
-                self.assertEqual(Prediction.objects.count(), ROW_COUNT)
-
+        with self.subTest("with at least one future match record"):
             next_match = (
-                Match.objects.filter(start_date_time__gt=right_now)
-                .order_by("start_date_time")
-                .first()
+                self.fixture_return_values[0]
+                .sort_values("date", ascending=True)
+                .iloc[0]
             )
 
-        with self.subTest("with played matches in the current round"):
-            with freeze_time(next_match.start_date_time + timedelta(days=1)):
-                right_now = timezone.localtime()
-                self.tipping._right_now = right_now  # pylint: disable=protected-access
+            mock_api.fetch_next_match = MagicMock(
+                return_value={
+                    "round_number": next_match["round_number"],
+                    "season": next_match["date"].year,
+                }
+            )
 
-                next_match = (
-                    Match.objects.filter(start_date_time__gt=right_now)
-                    .order_by("start_date_time")
-                    .first()
-                )
+            self.tipping.update_match_predictions()
 
-                played_matches = Match.objects.filter(
-                    start_date_time__lt=right_now, round_number=next_match.round_number
-                )
-                self.assertGreater(played_matches.count(), 0)
+            # It fetches predictions
+            self.tipping.data_importer.fetch_prediction_data.assert_called()
+            # It sends predictions to server API
+            mock_api.update_future_match_predictions.assert_called()
 
-                past_predictions = played_matches.values(
-                    "prediction__id", "prediction__updated_at"
-                )
-
-                self.tipping.update_match_predictions()
-
-                # It doesn't update predictions for played matches
-                for pred in past_predictions:
-                    record_updated_at = Prediction.objects.get(
-                        id=pred["prediction__id"]
-                    ).updated_at
-
-                    self.assertEqual(pred["prediction__updated_at"], record_updated_at)
+        next_match = (
+            Match.objects.filter(start_date_time__gt=right_now)
+            .order_by("start_date_time")
+            .first()
+        )
 
     def test_submit_tips(self):
         for _ in range(ROW_COUNT):

@@ -2,7 +2,7 @@
 
 from django.core.management.base import BaseCommand
 
-from server.tipping import Tipper
+from data.tipping import Tipper
 
 
 class Command(BaseCommand):

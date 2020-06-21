@@ -6,9 +6,9 @@ from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from data import data_import
+from data.helpers import pivot_team_matches_to_matches
 from server.models import Match, TeamMatch, MLModel, Prediction
-from server import data_import
-from server.helpers import pivot_team_matches_to_matches
 from server.types import MlModel, MatchData
 
 YEAR_RANGE = "2014-2020"

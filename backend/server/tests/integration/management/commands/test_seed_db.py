@@ -17,7 +17,7 @@ MATCH_COUNT_PER_YEAR = 5
 
 
 class TestSeedDb(TestCase):
-    @patch("server.data_import")
+    @patch("data.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         joblib.dump = Mock()
 

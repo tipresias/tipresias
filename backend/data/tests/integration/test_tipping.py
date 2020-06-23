@@ -13,10 +13,6 @@ from faker import Faker
 from data.tipping import Tipper, FootyTipsSubmitter
 from server.models import Match, TeamMatch
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
-from server.tests.fixtures.factories import (
-    TeamFactory,
-    MLModelFactory,
-)
 
 
 ROW_COUNT = 5
@@ -31,10 +27,6 @@ FAKE = Faker()
 class TestTipper(TestCase):
     @patch("data.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
-        self.ml_model = MLModelFactory(
-            name="test_estimator", is_principal=True, used_in_competitions=True
-        )
-
         (
             self.fixture_return_values,
             prediction_return_values,
@@ -163,15 +155,10 @@ class TestTipper(TestCase):
             # Mock footywire fixture data
             fixture_data = fake_fixture_data(ROW_COUNT, (year, year + 1))
 
-            prediction_match_data, _ = zip(
-                *[
-                    (
-                        self._build_prediction_and_match_results_data(match_data),
-                        self._build_teams(match_data),
-                    )
-                    for match_data in fixture_data.to_dict("records")
-                ]
-            )
+            prediction_match_data = [
+                (self._build_prediction_and_match_results_data(match_data))
+                for match_data in fixture_data.to_dict("records")
+            ]
 
             prediction_data, match_results_data = zip(*prediction_match_data)
 
@@ -182,9 +169,7 @@ class TestTipper(TestCase):
         )
 
     def _build_prediction_and_match_results_data(self, match_data):
-        match_predictions = fake_prediction_data(
-            match_data=match_data, ml_model_name=self.ml_model.name
-        )
+        match_predictions = fake_prediction_data(match_data=match_data)
 
         return (
             match_predictions,
@@ -210,8 +195,3 @@ class TestTipper(TestCase):
             "home_score": home_team_prediction["predicted_margin"] + 50,
             "away_score": away_team_prediction["predicted_margin"] + 50,
         }
-
-    @staticmethod
-    def _build_teams(match_data):
-        TeamFactory(name=match_data["home_team"])
-        TeamFactory(name=match_data["away_team"])

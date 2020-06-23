@@ -9,8 +9,8 @@ from django.utils import timezone
 import pandas as pd
 from faker import Faker
 
+from data.management.commands import tip
 from server.tests.fixtures import data_factories, factories
-from server.management.commands import tip
 from server.models import Match, Prediction
 
 ROW_COUNT = 5
@@ -29,7 +29,7 @@ class TestTip(TestCase):
         "For some reason, the mock data import isn't working in CI, "
         "so we're getting real data."
     )
-    @patch("server.tipping.data_import")
+    @patch("data.tipping.data_import")
     def test_handle(self, mock_data_import):
         self._stub_import_methods(mock_data_import)
 

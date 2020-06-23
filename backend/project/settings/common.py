@@ -29,6 +29,7 @@ ALLOWED_HOSTS: List = []
 # Application definition
 
 INSTALLED_APPS = [
+    "data.apps.DataConfig",
     "server.apps.ServerConfig",
     "graphene_django",
     "django.contrib.admin",

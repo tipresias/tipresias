@@ -8,7 +8,7 @@ import pandas as pd
 
 from server.tests.fixtures import data_factories, factories
 from server.models import Prediction, MLModel
-from server.tipping import Tipper
+from data.tipping import Tipper
 
 
 N_MATCHES = 9

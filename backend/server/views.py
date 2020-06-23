@@ -7,9 +7,9 @@ from django.conf import settings
 import numpy as np
 import pandas as pd
 
-from server.helpers import pivot_team_matches_to_matches
 from server.models import Prediction
-from server.tipping import Tipper
+from data.helpers import pivot_team_matches_to_matches
+from data.tipping import Tipper
 
 
 def predictions(request: HttpRequest):

@@ -14,10 +14,9 @@ from django.utils import timezone
 from mypy_extensions import TypedDict
 import mechanicalsoup
 
-from server.models import Match, TeamMatch, Prediction
-from server.types import FixtureData
-from server import data_import
-from server.helpers import pivot_team_matches_to_matches
+from data import data_import
+from data.helpers import pivot_team_matches_to_matches
+from server import api
 from project.settings.data_config import TEAM_TRANSLATIONS
 
 
@@ -34,7 +33,6 @@ PredictionType = Union[
 ]
 
 
-FIRST_ROUND = 1
 JAN = 1
 FIRST = 1
 
@@ -389,40 +387,32 @@ class Tipper:
         self._right_now = timezone.localtime()
         self.verbose = verbose
 
-    def update_match_data(self) -> None:
-        """Fetch and save predictions, then submit tips to competitions."""
+    def fetch_upcoming_fixture(self) -> None:
+        """Fetch fixture data and send upcoming match data to the Server API."""
         fixture_data_frame = self._fetch_fixture_data(self._right_now.year)
         upcoming_round, upcoming_matches = self._select_upcoming_matches(
             fixture_data_frame
         )
 
         if upcoming_round is None or upcoming_matches is None:
-            self._backfill_match_results()
             return None
 
-        self._create_matches(
-            upcoming_matches.replace({np.nan: None}).to_dict("records"), upcoming_round
-        )
-
-        self._backfill_match_results()
+        match_records = upcoming_matches.replace({np.nan: None}).to_dict("records")
+        api.update_fixture_data(match_records, upcoming_round)
 
         return None
 
     def update_match_predictions(self) -> None:
         """Request prediction data from Augury service for upcoming matches."""
-        next_match = (
-            Match.objects.filter(start_date_time__gt=self._right_now)
-            .order_by("start_date_time")
-            .first()
-        )
+        next_match = api.fetch_next_match()
 
         if next_match is None:
             if self.verbose == 1:
                 print("There are no upcoming matches to predict.")
             return None
 
-        upcoming_round = next_match.round_number
-        upcoming_season = next_match.start_date_time.year
+        upcoming_round = next_match["round_number"]
+        upcoming_season = next_match["season"]
 
         if self.verbose == 1:
             print(
@@ -440,9 +430,9 @@ class Tipper:
             print("Predictions received!")
 
         home_away_df = pivot_team_matches_to_matches(prediction_data)
+        predictions = home_away_df.replace({np.nan: None}).to_dict("records")
 
-        for pred in home_away_df.replace({np.nan: None}).to_dict("records"):
-            Prediction.update_or_create_from_raw_data(pred, future_only=True)
+        api.update_future_match_predictions(predictions)
 
         return None
 
@@ -463,12 +453,22 @@ class Tipper:
             FootyTipsSubmitter(verbose=self.verbose),
         ]
 
-        predicted_winners = self._get_predicted_winners_for_latest_round()
+        latest_predictions = api.fetch_latest_round_predictions(verbose=self.verbose)
 
-        if any(predicted_winners):
-            for submitter in tip_submitters:
-                submitter.verbose = self.verbose
-                submitter.submit_tips(predicted_winners)
+        if not any(latest_predictions):
+            if self.verbose == 1:
+                print(
+                    "No predictions found for the upcoming round. "
+                    "Not submitting any tips."
+                )
+
+            return None
+
+        for submitter in tip_submitters:
+            submitter.verbose = self.verbose
+            submitter.submit_tips(latest_predictions)
+
+        return None
 
     def _fetch_fixture_data(self, year: int) -> pd.DataFrame:
         if self.verbose == 1:
@@ -512,104 +512,3 @@ class Tipper:
         )
 
         return upcoming_round, fixture_for_upcoming_round
-
-    def _create_matches(
-        self, fixture_data: List[FixtureData], upcoming_round: int
-    ) -> None:
-        saved_match_count = Match.objects.filter(
-            start_date_time__gt=self._right_now, round_number=upcoming_round
-        ).count()
-
-        if saved_match_count > 0:
-            if self.verbose == 1:
-                print(
-                    f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
-                    "Updating associated prediction records with new model predictions.\n"
-                )
-
-            return None
-
-        if self.verbose == 1:
-            print(
-                f"Creating new Match and TeamMatch records for round {upcoming_round}..."
-            )
-
-        assert any(fixture_data), "No fixture data found."
-
-        round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
-        year = {match_data["year"] for match_data in fixture_data}.pop()
-
-        prev_match = Match.objects.order_by("-start_date_time").first()
-
-        if prev_match is not None:
-            assert round_number in (prev_match.round_number + 1, FIRST_ROUND), (
-                "Expected upcoming round number to be 1 greater than previous round "
-                f"or 1, but upcoming round is {round_number} in {year}, "
-                f" and previous round was {prev_match.round_number} "
-                f"in {prev_match.start_date_time.year}"
-            )
-
-        for fixture_datum in fixture_data:
-            self._build_match(fixture_datum)
-
-        if self.verbose == 1:
-            print("Match data saved!\n")
-
-        return None
-
-    @staticmethod
-    def _build_match(match_data: FixtureData) -> Tuple[TeamMatch, TeamMatch]:
-        match = Match.get_or_create_from_raw_data(match_data)
-
-        return TeamMatch.get_or_create_from_raw_data(match, match_data)
-
-    def _backfill_match_results(self) -> None:
-        if self.verbose == 1:
-            print("Filling in results for recent matches...")
-
-        earliest_date_without_results = Match.earliest_date_without_results()
-
-        if earliest_date_without_results is None:
-            if self.verbose == 1:
-                print("No played matches are missing results.")
-
-            return None
-
-        match_results = self.data_importer.fetch_match_results_data(
-            earliest_date_without_results, self._right_now, fetch_data=self.fetch_data
-        )
-
-        if not any(match_results):
-            print("Results data is not yet available to update match records.")
-            return None
-
-        Match.update_results(match_results)
-
-        return None
-
-    def _get_predicted_winners_for_latest_round(self) -> List[PredictedWinner]:
-        latest_match = Match.objects.latest("start_date_time")
-        latest_year = latest_match.start_date_time.year
-        latest_round = latest_match.round_number
-
-        latest_round_predictions = (
-            Prediction.objects.filter(
-                ml_model__used_in_competitions=True,
-                match__start_date_time__gt=timezone.make_aware(
-                    datetime(latest_year, JAN, FIRST)
-                ),
-                match__round_number=latest_round,
-            )
-            .select_related("match")
-            .prefetch_related("match__teammatch_set__team")
-            .values(
-                "predicted_winner__name",
-                "predicted_margin",
-                "predicted_win_probability",
-            )
-        )
-
-        if not any(latest_round_predictions) and self.verbose == 1:
-            print(f"No predictions found for round {latest_round}.")
-
-        return latest_round_predictions

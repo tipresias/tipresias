@@ -155,6 +155,31 @@ class TestApi(TestCase):
             # It creates prediction records
             self.assertEqual(Prediction.objects.count(), ROW_COUNT)
 
+    def fetch_latest_round_predictions(self):
+        # FullMatchFactory produces two predictions per match by default
+        N_PREDICTION_MODELS = 2
+
+        for idx in range(ROW_COUNT * 2):
+            factories.FullMatchFactory(future=(idx % 2 == 0), with_predictions=True)
+
+        next_match = (
+            Match.objects.filter(start_date_time__gt=timezone.now())
+            .order_by("start_date_time")
+            .first()
+        )
+
+        latest_predictions = self.api.fetch_latest_round_predictions()
+        latest_matches = Match.objects.filter(
+            start_date_time__year=next_match.year, round_number=next_match.round_number
+        )
+
+        # It fetches predictions for matches (future or past) from the same round
+        # as the next match (i.e. current round if mid-round next round
+        # if between rounds)
+        self.assertEqual(
+            latest_matches.count(), len(latest_predictions) / N_PREDICTION_MODELS
+        )
+
     def _build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):
             tomorrow = timezone.localtime() + timedelta(days=1)

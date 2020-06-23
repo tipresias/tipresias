@@ -10,7 +10,16 @@ from server.types import FixtureData, CleanPredictionData
 from data import data_import
 
 
-MatchDict = TypedDict("MatchDict", {"season": int, "round_number": int},)
+MatchDict = TypedDict("MatchDict", {"season": int, "round_number": int})
+PredictionValues = TypedDict(
+    "PredictionValues",
+    {
+        "predicted_winner__name": str,
+        "predicted_margin": float,
+        "predicted_win_probability": float,
+    },
+)
+
 
 FIRST_ROUND = 1
 
@@ -130,3 +139,34 @@ def update_future_match_predictions(predictions: List[CleanPredictionData]) -> N
     """Update or create prediction records for upcoming matches."""
     for pred in predictions:
         Prediction.update_or_create_from_raw_data(pred, future_only=True)
+
+
+def fetch_latest_round_predictions(verbose=1) -> List[PredictionValues]:
+    """
+    Return predictions for matches from the current round or next round.
+
+    Params:
+    -------
+    verbose: Whether to print info messages.
+    """
+    latest_match = Match.objects.latest("start_date_time")
+    latest_year = latest_match.start_date_time.year
+    latest_round = latest_match.round_number
+
+    latest_round_predictions = (
+        Prediction.objects.filter(
+            ml_model__used_in_competitions=True,
+            match__start_date_time__year=latest_year,
+            match__round_number=latest_round,
+        )
+        .select_related("match")
+        .prefetch_related("match__teammatch_set__team")
+        .values(
+            "predicted_winner__name", "predicted_margin", "predicted_win_probability",
+        )
+    )
+
+    if not any(latest_round_predictions) and verbose == 1:
+        print(f"No predictions found for round {latest_round}.")
+
+    return latest_round_predictions

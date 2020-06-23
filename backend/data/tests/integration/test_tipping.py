@@ -7,15 +7,14 @@ from django.test import TestCase
 from django.utils import timezone
 from freezegun import freeze_time
 import pandas as pd
+import numpy as np
 from faker import Faker
 
 from data.tipping import Tipper, FootyTipsSubmitter
-from server.models import Match, TeamMatch, Prediction, MLModel
+from server.models import Match, TeamMatch
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 from server.tests.fixtures.factories import (
     TeamFactory,
-    FullMatchFactory,
-    PredictionFactory,
     MLModelFactory,
 )
 
@@ -90,7 +89,7 @@ class TestTipper(TestCase):
 
                 mock_api_update_fixture_data.assert_not_called()
 
-    @patch("server.api")
+    @patch("data.tipping.api")
     def test_update_match_predictions(self, mock_api):
         mock_api.update_future_match_predictions = MagicMock()
 
@@ -125,30 +124,29 @@ class TestTipper(TestCase):
             # It sends predictions to server API
             mock_api.update_future_match_predictions.assert_called()
 
-        next_match = (
-            Match.objects.filter(start_date_time__gt=right_now)
-            .order_by("start_date_time")
-            .first()
-        )
-
-    def test_submit_tips(self):
-        for _ in range(ROW_COUNT):
-            FullMatchFactory(future=True)
-
+    @patch("server.api.fetch_latest_round_predictions")
+    def test_submit_tips(self, mock_fetch_latest_round_predictions):
         mock_submitter = FootyTipsSubmitter(browser=None)
         mock_submitter.submit_tips = MagicMock()
 
         with self.subTest("when there are no predictions to submit"):
+            mock_fetch_latest_round_predictions.return_value = []
+
             self.tipping.submit_tips(tip_submitters=[mock_submitter])
 
             # It doesn't try to submit any tips
             mock_submitter.submit_tips.assert_not_called()
 
-        ml_model = MLModel.objects.get(is_principal=True)
+        fake_prediction_values = [
+            {
+                "predicted_winner__name": FAKE.company(),
+                "predicted_margin": FAKE.pyint(min_value=0, max_value=50),
+                "predicted_win_probability": np.random.uniform(0.5, 0.99),
+            }
+            for _ in range(ROW_COUNT)
+        ]
 
-        for match in Match.objects.all():
-            # Need to use competition models for the predictions to get queried
-            PredictionFactory(match=match, ml_model=ml_model)
+        mock_fetch_latest_round_predictions.return_value = fake_prediction_values
 
         self.tipping.submit_tips(tip_submitters=[mock_submitter, mock_submitter])
 

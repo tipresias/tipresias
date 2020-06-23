@@ -16,7 +16,6 @@ import mechanicalsoup
 
 from data import data_import
 from data.helpers import pivot_team_matches_to_matches
-from server.models import Match, Prediction
 from server import api
 from project.settings.data_config import TEAM_TRANSLATIONS
 
@@ -407,8 +406,6 @@ class Tipper:
         """Request prediction data from Augury service for upcoming matches."""
         next_match = api.fetch_next_match()
 
-        breakpoint()
-
         if next_match is None:
             if self.verbose == 1:
                 print("There are no upcoming matches to predict.")
@@ -456,12 +453,22 @@ class Tipper:
             FootyTipsSubmitter(verbose=self.verbose),
         ]
 
-        predicted_winners = self._get_predicted_winners_for_latest_round()
+        latest_predictions = api.fetch_latest_round_predictions(verbose=self.verbose)
 
-        if any(predicted_winners):
-            for submitter in tip_submitters:
-                submitter.verbose = self.verbose
-                submitter.submit_tips(predicted_winners)
+        if not any(latest_predictions):
+            if self.verbose == 1:
+                print(
+                    "No predictions found for the upcoming round. "
+                    "Not submitting any tips."
+                )
+
+            return None
+
+        for submitter in tip_submitters:
+            submitter.verbose = self.verbose
+            submitter.submit_tips(latest_predictions)
+
+        return None
 
     def _fetch_fixture_data(self, year: int) -> pd.DataFrame:
         if self.verbose == 1:
@@ -505,30 +512,3 @@ class Tipper:
         )
 
         return upcoming_round, fixture_for_upcoming_round
-
-    def _get_predicted_winners_for_latest_round(self) -> List[PredictedWinner]:
-        latest_match = Match.objects.latest("start_date_time")
-        latest_year = latest_match.start_date_time.year
-        latest_round = latest_match.round_number
-
-        latest_round_predictions = (
-            Prediction.objects.filter(
-                ml_model__used_in_competitions=True,
-                match__start_date_time__gt=timezone.make_aware(
-                    datetime(latest_year, JAN, FIRST)
-                ),
-                match__round_number=latest_round,
-            )
-            .select_related("match")
-            .prefetch_related("match__teammatch_set__team")
-            .values(
-                "predicted_winner__name",
-                "predicted_margin",
-                "predicted_win_probability",
-            )
-        )
-
-        if not any(latest_round_predictions) and self.verbose == 1:
-            print(f"No predictions found for round {latest_round}.")
-
-        return latest_round_predictions

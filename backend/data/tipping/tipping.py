@@ -58,7 +58,7 @@ class MonashSubmitter:
         competitions: Names of the different Monash competitions.
             Based on the option value of the select input for logging into
             a competition.
-        browser: Selenium browser for navigating competition websites.
+        browser: MechanicalSoup stateful browser for navigating competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.competitions = competitions or ["normal", "info"]

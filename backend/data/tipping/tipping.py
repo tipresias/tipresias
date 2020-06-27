@@ -41,7 +41,6 @@ FIRST = 1
 SUPPORTED_MONASH_COMPS = ["normal", "info"]
 
 FOOTY_TIPS_FORM_URL = "https://www.footytips.com.au/tipping/afl/"
-SPLASH_SERVICE = ""
 
 
 class MonashSubmitter:
@@ -228,8 +227,8 @@ class FootyTipsSubmitter:
         """
         self.browser: Any = browser or requests
         self.splash_host = (
-            SPLASH_SERVICE
-            if os.environ["PYTHON_ENV"] == "production"
+            os.environ["SPLASH_SERVICE"]
+            if settings.ENVIRONMENT == "production"
             else "http://splash:8050"
         )
         self.verbose = verbose

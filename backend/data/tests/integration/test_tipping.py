@@ -81,7 +81,7 @@ class TestTipper(TestCase):
 
                 mock_api_update_fixture_data.assert_not_called()
 
-    @patch("data.tipping.api")
+    @patch("data.tipping.tipping.api")
     def test_update_match_predictions(self, mock_api):
         mock_api.update_future_match_predictions = MagicMock()
 

@@ -7,12 +7,7 @@ FROM python:3.8.1-slim-buster@sha256:dc9c4de1bb38720f70af28e8071f324052725ba1228
 
 RUN apt-get --no-install-recommends update \
   # g++ is a dependency of gcc, so must come before
-  # Install firefox & geckodriver for use by selenium
-  && apt-get -y --no-install-recommends install g++ gcc wget firefox-esr \
-  && wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz \
-  && tar -xvzf geckodriver* \
-  && chmod +x geckodriver \
-  && mv geckodriver /usr/local/bin/ \
+  && apt-get -y --no-install-recommends install g++ gcc \
   && rm -rf /var/lib/apt/lists/*
 
 # Adding backend directory to make absolute filepaths consistent in dev & prod

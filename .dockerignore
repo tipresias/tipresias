@@ -22,6 +22,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 .mypy_cache/
+cc-test-reporter
 
 # Translations
 *.mo
@@ -63,6 +64,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Secrets
+secrets*
+*_rsa
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -93,6 +98,7 @@ db/backups
 
 # GCP files
 .gcloud
+keyfile*.json
 
 # Logs
 *.log

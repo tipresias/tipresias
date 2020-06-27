@@ -8,11 +8,11 @@ import re
 
 import pandas as pd
 import numpy as np
-from splinter import Browser
-from splinter.driver import ElementAPI
 from django.utils import timezone
+from django.conf import settings
 from mypy_extensions import TypedDict
 import mechanicalsoup
+import requests
 
 from data import data_import
 from data.helpers import pivot_team_matches_to_matches
@@ -57,7 +57,7 @@ class MonashSubmitter:
         competitions: Names of the different Monash competitions.
             Based on the option value of the select input for logging into
             a competition.
-        browser: Selenium browser for navigating competition websites.
+        browser: MechanicalSoup stateful browser for navigating competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.competitions = competitions or ["normal", "info"]
@@ -222,11 +222,14 @@ class FootyTipsSubmitter:
 
         Params:
         -------
-        browser: Selenium browser for navigating competition websites.
+        browser: requests module for posting to the Splash API.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
-        self.browser = browser or Browser(
-            "firefox", headless=True, profile_preferences={"javascript.enabled": False}
+        self.browser: Any = browser or requests
+        self.splash_host = (
+            os.environ["SPLASH_SERVICE"]
+            if settings.ENVIRONMENT == "production"
+            else "http://splash:8050"
         )
         self.verbose = verbose
 
@@ -242,18 +245,37 @@ class FootyTipsSubmitter:
         if self.verbose == 1:
             print("Submitting tips to footytips.com.au...")
 
-        try:
-            self._log_in()
+        predictions = self._transform_into_tipping_input(predicted_winners)
+        lua_filepath = os.path.join(
+            settings.BASE_DIR, "data", "tipping", "footy_tips_submitter.lua"
+        )
 
-            self._fill_in_tipping_form(
-                self._transform_into_tipping_input(predicted_winners)
-            )
-            self._submit_form()
+        with open(lua_filepath) as lua_file:
+            lua_source = "".join(lua_file.readlines())
 
-            if self.verbose == 1:
-                print("Tips submitted!")
-        finally:
-            self.browser.quit()
+        response = self.browser.post(
+            self.splash_host + "/execute",
+            json={
+                "lua_source": lua_source,
+                # We try to navigate directly to the tipping page, because we will be
+                # redirected there once we log in, minimising the number of steps
+                "url": FOOTY_TIPS_FORM_URL,
+                "username": os.environ["FOOTY_TIPS_USERNAME"],
+                "password": os.environ["FOOTY_TIPS_PASSWORD"],
+                "predictions": predictions,
+                "team_translations": TEAM_TRANSLATIONS,
+            },
+        )
+
+        if not 200 <= response.status_code < 300:
+            if "WARNING" in response.text:
+                warn(response.text)
+                return None
+
+            raise ValueError(response.text)
+
+        if self.verbose == 1:
+            print("Tips submitted!")
 
     def _transform_into_tipping_input(
         self, predicted_winners: List[PredictedWinner]
@@ -268,96 +290,12 @@ class FootyTipsSubmitter:
             if predicted_winner["predicted_margin"] is not None
         }
 
-    def _log_in(self):
-        # We try to navigate directly to the tipping page, because we will be
-        # redirected there once we log in, minimising the number of steps
-        self.browser.visit(FOOTY_TIPS_FORM_URL)
-
-        # Have to use second login form, because the first is some invisible Angular
-        # something something
-        login_form = self.browser.find_by_name("frmLogin")[1]
-        login_form.find_by_name("userLogin").fill(os.environ["FOOTY_TIPS_USERNAME"])
-        login_form.find_by_name("userPassword").fill(os.environ["FOOTY_TIPS_PASSWORD"])
-        login_form.find_by_id("signin-ft").click()
-
-        if self.browser.is_text_present("Welcome to ESPNfootytips", wait_time=5):
-            raise ValueError(
-                "Either the username or password was incorrect and we failed to log in."
-            )
-
-    def _fill_in_tipping_form(self, predicted_winners: Dict[str, int]):
-        match_elements = self.browser.find_by_css(".tipping-container")
-
-        assert self.browser.url == FOOTY_TIPS_FORM_URL, (
-            f"Something went wrong with logging in. We are on {self.browser.url}, "
-            f"but should be on {FOOTY_TIPS_FORM_URL}."
-        )
-
-        assert len(match_elements) == len(predicted_winners), (
-            "The number of predicted winners doesn't match the number of matches. "
-            "Check the given predicted winners below:\n"
-            f"{predicted_winners}"
-        )
-
-        for match_element in match_elements:
-            predicted_winner, predicted_margin = self._get_match_prediction(
-                predicted_winners, match_element
-            )
-
-            if predicted_winner is None or predicted_margin is None:
-                warn(
-                    "No matching prediction was found for a match element. "
-                    "This likely means that the tip submission page has not been "
-                    "updated for the next round yet. Try again tomorrow."
-                )
-
-                return None
-
-            self._select_predicted_winner(predicted_winner, match_element)
-            self._fill_in_predicted_margin(predicted_margin, match_element)
-
-        return None
-
-    @staticmethod
-    def _get_match_prediction(
-        predictions: Dict[str, int], match_element: ElementAPI
-    ) -> Tuple[Optional[str], Optional[int]]:
-        for team_name in predictions.keys():
-            if team_name in match_element.text:
-                return (team_name, predictions[team_name])
-
-        return None, None
-
-    def _select_predicted_winner(
-        self, predicted_winner: str, match_element: ElementAPI
-    ) -> None:
-        for team_name_element in match_element.find_by_css(".team-name.team-full"):
-            if (
-                self._translate_team_name(team_name_element.text) == predicted_winner
-                and team_name_element.visible
-            ):
-                # Even though it's not an input element, triggering a click
-                # on the team name still triggers the associated radio button.
-                team_name_element.click()
-
     @staticmethod
     def _translate_team_name(element_text: str) -> str:
         if element_text in TEAM_TRANSLATIONS.keys():
             return TEAM_TRANSLATIONS[element_text]
 
         return element_text
-
-    @staticmethod
-    def _fill_in_predicted_margin(
-        predicted_margin: int, match_element: ElementAPI
-    ) -> None:
-        margin_input = match_element.find_by_name("Margin")
-
-        if any(margin_input):
-            margin_input.fill(predicted_margin)
-
-    def _submit_form(self):
-        self.browser.find_by_css(".tipform-submit-button").first.click()
 
 
 class Tipper:

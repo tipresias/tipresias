@@ -1,0 +1,7 @@
+steps:
+  - name: gcr.io/kaniko-project/executor
+    args:
+      - --destination=gcr.io/${PROJECT_ID}/splash
+      - --cache=true
+      - --cache-ttl=24h
+timeout: 3600s

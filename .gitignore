@@ -96,7 +96,7 @@ venv.bak/
 
 # Secrets
 *_rsa
-keyfile.json
+keyfile*.json
 secrets.tar
 
 # Spyder project settings

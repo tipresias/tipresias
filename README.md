@@ -1,6 +1,6 @@
 # Tipresias
 
-[![Build Status](https://travis-ci.com/tipresias/tipresias.svg?branch=master)](https://travis-ci.com/tipresias/tipresias)
+[![Build Status](https://travis-ci.com/tipresias/tipresias.svg?branch=main)](https://travis-ci.com/tipresias/tipresias)
 <a href="https://codeclimate.com/github/tipresias/tipresias/maintainability"><img src="https://api.codeclimate.com/v1/badges/b6a40f7f72b307763b88/maintainability" /></a>
 <a href="https://codeclimate.com/github/tipresias/tipresias/test_coverage"><img src="https://api.codeclimate.com/v1/badges/b6a40f7f72b307763b88/test_coverage" /></a>
 
@@ -8,7 +8,7 @@
 > Perceived the match, and foretold the score—<br>
 > I too awaited the fanatics' roar.<br>
 
-Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias, has, like Zeus before it, arisen to vanquish its father and claim its throne as the master of AFL footy tipping models.
+Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias, has, like Zeus before it, arisen to vanquish its father and claim its throne as the sovereign of AFL footy tipping models.
 
 Check out the site, with a dashboard for model performance, at [tipresias.net](http://www.tipresias.net).
 
@@ -83,7 +83,7 @@ Seed the DB with raw data:
 
 ### Deploy
 
-The app is deployed to Google Cloud with every merge/push to `master`. You can manually deploy in two ways:
+The app is deployed to Google Cloud with every merge/push to `main`. You can manually deploy in two ways:
 
 - **Recommended:** Manually trigger a build in Travis CI via the "More options" menu.
 - Run `./scripts/deploy.sh`, but be careful with which env vars you have in your shell.

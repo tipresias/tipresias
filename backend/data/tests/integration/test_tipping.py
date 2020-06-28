@@ -11,7 +11,6 @@ import numpy as np
 from faker import Faker
 
 from data.tipping import Tipper, FootyTipsSubmitter
-from server.models import Match, TeamMatch
 from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 
 
@@ -55,9 +54,6 @@ class TestTipper(TestCase):
         with freeze_time(TIP_DATES[0]):
             right_now = timezone.localtime()
             self.tipping._right_now = right_now  # pylint: disable=protected-access
-
-            self.assertEqual(Match.objects.count(), 0)
-            self.assertEqual(TeamMatch.objects.count(), 0)
 
             self.tipping.fetch_upcoming_fixture()
 

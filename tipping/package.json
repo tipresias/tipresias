@@ -1,0 +1,24 @@
+{
+    "name": "tipresias",
+    "version": "1.0.0",
+    "description": "Application for a footy-tipping model",
+    "main": "index.js",
+    "scripts": {
+        "start": "npx sls offline"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/tipresias/tipresias.git"
+    },
+    "author": "Craig Franklin",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/tipresias/tipresias/issues"
+    },
+    "homepage": "https://github.com/tipresias/tipresias#readme",
+    "dependencies": {},
+    "devDependencies": {
+        "serverless": "^1.74.0",
+        "serverless-offline": "^6.4.0"
+    }
+}

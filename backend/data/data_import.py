@@ -13,7 +13,7 @@ from django.conf import settings
 from django.utils import timezone
 from mypy_extensions import TypedDict
 
-from server.types import MLModelInfo
+from data.types import MLModelInfo
 
 ParamValue = Union[str, int, datetime]
 PredictionData = TypedDict(

@@ -11,7 +11,7 @@ import numpy as np
 from faker import Faker
 
 from data.tipping import Tipper, FootyTipsSubmitter
-from server.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
+from data.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
 
 
 ROW_COUNT = 5

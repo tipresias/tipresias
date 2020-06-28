@@ -3,7 +3,7 @@ from django.test import TestCase
 import pandas as pd
 
 from data.helpers import pivot_team_matches_to_matches
-from server.tests.fixtures.data_factories import fake_prediction_data
+from data.tests.fixtures.data_factories import fake_prediction_data
 
 
 class TestHelpers(TestCase):

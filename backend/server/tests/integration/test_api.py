@@ -8,7 +8,6 @@ from django.test import TestCase
 from django.utils import timezone
 import pandas as pd
 
-from data.helpers import pivot_team_matches_to_matches
 from server.models import Match, TeamMatch, Prediction
 from server import api
 from server.tests.fixtures import data_factories, factories
@@ -136,21 +135,19 @@ class TestApi(TestCase):
             match = Match.get_or_create_from_raw_data(fixture_datum)
             TeamMatch.get_or_create_from_raw_data(match, fixture_datum)
 
-        prediction_data = pivot_team_matches_to_matches(self.prediction_data[0])
+        prediction_data = self.prediction_data[0].to_dict("records")
 
         with self.subTest("when the predictions are for past matches"):
             with freeze_time(TIP_DATES[1]):
                 self.assertEqual(Prediction.objects.count(), 0)
 
-                self.api.update_future_match_predictions(
-                    prediction_data.to_dict("records")
-                )
+                self.api.update_future_match_predictions(prediction_data)
 
                 # It doesn't create any prediction records
                 self.assertEqual(Prediction.objects.count(), 0)
 
         with freeze_time(TIP_DATES[0]):
-            self.api.update_future_match_predictions(prediction_data.to_dict("records"))
+            self.api.update_future_match_predictions(prediction_data)
 
             # It creates prediction records
             self.assertEqual(Prediction.objects.count(), ROW_COUNT)
@@ -218,13 +215,6 @@ class TestApi(TestCase):
 
     @staticmethod
     def _build_match_results_data(match_data, match_predictions):
-        home_team_prediction = (
-            match_predictions.query("at_home == 1").iloc[0, :].to_dict()
-        )
-        away_team_prediction = (
-            match_predictions.query("at_home == 0").iloc[0, :].to_dict()
-        )
-
         # Making all predictions correct, because trying to get fancy with it
         # resulted in flakiness that was difficult to fix
         return {
@@ -232,8 +222,8 @@ class TestApi(TestCase):
             "round_number": match_data["round_number"],
             "home_team": match_data["home_team"],
             "away_team": match_data["away_team"],
-            "home_score": home_team_prediction["predicted_margin"] + 50,
-            "away_score": away_team_prediction["predicted_margin"] + 50,
+            "home_score": match_predictions["home_predicted_margin"].iloc[0],
+            "away_score": match_predictions["away_predicted_margin"].iloc[0],
         }
 
     @staticmethod

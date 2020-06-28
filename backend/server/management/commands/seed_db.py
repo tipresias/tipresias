@@ -6,8 +6,7 @@ from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from data import data_import
-from data.helpers import pivot_team_matches_to_matches
+from data import api
 from server.models import Match, TeamMatch, MLModel, Prediction
 from server.types import MatchData, MLModelInfo
 
@@ -21,12 +20,7 @@ class Command(BaseCommand):
     help = "Seed the database with team, match, and prediction data."
 
     def __init__(
-        self,
-        *args,
-        fetch_data=True,
-        data_importer=data_import,
-        verbose: int = 1,
-        **kwargs,
+        self, *args, fetch_data=True, data_importer=api, verbose: int = 1, **kwargs,
     ) -> None:
         """
         Instantiate the seed_db Command.
@@ -119,7 +113,7 @@ class Command(BaseCommand):
     def _create_ml_models(self) -> List[MLModel]:
         ml_models = [
             self._get_or_create_ml_model(ml_model)
-            for ml_model in self.data_importer.fetch_ml_model_info()
+            for ml_model in self.data_importer.fetch_ml_models()
             if self.ml_model is None or ml_model["name"] == self.ml_model
         ]
 
@@ -131,18 +125,16 @@ class Command(BaseCommand):
         return ml_models
 
     def _create_matches(self) -> None:
-        match_data_frame = self.data_importer.fetch_match_results_data(
+        match_data = self.data_importer.fetch_match_results(
             start_date=timezone.make_aware(datetime(self._year_range[0], 1, 1)),
             end_date=timezone.make_aware(datetime(self._year_range[1] - 1, 12, 31)),
             fetch_data=self.fetch_data,
         )
 
-        fixture_data = match_data_frame.to_dict("records")
+        assert any(match_data), "No match data found."
 
-        assert any(fixture_data), "No match data found."
-
-        for fixture_datum in fixture_data:
-            self._get_or_create_match(fixture_datum)
+        for match_datum in match_data:
+            self._get_or_create_match(match_datum)
 
         if self.verbose == 1:
             print("Match data saved!")
@@ -153,12 +145,11 @@ class Command(BaseCommand):
         TeamMatch.get_or_create_from_raw_data(match, match_data)
 
     def _make_predictions(self) -> None:
-        predictions = self.data_importer.fetch_prediction_data(
+        predictions = self.data_importer.fetch_match_predictions(
             self._year_range, ml_models=[self.ml_model], train_models=True
         )
-        home_away_df = pivot_team_matches_to_matches(predictions)
 
-        for pred in home_away_df.to_dict("records"):
+        for pred in predictions:
             Prediction.update_or_create_from_raw_data(pred)
 
         if self.verbose == 1:

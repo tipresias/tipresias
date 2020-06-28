@@ -4,12 +4,8 @@ import json
 
 from django.http import HttpRequest, HttpResponse
 from django.conf import settings
-import numpy as np
-import pandas as pd
 
 from server.models import Prediction
-from data.helpers import pivot_team_matches_to_matches
-from data.tipping import Tipper
 
 
 def predictions(request: HttpRequest):
@@ -25,13 +21,9 @@ def predictions(request: HttpRequest):
         return HttpResponse(status=401)
 
     body = json.loads(request.body)
-    prediction_data = pd.DataFrame(body["data"])
+    prediction_data = body["data"]
 
-    home_away_df = pivot_team_matches_to_matches(prediction_data)
-
-    for pred in home_away_df.replace({np.nan: None}).to_dict("records"):
+    for pred in prediction_data:
         Prediction.update_or_create_from_raw_data(pred)
-
-    Tipper().submit_tips()
 
     return HttpResponse("Success", status=200)

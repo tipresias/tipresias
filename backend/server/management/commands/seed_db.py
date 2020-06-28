@@ -9,7 +9,7 @@ from django.db import transaction
 from data import data_import
 from data.helpers import pivot_team_matches_to_matches
 from server.models import Match, TeamMatch, MLModel, Prediction
-from server.types import MlModel, MatchData
+from server.types import MatchData, MLModelInfo
 
 YEAR_RANGE = "2014-2020"
 JAN = 1
@@ -165,7 +165,7 @@ class Command(BaseCommand):
             print("\nPredictions saved!")
 
     @staticmethod
-    def _get_or_create_ml_model(ml_model: MlModel) -> MLModel:
+    def _get_or_create_ml_model(ml_model: MLModelInfo) -> MLModel:
         ml_model_record, _created = MLModel.objects.get_or_create(name=ml_model["name"])
         ml_model_record.full_clean()
 

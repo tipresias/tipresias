@@ -64,7 +64,7 @@ CleanPredictionData = TypedDict(
     },
 )
 
-MlModel = TypedDict("MlModel", {"name": str, "filepath": str})
+MLModelInfo = TypedDict("MLModelInfo", {"name": str, "filepath": str})
 
 RoundMetrics = TypedDict(
     "RoundMetrics",

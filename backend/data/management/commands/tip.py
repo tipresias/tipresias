@@ -13,7 +13,9 @@ class Command(BaseCommand):
     for all unplayed matches in the upcoming/current round.
     """
 
-    def handle(self, *_args, verbose=1, **_kwargs) -> None:  # pylint: disable=W0221
+    def handle(  # pylint: disable=arguments-differ
+        self, *_args, tipper_class=Tipper, verbose=1, **_kwargs
+    ) -> None:
         """
         Run 'tip' command for end-to-end tipping process.
 
@@ -23,7 +25,7 @@ class Command(BaseCommand):
         3. Submitting tips to competition websites
             (footytips.com.au & Monash by default).
         """
-        tipper = Tipper(verbose=verbose)
+        tipper = tipper_class(verbose=verbose)
         tipper.fetch_upcoming_fixture()
         tipper.update_match_predictions()
         tipper.submit_tips()

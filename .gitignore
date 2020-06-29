@@ -154,3 +154,6 @@ browser_test/cypress/videos/
 
 # GCP files
 .gcloud
+
+# Serverless directories
+.serverless

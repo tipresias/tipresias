@@ -8,11 +8,9 @@ import pytz
 from faker import Faker
 import numpy as np
 import pandas as pd
-from django.utils import timezone
-from django.conf import settings
 
-from server.types import FixtureData, MatchData, MLModelInfo
-from server.models import Match
+from tipping import settings
+from tipping.types import FixtureData, MatchData
 
 FIRST = 1
 SECOND = 2
@@ -53,8 +51,8 @@ class CyclicalTeamNames:
 
 def _min_max_datetimes_by_year(year: int) -> Dict[str, datetime]:
     return {
-        "datetime_start": timezone.make_aware(datetime(year, JAN, FIRST)),
-        "datetime_end": timezone.make_aware(datetime(year, DEC, THIRTY_FIRST)),
+        "datetime_start": datetime(year, JAN, FIRST, tzinfo=pytz.UTC),
+        "datetime_end": datetime(year, DEC, THIRTY_FIRST, tzinfo=pytz.UTC),
     }
 
 
@@ -147,20 +145,13 @@ def fake_fixture_data(row_count: int, year_range: Tuple[int, int]) -> pd.DataFra
 
 
 def fake_prediction_data(
-    match_data: Union[FixtureData, Match, None] = None,
+    match_data: Union[FixtureData, None] = None,
     ml_model_name="test_estimator",
     predict_margin=True,
 ) -> pd.DataFrame:
     """Return minimally-valid prediction data."""
     if match_data is None:
         match_data_for_pred = fake_fixture_data(1, (2018, 2019)).iloc[0, :]
-    elif isinstance(match_data, Match):
-        match_data_for_pred = {
-            "home_team": match_data.teammatch_set.get(at_home=1).team.name,
-            "away_team": match_data.teammatch_set.get(at_home=0).team.name,
-            "year": match_data.start_date_time.year,
-            "round_number": match_data.round_number,
-        }
     else:
         match_data_for_pred = match_data
 
@@ -196,6 +187,7 @@ def fake_prediction_data(
 
 
 def fake_ml_model_data(n_models: int = 1) -> List[MLModelInfo]:
+    """Generate mock data for raw ML model info from the Augury app."""
     return [
         {
             "name": FAKE.company(),
@@ -206,4 +198,3 @@ def fake_ml_model_data(n_models: int = 1) -> List[MLModelInfo]:
         }
         for _ in range(n_models)
     ]
-

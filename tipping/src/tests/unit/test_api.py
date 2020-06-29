@@ -1,13 +1,13 @@
 # pylint: disable=missing-docstring
 
+from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
-from django.test import TestCase
 import pandas as pd
 import numpy as np
 
-from data import api
-from data.tests.fixtures import data_factories
+from tests.fixtures import data_factories
+from tipping import api
 
 
 N_MATCHES = 5
@@ -18,7 +18,7 @@ class TestApi(TestCase):
     def setUp(self):
         self.api = api
 
-    @patch("data.api.data_import")
+    @patch("tipping.api.data_import")
     def test_fetch_match_predictions(self, mock_data_import):
         matches = data_factories.fake_match_results_data(N_MATCHES, YEAR_RANGE)
         predictions = pd.concat(
@@ -66,7 +66,7 @@ class TestApi(TestCase):
         )
         self.assertEqual(N_MATCHES, len(prediction_response))
 
-    @patch("data.api.data_import")
+    @patch("tipping.api.data_import")
     def test_fetch_match_results(self, mock_data_import):
         matches = data_factories.fake_match_results_data(N_MATCHES, YEAR_RANGE)
         mock_data_import.fetch_match_results_data = MagicMock(return_value=matches)
@@ -105,7 +105,7 @@ class TestApi(TestCase):
         )
         self.assertEqual(N_MATCHES, len(match_response))
 
-    @patch("data.api.data_import")
+    @patch("tipping.api.data_import")
     def test_fetch_ml_models(self, mock_data_import):
         N_ML_MODELS = 2
         ml_models = data_factories.fake_ml_model_data(N_ML_MODELS)

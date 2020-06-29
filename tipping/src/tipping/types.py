@@ -48,3 +48,15 @@ MLModelInfo = TypedDict(
         "label_col": Union[Literal["margin"], Literal["result"]],
     },
 )
+
+FixtureData = TypedDict(
+    "FixtureData",
+    {
+        "date": Union[datetime],
+        "year": int,
+        "round_number": int,
+        "home_team": str,
+        "away_team": str,
+        "venue": str,
+    },
+)

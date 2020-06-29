@@ -5,20 +5,19 @@ from typing import List, Optional, Dict, Tuple, Union, Literal, cast, Any
 import os
 from warnings import warn
 import re
+import pytz
 
 import pandas as pd
 import numpy as np
-from django.utils import timezone
-from django.conf import settings
 from mypy_extensions import TypedDict
 import mechanicalsoup
 import requests
 
-from data import data_import
-from data.helpers import pivot_team_matches_to_matches
-from data.types import CleanPredictionData
+from tipping import data_import
+from tipping.helpers import pivot_team_matches_to_matches
+from tipping.types import CleanPredictionData
+from tipping import settings
 from server import api
-from project.settings.data_config import TEAM_TRANSLATIONS
 
 
 PredictedWinner = TypedDict(
@@ -208,8 +207,8 @@ class MonashSubmitter:
 
     @staticmethod
     def _translate_team_name(element_text: str) -> str:
-        if element_text in TEAM_TRANSLATIONS.keys():
-            return TEAM_TRANSLATIONS[element_text]
+        if element_text in settings.TEAM_TRANSLATIONS.keys():
+            return settings.TEAM_TRANSLATIONS[element_text]
 
         return element_text
 
@@ -248,7 +247,7 @@ class FootyTipsSubmitter:
 
         predictions = self._transform_into_tipping_input(predicted_winners)
         lua_filepath = os.path.join(
-            settings.BASE_DIR, "data", "tipping", "footy_tips_submitter.lua"
+            settings.SRC_DIR, "tipping", "footy_tips_submitter.lua"
         )
 
         with open(lua_filepath) as lua_file:
@@ -264,7 +263,7 @@ class FootyTipsSubmitter:
                 "username": os.environ["FOOTY_TIPS_USERNAME"],
                 "password": os.environ["FOOTY_TIPS_PASSWORD"],
                 "predictions": predictions,
-                "team_translations": TEAM_TRANSLATIONS,
+                "settings.team_translations": settings.TEAM_TRANSLATIONS,
             },
         )
 
@@ -293,8 +292,8 @@ class FootyTipsSubmitter:
 
     @staticmethod
     def _translate_team_name(element_text: str) -> str:
-        if element_text in TEAM_TRANSLATIONS.keys():
-            return TEAM_TRANSLATIONS[element_text]
+        if element_text in settings.TEAM_TRANSLATIONS.keys():
+            return settings.TEAM_TRANSLATIONS[element_text]
 
         return element_text
 
@@ -323,7 +322,7 @@ class Tipper:
         self.data_importer: Any = data_importer or data_import
         self.ml_models = ml_models
 
-        self._right_now = timezone.localtime()
+        self._right_now = datetime.now(tz=pytz.UTC)
         self.verbose = verbose
 
     def fetch_upcoming_fixture(self) -> None:
@@ -422,8 +421,8 @@ class Tipper:
             print(f"Fetching fixture for {year}...\n")
 
         fixture_data_frame = self.data_importer.fetch_fixture_data(
-            start_date=timezone.make_aware(datetime(year, 1, 1)),
-            end_date=timezone.make_aware(datetime(year, 12, 31)),
+            start_date=datetime(year, 1, 1, tzinfo=pytz.UTC),
+            end_date=datetime(year, 12, 31, tzinfo=pytz.UTC),
         )
 
         return fixture_data_frame

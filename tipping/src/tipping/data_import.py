@@ -9,11 +9,10 @@ import pytz
 
 import pandas as pd
 import requests
-from django.conf import settings
-from django.utils import timezone
 from mypy_extensions import TypedDict
 
-from data.types import MLModelInfo
+from tipping import settings
+from tipping.types import MLModelInfo
 
 ParamValue = Union[str, int, datetime]
 PredictionData = TypedDict(
@@ -33,7 +32,7 @@ def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
     # because the former doesn't maintain the timezone offset.
     # We make sure all datetimes are converted to UTC, because that makes things
     # easier due to Django converting all datetime fields to UTC when saving DB records.
-    return data_frame["date"].map(lambda dt: timezone.localtime(parser.parse(dt)))
+    return data_frame["date"].map(lambda dt: parser.parse(dt, tz_info=pytz.UTC))
 
 
 def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
@@ -43,11 +42,7 @@ def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
     # For the edge-case in which this gets run early enough in the morning
     # such that UTC is still the previous day, and the start/end date filters are all
     # one day off.
-    return str(
-        timezone.localtime(
-            param_value, timezone=pytz.timezone("Australia/Melbourne")
-        ).date()
-    )
+    return str(pytz.timezone("Australia/Melbourne").localize(param_value).date())
 
 
 def _clean_param_value(param_value: ParamValue) -> str:

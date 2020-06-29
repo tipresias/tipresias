@@ -5,9 +5,9 @@ from datetime import datetime
 
 import numpy as np
 
-from data import data_import
-from data.helpers import pivot_team_matches_to_matches
-from data.types import CleanPredictionData, MatchData, MLModelInfo
+from tipping import data_import
+from tipping.helpers import pivot_team_matches_to_matches
+from tipping.types import CleanPredictionData, MatchData, MLModelInfo
 
 
 def fetch_match_predictions(

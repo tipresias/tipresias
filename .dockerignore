@@ -106,3 +106,6 @@ keyfile*.json
 # Cypress artifacts
 browser_test/cypress/screenshots/
 browser_test/cypress/videos/
+
+# Serverless directories
+.serverless

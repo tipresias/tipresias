@@ -1,9 +1,11 @@
 # pylint: disable=missing-docstring
-from django.test import TestCase
+
+from unittest import TestCase
+
 import pandas as pd
 
-from data.helpers import pivot_team_matches_to_matches
-from data.tests.fixtures.data_factories import fake_prediction_data
+from tipping.helpers import pivot_team_matches_to_matches
+from tests.fixtures.data_factories import fake_prediction_data
 
 
 class TestHelpers(TestCase):

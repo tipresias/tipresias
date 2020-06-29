@@ -1,30 +1,34 @@
 # pylint: disable=missing-docstring
+
 from typing import Tuple
 from datetime import datetime, timedelta
+from unittest import TestCase
 from unittest.mock import Mock, patch, MagicMock
+import pytz
 
-from django.test import TestCase
-from django.utils import timezone
 from freezegun import freeze_time
 import pandas as pd
 import numpy as np
 from faker import Faker
 
-from data.tipping import Tipper, FootyTipsSubmitter
-from data.tests.fixtures.data_factories import fake_fixture_data, fake_prediction_data
+from tests.fixtures.data_factories import (
+    fake_fixture_data,
+    fake_prediction_data,
+)
+from tipping.tipping import Tipper, FootyTipsSubmitter
 
 
 ROW_COUNT = 5
 TIP_DATES = [
-    timezone.make_aware(datetime(2016, 1, 1)),
-    timezone.make_aware(datetime(2017, 1, 1)),
-    timezone.make_aware(datetime(2018, 1, 1)),
+    datetime(2016, 1, 1, tzinfo=pytz.UTC),
+    datetime(2017, 1, 1, tzinfo=pytz.UTC),
+    datetime(2018, 1, 1, tzinfo=pytz.UTC),
 ]
 FAKE = Faker()
 
 
 class TestTipper(TestCase):
-    @patch("data.data_import")
+    @patch("tipping.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         (
             self.fixture_return_values,
@@ -52,7 +56,7 @@ class TestTipper(TestCase):
     @patch("server.api.update_fixture_data")
     def test_fetch_upcoming_fixture(self, mock_api_update_fixture_data):
         with freeze_time(TIP_DATES[0]):
-            right_now = timezone.localtime()
+            right_now = datetime.now(tz=pytz.UTC)
             self.tipping._right_now = right_now  # pylint: disable=protected-access
 
             self.tipping.fetch_upcoming_fixture()
@@ -70,7 +74,7 @@ class TestTipper(TestCase):
             mock_api_update_fixture_data.reset_mock()
 
             with self.subTest("with no future matches"):
-                right_now = timezone.localtime()
+                right_now = datetime.now(tz=pytz.UTC)
                 self.tipping._right_now = right_now  # pylint: disable=protected-access
 
                 self.tipping.fetch_upcoming_fixture()
@@ -145,7 +149,7 @@ class TestTipper(TestCase):
         self, tip_date
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         with freeze_time(tip_date):
-            tomorrow = timezone.localtime() + timedelta(days=1)
+            tomorrow = datetime.now(tz=pytz.UTC) + timedelta(days=1)
             year = tomorrow.year
 
             # Mock footywire fixture data

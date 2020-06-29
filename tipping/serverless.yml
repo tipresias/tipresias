@@ -55,12 +55,30 @@ plugins:
 package:
   include:
     - handler.py
-    - src/*.py
     - src/tipping/**
   exclude:
-    - '**/**'
+    - '**'
 
 functions:
+  fetch_match_predictions:
+    handler: handler.fetch_match_predictions
+    events:
+      - http:
+          path: predictions
+          method: get
+  fetch_match_results:
+    handler: handler.fetch_match_results
+    events:
+      - http:
+          path: matches
+          method: get
+  fetch_ml_models:
+    handler: handler.fetch_ml_models
+    events:
+      - http:
+          path: ml_models
+          method: get
+
   hello:
     handler: handler.hello
 #    The following are a few example events you can configure

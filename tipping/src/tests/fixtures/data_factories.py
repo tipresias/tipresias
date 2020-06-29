@@ -186,15 +186,17 @@ def fake_prediction_data(
     return pd.DataFrame(predictions)
 
 
-def fake_ml_model_data(n_models: int = 1) -> List[MLModelInfo]:
+def fake_ml_model_data(n_models: int = 1) -> pd.DataFrame:
     """Generate mock data for raw ML model info from the Augury app."""
-    return [
-        {
-            "name": FAKE.company(),
-            "prediction_type": np.random.choice(["margin", "win_probability"]),
-            "trained_to": FAKE.pybool(),
-            "data_set": np.random.choice(["legacy_model_data", "model_data"]),
-            "label_col": np.random.choice(["margin", "result"]),
-        }
-        for _ in range(n_models)
-    ]
+    return pd.DataFrame(
+        [
+            {
+                "name": FAKE.company(),
+                "prediction_type": np.random.choice(["margin", "win_probability"]),
+                "trained_to": FAKE.pybool(),
+                "data_set": np.random.choice(["legacy_model_data", "model_data"]),
+                "label_col": np.random.choice(["margin", "result"]),
+            }
+            for _ in range(n_models)
+        ]
+    )

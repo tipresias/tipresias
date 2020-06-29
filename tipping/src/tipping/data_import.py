@@ -1,6 +1,6 @@
 """Module for functions that fetch data."""
 
-from typing import Tuple, Optional, List, Dict, Any, cast, Union
+from typing import Optional, List, Dict, Any, cast, Union
 import os
 from datetime import datetime
 from urllib.parse import urljoin
@@ -78,32 +78,33 @@ def _fetch_data(
 
 
 def fetch_prediction_data(
-    year_range: Tuple[int, int],
+    year_range: str,
     round_number: Optional[int] = None,
     ml_models: Optional[List[str]] = None,
     train_models: Optional[bool] = False,
 ) -> pd.DataFrame:
     """
-    Fetch prediction data from machine_learning module.
+    Fetch prediction data from ML models in the data-science service.
 
     Params:
     -------
     year_range: Min (inclusive) and max (exclusive) years for which to fetch data.
+        Format is 'yyyy-yyyy'.
     round_number: Specify a particular round for which to fetch data.
     ml_models: List of ML model names to use for making predictions.
+    train_models: Whether to train models in between predictions (only applies
+        when predicting across multiple seasons).
 
     Returns:
     --------
         List of prediction data dictionaries.
     """
-    min_year, max_year = year_range
-    year_range_param = "-".join((str(min_year), str(max_year)))
     ml_model_param = None if ml_models is None else ",".join(ml_models)
 
     prediction_data = _fetch_data(
         "predictions",
         {
-            "year_range": year_range_param,
+            "year_range": year_range,
             "round_number": round_number,
             "ml_models": ml_model_param,
             "train_models": train_models,
@@ -139,17 +140,17 @@ def fetch_fixture_data(start_date: datetime, end_date: datetime) -> pd.DataFrame
 
 
 def fetch_match_results_data(
-    start_date: datetime, end_date: datetime, fetch_data: bool = False
+    start_date: str, end_date: str, fetch_data: bool = False
 ) -> pd.DataFrame:
     """
     Fetch results data for past matches from machine_learning module.
 
     Params:
     -------
-    start_date: Timezone-aware date-time that determines the earliest date
-        for which to fetch data.
-    end_date: Timezone-aware date-time that determines the latest date
-        for which to fetch data.
+    start_date: Date string that determines the earliest date
+        for which to fetch data. Format is 'yyyy-mm-dd'.
+    end_date: Date string that determines the latest date
+        for which to fetch data. Format is 'yyyy-mm-dd'.
     fetch_data: Whether to fetch fresh data. Non-fresh data goes up to end
         of previous season.
 
@@ -170,7 +171,7 @@ def fetch_match_results_data(
     return match_results
 
 
-def fetch_ml_model_info() -> List[MLModelInfo]:
+def fetch_ml_model_info() -> pd.DataFrame:
     """
     Fetch general info about all saved ML models.
 
@@ -178,4 +179,6 @@ def fetch_ml_model_info() -> List[MLModelInfo]:
     --------
     A list of objects with basic info about each ML model.
     """
-    return [cast(MLModelInfo, ml_model) for ml_model in _fetch_data("ml_models")]
+    return pd.DataFrame(
+        [cast(MLModelInfo, ml_model) for ml_model in _fetch_data("ml_models")]
+    )

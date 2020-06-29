@@ -4,11 +4,9 @@ from datetime import datetime, timedelta
 from django.test import TestCase
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-import pandas as pd
 
 from server.models import Match, MLModel, Team, Prediction
 from server.tests.fixtures.data_factories import fake_prediction_data
-from data.helpers import pivot_team_matches_to_matches
 
 
 class TestPrediction(TestCase):
@@ -27,7 +25,6 @@ class TestPrediction(TestCase):
 
     def test_update_or_create_from_raw_data(self):
         data = fake_prediction_data(self.match, ml_model_name=self.ml_model.name)
-        home_away_df = pivot_team_matches_to_matches(pd.DataFrame(data))
 
         with self.subTest("when future_only is True"):
             with self.subTest("and the match has already been played"):
@@ -35,7 +32,7 @@ class TestPrediction(TestCase):
                 self.assertEqual(Prediction.objects.count(), 0)
 
                 Prediction.update_or_create_from_raw_data(
-                    home_away_df.to_dict("records")[0], future_only=True
+                    data.to_dict("records")[0], future_only=True
                 )
 
                 # It doesn't create a prediction
@@ -60,12 +57,9 @@ class TestPrediction(TestCase):
                 future_data = fake_prediction_data(
                     future_match, ml_model_name=self.ml_model.name
                 )
-                future_home_away_df = pivot_team_matches_to_matches(
-                    pd.DataFrame(future_data)
-                )
 
                 Prediction.update_or_create_from_raw_data(
-                    future_home_away_df.to_dict("records")[0], future_only=True
+                    future_data.to_dict("records")[0], future_only=True
                 )
 
                 # It creates a prediction
@@ -73,7 +67,7 @@ class TestPrediction(TestCase):
 
         Prediction.objects.all().delete()
         self.assertEqual(Prediction.objects.count(), 0)
-        Prediction.update_or_create_from_raw_data(home_away_df.to_dict("records")[0])
+        Prediction.update_or_create_from_raw_data(data.to_dict("records")[0])
         self.assertEqual(Prediction.objects.count(), 1)
 
         prediction = Prediction.objects.first()
@@ -82,12 +76,10 @@ class TestPrediction(TestCase):
 
         with self.subTest("when prediction record already exists"):
             predicted_margin = 100
-            home_away_df.loc[:, "home_predicted_margin"] = predicted_margin
-            home_away_df.loc[:, "away_predicted_margin"] = -predicted_margin
+            data.loc[:, "home_predicted_margin"] = predicted_margin
+            data.loc[:, "away_predicted_margin"] = -predicted_margin
 
-            Prediction.update_or_create_from_raw_data(
-                home_away_df.to_dict("records")[0]
-            )
+            Prediction.update_or_create_from_raw_data(data.to_dict("records")[0])
             self.assertEqual(Prediction.objects.count(), 1)
 
             prediction = Prediction.objects.first()
@@ -101,16 +93,14 @@ class TestPrediction(TestCase):
         ):
             predicted_winning_margin = 100
             predicted_losing_margin = -200
-            home_away_df.loc[:, "home_predicted_margin"] = predicted_losing_margin
-            home_away_df.loc[:, "away_predicted_margin"] = predicted_winning_margin
+            data.loc[:, "home_predicted_margin"] = predicted_losing_margin
+            data.loc[:, "away_predicted_margin"] = predicted_winning_margin
 
-            Prediction.update_or_create_from_raw_data(
-                home_away_df.to_dict("records")[0]
-            )
+            Prediction.update_or_create_from_raw_data(data.to_dict("records")[0])
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 150)
             self.assertEqual(
-                home_away_df["away_team"].iloc[0], prediction.predicted_winner.name
+                data["away_team"].iloc[0], prediction.predicted_winner.name
             )
 
         with self.subTest(
@@ -118,87 +108,74 @@ class TestPrediction(TestCase):
         ):
             predicted_winning_margin = 100
             predicted_losing_margin = -200
-            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
-            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+            data.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            data.loc[:, "away_predicted_margin"] = predicted_losing_margin
 
-            Prediction.update_or_create_from_raw_data(
-                home_away_df.to_dict("records")[0]
-            )
+            Prediction.update_or_create_from_raw_data(data.to_dict("records")[0])
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 150)
             self.assertEqual(
-                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+                data["home_team"].iloc[0], prediction.predicted_winner.name
             )
 
         with self.subTest("when predicted margins are less than 0.5"):
             predicted_winning_margin = 0.4
             predicted_losing_margin = -0.4
-            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
-            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+            data.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            data.loc[:, "away_predicted_margin"] = predicted_losing_margin
 
-            Prediction.update_or_create_from_raw_data(
-                home_away_df.to_dict("records")[0]
-            )
+            Prediction.update_or_create_from_raw_data(data.to_dict("records")[0])
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 0.4)
             self.assertEqual(
-                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+                data["home_team"].iloc[0], prediction.predicted_winner.name
             )
 
         with self.subTest("when predicted margins are both positive"):
             predicted_winning_margin = 20.6
             predicted_losing_margin = 10.6
-            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
-            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+            data.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            data.loc[:, "away_predicted_margin"] = predicted_losing_margin
 
-            Prediction.update_or_create_from_raw_data(
-                home_away_df.to_dict("records")[0]
-            )
+            Prediction.update_or_create_from_raw_data(data.to_dict("records")[0])
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 10)
             self.assertEqual(
-                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+                data["home_team"].iloc[0], prediction.predicted_winner.name
             )
 
         with self.subTest("when predicted margins are both negative"):
             predicted_winning_margin = -10.6
             predicted_losing_margin = -20.6
-            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
-            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+            data.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            data.loc[:, "away_predicted_margin"] = predicted_losing_margin
 
-            Prediction.update_or_create_from_raw_data(
-                home_away_df.to_dict("records")[0]
-            )
+            Prediction.update_or_create_from_raw_data(data.to_dict("records")[0])
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 10)
             self.assertEqual(
-                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+                data["home_team"].iloc[0], prediction.predicted_winner.name
             )
 
         with self.subTest("when the calculated predicted_margin rounds up"):
             predicted_winning_margin = 5.8
             predicted_losing_margin = -5.7
-            home_away_df.loc[:, "home_predicted_margin"] = predicted_winning_margin
-            home_away_df.loc[:, "away_predicted_margin"] = predicted_losing_margin
+            data.loc[:, "home_predicted_margin"] = predicted_winning_margin
+            data.loc[:, "away_predicted_margin"] = predicted_losing_margin
 
-            Prediction.update_or_create_from_raw_data(
-                home_away_df.to_dict("records")[0]
-            )
+            Prediction.update_or_create_from_raw_data(data.to_dict("records")[0])
             prediction = Prediction.objects.first()
             self.assertEqual(prediction.predicted_margin, 5.75)
             self.assertEqual(
-                home_away_df["home_team"].iloc[0], prediction.predicted_winner.name
+                data["home_team"].iloc[0], prediction.predicted_winner.name
             )
 
         with self.subTest("when predicting win probability"):
             proba_data = fake_prediction_data(
                 self.match, ml_model_name=self.ml_model.name, predict_margin=False
             )
-            proba_home_away_df = pivot_team_matches_to_matches(pd.DataFrame(proba_data))
 
-            Prediction.update_or_create_from_raw_data(
-                proba_home_away_df.to_dict("records")[0]
-            )
+            Prediction.update_or_create_from_raw_data(proba_data.to_dict("records")[0])
 
             prediction = Prediction.objects.first()
             self.assertIsInstance(prediction.predicted_win_probability, float)

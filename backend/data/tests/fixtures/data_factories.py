@@ -11,7 +11,7 @@ import pandas as pd
 from django.utils import timezone
 from django.conf import settings
 
-from server.types import FixtureData, MatchData
+from server.types import FixtureData, MatchData, MLModelInfo
 from server.models import Match
 
 FIRST = 1
@@ -164,23 +164,46 @@ def fake_prediction_data(
     else:
         match_data_for_pred = match_data
 
-    predicted_home_margin = np.random.uniform(25.0, 125.0) if predict_margin else None
-    predicted_away_margin = np.random.uniform(25.0, 125.0) if predict_margin else None
-    predicted_home_proba = np.random.uniform(0.1, 0.9) if not predict_margin else None
-    predicted_away_proba = np.random.uniform(0.1, 0.9) if not predict_margin else None
+    predicted_home_margin = np.random.rand() * 50 if predict_margin else None
+    predicted_away_margin = np.random.rand() * 50 if predict_margin else None
+    predicted_home_proba = np.random.rand() if not predict_margin else None
+    predicted_away_proba = np.random.rand() if not predict_margin else None
 
-    return pd.DataFrame(
-        [
-            {
-                "home_team": match_data_for_pred["home_team"],
-                "away_team": match_data_for_pred["away_team"],
-                "year": match_data_for_pred["year"],
-                "round_number": match_data_for_pred["round_number"],
-                "ml_model": ml_model_name,
-                "home_predicted_margin": predicted_home_margin,
-                "away_predicted_margin": predicted_away_margin,
-                "home_predicted_win_probability": predicted_home_proba,
-                "away_predicted_win_probability": predicted_away_proba,
-            }
-        ]
-    )
+    predictions = [
+        {
+            "team": match_data_for_pred["home_team"],
+            "year": match_data_for_pred["year"],
+            "round_number": match_data_for_pred["round_number"],
+            "at_home": 1,
+            "oppo_team": match_data_for_pred["away_team"],
+            "ml_model": ml_model_name,
+            "predicted_margin": predicted_home_margin,
+            "predicted_win_probability": predicted_home_proba,
+        },
+        {
+            "team": match_data_for_pred["away_team"],
+            "year": match_data_for_pred["year"],
+            "round_number": match_data_for_pred["round_number"],
+            "at_home": 0,
+            "oppo_team": match_data_for_pred["home_team"],
+            "ml_model": ml_model_name,
+            "predicted_margin": predicted_away_margin,
+            "predicted_win_probability": predicted_away_proba,
+        },
+    ]
+
+    return pd.DataFrame(predictions)
+
+
+def fake_ml_model_data(n_models: int = 1) -> List[MLModelInfo]:
+    return [
+        {
+            "name": FAKE.company(),
+            "prediction_type": np.random.choice(["margin", "win_probability"]),
+            "trained_to": FAKE.pybool(),
+            "data_set": np.random.choice(["legacy_model_data", "model_data"]),
+            "label_col": np.random.choice(["margin", "result"]),
+        }
+        for _ in range(n_models)
+    ]
+

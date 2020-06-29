@@ -4,10 +4,11 @@ from typing import List, Tuple, Optional
 
 from django.utils import timezone
 from mypy_extensions import TypedDict
+import pandas as pd
 
 from server.models import Match, TeamMatch, Prediction
 from server.types import FixtureData, CleanPredictionData
-from data import data_import
+from data import api
 
 
 MatchDict = TypedDict("MatchDict", {"season": int, "round_number": int})
@@ -105,7 +106,7 @@ def backfill_recent_match_results(verbose=1) -> None:
 
         return None
 
-    match_results = data_import.fetch_match_results_data(
+    match_results = api.fetch_match_results(
         earliest_date_without_results, timezone.now(), fetch_data=True
     )
 
@@ -113,7 +114,7 @@ def backfill_recent_match_results(verbose=1) -> None:
         print("Results data is not yet available to update match records.")
         return None
 
-    Match.update_results(match_results)
+    Match.update_results(pd.DataFrame(match_results))
 
     return None
 

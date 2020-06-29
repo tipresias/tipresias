@@ -16,6 +16,7 @@ import requests
 
 from data import data_import
 from data.helpers import pivot_team_matches_to_matches
+from data.types import CleanPredictionData
 from server import api
 from project.settings.data_config import TEAM_TRANSLATIONS
 
@@ -368,11 +369,19 @@ class Tipper:
             print("Predictions received!")
 
         home_away_df = pivot_team_matches_to_matches(prediction_data)
-        predictions = home_away_df.replace({np.nan: None}).to_dict("records")
+        api.update_future_match_predictions(
+            home_away_df.replace({np.nan: None}).to_dict("records")
+        )
 
-        api.update_future_match_predictions(predictions)
+        if self.verbose == 1:
+            print("Match predictions sent!")
 
         return None
+
+    def fetch_match_predictions(
+        self, season_range: Tuple[int, int], round_number: Optional[int] = None
+    ) -> List[CleanPredictionData]:
+        """Fetch match prediction data from the data-science service."""
 
     def submit_tips(self, tip_submitters: Optional[List[Any]] = None) -> None:
         """

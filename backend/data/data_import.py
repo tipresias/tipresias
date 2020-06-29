@@ -13,7 +13,7 @@ from django.conf import settings
 from django.utils import timezone
 from mypy_extensions import TypedDict
 
-from server.types import MlModel
+from data.types import MLModelInfo
 
 ParamValue = Union[str, int, datetime]
 PredictionData = TypedDict(
@@ -175,7 +175,7 @@ def fetch_match_results_data(
     return match_results
 
 
-def fetch_ml_model_info() -> List[MlModel]:
+def fetch_ml_model_info() -> List[MLModelInfo]:
     """
     Fetch general info about all saved ML models.
 
@@ -183,4 +183,4 @@ def fetch_ml_model_info() -> List[MlModel]:
     --------
     A list of objects with basic info about each ML model.
     """
-    return [cast(MlModel, ml_model) for ml_model in _fetch_data("ml_models")]
+    return [cast(MLModelInfo, ml_model) for ml_model in _fetch_data("ml_models")]

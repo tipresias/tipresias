@@ -56,13 +56,13 @@ class TestSeedDb(TestCase):
                 )
             )
 
-        mock_data_import.fetch_prediction_data = Mock(
-            return_value=pd.concat(prediction_data).reset_index()
+        mock_data_import.fetch_match_predictions = Mock(
+            return_value=pd.concat(prediction_data).reset_index().to_dict("records")
         )
-        mock_data_import.fetch_match_results_data = Mock(
+        mock_data_import.fetch_match_results = Mock(
             side_effect=self.__match_results_side_effect
         )
-        mock_data_import.fetch_ml_model_info = Mock(
+        mock_data_import.fetch_ml_models = Mock(
             return_value=[
                 {"name": "test_estimator", "filepath": "some/filepath/model.pkl"}
             ]
@@ -112,11 +112,11 @@ class TestSeedDb(TestCase):
         fetch_data=False,  # pylint: disable=unused-argument
     ):
         if start_date is None or end_date is None:
-            return self.match_results_data_frame
+            return self.match_results_data_frame.to_dict("records")
 
         return self.match_results_data_frame.query(
             "date >= @start_date & date <= @end_date"
-        )
+        ).to_dict("records")
 
     @staticmethod
     def __clear_db():

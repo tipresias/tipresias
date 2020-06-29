@@ -1,14 +1,11 @@
 # pylint: disable=missing-docstring
 
-from unittest.mock import patch, MagicMock
-
 from django.test import TestCase, RequestFactory
 import pandas as pd
 
 from server.tests.fixtures import data_factories, factories
 from server.models import Prediction
 from server import views
-from data.tipping import Tipper
 
 N_MATCHES = 9
 
@@ -22,12 +19,7 @@ class TestViews(TestCase):
         self.matches = [factories.FullMatchFactory() for _ in range(N_MATCHES)]
         self.views = views
 
-    @patch("server.views.Tipper")
-    def test_predictions(self, mock_tipper_class):
-        mock_tipper = Tipper()
-        mock_tipper.submit_tips = MagicMock()
-        mock_tipper_class.return_value = mock_tipper
-
+    def test_predictions(self):
         prediction_data = pd.concat(
             [
                 data_factories.fake_prediction_data(
@@ -74,8 +66,6 @@ class TestViews(TestCase):
 
                 # It creates predictions
                 self.assertEqual(Prediction.objects.count(), 9)
-                # It submits tips
-                mock_tipper.submit_tips.assert_called()
                 # It returns success response
                 self.assertEqual(response.status_code, 200)
 
@@ -103,7 +93,5 @@ class TestViews(TestCase):
                 Prediction.objects.all().values_list("predicted_margin", flat=True)
             )
             self.assertEqual(original_predicted_margins, posted_predicted_margins)
-            # It submits tips
-            mock_tipper.submit_tips.assert_called()
             # It returns a success response
             self.assertEqual(response.status_code, 200)

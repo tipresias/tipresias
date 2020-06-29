@@ -1,6 +1,6 @@
 """Contains custom mypy TypedDicts that are used across the application."""
 
-from typing import Union
+from typing import Union, Literal
 from datetime import datetime
 
 from mypy_extensions import TypedDict
@@ -64,7 +64,16 @@ CleanPredictionData = TypedDict(
     },
 )
 
-MlModel = TypedDict("MlModel", {"name": str, "filepath": str})
+MLModelInfo = TypedDict(
+    "MLModelInfo",
+    {
+        "name": str,
+        "prediction_type": Union[Literal["margin"], Literal["win_probability"]],
+        "trained_to": int,
+        "data_set": Union[Literal["legacy_model_data"], Literal["model_data"]],
+        "label_col": Union[Literal["margin"], Literal["result"]],
+    },
+)
 
 RoundMetrics = TypedDict(
     "RoundMetrics",

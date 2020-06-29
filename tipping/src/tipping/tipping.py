@@ -13,11 +13,9 @@ from mypy_extensions import TypedDict
 import mechanicalsoup
 import requests
 
-from tipping import data_import
+from tipping import data_import, data_export, settings
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.types import CleanPredictionData
-from tipping import settings
-from server import api
 
 
 PredictedWinner = TypedDict(
@@ -35,6 +33,8 @@ PredictionType = Union[
 
 JAN = 1
 FIRST = 1
+DEC = 12
+THIRTY_FIRST = 31
 
 # There's also a 'gaussian' competition, but I don't participate in that one,
 # so leaving it out for now.
@@ -306,6 +306,7 @@ class Tipper:
         fetch_data: bool = True,
         data_importer=None,
         ml_models: Optional[List[str]] = None,
+        tip_submitters: Optional[List[Any]] = None,
         verbose: int = 1,
     ) -> None:
         """
@@ -316,14 +317,23 @@ class Tipper:
         fetch_data: Whether to fetch up-to-date data or load saved data files.
         data_importer: Module used for importing data from remote sources.
         ml_models: A list of names of models to use when making tipping predictions.
+        tip_submitters: List of submitter objects that handle submitting tips
+            to competition websites.
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.fetch_data = fetch_data
         self.data_importer: Any = data_importer or data_import
         self.ml_models = ml_models
+        self.verbose = verbose
+        self.tip_submitters = tip_submitters or [
+            MonashSubmitter(verbose=self.verbose),
+            # Better to but FootyTipsSubmitter last, because the site has a lot
+            # of javascript, and is more prone to errors. They also send an email,
+            # so we get confirmation of tips submission.
+            FootyTipsSubmitter(verbose=self.verbose),
+        ]
 
         self._right_now = datetime.now(tz=pytz.UTC)
-        self.verbose = verbose
 
     def fetch_upcoming_fixture(self) -> None:
         """Fetch fixture data and send upcoming match data to the Server API."""
@@ -335,22 +345,24 @@ class Tipper:
         if upcoming_round is None or upcoming_matches is None:
             return None
 
-        match_records = upcoming_matches.replace({np.nan: None}).to_dict("records")
-        api.update_fixture_data(match_records, upcoming_round)
+        data_export.update_fixture_data(upcoming_matches, upcoming_round)
 
         return None
 
     def update_match_predictions(self) -> None:
         """Request prediction data from Augury service for upcoming matches."""
-        next_match = api.fetch_next_match()
+        right_now = datetime.now(tz=pytz.UTC)
+        end_of_year = datetime(right_now.year, DEC, THIRTY_FIRST, tzinfo=pytz.UTC)
+        upcoming_matches = data_import.fetch_fixture_data(right_now, end_of_year)
 
-        if next_match is None:
+        if not upcoming_matches.any().any():
             if self.verbose == 1:
                 print("There are no upcoming matches to predict.")
             return None
 
+        next_match = upcoming_matches.sort_values("date").iloc[0, :]
         upcoming_round = next_match["round_number"]
-        upcoming_season = next_match["season"]
+        upcoming_season = next_match["year"]
 
         if self.verbose == 1:
             print(
@@ -368,12 +380,14 @@ class Tipper:
             print("Predictions received!")
 
         home_away_df = pivot_team_matches_to_matches(prediction_data)
-        api.update_future_match_predictions(
-            home_away_df.replace({np.nan: None}).to_dict("records")
-        )
+        match_predictions = home_away_df.replace({np.nan: None}).to_dict("records")
+
+        data_export.update_match_predictions(match_predictions)
 
         if self.verbose == 1:
             print("Match predictions sent!")
+
+        self._submit_tips(match_predictions)
 
         return None
 
@@ -382,25 +396,7 @@ class Tipper:
     ) -> List[CleanPredictionData]:
         """Fetch match prediction data from the data-science service."""
 
-    def submit_tips(self, tip_submitters: Optional[List[Any]] = None) -> None:
-        """
-        Submit tips to the given competitions.
-
-        Params:
-        -------
-        tip_submitters: List of submitter objects that handle submitting tips
-            to competition websites.
-        """
-        tip_submitters = tip_submitters or [
-            MonashSubmitter(verbose=self.verbose),
-            # Better to but FootyTipsSubmitter last, because the site has a lot
-            # of javascript, and is more prone to errors. They also send an email,
-            # so we get confirmation of tips submission.
-            FootyTipsSubmitter(verbose=self.verbose),
-        ]
-
-        latest_predictions = api.fetch_latest_round_predictions(verbose=self.verbose)
-
+    def _submit_tips(self, latest_predictions: List[PredictedWinner]) -> None:
         if not any(latest_predictions):
             if self.verbose == 1:
                 print(
@@ -410,7 +406,7 @@ class Tipper:
 
             return None
 
-        for submitter in tip_submitters:
+        for submitter in self.tip_submitters:
             submitter.verbose = self.verbose
             submitter.submit_tips(latest_predictions)
 

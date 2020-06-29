@@ -1,11 +1,13 @@
 """Module for app settings, data transformations, and internal conventions."""
 
 import os
-import pytz
 
 SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
 ENVIRONMENT = os.getenv("PYTHON_ENV", "development")
-MELBOURNE_TIMEZONE = pytz.timezone("Australia/Melbourne")
+
+TIPRESIAS_APP = (
+    "http://www.tipresias.net" if ENVIRONMENT == "production" else "http://backend:8000"
+)
 
 TEAM_TRANSLATIONS = {
     "Tigers": "Richmond",

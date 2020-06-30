@@ -2,7 +2,9 @@ function main(splash)
   local function fill_in_predicted_margin(predicted_margin, match_element)
     local margin_input = match_element:querySelector('[name="Margin"]')
 
-    if margin_input then assert(margin_input:fill(predicted_margin)) end
+    -- There is only one Margin input. The element check is to make sure we use
+    -- the correct predicted_margin value.
+    if margin_input then assert(splash:select('form'):fill({Margin = predicted_margin})) end
   end
 
   local function element_is_predicted_winner(element, predicted_winner)

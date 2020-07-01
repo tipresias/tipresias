@@ -1,14 +1,15 @@
 """Functions for use by other apps or services to modify Server DB records."""
 
 from typing import List, Tuple, Optional
+from datetime import datetime
+import pytz
 
 from django.utils import timezone
 from mypy_extensions import TypedDict
 import pandas as pd
 
 from server.models import Match, TeamMatch, Prediction
-from server.types import FixtureData, CleanPredictionData
-from data import api
+from server.types import FixtureData, CleanPredictionData, MatchData
 
 
 MatchDict = TypedDict("MatchDict", {"season": int, "round_number": int})
@@ -93,8 +94,15 @@ def update_fixture_data(
     return None
 
 
-def backfill_recent_match_results(verbose=1) -> None:
-    """Updates scores for all played matches without score data."""
+def backfill_recent_match_results(match_results: List[MatchData], verbose=1) -> None:
+    """
+    Updates scores for all played matches without score data.
+
+    Params:
+    -------
+    match_results: List of match dicts that include home & away scores.
+    verbose: Whether to print info messages.
+    """
     if verbose == 1:
         print("Filling in results for recent matches...")
 
@@ -106,15 +114,20 @@ def backfill_recent_match_results(verbose=1) -> None:
 
         return None
 
-    match_results = api.fetch_match_results(
-        earliest_date_without_results, timezone.now(), fetch_data=True
-    )
-
     if not any(match_results):
         print("Results data is not yet available to update match records.")
         return None
 
-    Match.update_results(pd.DataFrame(match_results))
+    right_now = datetime.now(tz=pytz.UTC)  # pylint: disable=unused-variable
+    match_results_to_fill = pd.DataFrame(match_results).query(
+        "date >= @earliest_date_without_results & date < @right_now"
+    )
+
+    if not match_results_to_fill.any().any():
+        print("Results data is not yet available to update match records.")
+        return None
+
+    Match.update_results(pd.DataFrame(match_results_to_fill))
 
     return None
 

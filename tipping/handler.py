@@ -21,7 +21,8 @@ class Response(TypedDict):
 
 
 def _response(data: Union[List[Dict[str, Any]], Dict[str, Any]]) -> Response:
-    return {"statusCode": 200, "body": json.dumps(data)}
+
+    return {"statusCode": 200, "body": json.dumps({"data": data})}
 
 
 def hello(event, _context) -> Response:

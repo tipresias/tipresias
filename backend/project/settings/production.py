@@ -10,6 +10,9 @@ ENVIRONMENT = "production"
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 API_TOKEN = os.environ["API_TOKEN"]
+TIPPING_SERVICE_TOKEN = os.environ["TIPPING_SERVICE_TOKEN"]
+
+TIPPING_SERVICE = "TBD"
 
 ALLOWED_HOSTS = [
     "tipresias.herokuapp.com",

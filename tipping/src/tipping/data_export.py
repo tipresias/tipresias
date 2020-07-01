@@ -59,3 +59,29 @@ def update_match_predictions(prediction_data: pd.DataFrame):
         f"Headers: {response.headers}\n"
         f"Body: {response.text}"
     )
+
+
+def update_match_results(match_data: pd.DataFrame):
+    """
+    POST match data to main Tipresias app.
+
+    Params:
+    -------
+    match_data: Data from played matches, especially finally scores.
+    """
+    url = settings.TIPRESIAS_APP + "/matches"
+    body = {
+        "data": match_data.replace({np.nan: None}).to_dict("records"),
+    }
+
+    response = requests.post(url, json=body)
+
+    if 200 <= response.status_code < 300:
+        return None
+
+    raise Exception(
+        f"Bad response from application when posting to {url}:\n"
+        f"Status: {response.status_code}\n"
+        f"Headers: {response.headers}\n"
+        f"Body: {response.text}"
+    )

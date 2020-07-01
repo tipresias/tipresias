@@ -16,7 +16,7 @@ def fetch_match_predictions(
     train_models: Optional[bool] = False,
 ) -> List[CleanPredictionData]:
     """
-    Fetch prediction data from machine_learning module.
+    Fetch prediction data from ML models.
 
     Params:
     -------

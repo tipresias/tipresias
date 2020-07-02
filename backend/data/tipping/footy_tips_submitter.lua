@@ -10,7 +10,7 @@ function main(splash)
   local function element_is_predicted_winner(element, predicted_winner)
     local element_team_name = splash.args.team_translations[element:text()] or
       element:text()
-    return element_team_name == predicted_winner and element:visible()
+    return element_team_name == predicted_winner
   end
 
   local function select_predicted_winner(predicted_winner, match_element)

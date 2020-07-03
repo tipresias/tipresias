@@ -10,7 +10,12 @@ function main(splash)
   local function element_is_predicted_winner(element, predicted_winner)
     local element_team_name = splash.args.team_translations[element:text()] or
       element:text()
-    return element_team_name == predicted_winner
+    -- We use offset parent rather than visible/hidden, because Splash thinks
+    -- all team elements are visible, when only the first one actually is.
+    -- This raises an error when we try to click on the invisible element.
+    local element_is_visible = element.offsetParent
+
+    return element_is_visible and element_team_name == predicted_winner
   end
 
   local function select_predicted_winner(predicted_winner, match_element)
@@ -56,8 +61,8 @@ function main(splash)
     for _, match_element in ipairs(get_match_elements()) do
       local predictions = get_match_prediction(match_element)
 
-      select_predicted_winner(predictions[0], match_element)
-      fill_in_predicted_margin(predictions[1], match_element)
+      select_predicted_winner(predictions[1], match_element)
+      fill_in_predicted_margin(predictions[2], match_element)
     end
   end
 

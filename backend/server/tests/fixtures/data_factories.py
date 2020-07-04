@@ -1,7 +1,7 @@
 """Module for factory functions that create raw data objects."""
 
 from typing import List, Dict, Tuple, Union
-from datetime import datetime
+from datetime import datetime, timedelta
 import itertools
 import pytz
 
@@ -51,10 +51,38 @@ class CyclicalTeamNames:
             return next(self.cyclical_team_names)
 
 
-def _min_max_datetimes_by_year(year: int) -> Dict[str, datetime]:
+def _min_max_datetimes_by_year(
+    year: int, force_future: bool = False
+) -> Dict[str, datetime]:
+    # About as early as matches ever start
+    MIN_MATCH_HOUR = 12
+    # About as late as matches ever start
+    MAX_MATCH_HOUR = 20
+
+    if force_future:
+        today = timezone.now()
+
+        # Running tests on 28 Feb of a leap year breaks them, because the given year
+        # generally won't be a leap year (e.g. 2018-2-29 doesn't exist),
+        # so we retry with two days in the future (e.g. 2018-3-1).
+        try:
+            tomorrow = today + timedelta(hours=24)
+            datetime_start = timezone.make_aware(
+                datetime(year, tomorrow.month, tomorrow.day, MIN_MATCH_HOUR)
+            )
+        except ValueError:
+            tomorrow = today + timedelta(hours=48)
+            datetime_start = timezone.make_aware(
+                datetime(year, tomorrow.month, tomorrow.day, MIN_MATCH_HOUR)
+            )
+    else:
+        datetime_start = timezone.make_aware(datetime(year, JAN, FIRST, MIN_MATCH_HOUR))
+
     return {
-        "datetime_start": timezone.make_aware(datetime(year, JAN, FIRST)),
-        "datetime_end": timezone.make_aware(datetime(year, DEC, THIRTY_FIRST)),
+        "datetime_start": datetime_start,
+        "datetime_end": timezone.make_aware(
+            datetime(year, DEC, THIRTY_FIRST, MAX_MATCH_HOUR)
+        ),
     }
 
 
@@ -108,7 +136,7 @@ def fake_match_results_data(
 def _fixture_data(year: int, team_names: Tuple[str, str]) -> FixtureData:
     return {
         "date": FAKE.date_time_between_dates(
-            **_min_max_datetimes_by_year(year), tzinfo=pytz.UTC
+            **_min_max_datetimes_by_year(year, force_future=True), tzinfo=pytz.UTC
         ),
         "year": year,
         "round_number": 1,

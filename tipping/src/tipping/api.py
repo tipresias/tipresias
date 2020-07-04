@@ -1,12 +1,76 @@
 """External-facing API for fetching and updating application data."""
 
-from typing import Optional, List
+from typing import Optional, List, Tuple
+from datetime import datetime
+from warnings import warn
+import pytz
 
 import numpy as np
+import pandas as pd
 
-from tipping import data_import
+from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.types import CleanPredictionData, MatchData, MLModelInfo
+
+
+def _select_upcoming_matches(
+    fixture_data_frame: pd.DataFrame, right_now: datetime
+) -> Tuple[Optional[int], Optional[pd.DataFrame]]:
+    if not fixture_data_frame.any().any():
+        warn(
+            "Fixture for the upcoming round haven't been posted yet, "
+            "so there's nothing to tip. Try again later."
+        )
+
+        return None, None
+
+    latest_match_date = fixture_data_frame["date"].max()
+
+    if right_now > latest_match_date:
+        warn(
+            f"No matches found after {right_now}. The latest match "
+            f"found is at {latest_match_date}\n"
+        )
+
+        return None, None
+
+    upcoming_round = int(
+        fixture_data_frame.query("date > @right_now").loc[:, "round_number"].min()
+    )
+    fixture_for_upcoming_round = fixture_data_frame.query(
+        "round_number == @upcoming_round"
+    )
+
+    return upcoming_round, fixture_for_upcoming_round
+
+
+def update_fixture_data(verbose=1) -> None:
+    """
+    Fetch fixture data and send upcoming match data to the main app.
+
+    verbose: How much information to print. 1 prints all messages; 0 prints none.
+    """
+    right_now = datetime.now(tz=pytz.UTC)
+    year = right_now.year
+
+    if verbose == 1:
+        print(f"Fetching fixture for {year}...\n")
+
+    fixture_data_frame = data_import.fetch_fixture_data(
+        start_date=datetime(year, 1, 1, tzinfo=pytz.UTC),
+        end_date=datetime(year, 12, 31, tzinfo=pytz.UTC),
+    )
+
+    upcoming_round, upcoming_matches = _select_upcoming_matches(
+        fixture_data_frame, right_now
+    )
+
+    if upcoming_round is None or upcoming_matches is None:
+        return None
+
+    data_export.update_fixture_data(upcoming_matches, upcoming_round)
+
+    return None
 
 
 def fetch_match_predictions(

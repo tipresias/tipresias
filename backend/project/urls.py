@@ -30,6 +30,7 @@ urlpatterns = [  # pylint: disable=C0103
         csrf_exempt(GraphQLView.as_view(graphiql=(os.getenv("GRAPHIQL") or False))),
     ),
     path("predictions", csrf_exempt(views.predictions), name="predictions"),
+    path("fixtures", csrf_exempt(views.fixtures), name="fixtures"),
 ]
 
 if settings.ENVIRONMENT == "production":

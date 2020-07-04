@@ -53,8 +53,8 @@ def update_fixture_data(
     if saved_match_count > 0:
         if verbose == 1:
             print(
-                f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
-                "Updating associated prediction records with new model predictions.\n"
+                f"Already have match records for round {upcoming_round}. "
+                "No new data to update."
             )
 
         return None
@@ -75,7 +75,11 @@ def update_fixture_data(
     round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
     year = {match_data["year"] for match_data in fixture_data}.pop()
 
-    prev_match = Match.objects.order_by("-start_date_time").first()
+    prev_match = (
+        Match.objects.filter(start_date_time__lt=right_now)
+        .order_by("-start_date_time")
+        .first()
+    )
 
     if prev_match is not None:
         assert round_number in (prev_match.round_number + 1, FIRST_ROUND), (

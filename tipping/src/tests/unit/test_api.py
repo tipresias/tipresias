@@ -2,6 +2,7 @@
 
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
+from datetime import datetime
 
 import pandas as pd
 import numpy as np
@@ -17,6 +18,27 @@ YEAR_RANGE = (2016, 2017)
 class TestApi(TestCase):
     def setUp(self):
         self.api = api
+
+    @patch("tipping.api.data_export")
+    @patch("tipping.api.data_import")
+    def test_update_fixture_data(self, mock_data_import, mock_data_export):
+        this_year = datetime.now().year
+        fixture = data_factories.fake_fixture_data(
+            N_MATCHES, (this_year, this_year + 1)
+        )
+        upcoming_round = fixture["round_number"].min()
+
+        mock_data_import.fetch_fixture_data = MagicMock(return_value=fixture)
+        mock_data_export.update_fixture_data = MagicMock()
+
+        self.api.update_fixture_data()
+
+        # It posts data to main app
+        mock_data_export.update_fixture_data.assert_called()
+        call_args = mock_data_export.update_fixture_data.call_args[0]
+        data_are_equal = (call_args[0] == fixture).all().all()
+        self.assertTrue(data_are_equal)
+        self.assertEqual(call_args[1], upcoming_round)
 
     @patch("tipping.api.data_import")
     def test_fetch_match_predictions(self, mock_data_import):

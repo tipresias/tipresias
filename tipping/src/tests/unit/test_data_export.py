@@ -33,12 +33,11 @@ class TestDataExport(TestCase):
         self.data_export.update_fixture_data(fake_fixture, upcoming_round)
 
         # It posts the data
+        fixture_response = fake_fixture.astype({"date": str}).to_dict("records")
         mock_requests.post.assert_called_with(
             url,
-            json={
-                "upcoming_round": upcoming_round,
-                "data": fake_fixture.to_dict("records"),
-            },
+            json={"upcoming_round": upcoming_round, "data": fixture_response},
+            headers={},
         )
 
         with self.subTest("when the status code isn't 2xx"):

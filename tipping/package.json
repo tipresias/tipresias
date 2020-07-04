@@ -4,7 +4,7 @@
     "description": "Application for a footy-tipping model",
     "main": "index.js",
     "scripts": {
-        "start": "npx sls offline"
+        "start": "npx sls offline --httpPort ${PORT} --host 0.0.0.0"
     },
     "repository": {
         "type": "git",

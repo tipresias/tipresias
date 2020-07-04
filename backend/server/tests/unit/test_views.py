@@ -1,13 +1,15 @@
 # pylint: disable=missing-docstring
 
 from django.test import TestCase, RequestFactory
+from django.utils import timezone
 import pandas as pd
 
 from server.tests.fixtures import data_factories, factories
-from server.models import Prediction
+from server.models import Prediction, Match
 from server import views
 
 N_MATCHES = 9
+YEAR_RANGE = (timezone.now().year, timezone.now().year + 1)
 
 
 class TestViews(TestCase):
@@ -95,3 +97,47 @@ class TestViews(TestCase):
             self.assertEqual(original_predicted_margins, posted_predicted_margins)
             # It returns a success response
             self.assertEqual(response.status_code, 200)
+
+    def test_fixtures(self):
+        fixture_data = data_factories.fake_fixture_data(N_MATCHES, YEAR_RANGE)
+        fixtures = {
+            "data": fixture_data.to_dict("records"),
+            "upcoming_round": int(fixture_data["round_number"].min()),
+        }
+
+        self.assertEqual(Match.objects.count(), N_MATCHES)
+
+        with self.subTest("GET request"):
+            request = self.factory.get(
+                "/fixtures", content_type="application/json", data=fixtures
+            )
+
+            response = views.fixtures(request, verbose=0)
+
+            # It doesn't create fixtures
+            self.assertEqual(Match.objects.count(), N_MATCHES)
+            # It returns a 405 response
+            self.assertEqual(response.status_code, 405)
+
+        request = self.factory.post(
+            "/fixtures", content_type="application/json", data=fixtures
+        )
+
+        with self.settings(API_TOKEN="token", ENVIRONMENT="production"):
+            with self.subTest("when Authorization header doesn't match app token"):
+                request.headers = {"Authorization": "Bearer not_token"}
+                response = views.fixtures(request, verbose=0)
+
+                # It doesn't create fixtures
+                self.assertEqual(Match.objects.count(), N_MATCHES)
+                # It returns unauthorized response
+                self.assertEqual(response.status_code, 401)
+
+            with self.subTest("when Authorization header does match app token"):
+                request.headers = {"Authorization": "Bearer token"}
+                response = views.fixtures(request, verbose=0)
+
+                # It creates fixtures
+                self.assertEqual(Match.objects.count(), N_MATCHES * 2)
+                # It returns success response
+                self.assertEqual(response.status_code, 200)

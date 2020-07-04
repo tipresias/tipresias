@@ -5,9 +5,10 @@ import os
 SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
 ENVIRONMENT = os.getenv("PYTHON_ENV", "development")
 
-TIPRESIAS_APP = (
-    "http://www.tipresias.net" if ENVIRONMENT == "production" else "http://backend:8000"
-)
+TIPRESIAS_APP = os.environ["TIPRESIAS_APP"]
+TIPRESIAS_APP_TOKEN = os.getenv("TIPRESIAS_APP_TOKEN", "")
+DATA_SCIENCE_SERVICE = os.environ["DATA_SCIENCE_SERVICE"]
+DATA_SCIENCE_SERVICE_TOKEN = os.getenv("DATA_SCIENCE_SERVICE_TOKEN", "")
 
 TEAM_TRANSLATIONS = {
     "Tigers": "Richmond",

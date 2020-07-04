@@ -44,6 +44,17 @@ def hello(event, _context) -> Response:
     # """
 
 
+def update_fixture_data(_event, _context, verbose=1):
+    """
+    Fetch fixture data and send upcoming match data to the main app.
+
+    verbose: How much information to print. 1 prints all messages; 0 prints none.
+    """
+    api.update_fixture_data(verbose=verbose)
+
+    return _response({"message": "Success"})
+
+
 def fetch_match_predictions(event, _context):
     """
     Get match predictions from ML models.

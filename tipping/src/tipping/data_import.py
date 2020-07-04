@@ -1,9 +1,8 @@
 """Module for functions that fetch data."""
 
 from typing import Optional, List, Dict, Any, cast, Union
-import os
-from datetime import datetime
 from urllib.parse import urljoin
+from datetime import datetime
 from dateutil import parser
 import pytz
 
@@ -14,17 +13,15 @@ from mypy_extensions import TypedDict
 from tipping import settings
 from tipping.types import MLModelInfo
 
+
 ParamValue = Union[str, int, datetime]
 PredictionData = TypedDict(
     "PredictionData",
     {"ml_models": List[str], "round_number": int, "year_range": List[int]},
 )
 
-DATA_SCIENCE_SERVICE = (
-    os.environ["DATA_SCIENCE_SERVICE"]
-    if settings.ENVIRONMENT == "production"
-    else "http://host.docker.internal:8008"
-)
+
+IS_PRODUCTION = settings.ENVIRONMENT == "prediction"
 
 
 def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
@@ -32,7 +29,7 @@ def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
     # because the former doesn't maintain the timezone offset.
     # We make sure all datetimes are converted to UTC, because that makes things
     # easier due to Django converting all datetime fields to UTC when saving DB records.
-    return data_frame["date"].map(lambda dt: parser.parse(dt, tz_info=pytz.UTC))
+    return data_frame["date"].map(lambda dt: parser.parse(dt).replace(tzinfo=pytz.UTC))
 
 
 def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
@@ -42,7 +39,7 @@ def _clean_datetime_param(param_value: ParamValue) -> Optional[str]:
     # For the edge-case in which this gets run early enough in the morning
     # such that UTC is still the previous day, and the start/end date filters are all
     # one day off.
-    return str(pytz.timezone("Australia/Melbourne").localize(param_value).date())
+    return str(param_value.astimezone(pytz.timezone("Australia/Melbourne")).date())
 
 
 def _clean_param_value(param_value: ParamValue) -> str:
@@ -54,8 +51,8 @@ def _fetch_data(
 ) -> Union[List[Dict[str, Any]], PredictionData]:
     params = params or {}
 
-    service_host = DATA_SCIENCE_SERVICE
-    headers = {"Authorization": f'Bearer {os.environ["DATA_SCIENCE_SERVICE_TOKEN"]}'}
+    service_host = settings.DATA_SCIENCE_SERVICE
+    headers = {"Authorization": f"Bearer {settings.DATA_SCIENCE_SERVICE_TOKEN}"}
 
     service_url = urljoin(service_host, path)
     clean_params = {

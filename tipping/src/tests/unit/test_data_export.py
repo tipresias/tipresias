@@ -62,8 +62,9 @@ class TestDataExport(TestCase):
         self.data_export.update_match_predictions(fake_predictions)
 
         # It posts the data
+        predictions_response = fake_predictions.to_dict("records")
         mock_requests.post.assert_called_with(
-            url, json={"data": fake_predictions.to_dict("records")}
+            url, json={"data": predictions_response}, headers={}
         )
 
         with self.subTest("when the status code isn't 2xx"):

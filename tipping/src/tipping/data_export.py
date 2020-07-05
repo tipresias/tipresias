@@ -65,22 +65,11 @@ def update_match_predictions(prediction_data: pd.DataFrame):
     -------
     prediction_data: Predictions from ML models, organised to have one match per row.
     """
-    url = settings.TIPRESIAS_APP + "/predictions"
     body = {
         "data": _convert_to_dict(prediction_data),
     }
 
-    response = requests.post(url, json=body)
-
-    if 200 <= response.status_code < 300:
-        return None
-
-    raise Exception(
-        f"Bad response from application when posting to {url}:\n"
-        f"Status: {response.status_code}\n"
-        f"Headers: {response.headers}\n"
-        f"Body: {response.text}"
-    )
+    _send_data("/predictions", body=body)
 
 
 def update_match_results(match_data: pd.DataFrame):

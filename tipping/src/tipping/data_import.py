@@ -94,7 +94,7 @@ def fetch_prediction_data(
 
     Returns:
     --------
-        List of prediction data dictionaries.
+    List of prediction data dictionaries.
     """
     ml_model_param = None if ml_models is None else ",".join(ml_models)
 
@@ -124,7 +124,7 @@ def fetch_fixture_data(start_date: datetime, end_date: datetime) -> pd.DataFrame
 
     Returns:
     --------
-        pandas.DataFrame with fixture data.
+    pandas.DataFrame with fixture data.
     """
     fixtures = pd.DataFrame(
         _fetch_data("fixtures", {"start_date": start_date, "end_date": end_date})
@@ -153,7 +153,7 @@ def fetch_match_results_data(
 
     Returns:
     --------
-        pandas.DataFrame with match results data.
+    pandas.DataFrame with match results data.
     """
     match_results = pd.DataFrame(
         _fetch_data(

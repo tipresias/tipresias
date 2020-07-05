@@ -11,6 +11,10 @@ import pandas as pd
 from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.types import CleanPredictionData, MatchData, MLModelInfo
+from tipping.tipping import MonashSubmitter, FootyTipsSubmitter
+
+DEC = 12
+THIRTY_FIRST = 31
 
 
 def _select_upcoming_matches(
@@ -73,6 +77,65 @@ def update_fixture_data(verbose=1) -> None:
     return None
 
 
+def update_match_predictions(tips_submitters=None, verbose=1) -> None:
+    """
+    Fetch predictions from ML models and send them to the main app.
+
+    verbose: How much information to print. 1 prints all messages; 0 prints none.
+    """
+    right_now = datetime.now(tz=pytz.UTC)
+    end_of_year = datetime(right_now.year, DEC, THIRTY_FIRST, tzinfo=pytz.UTC)
+    upcoming_matches = data_import.fetch_fixture_data(right_now, end_of_year)
+
+    if not upcoming_matches.any().any():
+        if verbose == 1:
+            print("There are no upcoming matches to predict.")
+        return None
+
+    next_match = upcoming_matches.sort_values("date").iloc[0, :]
+    upcoming_round = int(next_match["round_number"])
+    upcoming_season = int(next_match["year"])
+
+    if verbose == 1:
+        print(
+            "Fetching predictions for round " f"{upcoming_round}, {upcoming_season}..."
+        )
+
+    prediction_data = data_import.fetch_prediction_data(
+        f"{upcoming_season}-{upcoming_season + 1}", round_number=upcoming_round,
+    )
+
+    if verbose == 1:
+        print("Predictions received!")
+
+    home_away_df = pivot_team_matches_to_matches(prediction_data)
+    match_predictions = home_away_df.replace({np.nan: None}).to_dict("records")
+
+    data_export.update_match_predictions(match_predictions)
+
+    if verbose == 1:
+        print("Match predictions sent!")
+
+    if not any(match_predictions):
+        if verbose == 1:
+            print(
+                "No predictions found for the upcoming round. "
+                "Not submitting any tips."
+            )
+
+        return None
+
+    tips_submitters = tips_submitters or [
+        MonashSubmitter(verbose=verbose),
+        FootyTipsSubmitter(verbose=verbose),
+    ]
+
+    for submitter in tips_submitters:
+        submitter.submit_tips(match_predictions)
+
+    return None
+
+
 def fetch_match_predictions(
     year_range: str,
     round_number: Optional[int] = None,
@@ -95,7 +158,6 @@ def fetch_match_predictions(
     --------
         List of prediction data dictionaries.
     """
-
     prediction_data = data_import.fetch_prediction_data(
         year_range,
         round_number=round_number,

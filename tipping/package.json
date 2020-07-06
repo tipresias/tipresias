@@ -16,9 +16,12 @@
         "url": "https://github.com/tipresias/tipresias/issues"
     },
     "homepage": "https://github.com/tipresias/tipresias#readme",
-    "dependencies": {},
+    "dependencies": {
+        "serverless-python-requirements": "^5.1.0"
+    },
     "devDependencies": {
         "serverless": "^1.74.0",
+        "serverless-dotenv-plugin": "^2.4.2",
         "serverless-offline": "^6.4.0"
     }
 }

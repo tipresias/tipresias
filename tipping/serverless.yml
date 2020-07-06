@@ -23,10 +23,40 @@ service: tipping
 provider:
   name: aws
   runtime: python3.8
+  timeout: 900
+  stage: prod
+  region: ap-southeast-2
+  environment:
+    PYTHON_ENV: production
+    TIPRESIAS_APP: ${env:TIPRESIAS_APP}
+    TIPRESIAS_APP_TOKEN: ${env:TIPRESIAS_APP_TOKEN}
+    DATA_SCIENCE_SERVICE: ${env:DATA_SCIENCE_SERVICE}
+    DATA_SCIENCE_SERVICE_TOKEN: ${env:DATA_SCIENCE_SERVICE_TOKEN}
+    TIPPING_SERVICE_TOKEN: ${env:TIPPING_SERVICE_TOKEN}
+    MONASH_USERNAME: ${env:MONASH_USERNAME}
+    MONASH_PASSWORD: ${env:MONASH_PASSWORD}
+    FOOTY_TIPS_USERNAME: ${env:FOOTY_TIPS_USERNAME}
+    FOOTY_TIPS_PASSWORD: ${env:FOOTY_TIPS_PASSWORD}
 
 plugins:
   - serverless-offline
+  - serverless-python-requirements
 
+custom:
+  pythonRequirements:
+    dockerizePip: false # We run sls inside Docker already
+  dotenv:
+    logging: false
+    include:
+      - TIPRESIAS_APP
+      - TIPRESIAS_APP_TOKEN
+      - DATA_SCIENCE_SERVICE
+      - DATA_SCIENCE_SERVICE_TOKEN
+      - TIPPING_SERVICE_TOKEN
+      - MONASH_USERNAME
+      - MONASH_PASSWORD
+      - FOOTY_TIPS_USERNAME
+      - FOOTY_TIPS_PASSWORD
 # you can overwrite defaults here
 #  stage: dev
 #  region: us-east-1
@@ -64,13 +94,13 @@ functions:
     handler: handler.update_fixture_data
     events:
       - schedule:
-          rate: cron(0 7 * * 1) # Monday morning
+          rate: cron(0 7 ? * 1 *) # Monday morning
           enabled: true
   update_match_predictions:
     handler: handler.update_match_predictions
     events:
       - schedule:
-          rate: cron(0 7 * * 3-5) # Wednesday through Friday morning
+          rate: cron(0 7 ? * 3-5 *) # Wednesday through Friday morning
           enabled: true
   fetch_match_predictions:
     handler: handler.fetch_match_predictions

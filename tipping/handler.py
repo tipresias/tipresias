@@ -1,3 +1,5 @@
+# pylint: disable=wrong-import-position
+
 """Serverless functions for fetching and updating application data."""
 
 from typing import List, Dict, Any, Union, TypedDict
@@ -10,7 +12,11 @@ SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
 if SRC_DIR not in sys.path:
     sys.path.append(SRC_DIR)
 
-from tipping import api  # pylint: disable=wrong-import-position
+from tipping import api
+from tipping import settings
+
+
+IS_PRODUCTION = settings.ENVIRONMENT = "production"
 
 
 class Response(TypedDict):
@@ -20,9 +26,20 @@ class Response(TypedDict):
     body: str
 
 
-def _response(data: Union[List[Dict[str, Any]], Dict[str, Any]]) -> Response:
+def _response(
+    data: Union[List[Dict[str, Any]], Dict[str, Any], str], status_code=200
+) -> Response:
 
-    return {"statusCode": 200, "body": json.dumps({"data": data})}
+    return {"statusCode": status_code, "body": json.dumps({"data": data})}
+
+
+def _request_is_authorized(http_request) -> bool:
+    auth_token = http_request.headers.get("Authorization")
+
+    if IS_PRODUCTION and auth_token != f"Bearer {settings.API_TOKEN}":
+        return False
+
+    return True
 
 
 def hello(event, _context) -> Response:
@@ -84,6 +101,9 @@ def fetch_match_predictions(event, _context):
     --------
     List of prediction data dictionaries in a JSON body.
     """
+    if not _request_is_authorized(event):
+        return _response("Unauthorized", status_code=401)
+
     VALID_KWARGS = ["round_number", "ml_models", "train_models"]
     year_range = event["year_range"]
 
@@ -124,6 +144,8 @@ def fetch_match_results(event, _context) -> Response:
     --------
     List of match results data in a JSON body.
     """
+    if not _request_is_authorized(event):
+        return _response("Unauthorized", status_code=401)
 
     kwargs = {}
     if event.get("fetch_data") is not None:
@@ -134,7 +156,7 @@ def fetch_match_results(event, _context) -> Response:
     )
 
 
-def fetch_ml_models() -> Response:
+def fetch_ml_models(event, _context) -> Response:
     """
     Fetch general info about all saved ML models.
 
@@ -142,4 +164,7 @@ def fetch_ml_models() -> Response:
     --------
     A list of objects with basic info about each ML model in a JSON body.
     """
+    if not _request_is_authorized(event):
+        return _response("Unauthorized", status_code=401)
+
     return _response(api.fetch_ml_models())

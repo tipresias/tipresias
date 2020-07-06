@@ -5,6 +5,7 @@ import os
 SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
 ENVIRONMENT = os.getenv("PYTHON_ENV", "development")
 
+API_TOKEN = os.getenv("TIPPING_SERVICE_TOKEN", "")
 TIPRESIAS_APP = os.environ["TIPRESIAS_APP"]
 TIPRESIAS_APP_TOKEN = os.getenv("TIPRESIAS_APP_TOKEN", "")
 DATA_SCIENCE_SERVICE = os.environ["DATA_SCIENCE_SERVICE"]

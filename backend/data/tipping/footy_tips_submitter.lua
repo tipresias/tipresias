@@ -77,7 +77,6 @@ function main(splash)
 
     assert(form:fill(form_inputs))
     assert(form:submit())
-
     splash:wait(2.0)
 
     assert(string.find(splash:html(), 'Welcome to ESPNfootytips') == nil,
@@ -94,8 +93,15 @@ function main(splash)
   log_in(url)
   fill_in_tipping_form()
 
-  local tip_form = splash:select('form')
-  assert(tip_form:submit())
-  -- We need to give Splash a second to submit the form or it doesn't register
+  -- Need to click button instead of submitting form directly,
+  -- because we need to trigger some javascript nonsense for the form
+  -- to actually get submitted
+  local submit_btn = splash:select('.tipform-submit-button')
+  assert(submit_btn:mouse_click())
   splash:wait(1.0)
+
+  local success_page = "https://www.footytips.com.au/tipping/afl/tipspost"
+  assert(string.find(splash:url(), success_page),
+        "Wasn't redirected to success page after submitting tips. Current URL is: " ..
+        splash:url())
 end

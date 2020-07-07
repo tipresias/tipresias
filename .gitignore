@@ -99,6 +99,7 @@ venv.bak/
 keyfile*.json
 secrets.tar
 .aws
+credentials
 
 # Spyder project settings
 .spyderproject

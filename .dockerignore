@@ -68,6 +68,7 @@ venv.bak/
 secrets*
 *_rsa
 .aws
+credentials
 
 # Spyder project settings
 .spyderproject

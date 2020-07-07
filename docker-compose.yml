@@ -37,6 +37,7 @@ services:
     command: npm start
     depends_on:
       - backend
+    env_file: .env
     environment:
       PYTHONPATH: './src'
       PORT: 3333
@@ -51,7 +52,6 @@ services:
       - ./tipping:/app
       - /app/node_modules
       - ${HOME}/.aws:/app/.aws
-      - ./.env:/app/.env
   browser_test:
     build: ./browser_test
     depends_on:

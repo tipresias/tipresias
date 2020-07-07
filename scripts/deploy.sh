@@ -2,10 +2,13 @@
 
 set -euo pipefail
 
+# Deploy main app
 APP_DIR=/var/www/${PROJECT_ID}
-DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_app:latest
+APP_DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_app:latest
 PORT=80
 TRAVIS=${TRAVIS:-""}
+
+echo "Deploying main app to DigitalOcean..."
 
 if [ "${TRAVIS}" ]
 then
@@ -13,9 +16,9 @@ then
   sudo chmod 755 ~/.ssh
 fi
 
-docker pull ${DOCKER_IMAGE}
-docker build --cache-from ${DOCKER_IMAGE} -t ${DOCKER_IMAGE} .
-docker push ${DOCKER_IMAGE}
+docker pull ${APP_DOCKER_IMAGE}
+docker build --cache-from ${APP_DOCKER_IMAGE} -t ${APP_DOCKER_IMAGE} .
+docker push ${APP_DOCKER_IMAGE}
 
 scp -i ~/.ssh/deploy_rsa -oStrictHostKeyChecking=no \
   docker-compose.prod.yml \
@@ -23,7 +26,7 @@ scp -i ~/.ssh/deploy_rsa -oStrictHostKeyChecking=no \
 
 RUN_APP="
   cd ${APP_DIR} \
-    && docker pull ${DOCKER_IMAGE} \
+    && docker pull ${APP_DOCKER_IMAGE} \
     && docker-compose stop \
     && docker-compose up -d
 "
@@ -38,8 +41,32 @@ then
   exit $?
 fi
 
-./backend/scripts/wait-for-it.sh ${PRODUCTION_HOST}:${PORT} \
+./scripts/wait-for-it.sh ${PRODUCTION_HOST}:${PORT} \
   -t 60 \
   -- ./scripts/post_deploy.sh
 
-exit $?
+echo "Main app deployed!"
+
+# Deploy tipping service
+echo "Deploying serverless functions..."
+
+SERVICE_DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_tipping:latest
+
+# Need lots of deploy-specific env vars, so we use docker instead of docker-compose
+docker run \
+  -v ${HOME}/.aws:/app/.aws \
+  -e PYTHONPATH=./src \
+  -e AWS_SHARED_CREDENTIALS_FILE=".aws/credentials" \
+  -e TIPRESIAS_APP=${TIPRESIAS_APP} \
+  -e TIPRESIAS_APP_TOKEN=${TIPRESIAS_APP_TOKEN} \
+  -e DATA_SCIENCE_SERVICE=${DATA_SCIENCE_SERVICE} \
+  -e DATA_SCIENCE_SERVICE_TOKEN=${DATA_SCIENCE_SERVICE_TOKEN} \
+  -e TIPPING_SERVICE_TOKEN=${TIPPING_SERVICE_TOKEN} \
+  -e MONASH_USERNAME=${MONASH_USERNAME} \
+  -e MONASH_PASSWORD=${MONASH_PASSWORD} \
+  -e FOOTY_TIPS_USERNAME=${FOOTY_TIPS_USERNAME} \
+  -e FOOTY_TIPS_PASSWORD=${FOOTY_TIPS_PASSWORD} \
+  ${SERVICE_DOCKER_IMAGE} \
+  npx sls deploy
+
+echo "Serverless functions deployed!"

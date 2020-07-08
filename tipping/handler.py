@@ -2,7 +2,7 @@
 
 """Serverless functions for fetching and updating application data."""
 
-from typing import List, Dict, Any, Union, TypedDict
+from typing import List, Union, TypedDict
 import json
 import os
 import sys
@@ -14,6 +14,7 @@ if SRC_DIR not in sys.path:
 
 from tipping import api
 from tipping import settings
+from tipping.types import CleanPredictionData, MatchData, MLModelInfo
 
 
 IS_PRODUCTION = settings.ENVIRONMENT = "production"
@@ -27,7 +28,8 @@ class Response(TypedDict):
 
 
 def _response(
-    data: Union[List[Dict[str, Any]], Dict[str, Any], str], status_code=200
+    data: Union[List[CleanPredictionData], List[MatchData], List[MLModelInfo], str],
+    status_code=200,
 ) -> Response:
 
     return {"statusCode": status_code, "body": json.dumps({"data": data})}
@@ -50,7 +52,7 @@ def update_fixture_data(_event, _context, verbose=1):
     """
     api.update_fixture_data(verbose=verbose)
 
-    return _response({"message": "Success"})
+    return _response("Success")
 
 
 def update_match_predictions(_event, _context, verbose=1):
@@ -61,7 +63,7 @@ def update_match_predictions(_event, _context, verbose=1):
     """
     api.update_match_predictions(verbose=verbose)
 
-    return _response({"message": "Success"})
+    return _response("Success")
 
 
 def fetch_match_predictions(event, _context):

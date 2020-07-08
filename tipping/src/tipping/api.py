@@ -15,6 +15,8 @@ from tipping.tipping import MonashSubmitter, FootyTipsSubmitter
 
 DEC = 12
 THIRTY_FIRST = 31
+JAN = 1
+FIRST = 1
 
 
 def _select_upcoming_matches(
@@ -134,6 +136,36 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
         submitter.submit_tips(match_predictions)
 
     return None
+
+
+def update_match_results(verbose=1) -> None:
+    """
+    Fetch match results data and send them to the main app.
+
+    verbose: How much information to print. 1 prints all messages; 0 prints none.
+    """
+    right_now = datetime.now()
+    start_of_year = datetime(right_now.year, JAN, FIRST)
+    end_of_year = datetime(right_now.year, DEC, THIRTY_FIRST)
+
+    if verbose == 1:
+        print(f"Fetching match results for season {right_now.year}")
+
+    match_data = (
+        data_import.fetch_match_results_data(
+            str(start_of_year), str(end_of_year), fetch_data=True
+        )
+        .replace({np.nan: None})
+        .to_dict("records")
+    )
+
+    if verbose == 1:
+        print("Match results reveived!")
+
+    data_export.update_match_results(match_data)
+
+    if verbose == 1:
+        print("Match results sent!")
 
 
 def fetch_match_predictions(

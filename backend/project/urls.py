@@ -31,6 +31,7 @@ urlpatterns = [  # pylint: disable=C0103
     ),
     path("predictions", csrf_exempt(views.predictions), name="predictions"),
     path("fixtures", csrf_exempt(views.fixtures), name="fixtures"),
+    path("matches", csrf_exempt(views.matches), name="matches"),
 ]
 
 if settings.ENVIRONMENT == "production":

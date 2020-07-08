@@ -52,7 +52,11 @@ def _fetch_data(
     params = params or {}
 
     service_host = settings.DATA_SCIENCE_SERVICE
-    headers = {"Authorization": f"Bearer {settings.DATA_SCIENCE_SERVICE_TOKEN}"}
+    headers = (
+        {"Authorization": f"Bearer {settings.DATA_SCIENCE_SERVICE_TOKEN}"}
+        if IS_PRODUCTION
+        else {}
+    )
 
     service_url = urljoin(service_host, path)
     clean_params = {

@@ -80,19 +80,8 @@ def update_match_results(match_data: pd.DataFrame):
     -------
     match_data: Data from played matches, especially finally scores.
     """
-    url = settings.TIPRESIAS_APP + "/matches"
     body = {
         "data": _convert_to_dict(match_data),
     }
 
-    response = requests.post(url, json=body)
-
-    if 200 <= response.status_code < 300:
-        return None
-
-    raise Exception(
-        f"Bad response from application when posting to {url}:\n"
-        f"Status: {response.status_code}\n"
-        f"Headers: {response.headers}\n"
-        f"Body: {response.text}"
-    )
+    _send_data("/matches", body=body)

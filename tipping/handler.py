@@ -42,25 +42,6 @@ def _request_is_authorized(http_request) -> bool:
     return True
 
 
-def hello(event, _context) -> Response:
-    """Say hello."""
-    body = {
-        "message": "Go Serverless v1.0! Your function executed successfully!",
-        "input": event,
-    }
-
-    return _response(body)
-
-    # Use this code if you don't use the http event with the LAMBDA-PROXY
-    # integration
-    # """
-    # return {
-    #     "message": "Go Serverless v1.0! Your function executed successfully!",
-    #     "event": event
-    # }
-    # """
-
-
 def update_fixture_data(_event, _context, verbose=1):
     """
     Fetch fixture data and send upcoming match data to the main app.

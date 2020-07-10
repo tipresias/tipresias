@@ -22,20 +22,12 @@ before_script:
   - docker pull cfranklin11/tipresias_backend:latest
   - docker pull cfranklin11/tipresias_frontend:latest
   - docker pull cfranklin11/tipresias_browser_test:latest
+  - docker pull cfranklin11/tipresias_tipping:latest
 
   - docker build --cache-from cfranklin11/tipresias_backend:latest -t cfranklin11/tipresias_backend:latest ./backend
   - docker build --cache-from cfranklin11/tipresias_frontend:latest -t cfranklin11/tipresias_frontend:latest ./frontend
   - docker build --cache-from cfranklin11/tipresias_browser_test:latest -t cfranklin11/tipresias_browser_test:latest ./browser_test
-script:
-  # Python linting
-  - docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
-  - docker run cfranklin11/tipresias_backend:latest pydocstyle server project scripts
-  - docker run cfranklin11/tipresias_backend:latest mypy server project scripts
-
-  # JS linting/tests
-  - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
-  - docker run cfranklin11/tipresias_frontend:latest yarn run flow
-  - docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
+  - docker build --cache-from cfranklin11/tipresias_tipping:latest -t cfranklin11/tipresias_tipping:latest ./tipping
 
   # We use gcloud/gsutil to upload screenshot artifacts on browser test failures,
   # so we have to add credentials before running system tests
@@ -43,10 +35,25 @@ script:
   - tar xvf secrets.tar
   - mkdir ${HOME}/.gcloud && mv keyfile.json ${GOOGLE_APPLICATION_CREDENTIALS}
   - mv deploy_rsa ${HOME}/.ssh/
+  - mkdir ${HOME}/.aws && mv credentials ${HOME}/.aws/
+script:
+  # Python linting
+  - docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
+  - docker run cfranklin11/tipresias_backend:latest pydocstyle server project scripts
+  - docker run cfranklin11/tipresias_backend:latest mypy server project scripts
+  - docker run cfranklin11/tipresias_tipping:latest pylint --disable=R src handler.py
+  - docker run cfranklin11/tipresias_tipping:latest pydocstyle src handler.py
+  - docker run cfranklin11/tipresias_tipping:latest mypy src handler.py
+
+  # JS linting/tests
+  - docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
+  - docker run cfranklin11/tipresias_frontend:latest yarn run flow
+  - docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
+
 
   # Integration/system tests
   - ./scripts/update_frontend_gql_types.sh docker-compose.ci.yml
-  - ./backend/scripts/integration_tests.sh docker-compose.ci.yml
+  - ./scripts/integration_tests.sh docker-compose.ci.yml
   - ./scripts/browser_tests.sh docker-compose.ci.yml
   # Code coverage
   # Running code coverage commands in scripts instead of after_script,
@@ -58,14 +65,16 @@ script:
   # not to find files in subdirectories.
   # Also, trying to run the code coverage tool inside docker was more trouble than it's worth.
   - cd ./backend && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.backend.json && cd ..
+  - cd ./tipping && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.tipping.json && cd ..
   # Need to move coverage files to frontend, because filenames are relative to frontend root
   - sudo chmod 755 ./browser_test && sudo mv ./browser_test/coverage ./frontend
   - cd ./frontend && ../cc-test-reporter format-coverage -t lcov -o ../coverage/codeclimate.frontend.json && cd ..
-  - ./cc-test-reporter sum-coverage ./coverage/codeclimate.*.json -p 2
+  - ./cc-test-reporter sum-coverage ./coverage/codeclimate.*.json -p 3
   - if [[ "$TRAVIS_TEST_RESULT" == 0 ]]; then ./cc-test-reporter upload-coverage; fi
 before_deploy:
   - echo "$DOCKER_PASSWORD" | docker login -u cfranklin11 --password-stdin
   - docker push cfranklin11/tipresias_backend:latest
+  - docker push cfranklin11/tipresias_tipping:latest
   - docker push cfranklin11/tipresias_frontend:latest
   - docker push cfranklin11/tipresias_browser_test:latest
 

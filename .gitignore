@@ -98,6 +98,8 @@ venv.bak/
 *_rsa
 keyfile*.json
 secrets.tar
+.aws
+credentials
 
 # Spyder project settings
 .spyderproject
@@ -154,3 +156,6 @@ browser_test/cypress/videos/
 
 # GCP files
 .gcloud
+
+# Serverless directories
+.serverless

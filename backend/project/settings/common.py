@@ -21,6 +21,10 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 
 FIXTURE_DIRS = [os.path.join(BASE_DIR, "server/tests/fixtures")]
 
+TIPPING_SERVICE_TOKEN = ""
+
+TIPPING_SERVICE = "http://tipping:3333"
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
@@ -29,7 +33,6 @@ ALLOWED_HOSTS: List = []
 # Application definition
 
 INSTALLED_APPS = [
-    "data.apps.DataConfig",
     "server.apps.ServerConfig",
     "graphene_django",
     "django.contrib.admin",

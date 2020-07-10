@@ -1,11 +1,10 @@
 # pylint: disable=missing-docstring
 
+from unittest import TestCase
 from unittest.mock import MagicMock
 
-from django.test import TestCase
-
-from data.management.commands import tip
-from data.tipping import Tipper
+from tipping.management.commands import tip
+from tipping.tipping import Tipper
 
 
 class TestTip(TestCase):
@@ -16,10 +15,10 @@ class TestTip(TestCase):
         self.tipper.submit_tips = MagicMock()
 
         self.tipper_class = MagicMock(return_value=self.tipper)
-        self.tip_command = tip.Command()
+        self.tip = tip
 
     def test_handle(self):
-        self.tip_command.handle(tipper_class=self.tipper_class, verbose=0)
+        self.tip.main(tipper_class=self.tipper_class, verbose=0)
 
         # It fetches fixture data
         self.tipper.fetch_upcoming_fixture.assert_called()

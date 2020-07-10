@@ -1,7 +1,10 @@
 # pylint: disable=missing-docstring
-from unittest.mock import Mock, patch
+
+from unittest.mock import MagicMock
+from dateutil import parser
 
 from django.test import TestCase
+from django.utils import timezone
 import joblib
 import pandas as pd
 
@@ -17,9 +20,8 @@ MATCH_COUNT_PER_YEAR = 5
 
 
 class TestSeedDb(TestCase):
-    @patch("data.data_import")
-    def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
-        joblib.dump = Mock()
+    def setUp(self):
+        joblib.dump = MagicMock()
 
         min_seed_year = int(seed_db.YEAR_RANGE.split("-")[0])
         # Min year needs to be greather than 2010, or weird stuff can happen
@@ -56,13 +58,14 @@ class TestSeedDb(TestCase):
                 )
             )
 
-        mock_data_import.fetch_match_predictions = Mock(
+        mock_data_import = MagicMock()
+        mock_data_import.fetch_match_predictions = MagicMock(
             return_value=pd.concat(prediction_data).reset_index().to_dict("records")
         )
-        mock_data_import.fetch_match_results = Mock(
+        mock_data_import.fetch_match_results = MagicMock(
             side_effect=self.__match_results_side_effect
         )
-        mock_data_import.fetch_ml_models = Mock(
+        mock_data_import.fetch_ml_models = MagicMock(
             return_value=[
                 {"name": "test_estimator", "filepath": "some/filepath/model.pkl"}
             ]
@@ -114,8 +117,15 @@ class TestSeedDb(TestCase):
         if start_date is None or end_date is None:
             return self.match_results_data_frame.to_dict("records")
 
+        start_datetime = timezone.make_aware(  # pylint: disable=unused-variable
+            parser.parse(start_date)
+        )
+        end_datetime = timezone.make_aware(  # pylint: disable=unused-variable
+            parser.parse(end_date)
+        )
+
         return self.match_results_data_frame.query(
-            "date >= @start_date & date <= @end_date"
+            "date >= @start_datetime & date <= @end_datetime"
         ).to_dict("records")
 
     @staticmethod

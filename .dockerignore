@@ -67,6 +67,8 @@ venv.bak/
 # Secrets
 secrets*
 *_rsa
+.aws
+credentials
 
 # Spyder project settings
 .spyderproject
@@ -106,3 +108,6 @@ keyfile*.json
 # Cypress artifacts
 browser_test/cypress/screenshots/
 browser_test/cypress/videos/
+
+# Serverless directories
+.serverless

@@ -10,7 +10,7 @@ from pandas import Timestamp
 FixtureData = TypedDict(
     "FixtureData",
     {
-        "date": Union[datetime],
+        "date": datetime,
         "year": int,
         "round_number": int,
         "home_team": str,

@@ -1,6 +1,5 @@
 # pylint: disable=missing-docstring
 
-from unittest.mock import patch
 from datetime import datetime, timedelta
 
 from freezegun import freeze_time
@@ -85,10 +84,7 @@ class TestApi(TestCase):
                         verbose=0,
                     )
 
-    @patch("data.data_import.fetch_match_results_data")
-    def test_backfill_recent_match_results(self, mock_fetch_match_results_data):
-        mock_fetch_match_results_data.return_value = self.match_results_data[0]
-
+    def test_backfill_recent_match_results(self):
         for fixture_datum in self.fixture_data[0].to_dict("records"):
             match = Match.get_or_create_from_raw_data(fixture_datum)
             TeamMatch.get_or_create_from_raw_data(match, fixture_datum)
@@ -97,7 +93,9 @@ class TestApi(TestCase):
             self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
             self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)
 
-            self.api.backfill_recent_match_results(verbose=0)
+            self.api.backfill_recent_match_results(
+                self.match_results_data[0].to_dict("records"), verbose=0
+            )
 
             # It updates scores for past matches
             self.assertEqual(
@@ -203,25 +201,26 @@ class TestApi(TestCase):
             pd.DataFrame(list(match_results_data)),
         )
 
-    def _build_prediction_and_match_results_data(self, match_data):
+    def _build_prediction_and_match_results_data(self, fixture_data):
         match_predictions = data_factories.fake_prediction_data(
-            match_data=match_data, ml_model_name=self.ml_model.name
+            match_data=fixture_data, ml_model_name=self.ml_model.name
         )
 
         return (
             match_predictions,
-            self._build_match_results_data(match_data, match_predictions),
+            self._build_match_results_data(fixture_data, match_predictions),
         )
 
     @staticmethod
-    def _build_match_results_data(match_data, match_predictions):
+    def _build_match_results_data(fixture_data, match_predictions):
         # Making all predictions correct, because trying to get fancy with it
         # resulted in flakiness that was difficult to fix
         return {
-            "year": match_data["year"],
-            "round_number": match_data["round_number"],
-            "home_team": match_data["home_team"],
-            "away_team": match_data["away_team"],
+            "date": fixture_data["date"],
+            "year": fixture_data["year"],
+            "round_number": fixture_data["round_number"],
+            "home_team": fixture_data["home_team"],
+            "away_team": fixture_data["away_team"],
             "home_score": match_predictions["home_predicted_margin"].iloc[0],
             "away_score": match_predictions["away_predicted_margin"].iloc[0],
         }

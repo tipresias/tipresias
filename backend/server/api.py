@@ -1,14 +1,15 @@
 """Functions for use by other apps or services to modify Server DB records."""
 
 from typing import List, Tuple, Optional
+from datetime import datetime
+import pytz
 
 from django.utils import timezone
 from mypy_extensions import TypedDict
 import pandas as pd
 
 from server.models import Match, TeamMatch, Prediction
-from server.types import FixtureData, CleanPredictionData
-from data import api
+from server.types import FixtureData, CleanPredictionData, MatchData
 
 
 MatchDict = TypedDict("MatchDict", {"season": int, "round_number": int})
@@ -52,8 +53,8 @@ def update_fixture_data(
     if saved_match_count > 0:
         if verbose == 1:
             print(
-                f"{saved_match_count} unplayed match records found for round {upcoming_round}. "
-                "Updating associated prediction records with new model predictions.\n"
+                f"Already have match records for round {upcoming_round}. "
+                "No new data to update."
             )
 
         return None
@@ -74,7 +75,11 @@ def update_fixture_data(
     round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
     year = {match_data["year"] for match_data in fixture_data}.pop()
 
-    prev_match = Match.objects.order_by("-start_date_time").first()
+    prev_match = (
+        Match.objects.filter(start_date_time__lt=right_now)
+        .order_by("-start_date_time")
+        .first()
+    )
 
     if prev_match is not None:
         assert round_number in (prev_match.round_number + 1, FIRST_ROUND), (
@@ -93,8 +98,15 @@ def update_fixture_data(
     return None
 
 
-def backfill_recent_match_results(verbose=1) -> None:
-    """Updates scores for all played matches without score data."""
+def backfill_recent_match_results(match_results: List[MatchData], verbose=1) -> None:
+    """
+    Updates scores for all played matches without score data.
+
+    Params:
+    -------
+    match_results: List of match dicts that include home & away scores.
+    verbose: Whether to print info messages.
+    """
     if verbose == 1:
         print("Filling in results for recent matches...")
 
@@ -106,15 +118,20 @@ def backfill_recent_match_results(verbose=1) -> None:
 
         return None
 
-    match_results = api.fetch_match_results(
-        earliest_date_without_results, timezone.now(), fetch_data=True
-    )
-
     if not any(match_results):
         print("Results data is not yet available to update match records.")
         return None
 
-    Match.update_results(pd.DataFrame(match_results))
+    right_now = datetime.now(tz=pytz.UTC)  # pylint: disable=unused-variable
+    match_results_to_fill = pd.DataFrame(match_results).query(
+        "date >= @earliest_date_without_results & date < @right_now"
+    )
+
+    if not match_results_to_fill.any().any():
+        print("Results data is not yet available to update match records.")
+        return None
+
+    Match.update_results(pd.DataFrame(match_results_to_fill))
 
     return None
 

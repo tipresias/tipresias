@@ -1,17 +1,123 @@
 """Django command for seeding the DB with match & prediction data."""
 
-from typing import Tuple, List, cast, Optional
-from datetime import datetime
-from django.utils import timezone
+from typing import Tuple, List, cast, Optional, Dict, Any, Union
+from urllib.parse import urljoin
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.conf import settings
+import requests
 
-from data import api
 from server.models import Match, TeamMatch, MLModel, Prediction
-from server.types import MatchData, MLModelInfo
+from server.types import MatchData, MLModelInfo, CleanPredictionData
 
 YEAR_RANGE = "2014-2020"
-JAN = 1
+
+
+class DataImporter:
+    """Imports data from the tipping service."""
+
+    def fetch_ml_models(self) -> List[MLModel]:
+        """
+        Fetch general info about all saved ML models.
+
+        Returns:
+        --------
+        A list of objects with basic info about each ML model.
+        """
+        return cast(List[MLModel], self._fetch_data("ml_models"))
+
+    def fetch_match_results(
+        self, start_date: str, end_date: str, fetch_data: bool = False
+    ) -> List[MatchData]:
+        """
+        Fetch results data for past matches.
+
+        Params:
+        -------
+        start_date: Date-time string that determines the earliest date
+            for which to fetch data. Format is 'yyyy-mm-dd'.
+        end_date: Date-time string that determines the latest date
+            for which to fetch data. Format is 'yyyy-mm-dd'.
+        fetch_data: Whether to fetch fresh data. Non-fresh data goes up to end
+            of previous season.
+
+        Returns:
+        --------
+            List of match results data dicts.
+        """
+        return cast(
+            List[MatchData],
+            self._fetch_data(
+                "matches",
+                {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "fetch_data": fetch_data,
+                },
+            ),
+        )
+
+    def fetch_match_predictions(
+        self,
+        year_range: str,
+        round_number: Optional[int] = None,
+        ml_models: Optional[List[str]] = None,
+        train_models: Optional[bool] = False,
+    ) -> List[CleanPredictionData]:
+        """
+        Fetch prediction data from ML models.
+
+        Params:
+        -------
+        year_range: Min (inclusive) and max (exclusive) years for which to fetch data.
+            Format is 'yyyy-yyyy'.
+        round_number: Specify a particular round for which to fetch data.
+        ml_models: List of ML model names to use for making predictions.
+        train_models: Whether to train models in between predictions (only applies
+            when predicting across multiple seasons).
+
+        Returns:
+        --------
+            List of prediction data dictionaries.
+        """
+        return cast(
+            List[CleanPredictionData],
+            self._fetch_data(
+                "predictions",
+                {
+                    "year_range": year_range,
+                    "round_number": round_number,
+                    "ml_models": ml_models,
+                    "train_models": train_models,
+                },
+            ),
+        )
+
+    @staticmethod
+    def _fetch_data(
+        path: str, params: Optional[Dict[str, Any]] = None
+    ) -> List[Union[MLModelInfo, MatchData, CleanPredictionData]]:
+        params = params or {}
+
+        headers = {"Authorization": f"Bearer {settings.TIPPING_SERVICE_TOKEN}"}
+
+        service_url = urljoin(settings.TIPPING_SERVICE, path)
+        clean_params = {
+            key: str(value) for key, value in params.items() if value is not None
+        }
+
+        response = requests.get(service_url, params=clean_params, headers=headers)
+
+        if 200 <= response.status_code < 300:
+            return response.json().get("data")
+
+        raise Exception(
+            f"Bad response from application when requesting {service_url}:\n"
+            f"Status: {response.status_code}\n"
+            f"Headers: {response.headers}\n"
+            f"Body: {response.text}"
+        )
 
 
 class Command(BaseCommand):
@@ -20,7 +126,12 @@ class Command(BaseCommand):
     help = "Seed the database with team, match, and prediction data."
 
     def __init__(
-        self, *args, fetch_data=True, data_importer=api, verbose: int = 1, **kwargs,
+        self,
+        *args,
+        fetch_data=True,
+        data_importer=DataImporter(),
+        verbose: int = 1,
+        **kwargs,
     ) -> None:
         """
         Instantiate the seed_db Command.
@@ -126,8 +237,8 @@ class Command(BaseCommand):
 
     def _create_matches(self) -> None:
         match_data = self.data_importer.fetch_match_results(
-            start_date=timezone.make_aware(datetime(self._year_range[0], 1, 1)),
-            end_date=timezone.make_aware(datetime(self._year_range[1] - 1, 12, 31)),
+            start_date=f"{self._year_range[0]}-01-01",
+            end_date=f"{self._year_range[1] - 1}-12-31",
             fetch_data=self.fetch_data,
         )
 

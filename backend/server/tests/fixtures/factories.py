@@ -1,6 +1,7 @@
 """Factory classes for generating realistic DB records for tests."""
 
 from datetime import date, datetime, timedelta
+import math
 import pytz
 
 import factory
@@ -19,6 +20,14 @@ JAN = 1
 FIRST = 1
 DEC = 12
 THIRTY_FIRST = 31
+MAR = 3
+ONE_WEEK = 7
+
+# A full round with all teams playing each other currently has 9 matches.
+TYPICAL_N_MATCHES_PER_ROUND = 9
+# A typical regular season has 24 rounds, so we set that as the limit
+# to keep round number realistic.
+N_ROUNDS_PER_REGULAR_SEASON = 24
 
 N_ML_MODELS = 5
 ML_MODEL_NAMES = [factory.Faker("company") for _ in range(N_ML_MODELS)]
@@ -36,31 +45,56 @@ class TeamFactory(DjangoModelFactory):
     name = factory.Sequence(lambda n: settings.TEAM_NAMES[n % len(settings.TEAM_NAMES)])
 
 
-def fake_future_datetime(match_factory) -> datetime:
-    """Return a realistic future datetime value for a match's start_date_time."""
-    if TODAY.month == 12 and TODAY.day == 31:
-        raise ValueError("Watcha doin?! It's New Year's Eve: get drunk or something.")
+def _fake_datetime(match_factory, n, start_month_day=(MAR, FIRST)) -> datetime:
+    round_week_delta = timedelta(days=ONE_WEEK)
+    start_round_week_delta = round_week_delta * math.ceil(
+        n / TYPICAL_N_MATCHES_PER_ROUND
+    )
+    # Since we create match records per year, we don't want want dates running
+    # into the next year.
+    max_datetime = timezone.make_aware(datetime(match_factory.year, DEC, THIRTY_FIRST))
 
-    # Running tests on 28 Feb of a leap year breaks them, because the given year
-    # generally won't be a leap year (e.g. 2018-2-29 doesn't exist),
-    # so we retry with two days in the future (e.g. 2018-3-1).
     try:
-        tomorrow = TODAY + timedelta(days=1)
-        datetime_start = timezone.make_aware(
-            datetime(match_factory.year, tomorrow.month, tomorrow.day)
+        # The AFL season typically starts in March
+        datetime_start = (
+            timezone.make_aware(datetime(match_factory.year, *start_month_day))
+            + start_round_week_delta
         )
     except ValueError:
-        tomorrow = TODAY + timedelta(days=2)
-        datetime_start = timezone.make_aware(
-            datetime(match_factory.year, tomorrow.month, tomorrow.day)
+        # Trying to create a datetime for 29 Feb in a non-leap year raises an error,
+        # (e.g. 2018-2-29 doesn't exist), so we retry with an extra day in the future
+        # (e.g. 2018-3-1).
+        datetime_start = (
+            timezone.make_aware(datetime(match_factory.year, MAR, FIRST))
+            + start_round_week_delta
+            + timedelta(days=1)
         )
 
+    try:
+        # Rounds last about a week, so that's how big we make our date range per round.
+        datetime_end = datetime_start + round_week_delta
+    except ValueError:
+        # Trying to create a datetime for 29 Feb in a non-leap year raises an error,
+        # (e.g. 2018-2-29 doesn't exist), so we retry with an extra day in the future
+        # (e.g. 2018-3-1).
+        datetime_end = datetime_start + round_week_delta + timedelta(days=1)
+
     return FAKE.date_time_between_dates(
-        datetime_start=datetime_start,
-        datetime_end=timezone.make_aware(
-            datetime(match_factory.year, DEC, THIRTY_FIRST)
-        ),
+        datetime_start=min(datetime_start, max_datetime),
+        datetime_end=min(datetime_end, max_datetime),
         tzinfo=pytz.UTC,
+    )
+
+
+def _fake_future_datetime(match_factory, n) -> datetime:
+    """Return a realistic future datetime value for a match's start_date_time."""
+    if TODAY.month == 12 and TODAY.day == 31:
+        match_factory.year = match_factory.year + 1
+
+    tomorrow = TODAY + timedelta(days=1)
+
+    return _fake_datetime(
+        match_factory, n, start_month_day=(tomorrow.month, tomorrow.day)
     )
 
 
@@ -72,21 +106,16 @@ class MatchFactory(DjangoModelFactory):
 
         model = Match
 
-    # TODO: Make start_date_time increment in sync with round_number,
-    # because sometimes fake data will have matches with higher round numbers,
-    # but earlier dates, which can cause test to fail, depending on how
-    # we're sorting data.
-    start_date_time = factory.LazyAttribute(
-        lambda obj: FAKE.date_time_between_dates(
-            datetime_start=timezone.make_aware(datetime(obj.year, JAN, FIRST)),
-            datetime_end=timezone.make_aware(datetime(obj.year, DEC, THIRTY_FIRST)),
-            tzinfo=pytz.UTC,
-        )
+    start_date_time = factory.LazyAttributeSequence(_fake_datetime)
+    round_number = factory.Sequence(
+        lambda n: math.ceil(n / TYPICAL_N_MATCHES_PER_ROUND)
+        % N_ROUNDS_PER_REGULAR_SEASON
     )
-    round_number = factory.Faker("pyint", min_value=1, max_value=24)
-    venue = settings.VENUES[
-        FAKE.pyint(min_value=0, max_value=(len(settings.VENUES) - 1))
-    ]
+    venue = factory.LazyFunction(
+        lambda: settings.VENUES[
+            FAKE.pyint(min_value=0, max_value=(len(settings.VENUES) - 1))
+        ]
+    )
 
     class Params:
         """Params for modifying the factory's default attributes."""
@@ -94,7 +123,7 @@ class MatchFactory(DjangoModelFactory):
         year = TODAY.year
         # A lot of functionality depends on future matches for generating predictions
         future = factory.Trait(
-            start_date_time=factory.LazyAttribute(fake_future_datetime)
+            start_date_time=factory.LazyAttributeSequence(_fake_future_datetime)
         )
 
 

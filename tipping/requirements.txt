@@ -1,0 +1,22 @@
+# Data packages
+numpy
+pandas>=0.23.0,<0.26
+
+# App packages
+requests
+pytz
+
+# Browser automation
+MechanicalSoup
+
+# Testing/Linting
+pylint==2.5.3
+pydocstyle==5.0.2
+black
+pytest
+pytest-env
+faker==4.1.1
+mypy>=0.70
+freezegun==0.3.15
+factory_boy
+coverage

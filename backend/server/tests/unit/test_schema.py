@@ -10,7 +10,7 @@ from freezegun import freeze_time
 
 from server.graphql import schema
 from server.tests.fixtures.factories import FullMatchFactory, MLModelFactory
-from server.models import Match, MLModel, Prediction
+from server.models import Match, MLModel, Prediction, TeamMatch
 from server.models.ml_model import PredictionType
 
 
@@ -462,11 +462,16 @@ class TestSchema(TestCase):
             self.assertGreater(model_stats["cumulativeAccuracy"], 0)
             self.assertEqual(model_stats["cumulativeBits"], 0)
 
-        with self.subTest("when the last matches haven't been played yet"):
+        with self.subTest("when the last matches in the DB haven't been played yet"):
             DAY = 3
             fake_datetime = timezone.make_aware(datetime(YEAR, MONTH, DAY))
 
             with freeze_time(fake_datetime):
+                # Need to set scores for "future" matches to 0
+                TeamMatch.objects.filter(
+                    match__start_date_time__gte=fake_datetime
+                ).update(score=0)
+
                 past_executed = self.client.execute(
                     query, variables={"mlModelName": "predictanator"}
                 )
@@ -478,6 +483,7 @@ class TestSchema(TestCase):
                 max_match_round = (
                     Match.objects.all().order_by("-round_number").first().round_number
                 )
+
                 self.assertLess(data["roundNumber"], max_match_round)
                 # Last played match will be from day before, because "now" and the
                 # start time for "today's match" are equal

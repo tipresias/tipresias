@@ -146,7 +146,9 @@ class Match(models.Model):
         if not self.has_been_played:
             return None
 
-        self._validate_results_data_presence(match_result)
+        if not self._validate_results_data_presence(match_result):
+            return None
+
         self._validate_one_result_row(match_result)
 
         for team_match in self.teammatch_set.all():
@@ -157,7 +159,7 @@ class Match(models.Model):
 
         return None
 
-    def _validate_results_data_presence(self, match_result: pd.DataFrame):
+    def _validate_results_data_presence(self, match_result: pd.DataFrame) -> bool:
         # AFLTables usually updates match results a few days after the round
         # is finished. Allowing for the occasional delay, we accept matches without
         # results data for a week before raising an error.
@@ -172,14 +174,14 @@ class Match(models.Model):
                 "yet."
             )
 
-            return None
+            return False
 
         assert match_result.any().any(), (
             "Didn't find any match data rows that matched match record:\n"
-            f"{self.values('start_date_time__year', 'round_number', 'teammatch__team__name')}"
+            f"{self.__dict__}"
         )
 
-        return None
+        return True
 
     @staticmethod
     def _validate_one_result_row(match_result: pd.DataFrame):

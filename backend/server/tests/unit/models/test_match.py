@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 from django.db.utils import DataError
 from django.core.exceptions import ValidationError
+import pandas as pd
 
 from server.models import Match, Team
 from server.tests.fixtures.data_factories import (
@@ -133,6 +134,74 @@ class TestMatch(TestCase):
         self.assertEqual(mock_update_result.call_count, 3)
 
     def test_update_result(self):
+        with self.subTest("When the match hasn't been played yet"):
+            match = FullMatchFactory(
+                future=True,
+                with_predictions=True,
+                home_team_match__score=0,
+                away_team_match__score=0,
+            )
+
+            match.update_result(pd.DataFrame())
+
+            # It doesn't update match scores
+            score_sum = sum(match.teammatch_set.values_list("score", flat=True))
+            self.assertEqual(score_sum, 0)
+            # It doesn't update prediction correctness
+            self.assertEqual(
+                match.prediction_set.filter(is_correct__in=[True, False]).count(), 0,
+            )
+
+        with self.subTest("When the match doesn't have results yet"):
+            with self.subTest("and has been played within the last week"):
+                yesterday = timezone.now() - timedelta(days=1)
+
+                match = FullMatchFactory(
+                    with_predictions=True,
+                    start_date_time=yesterday,
+                    home_team_match__score=0,
+                    away_team_match__score=0,
+                    prediction__is_correct=None,
+                    prediction_two__is_correct=None,
+                )
+
+                match.update_result(pd.DataFrame())
+
+                # It doesn't update match scores
+                score_sum = sum(match.teammatch_set.values_list("score", flat=True))
+                self.assertEqual(score_sum, 0)
+                # It doesn't update prediction correctness
+                self.assertEqual(
+                    match.prediction_set.filter(is_correct__in=[True, False]).count(),
+                    0,
+                )
+
+            with self.subTest("and has been played over a week ago"):
+                eight_days_ago = timezone.now() - timedelta(days=8)
+
+                match = FullMatchFactory(
+                    with_predictions=True,
+                    start_date_time=eight_days_ago,
+                    home_team_match__score=0,
+                    away_team_match__score=0,
+                    prediction__is_correct=None,
+                    prediction_two__is_correct=None,
+                )
+
+                with self.assertRaisesRegex(
+                    AssertionError, "Didn't find any match data rows"
+                ):
+                    match.update_result(pd.DataFrame())
+
+                # It doesn't update match scores
+                score_sum = sum(match.teammatch_set.values_list("score", flat=True))
+                self.assertEqual(score_sum, 0)
+                # It doesn't update prediction correctness
+                self.assertEqual(
+                    match.prediction_set.filter(is_correct__in=[True, False]).count(),
+                    0,
+                )
+
         match_results = fake_match_results_data(1, ONE_YEAR_RANGE)
         match_result = match_results.iloc[0, :]
 
@@ -155,9 +224,11 @@ class TestMatch(TestCase):
         match.prediction_set.update(predicted_winner=winner)
         match.update_result(match_results)
 
+        # It updates match scores
         match_scores = set(match.teammatch_set.values_list("score", flat=True))
         match_data_scores = set(match_result[["home_score", "away_score"]])
         self.assertEqual(match_scores, match_data_scores)
+        # It updates prediction correctness
         self.assertGreaterEqual(match.prediction_set.filter(is_correct=True).count(), 1)
 
     def test_year(self):

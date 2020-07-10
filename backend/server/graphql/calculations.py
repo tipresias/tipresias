@@ -19,7 +19,6 @@ from django.db.models import (
     Avg,
     QuerySet,
 )
-from django.utils import timezone
 import pandas as pd
 import numpy as np
 
@@ -101,9 +100,9 @@ def cumulative_metrics_query(
     return (
         prediction_query_set.select_related("ml_model", "match")
         .order_by("match__start_date_time")
-        # We don't want to include unplayed matches, which would impact
+        # We don't want to include matches without results, which would impact
         # mean-based metrics like accuracy and MAE
-        .filter(match__start_date_time__lt=timezone.localtime())
+        .filter(match__teammatch__score__gt=0)
         .annotate(
             tip_point=_calculate_tip_points(),
             match__winner__name=_get_match_winner_name(),

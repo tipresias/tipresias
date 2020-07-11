@@ -27,11 +27,27 @@ def predictions(request: HttpRequest):
 
     body = json.loads(request.body)
     prediction_data = body["data"]
+    prediction_records = []
 
     for pred in prediction_data:
-        Prediction.update_or_create_from_raw_data(pred)
+        prediction = Prediction.update_or_create_from_raw_data(pred)
 
-    return HttpResponse("Success", status=200)
+        if prediction is None:
+            continue
+
+        prediction_records.append(
+            {
+                "predicted_winner__name": prediction.predicted_winner.name,
+                "predicted_margin": prediction.predicted_margin,
+                "predicted_win_probability": prediction.predicted_win_probability,
+            },
+        )
+
+    return HttpResponse(
+        content=json.dumps(prediction_records),
+        content_type="application/json",
+        status=200,
+    )
 
 
 def fixtures(request: HttpRequest, verbose=1):
@@ -57,7 +73,7 @@ def fixtures(request: HttpRequest, verbose=1):
         cast(List[FixtureData], fixture_data), upcoming_round, verbose=verbose
     )
 
-    return HttpResponse("Success", status=200)
+    return HttpResponse("Success", content_type="application/json", status=200)
 
 
 def matches(request: HttpRequest, verbose=1):
@@ -82,4 +98,4 @@ def matches(request: HttpRequest, verbose=1):
         cast(List[MatchData], match_data), verbose=verbose
     )
 
-    return HttpResponse("Success", status=200)
+    return HttpResponse("Success", content_type="application/json", status=200)

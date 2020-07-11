@@ -34,7 +34,7 @@ class Prediction(models.Model):
     @classmethod
     def update_or_create_from_raw_data(
         cls, prediction_data: CleanPredictionData, future_only=False
-    ) -> None:
+    ) -> Optional["Prediction"]:
         """
         Convert raw prediction data to a Prediction model instance.
 
@@ -107,6 +107,8 @@ class Prediction(models.Model):
             prediction.full_clean()
             prediction.save()
             cls.update_correctness(prediction)
+
+        return prediction
 
     @classmethod
     def _calculate_predicted_margin(

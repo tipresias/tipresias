@@ -21,7 +21,9 @@ class TestViews(TestCase):
         self.ml_model = factories.MLModelFactory(
             name="test_estimator", is_principal=True, used_in_competitions=True
         )
-        self.matches = [factories.FullMatchFactory() for _ in range(N_MATCHES)]
+        self.matches = [
+            factories.FullMatchFactory(future=True) for _ in range(N_MATCHES)
+        ]
         self.views = views
 
     def test_predictions(self):
@@ -115,6 +117,7 @@ class TestViews(TestCase):
             # It returns the updated predictions
             prediction_response = json.loads(response.content)
             self.assertEqual(len(prediction_response), N_MATCHES)
+
             for pred in prediction_response:
                 self.assertEqual(
                     {

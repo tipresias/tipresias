@@ -13,7 +13,7 @@ from server import api
 from server.types import FixtureData, MatchData
 
 
-def predictions(request: HttpRequest):
+def predictions(request: HttpRequest, verbose=1):
     """Handle POST request to /predictions with prediction data in the body."""
     if request.method != "POST":
         return HttpResponse(status=405)
@@ -27,21 +27,11 @@ def predictions(request: HttpRequest):
 
     body = json.loads(request.body)
     prediction_data = body["data"]
-    prediction_records = []
 
     for pred in prediction_data:
-        prediction = Prediction.update_or_create_from_raw_data(pred)
+        Prediction.update_or_create_from_raw_data(pred)
 
-        if prediction is None:
-            continue
-
-        prediction_records.append(
-            {
-                "predicted_winner__name": prediction.predicted_winner.name,
-                "predicted_margin": prediction.predicted_margin,
-                "predicted_win_probability": prediction.predicted_win_probability,
-            },
-        )
+    prediction_records = list(api.fetch_latest_round_predictions(verbose=verbose))
 
     return HttpResponse(
         content=json.dumps(prediction_records),

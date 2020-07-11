@@ -109,12 +109,12 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
         print("Predictions received!")
 
     match_predictions = pivot_team_matches_to_matches(prediction_data)
-    data_export.update_match_predictions(match_predictions)
+    updated_prediction_records = data_export.update_match_predictions(match_predictions)
 
     if verbose == 1:
         print("Match predictions sent!")
 
-    if not match_predictions.any().any():
+    if not updated_prediction_records.any().any():
         if verbose == 1:
             print(
                 "No predictions found for the upcoming round. "
@@ -129,7 +129,7 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
     ]
 
     for submitter in tips_submitters:
-        submitter.submit_tips(match_predictions)
+        submitter.submit_tips(updated_prediction_records)
 
     return None
 

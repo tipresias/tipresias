@@ -2,6 +2,7 @@
 
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
+import json
 
 import numpy as np
 import pandas as pd
@@ -51,7 +52,16 @@ class TestDataExport(TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.headers = {}
-        mock_response.text = "Stuff happened"
+        response_data = [
+            {
+                "predicted_winner__name": "Some Team",
+                # Can't use 'None' for either prediction value, because it messes
+                # with pandas equality checks
+                "predicted_margin": 5.23,
+                "predicted_win_probability": 0.876,
+            }
+        ]
+        mock_response.text = json.dumps(response_data)
 
         mock_requests.post = MagicMock(return_value=mock_response)
 
@@ -59,13 +69,16 @@ class TestDataExport(TestCase):
         fake_predictions = pd.concat(
             [data_factories.fake_prediction_data() for _ in range(N_MATCHES)]
         )
-        self.data_export.update_match_predictions(fake_predictions)
+        prediction_records = self.data_export.update_match_predictions(fake_predictions)
 
         # It posts the data
-        predictions_response = fake_predictions.to_dict("records")
+        prediction_data = fake_predictions.to_dict("records")
         mock_requests.post.assert_called_with(
-            url, json={"data": predictions_response}, headers={}
+            url, json={"data": prediction_data}, headers={}
         )
+
+        # It returns the created/updated predictions records
+        self.assertTrue((prediction_records == pd.DataFrame(response_data)).all().all())
 
         with self.subTest("when the status code isn't 2xx"):
             mock_response.status_code = 400

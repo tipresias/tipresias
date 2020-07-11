@@ -1,16 +1,18 @@
 """Module for exporting data to the main Tipresias app."""
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from urllib.parse import urljoin
+import json
 
 import pandas as pd
 import requests
 
 from tipping.helpers import convert_to_dict
 from tipping import settings
+from tipping.types import MatchPrediction
 
 
-def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> None:
+def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> requests.Response:
     body = body or {}
 
     app_host = settings.TIPRESIAS_APP
@@ -19,13 +21,12 @@ def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> None:
         if settings.IS_PRODUCTION
         else {}
     )
-
     service_url = urljoin(app_host, path)
 
     response = requests.post(service_url, json=body, headers=headers)
 
     if 200 <= response.status_code < 300:
-        return None
+        return response
 
     raise Exception(
         f"Bad response from application when requesting {service_url}:\n"
@@ -49,7 +50,7 @@ def update_fixture_data(fixture_data: pd.DataFrame, upcoming_round: int):
     _send_data("/fixtures", body=body)
 
 
-def update_match_predictions(prediction_data: pd.DataFrame):
+def update_match_predictions(prediction_data: pd.DataFrame) -> pd.DataFrame:
     """
     POST prediction data to main Tipresias app.
 
@@ -61,7 +62,10 @@ def update_match_predictions(prediction_data: pd.DataFrame):
         "data": convert_to_dict(prediction_data),
     }
 
-    _send_data("/predictions", body=body)
+    response = _send_data("/predictions", body=body)
+    predictions: List[MatchPrediction] = json.loads(response.text)
+
+    return pd.DataFrame(predictions)
 
 
 def update_match_results(match_data: pd.DataFrame):

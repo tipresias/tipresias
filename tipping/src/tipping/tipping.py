@@ -8,24 +8,14 @@ import re
 import pytz
 
 import pandas as pd
-import numpy as np
-from mypy_extensions import TypedDict
 import mechanicalsoup
 import requests
 
 from tipping import data_import, data_export, settings
-from tipping.helpers import pivot_team_matches_to_matches
-from tipping.types import CleanPredictionData
+from tipping.helpers import pivot_team_matches_to_matches, convert_to_dict
+from tipping.types import CleanPredictionData, MatchPrediction
 
 
-PredictedWinner = TypedDict(
-    "PredictedWinner",
-    {
-        "predicted_winner__name": str,
-        "predicted_margin": float,
-        "predicted_win_probability": float,
-    },
-)
 PredictionType = Union[
     Literal["predicted_margin"], Literal["predicted_win_probability"]
 ]
@@ -64,13 +54,15 @@ class MonashSubmitter:
         self.browser = browser or mechanicalsoup.StatefulBrowser()
         self.verbose = verbose
 
-    def submit_tips(self, predicted_winners: List[PredictedWinner]) -> None:
+    def submit_tips(self, predictions: pd.DataFrame) -> None:
         """Submit tips to probabilistic-footy.monash.edu.
 
         Params:
         -------
-        predicted_winners: A dict of predicted winners and their predicted results.
+        predictions: Predicted winners and their predicted results.
         """
+        predicted_winners = cast(List[MatchPrediction], convert_to_dict(predictions))
+
         if self.verbose == 1:
             print("Submitting tips to probabilistic-footy.monash.edu...")
 
@@ -89,7 +81,7 @@ class MonashSubmitter:
                 print(f"{comp} tips submitted!")
 
     def _transform_into_tipping_input(
-        self, predicted_winners: List[PredictedWinner], competition
+        self, predicted_winners: List[MatchPrediction], competition
     ) -> Dict[str, str]:
         PREDICTION_TYPE = {"normal": "margin", "info": "win_probability"}
         competition_prediction_type = cast(
@@ -106,7 +98,7 @@ class MonashSubmitter:
 
     @staticmethod
     def _clean_numeric_input(
-        competition_prediction_type: PredictionType, predicted_winner: PredictedWinner
+        competition_prediction_type: PredictionType, predicted_winner: MatchPrediction
     ) -> str:
         prediction_number = predicted_winner[competition_prediction_type]
 
@@ -233,7 +225,7 @@ class FootyTipsSubmitter:
         )
         self.verbose = verbose
 
-    def submit_tips(self, predicted_winners: List[PredictedWinner]) -> None:
+    def submit_tips(self, predictions: pd.DataFrame) -> None:
         """
         Submit tips to footytips.com.au.
 
@@ -242,6 +234,8 @@ class FootyTipsSubmitter:
         predicted_winners: A dict where the keys are team names and the values
             are their predicted margins. Only includes predicted winners.
         """
+        predicted_winners = cast(List[MatchPrediction], convert_to_dict(predictions))
+
         if self.verbose == 1:
             print("Submitting tips to footytips.com.au...")
 
@@ -278,7 +272,7 @@ class FootyTipsSubmitter:
             print("Tips submitted!")
 
     def _transform_into_tipping_input(
-        self, predicted_winners: List[PredictedWinner]
+        self, predicted_winners: List[MatchPrediction]
     ) -> Dict[str, int]:
         return {
             # We round predicted_margin, because the margin input for footytips
@@ -379,8 +373,7 @@ class Tipper:
         if self.verbose == 1:
             print("Predictions received!")
 
-        home_away_df = pivot_team_matches_to_matches(prediction_data)
-        match_predictions = home_away_df.replace({np.nan: None}).to_dict("records")
+        match_predictions = pivot_team_matches_to_matches(prediction_data)
 
         data_export.update_match_predictions(match_predictions)
 
@@ -396,8 +389,8 @@ class Tipper:
     ) -> List[CleanPredictionData]:
         """Fetch match prediction data from the data-science service."""
 
-    def _submit_tips(self, latest_predictions: List[PredictedWinner]) -> None:
-        if not any(latest_predictions):
+    def _submit_tips(self, latest_predictions: pd.DataFrame) -> None:
+        if not latest_predictions.any().any():
             if self.verbose == 1:
                 print(
                     "No predictions found for the upcoming round. "

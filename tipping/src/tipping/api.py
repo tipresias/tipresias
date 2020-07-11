@@ -5,12 +5,10 @@ from datetime import datetime
 from warnings import warn
 import pytz
 
-import numpy as np
 import pandas as pd
 
 from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
-from tipping.types import CleanPredictionData, MatchData, MLModelInfo
 from tipping.tipping import MonashSubmitter, FootyTipsSubmitter
 
 DEC = 12
@@ -110,15 +108,13 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
     if verbose == 1:
         print("Predictions received!")
 
-    home_away_df = pivot_team_matches_to_matches(prediction_data)
-    match_predictions = home_away_df.replace({np.nan: None}).to_dict("records")
-
+    match_predictions = pivot_team_matches_to_matches(prediction_data)
     data_export.update_match_predictions(match_predictions)
 
     if verbose == 1:
         print("Match predictions sent!")
 
-    if not any(match_predictions):
+    if not match_predictions.any().any():
         if verbose == 1:
             print(
                 "No predictions found for the upcoming round. "
@@ -151,12 +147,8 @@ def update_match_results(verbose=1) -> None:
     if verbose == 1:
         print(f"Fetching match results for season {right_now.year}")
 
-    match_data = (
-        data_import.fetch_match_results_data(
-            str(start_of_year), str(end_of_year), fetch_data=True
-        )
-        .replace({np.nan: None})
-        .to_dict("records")
+    match_data = data_import.fetch_match_results_data(
+        str(start_of_year), str(end_of_year), fetch_data=True
     )
 
     if verbose == 1:
@@ -173,7 +165,7 @@ def fetch_match_predictions(
     round_number: Optional[int] = None,
     ml_models: Optional[List[str]] = None,
     train_models: Optional[bool] = False,
-) -> List[CleanPredictionData]:
+) -> pd.DataFrame:
     """
     Fetch prediction data from ML models.
 
@@ -197,14 +189,12 @@ def fetch_match_predictions(
         train_models=train_models,
     )
 
-    home_away_df = pivot_team_matches_to_matches(prediction_data)
-
-    return home_away_df.replace({np.nan: None}).to_dict("records")
+    return pivot_team_matches_to_matches(prediction_data)
 
 
 def fetch_match_results(
     start_date: str, end_date: str, fetch_data: bool = False
-) -> List[MatchData]:
+) -> pd.DataFrame:
     """
     Fetch results data for past matches.
 
@@ -223,10 +213,10 @@ def fetch_match_results(
     """
     return data_import.fetch_match_results_data(
         start_date, end_date, fetch_data=fetch_data
-    ).to_dict("records")
+    )
 
 
-def fetch_ml_models() -> List[MLModelInfo]:
+def fetch_ml_models() -> pd.DataFrame:
     """
     Fetch general info about all saved ML models.
 
@@ -234,4 +224,4 @@ def fetch_ml_models() -> List[MLModelInfo]:
     --------
     A list of objects with basic info about each ML model.
     """
-    return data_import.fetch_ml_model_info().to_dict("records")
+    return data_import.fetch_ml_model_info()

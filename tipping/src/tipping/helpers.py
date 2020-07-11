@@ -1,7 +1,8 @@
 """Helper functions."""
 
-from typing import Dict, Callable
+from typing import Dict, Callable, List, Any
 import pandas as pd
+import numpy as np
 
 
 NON_METRIC_COLS = ["home_team", "away_team", "year", "round_number", "ml_model"]
@@ -54,3 +55,19 @@ def pivot_team_matches_to_matches(team_match_df: pd.DataFrame) -> pd.DataFrame:
         on=["home_team", "away_team", "year", "round_number", "ml_model"],
         how="inner",
     )
+
+
+def convert_to_dict(data_frame: pd.DataFrame) -> List[Dict[str, Any]]:
+    """
+    Convert DataFrame to list of record dicts with necessary dtype conversions.
+
+    Params:
+    -------
+    data_frame: Any old data frame you choose.
+
+    Returns:
+    --------
+    List of dicts.
+    """
+    type_conversion = {"date": str} if "date" in data_frame.columns else {}
+    return data_frame.replace({np.nan: None}).astype(type_conversion).to_dict("records")

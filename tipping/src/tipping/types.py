@@ -6,6 +6,16 @@ from datetime import datetime
 from mypy_extensions import TypedDict
 from pandas import Timestamp
 
+
+MatchPrediction = TypedDict(
+    "MatchPrediction",
+    {
+        "predicted_winner__name": str,
+        "predicted_margin": float,
+        "predicted_win_probability": float,
+    },
+)
+
 CleanPredictionData = TypedDict(
     "CleanPredictionData",
     {

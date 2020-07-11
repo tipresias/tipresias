@@ -1,5 +1,7 @@
 # pylint: disable=missing-docstring
 
+import json
+
 from django.test import TestCase, RequestFactory
 from django.utils import timezone
 import pandas as pd
@@ -19,7 +21,10 @@ class TestViews(TestCase):
         self.ml_model = factories.MLModelFactory(
             name="test_estimator", is_principal=True, used_in_competitions=True
         )
-        self.matches = [factories.FullMatchFactory() for _ in range(N_MATCHES)]
+        self.matches = [
+            factories.FullMatchFactory(future=True, round_number=5)
+            for _ in range(N_MATCHES)
+        ]
         self.views = views
 
     def test_predictions(self):
@@ -68,9 +73,21 @@ class TestViews(TestCase):
                 response = views.predictions(request)
 
                 # It creates predictions
-                self.assertEqual(Prediction.objects.count(), 9)
+                self.assertEqual(Prediction.objects.count(), N_MATCHES)
                 # It returns success response
                 self.assertEqual(response.status_code, 200)
+                # It returns the created predictions
+                prediction_response = json.loads(response.content)
+                self.assertEqual(len(prediction_response), N_MATCHES)
+                for pred in prediction_response:
+                    self.assertEqual(
+                        {
+                            "predicted_winner__name",
+                            "predicted_margin",
+                            "predicted_win_probability",
+                        },
+                        set(pred.keys()),
+                    )
 
         with self.subTest("with existing prediction records"):
             original_predicted_margins = list(
@@ -98,6 +115,19 @@ class TestViews(TestCase):
             self.assertEqual(original_predicted_margins, posted_predicted_margins)
             # It returns a success response
             self.assertEqual(response.status_code, 200)
+            # It returns the updated predictions
+            prediction_response = json.loads(response.content)
+            self.assertEqual(len(prediction_response), N_MATCHES)
+
+            for pred in prediction_response:
+                self.assertEqual(
+                    {
+                        "predicted_winner__name",
+                        "predicted_margin",
+                        "predicted_win_probability",
+                    },
+                    set(pred.keys()),
+                )
 
     def test_fixtures(self):
         max_round = Match.objects.order_by("-round_number").first().round_number

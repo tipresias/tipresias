@@ -2,15 +2,17 @@
 
 from typing import Optional, Dict, Any, List
 from urllib.parse import urljoin
+import json
 
-import numpy as np
 import pandas as pd
 import requests
 
+from tipping.helpers import convert_to_dict
 from tipping import settings
+from tipping.types import MatchPrediction
 
 
-def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> None:
+def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> requests.Response:
     body = body or {}
 
     app_host = settings.TIPRESIAS_APP
@@ -19,13 +21,12 @@ def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> None:
         if settings.IS_PRODUCTION
         else {}
     )
-
     service_url = urljoin(app_host, path)
 
     response = requests.post(service_url, json=body, headers=headers)
 
     if 200 <= response.status_code < 300:
-        return None
+        return response
 
     raise Exception(
         f"Bad response from application when requesting {service_url}:\n"
@@ -33,11 +34,6 @@ def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> None:
         f"Headers: {response.headers}\n"
         f"Body: {response.text}"
     )
-
-
-def _convert_to_dict(data_frame: pd.DataFrame) -> List[Dict[str, Any]]:
-    type_conversion = {"date": str} if "date" in data_frame.columns else {}
-    return data_frame.replace({np.nan: None}).astype(type_conversion).to_dict("records")
 
 
 def update_fixture_data(fixture_data: pd.DataFrame, upcoming_round: int):
@@ -49,12 +45,12 @@ def update_fixture_data(fixture_data: pd.DataFrame, upcoming_round: int):
     fixture_data: Data for future matches.
     upcoming_round: Either the current round if ongoing or the next round to be played.
     """
-    body = {"upcoming_round": upcoming_round, "data": _convert_to_dict(fixture_data)}
+    body = {"upcoming_round": upcoming_round, "data": convert_to_dict(fixture_data)}
 
     _send_data("/fixtures", body=body)
 
 
-def update_match_predictions(prediction_data: pd.DataFrame):
+def update_match_predictions(prediction_data: pd.DataFrame) -> pd.DataFrame:
     """
     POST prediction data to main Tipresias app.
 
@@ -63,10 +59,13 @@ def update_match_predictions(prediction_data: pd.DataFrame):
     prediction_data: Predictions from ML models, organised to have one match per row.
     """
     body = {
-        "data": _convert_to_dict(prediction_data),
+        "data": convert_to_dict(prediction_data),
     }
 
-    _send_data("/predictions", body=body)
+    response = _send_data("/predictions", body=body)
+    predictions: List[MatchPrediction] = json.loads(response.text)
+
+    return pd.DataFrame(predictions)
 
 
 def update_match_results(match_data: pd.DataFrame):
@@ -78,7 +77,7 @@ def update_match_results(match_data: pd.DataFrame):
     match_data: Data from played matches, especially finally scores.
     """
     body = {
-        "data": _convert_to_dict(match_data),
+        "data": convert_to_dict(match_data),
     }
 
     _send_data("/matches", body=body)

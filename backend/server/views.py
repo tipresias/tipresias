@@ -13,7 +13,7 @@ from server import api
 from server.types import FixtureData, MatchData
 
 
-def predictions(request: HttpRequest):
+def predictions(request: HttpRequest, verbose=1):
     """Handle POST request to /predictions with prediction data in the body."""
     if request.method != "POST":
         return HttpResponse(status=405)
@@ -31,7 +31,13 @@ def predictions(request: HttpRequest):
     for pred in prediction_data:
         Prediction.update_or_create_from_raw_data(pred)
 
-    return HttpResponse("Success", status=200)
+    prediction_records = list(api.fetch_latest_round_predictions(verbose=verbose))
+
+    return HttpResponse(
+        content=json.dumps(prediction_records),
+        content_type="application/json",
+        status=200,
+    )
 
 
 def fixtures(request: HttpRequest, verbose=1):
@@ -57,7 +63,7 @@ def fixtures(request: HttpRequest, verbose=1):
         cast(List[FixtureData], fixture_data), upcoming_round, verbose=verbose
     )
 
-    return HttpResponse("Success", status=200)
+    return HttpResponse("Success", content_type="application/json", status=200)
 
 
 def matches(request: HttpRequest, verbose=1):
@@ -82,4 +88,4 @@ def matches(request: HttpRequest, verbose=1):
         cast(List[MatchData], match_data), verbose=verbose
     )
 
-    return HttpResponse("Success", status=200)
+    return HttpResponse("Success", content_type="application/json", status=200)

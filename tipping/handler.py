@@ -2,7 +2,7 @@
 
 """Serverless functions for fetching and updating application data."""
 
-from typing import List, Union, TypedDict
+from typing import List, Union, TypedDict, cast
 import json
 import os
 import sys
@@ -15,6 +15,7 @@ if SRC_DIR not in sys.path:
 from tipping import api
 from tipping import settings
 from tipping.types import CleanPredictionData, MatchData, MLModelInfo
+from tipping.helpers import convert_to_dict
 
 
 class Response(TypedDict):
@@ -114,7 +115,12 @@ def fetch_match_predictions(event, _context):
         if key in VALID_KWARGS and value is not None
     }
 
-    return _response(api.fetch_match_predictions(year_range, **kwargs))
+    response_data = cast(
+        List[CleanPredictionData],
+        convert_to_dict(api.fetch_match_predictions(year_range, **kwargs)),
+    )
+
+    return _response(response_data)
 
 
 def fetch_match_results(event, _context) -> Response:
@@ -142,9 +148,14 @@ def fetch_match_results(event, _context) -> Response:
     if event.get("fetch_data") is not None:
         kwargs["fetch_data"] = event["fetch_data"]
 
-    return _response(
-        api.fetch_match_results(event["start_date"], event["end_date"], **kwargs)
+    response_data = cast(
+        List[MatchData],
+        convert_to_dict(
+            api.fetch_match_results(event["start_date"], event["end_date"], **kwargs)
+        ),
     )
+
+    return _response(response_data)
 
 
 def fetch_ml_models(event, _context) -> Response:
@@ -158,4 +169,6 @@ def fetch_ml_models(event, _context) -> Response:
     if not _request_is_authorized(event):
         return _response("Unauthorized", status_code=401)
 
-    return _response(api.fetch_ml_models())
+    response_data = cast(List[MLModelInfo], convert_to_dict(api.fetch_ml_models()))
+
+    return _response(response_data)

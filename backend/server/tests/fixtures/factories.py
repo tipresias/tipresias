@@ -22,6 +22,7 @@ DEC = 12
 THIRTY_FIRST = 31
 MAR = 3
 ONE_WEEK = 7
+SIX_MONTHS_IN_WEEKS = 26
 
 # A full round with all teams playing each other currently has 9 matches.
 TYPICAL_N_MATCHES_PER_ROUND = 9
@@ -47,8 +48,11 @@ class TeamFactory(DjangoModelFactory):
 
 def _fake_datetime(match_factory, n, start_month_day=(MAR, FIRST)) -> datetime:
     round_week_delta = timedelta(days=ONE_WEEK)
-    start_round_week_delta = round_week_delta * math.ceil(
-        n / TYPICAL_N_MATCHES_PER_ROUND
+    start_round_week_delta = round_week_delta * (
+        # We cycle through six month periods, because the sequence doesn't reset
+        # between tests and eventually hits the end of the year for every test.
+        math.ceil(n / TYPICAL_N_MATCHES_PER_ROUND)
+        % SIX_MONTHS_IN_WEEKS
     )
     # Since we create match records per year, we don't want want dates running
     # into the next year.
@@ -108,7 +112,7 @@ class MatchFactory(DjangoModelFactory):
 
     start_date_time = factory.LazyAttributeSequence(_fake_datetime)
     round_number = factory.Sequence(
-        lambda n: math.ceil(n / TYPICAL_N_MATCHES_PER_ROUND)
+        lambda n: math.ceil((n + 1) / TYPICAL_N_MATCHES_PER_ROUND)
         % N_ROUNDS_PER_REGULAR_SEASON
     )
     venue = factory.LazyFunction(

@@ -137,20 +137,18 @@ class TestApi(TestCase):
         )
         # It returns predictions organised by match
         self.assertEqual(
-            set(
-                [
-                    "home_team",
-                    "year",
-                    "round_number",
-                    "away_team",
-                    "ml_model",
-                    "home_predicted_margin",
-                    "away_predicted_margin",
-                    "home_predicted_win_probability",
-                    "away_predicted_win_probability",
-                ]
-            ),
-            set(prediction_response[0].keys()),
+            {
+                "home_team",
+                "year",
+                "round_number",
+                "away_team",
+                "ml_model",
+                "home_predicted_margin",
+                "away_predicted_margin",
+                "home_predicted_win_probability",
+                "away_predicted_win_probability",
+            },
+            set(prediction_response.columns),
         )
         self.assertEqual(N_MATCHES, len(prediction_response))
 
@@ -174,22 +172,20 @@ class TestApi(TestCase):
         )
         # It returns match data
         self.assertEqual(
-            set(
-                [
-                    "date",
-                    "year",
-                    "round",
-                    "round_number",
-                    "home_team",
-                    "away_team",
-                    "venue",
-                    "home_score",
-                    "away_score",
-                    "match_id",
-                    "crowd",
-                ]
-            ),
-            set(match_response[0].keys()),
+            {
+                "date",
+                "year",
+                "round",
+                "round_number",
+                "home_team",
+                "away_team",
+                "venue",
+                "home_score",
+                "away_score",
+                "match_id",
+                "crowd",
+            },
+            set(match_response.columns),
         )
         self.assertEqual(N_MATCHES, len(match_response))
 
@@ -205,8 +201,8 @@ class TestApi(TestCase):
         mock_data_import.fetch_ml_model_info.assert_called()
         # It returns ML model data
         self.assertEqual(
-            set(["name", "prediction_type", "trained_to", "data_set", "label_col",]),
-            set(ml_model_response[0].keys()),
+            {"name", "prediction_type", "trained_to", "data_set", "label_col"},
+            set(ml_model_response.columns),
         )
         self.assertEqual(N_ML_MODELS, len(ml_model_response))
 

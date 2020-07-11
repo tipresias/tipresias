@@ -257,7 +257,7 @@ class FootyTipsSubmitter:
                 "username": os.environ["FOOTY_TIPS_USERNAME"],
                 "password": os.environ["FOOTY_TIPS_PASSWORD"],
                 "predictions": predictions,
-                "settings.team_translations": settings.TEAM_TRANSLATIONS,
+                "team_translations": settings.TEAM_TRANSLATIONS,
             },
         )
 

@@ -10,16 +10,13 @@ import requests
 from tipping import settings
 
 
-IS_PRODUCTION = settings.ENVIRONMENT == "production"
-
-
 def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> None:
     body = body or {}
 
     app_host = settings.TIPRESIAS_APP
     headers = (
         {"Authorization": f"Bearer {settings.TIPRESIAS_APP_TOKEN}"}
-        if IS_PRODUCTION
+        if settings.IS_PRODUCTION
         else {}
     )
 

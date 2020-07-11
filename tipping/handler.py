@@ -17,9 +17,6 @@ from tipping import settings
 from tipping.types import CleanPredictionData, MatchData, MLModelInfo
 
 
-IS_PRODUCTION = settings.ENVIRONMENT = "production"
-
-
 class Response(TypedDict):
     """Response dict for AWS Lambda functions."""
 
@@ -38,7 +35,7 @@ def _response(
 def _request_is_authorized(http_request) -> bool:
     auth_token = http_request.headers.get("Authorization")
 
-    if IS_PRODUCTION and auth_token != f"Bearer {settings.API_TOKEN}":
+    if settings.IS_PRODUCTION and auth_token != f"Bearer {settings.API_TOKEN}":
         return False
 
     return True

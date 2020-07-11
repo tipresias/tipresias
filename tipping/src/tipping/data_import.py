@@ -21,9 +21,6 @@ PredictionData = TypedDict(
 )
 
 
-IS_PRODUCTION = settings.ENVIRONMENT == "prediction"
-
-
 def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
     # We have to use dateutil.parser instead of a pandas datetime parser,
     # because the former doesn't maintain the timezone offset.
@@ -54,7 +51,7 @@ def _fetch_data(
     service_host = settings.DATA_SCIENCE_SERVICE
     headers = (
         {"Authorization": f"Bearer {settings.DATA_SCIENCE_SERVICE_TOKEN}"}
-        if IS_PRODUCTION
+        if settings.IS_PRODUCTION
         else {}
     )
 

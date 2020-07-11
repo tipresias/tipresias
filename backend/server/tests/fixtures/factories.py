@@ -108,7 +108,7 @@ class MatchFactory(DjangoModelFactory):
 
     start_date_time = factory.LazyAttributeSequence(_fake_datetime)
     round_number = factory.Sequence(
-        lambda n: math.ceil(n / TYPICAL_N_MATCHES_PER_ROUND)
+        lambda n: math.ceil((n + 1) / TYPICAL_N_MATCHES_PER_ROUND)
         % N_ROUNDS_PER_REGULAR_SEASON
     )
     venue = factory.LazyFunction(

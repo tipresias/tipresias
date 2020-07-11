@@ -22,7 +22,8 @@ class TestViews(TestCase):
             name="test_estimator", is_principal=True, used_in_competitions=True
         )
         self.matches = [
-            factories.FullMatchFactory(future=True) for _ in range(N_MATCHES)
+            factories.FullMatchFactory(future=True, round_number=5)
+            for _ in range(N_MATCHES)
         ]
         self.views = views
 

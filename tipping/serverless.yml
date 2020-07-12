@@ -37,6 +37,8 @@ provider:
     MONASH_PASSWORD: ${env:MONASH_PASSWORD}
     FOOTY_TIPS_USERNAME: ${env:FOOTY_TIPS_USERNAME}
     FOOTY_TIPS_PASSWORD: ${env:FOOTY_TIPS_PASSWORD}
+    SPLASH_SERVICE: ${env:SPLASH_SERVICE}
+
 
 plugins:
   - serverless-offline

@@ -47,43 +47,7 @@ plugins:
 custom:
   pythonRequirements:
     dockerizePip: false # We run sls inside Docker already
-  dotenv:
-    logging: false
-    include:
-      - TIPRESIAS_APP
-      - TIPRESIAS_APP_TOKEN
-      - DATA_SCIENCE_SERVICE
-      - DATA_SCIENCE_SERVICE_TOKEN
-      - TIPPING_SERVICE_TOKEN
-      - MONASH_USERNAME
-      - MONASH_PASSWORD
-      - FOOTY_TIPS_USERNAME
-      - FOOTY_TIPS_PASSWORD
-# you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
 
-# you can add statements to the Lambda function's IAM Role here
-#  iamRoleStatements:
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:ListBucket"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:PutObject"
-#      Resource:
-#        Fn::Join:
-#          - ""
-#          - - "arn:aws:s3:::"
-#            - "Ref" : "ServerlessDeploymentBucket"
-#            - "/*"
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
-
-# you can add packaging information here
 package:
   include:
     - handler.py

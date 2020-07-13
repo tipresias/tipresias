@@ -238,16 +238,21 @@ class Query(graphene.ObjectType):
     @staticmethod
     def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPredictions:
         """Return predictions and model metrics for the latest available round."""
-        max_match = Match.objects.order_by("-start_date_time").first()
+        max_match_with_predictions = (
+            Match.objects.annotate(prediction_count=Count("prediction"))
+            .filter(prediction_count__gt=0)
+            .order_by("-start_date_time")
+            .first()
+        )
 
         prediction_query = Prediction.objects.filter(
-            match__start_date_time__year=max_match.start_date_time.year,
-            match__round_number=max_match.round_number,
+            match__start_date_time__year=max_match_with_predictions.start_date_time.year,
+            match__round_number=max_match_with_predictions.round_number,
             ml_model__used_in_competitions=True,
         ).order_by("match__start_date_time")
 
         return {
-            "round_number": max_match.round_number,
+            "round_number": max_match_with_predictions.round_number,
             "match_predictions": prediction_query,
         }
 

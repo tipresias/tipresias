@@ -1,4 +1,5 @@
 # pylint: disable=missing-docstring
+
 from datetime import datetime
 from dateutil import parser
 
@@ -380,6 +381,17 @@ class TestSchema(TestCase):
                 pred["isCorrect"] for pred in data["matchPredictions"]
             }
             self.assertEqual(set([None]), unique_is_correct_values)
+
+            with self.subTest("that don't have predictions yet"):
+                Prediction.objects.filter(
+                    match__start_date_time__gt=timezone.now()
+                ).delete()
+
+                executed = self.client.execute(query_string)
+                data = executed["data"]["fetchLatestRoundPredictions"]
+
+                # It returns predictions from the last round that has them
+                self.assertEqual(data["roundNumber"], max_round_number)
 
     # Keeping this in a separate test, because it requires special setup
     # to properly test metric calculations

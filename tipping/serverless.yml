@@ -60,19 +60,22 @@ functions:
     handler: handler.update_fixture_data
     events:
       - schedule:
-          rate: cron(0 7 ? * 1 *) # Monday morning
+          # Sunday, 9pm UTC (next day, 7am/8am Melbourne time, depending on DST)
+          rate: cron(0 21 ? * 1 *)
           enabled: true
   update_match_predictions:
     handler: handler.update_match_predictions
     events:
       - schedule:
-          rate: cron(0 7 ? * 3-5 *) # Wednesday through Friday morning
+          # Tuesday-Saturday, 9pm UTC (next day, 7am/8am Melbourne time, depending on DST)
+          rate: cron(0 21 ? * 3-7 *)
           enabled: true
   update_match_results:
     handler: handler.update_match_results
     events:
       - schedule:
-          rate: cron(0 7 ? * 2 *) # Tuesday morning
+          # Monday, 9pm UTC (next day, 7am/8am Melbourne time, depending on DST)
+          rate: cron(0 21 ? * 2 *)
           enabled: true
   fetch_match_predictions:
     handler: handler.fetch_match_predictions

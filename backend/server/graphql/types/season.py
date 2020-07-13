@@ -3,7 +3,6 @@
 from typing import List, cast, Optional, Callable
 from functools import partial
 from datetime import datetime
-import math
 
 from django.db.models import QuerySet
 import graphene

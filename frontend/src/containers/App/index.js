@@ -37,7 +37,12 @@ const App = () => {
   } = data;
 
 
-  const metrics = ['cumulativeAccuracy', 'cumulativeBits', 'cumulativeMeanAbsoluteError'];
+  const metrics = [
+    'cumulativeAccuracy',
+    'cumulativeBits',
+    'cumulativeMeanAbsoluteError',
+    'cumulativeCorrectCount',
+  ];
 
 
   return (

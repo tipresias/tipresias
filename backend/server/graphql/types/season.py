@@ -147,14 +147,9 @@ class RoundPredictionType(graphene.ObjectType):
                     )
                 }
             )
+            .replace({np.nan: None})
             .to_dict("records")
         )
-
-        # to_dict converts None to Python's NaN, which boolean coerces to True,
-        # making is_correct True for all future matches
-        for pred in competition_predictions:
-            if math.isnan(pred["is_correct"]):
-                pred["is_correct"] = None
 
         return competition_predictions
 

@@ -583,6 +583,17 @@ class TestSchema(TestCase):
         # which would suggest a problem
         self.assertNotEqual(data["cumulativeBits"], 0)
 
+        with self.subTest("when the last matches don't have updated results yet"):
+            TeamMatch.objects.filter(
+                match__start_date_time__year=YEAR, match__round_number=ROUND_COUNT
+            ).update(score=0)
+
+            executed = self.client.execute(query)
+            data = executed["data"]["fetchLatestRoundMetrics"]
+
+            # It fetches latest round with results
+            self.assertEqual(data["roundNumber"], ROUND_COUNT - 1)
+
         with self.subTest("when the last matches haven't been played yet"):
             DAY = 3
             fake_datetime = timezone.make_aware(datetime(YEAR, MONTH, DAY))

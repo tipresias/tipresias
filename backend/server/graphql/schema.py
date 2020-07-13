@@ -256,14 +256,16 @@ class Query(graphene.ObjectType):
         """
         Return performance metrics for competition models through the last-played round.
         """
-        max_match = (
-            Match.objects.filter(start_date_time__lt=timezone.now())
+        max_match_with_results = (
+            Match.objects.filter(
+                start_date_time__lt=timezone.now(), teammatch__score__gt=0
+            )
             .order_by("-start_date_time")
             .first()
         )
 
         prediction_query_set = Prediction.objects.filter(
-            match__start_date_time__year=max_match.year,
+            match__start_date_time__year=max_match_with_results.year,
             ml_model__used_in_competitions=True,
         )
         additional_metric_values = [
@@ -275,7 +277,9 @@ class Query(graphene.ObjectType):
             prediction_query_set, additional_metric_values,
         )
 
-        metrics_df = calculate_cumulative_metrics(metric_values, max_match.round_number)
+        metrics_df = calculate_cumulative_metrics(
+            metric_values, max_match_with_results.round_number
+        )
 
         return _consolidate_competition_model_metrics(metrics_df)
 

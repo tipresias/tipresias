@@ -3,7 +3,7 @@
 # their own.
 # Using slim-buster instead of alpine based on this GH comment:
 # https://github.com/docker-library/python/issues/381#issuecomment-464258800
-FROM python:3.8.1-slim-buster@sha256:dc9c4de1bb38720f70af28e8071f324052725ba122878fbac784be9b03f41590
+FROM python:3.8.4-slim-buster@sha256:1808973dca9e89569d6359e4691ff24b2415fa369d83018429ff9f80c33da12a
 
 RUN apt-get --no-install-recommends update \
   # g++ is a dependency of gcc, so must come before

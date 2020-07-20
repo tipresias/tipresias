@@ -34,7 +34,7 @@
     "styled-components": "^4.4.1"
   },
   "devDependencies": {
-    "@apollo/react-testing": "^3.1.4",
+    "@apollo/react-testing": "^4.0.0",
     "@babel/plugin-proposal-class-properties": "^7.10.4",
     "@babel/plugin-transform-runtime": "^7.10.4",
     "@babel/preset-env": "^7.10.4",

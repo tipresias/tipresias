@@ -1,7 +1,7 @@
 """Functions for use by other apps or services to modify Server DB records."""
 
 from typing import List, Tuple, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 from django.utils import timezone
@@ -110,9 +110,9 @@ def backfill_recent_match_results(match_results: List[MatchData], verbose=1) -> 
     if verbose == 1:
         print("Filling in results for recent matches...")
 
-    earliest_date_without_results = Match.earliest_date_without_results()
+    earliest_date_time_without_results = Match.earliest_date_time_without_results()
 
-    if earliest_date_without_results is None:
+    if earliest_date_time_without_results is None:
         if verbose == 1:
             print("No played matches are missing results.")
 
@@ -122,9 +122,13 @@ def backfill_recent_match_results(match_results: List[MatchData], verbose=1) -> 
         print("Results data is not yet available to update match records.")
         return None
 
+    # Subtract a day to have a buffer to allow for mismatched start times
+    date_time_filter = (  # pylint: disable=unused-variable
+        earliest_date_time_without_results - timedelta(days=1)
+    )
     right_now = datetime.now(tz=pytz.UTC)  # pylint: disable=unused-variable
     match_results_to_fill = pd.DataFrame(match_results).query(
-        "date >= @earliest_date_without_results & date < @right_now"
+        "date >= @date_time_filter & date < @right_now"
     )
 
     if not match_results_to_fill.any().any():

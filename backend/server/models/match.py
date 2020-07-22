@@ -102,7 +102,7 @@ class Match(models.Model):
         )
 
     @classmethod
-    def earliest_date_without_results(cls) -> Optional[datetime]:
+    def earliest_date_time_without_results(cls) -> Optional[datetime]:
         """
         Get the earliest start_date_time of played matches without results.
 

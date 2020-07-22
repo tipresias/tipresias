@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@apollo/react-components": "^3.1.5",
-    "@apollo/react-hoc": "^3.1.5",
+    "@apollo/react-hoc": "^4.0.0",
     "@apollo/react-hooks": "^3.1.5",
     "@babel/core": "^7.10.5",
     "apollo": "^2.28.3",

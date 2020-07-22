@@ -83,7 +83,7 @@ class TestMatch(TestCase):
 
         self.assertEqual(played_matches_without_results.count(), 1)
 
-    def test_earliest_data_without_results(self):
+    def test_earliest_date_time_without_results(self):
         FullMatchFactory(
             start_date_time=timezone.localtime() - timedelta(days=1),
             home_team_match__score=50,
@@ -97,9 +97,11 @@ class TestMatch(TestCase):
         )
 
         with self.subTest("when all matches have results or haven't been played"):
-            earliest_date_without_results = Match.earliest_date_without_results()
+            earliest_date_time_without_results = (
+                Match.earliest_date_time_without_results()
+            )
 
-            self.assertIsNone(earliest_date_without_results)
+            self.assertIsNone(earliest_date_time_without_results)
 
         played_resultless = FullMatchFactory(
             start_date_time=timezone.localtime() - timedelta(days=1),
@@ -107,10 +109,10 @@ class TestMatch(TestCase):
             away_team_match__score=0,
         )
 
-        earliest_date_without_results = Match.earliest_date_without_results()
+        earliest_date_time_without_results = Match.earliest_date_time_without_results()
 
         self.assertEqual(
-            played_resultless.start_date_time, earliest_date_without_results
+            played_resultless.start_date_time, earliest_date_time_without_results
         )
 
     @patch("server.models.match.Match.update_result")

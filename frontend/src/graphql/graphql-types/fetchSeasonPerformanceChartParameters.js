@@ -11,9 +11,7 @@ export type fetchSeasonPerformanceChartParameters_fetchSeasonPerformanceChartPar
   __typename: "MLModelType",
   name: string,
   /**
-   * Whether the model is the principal model for predicting match winners among
-   * all the models used in competitions (i.e. all competition models predict
-   * winners, but only one's predictions are official predicted winners of Tipresias).
+   * Whether the model is the principal model for predicting match winners among all the models used in competitions (i.e. all competition models predict winners, but only one's predictions are official predicted winners of Tipresias).
    */
   isPrincipal: boolean,
   /**

@@ -7,13 +7,12 @@
     "build": "react-scripts build",
     "test:eslint": "yarn run eslint 'src/**/*.js' --ext .jsx --ext .js",
     "test:flow": "yarn flow",
-    "test:unit": "react-app-rewired test --env=jsdom",
-    "storybook": "start-storybook"
+    "test:unit": "react-app-rewired test --env=jsdom"
   },
   "dependencies": {
-    "@apollo/react-components": "^3.1.5",
-    "@apollo/react-hoc": "^3.1.5",
-    "@apollo/react-hooks": "^3.1.5",
+    "@apollo/react-components": "^4.0.0",
+    "@apollo/react-hoc": "^4.0.0",
+    "@apollo/react-hooks": "^4.0.0",
     "@babel/core": "^7.10.5",
     "apollo": "^2.30.1",
     "apollo-boost": "0.4.9",
@@ -40,9 +39,6 @@
     "@babel/preset-env": "^7.10.4",
     "@babel/preset-flow": "^7.10.4",
     "@babel/preset-react": "^7.10.4",
-    "@storybook/cli": "^5.3.19",
-    "@storybook/preset-create-react-app": "^3.1.2",
-    "@storybook/react": "5.3.19",
     "babel-cli": "^6.26.0",
     "babel-plugin-istanbul": "^6.0.0",
     "customize-cra": "^1.0.0",

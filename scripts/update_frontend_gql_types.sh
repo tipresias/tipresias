@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+CI=${CI:-"false"}
 DOCKER_COMPOSE_FILE="${1:-docker-compose.yml}"
 
 docker-compose -f ${DOCKER_COMPOSE_FILE} up -d

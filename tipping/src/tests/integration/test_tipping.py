@@ -9,12 +9,13 @@ import pytz
 from freezegun import freeze_time
 import pandas as pd
 from faker import Faker
+from requests import Response
 
 from tests.fixtures.data_factories import (
     fake_fixture_data,
     fake_prediction_data,
 )
-from tipping.tipping import Tipper, FootyTipsSubmitter
+from tipping.tipping import Tipper, FootyTipsSubmitter, MonashSubmitter
 
 
 ROW_COUNT = 5
@@ -50,12 +51,21 @@ class TestTipper(TestCase):
             return_value=match_results_return_values[0]
         )
 
-        self.mock_submitter = FootyTipsSubmitter(browser=None)
-        self.mock_submitter.submit_tips = MagicMock()
+        self.mock_footy_tips_submitter = FootyTipsSubmitter(browser=None)
+        mock_response = Response()
+        mock_response.status_code = 200
+        self.mock_footy_tips_submitter._call_splash_service = MagicMock(  # pylint: disable=protected-access
+            return_value=mock_response
+        )
+
+        self.mock_monash_submitter = MonashSubmitter(browser=None)
+        self.mock_monash_submitter._submit_competition_tips = (  # pylint: disable=protected-access
+            MagicMock()
+        )
 
         self.tipping = Tipper(
             data_importer=mock_data_import,
-            tip_submitters=[self.mock_submitter, self.mock_submitter],
+            tip_submitters=[self.mock_footy_tips_submitter, self.mock_monash_submitter],
             verbose=0,
         )
 
@@ -109,7 +119,8 @@ class TestTipper(TestCase):
             # It doesn't send predictions to server API
             mock_data_export.update_match_predictions.assert_not_called()
             # It doesn't try to submit any tips
-            self.mock_submitter.submit_tips.assert_not_called()
+            self.mock_footy_tips_submitter._call_splash_service.assert_not_called()  # pylint: disable=protected-access
+            self.mock_monash_submitter._submit_competition_tips.assert_not_called()  # pylint: disable=protected-access
 
         with self.subTest("with at least one future match record"):
             mock_data_import.fetch_fixture_data = MagicMock(
@@ -123,7 +134,8 @@ class TestTipper(TestCase):
             # It sends predictions to Tipresias app
             mock_data_export.update_match_predictions.assert_called()
             # It submits tips to all competitions
-            self.assertEqual(self.mock_submitter.submit_tips.call_count, 2)
+            self.mock_footy_tips_submitter._call_splash_service.assert_called()  # pylint: disable=protected-access
+            self.mock_monash_submitter._submit_competition_tips.assert_called()  # pylint: disable=protected-access
 
     def _build_imported_data_mocks(
         self, tip_date

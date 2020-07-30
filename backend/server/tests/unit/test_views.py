@@ -6,6 +6,7 @@ from django.test import TestCase, RequestFactory
 from django.utils import timezone
 import pandas as pd
 import numpy as np
+from freezegun import freeze_time
 
 from server.tests.fixtures import data_factories, factories
 from server.models import Prediction, Match, TeamMatch
@@ -128,6 +129,45 @@ class TestViews(TestCase):
                     },
                     set(pred.keys()),
                 )
+
+            with self.subTest("when some matches have already been played"):
+                second_match_date = pd.to_datetime(
+                    prediction_data.sort_values("date", ascending=True)["date"]
+                ).iloc[1]
+
+                with freeze_time(second_match_date):
+                    original_predicted_margins = list(
+                        Prediction.objects.all()
+                        .order_by("match__start_date_time")
+                        .values_list("predicted_margin", flat=True)
+                    )
+
+                    for prediction in Prediction.objects.all():
+                        prediction.predicted_margin += 5
+                        prediction.save()
+
+                    new_predicted_margins = list(
+                        Prediction.objects.all()
+                        .order_by("match__start_date_time")
+                        .values_list("predicted_margin", flat=True)
+                    )
+
+                    self.assertNotEqual(
+                        original_predicted_margins, new_predicted_margins
+                    )
+
+                    response = views.predictions(request)
+
+                    # It doesn't update predictions for played matches
+                    played_match_prediction = (
+                        Prediction.objects.all()
+                        .order_by("match__start_date_time")
+                        .first()
+                    )
+                    self.assertEqual(
+                        new_predicted_margins[0],
+                        played_match_prediction.predicted_margin,
+                    )
 
     def test_fixtures(self):
         max_round = Match.objects.order_by("-round_number").first().round_number

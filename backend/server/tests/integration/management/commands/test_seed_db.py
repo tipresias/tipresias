@@ -46,6 +46,7 @@ class TestSeedDb(TestCase):
         ).to_dict("records"):
 
             match_data = {
+                "date": match_result["date"],
                 "home_team": match_result["home_team"],
                 "away_team": match_result["away_team"],
                 "year": match_result["year"],

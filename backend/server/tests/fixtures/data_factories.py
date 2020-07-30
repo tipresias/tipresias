@@ -184,6 +184,7 @@ def fake_prediction_data(
         match_data_for_pred = fake_fixture_data(1, (2018, 2019)).iloc[0, :]
     elif isinstance(match_data, Match):
         match_data_for_pred = {
+            "date": match_data.start_date_time,
             "home_team": match_data.teammatch_set.get(at_home=1).team.name,
             "away_team": match_data.teammatch_set.get(at_home=0).team.name,
             "year": match_data.start_date_time.year,
@@ -200,6 +201,7 @@ def fake_prediction_data(
     return pd.DataFrame(
         [
             {
+                "date": match_data_for_pred["date"],
                 "home_team": match_data_for_pred["home_team"],
                 "away_team": match_data_for_pred["away_team"],
                 "year": match_data_for_pred["year"],

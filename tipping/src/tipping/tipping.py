@@ -61,32 +61,24 @@ class MonashSubmitter:
         -------
         predictions: Predicted winners and their predicted results.
         """
-        predicted_winners = cast(List[MatchPrediction], convert_to_dict(predictions))
-
         if self.verbose == 1:
             print("Submitting tips to probabilistic-footy.monash.edu...")
 
         for comp in self.competitions:
-            assert comp in SUPPORTED_MONASH_COMPS
-
-            # Need to revisit home page for each competition, because submitting tips
-            # doesn't redirect back to it.
-            self.browser.open("http://probabilistic-footy.monash.edu/~footy/tips.shtml")
-            self._login(comp)
-            self._submit_tipping_form(
-                self._transform_into_tipping_input(predicted_winners, comp)
-            )
+            predicted_winners = self._transform_into_tipping_input(comp, predictions)
+            self._submit_competition_tips(comp, predicted_winners)
 
             if self.verbose == 1:
                 print(f"{comp} tips submitted!")
 
     def _transform_into_tipping_input(
-        self, predicted_winners: List[MatchPrediction], competition
+        self, competition: str, predictions: pd.DataFrame
     ) -> Dict[str, str]:
         PREDICTION_TYPE = {"normal": "margin", "info": "win_probability"}
         competition_prediction_type = cast(
             PredictionType, f"predicted_{PREDICTION_TYPE[competition]}",
         )
+        predicted_winners = cast(List[MatchPrediction], convert_to_dict(predictions))
 
         return {
             predicted_winner["predicted_winner__name"]: self._clean_numeric_input(
@@ -109,6 +101,17 @@ class MonashSubmitter:
 
         # Numeric value inputs are of type "text"
         return str(prediction_number)
+
+    def _submit_competition_tips(
+        self, competition: str, predicted_winners: Dict[str, str]
+    ):
+        assert competition in SUPPORTED_MONASH_COMPS
+
+        # Need to revisit home page for each competition, because submitting tips
+        # doesn't redirect back to it.
+        self.browser.open("http://probabilistic-footy.monash.edu/~footy/tips.shtml")
+        self._login(competition)
+        self._submit_tipping_form(predicted_winners)
 
     def _login(self, competition: str) -> None:
         login_form = self.browser.select_form()
@@ -234,32 +237,11 @@ class FootyTipsSubmitter:
         predicted_winners: A dict where the keys are team names and the values
             are their predicted margins. Only includes predicted winners.
         """
-        predicted_winners = cast(List[MatchPrediction], convert_to_dict(predictions))
-
         if self.verbose == 1:
             print("Submitting tips to footytips.com.au...")
 
-        predictions = self._transform_into_tipping_input(predicted_winners)
-        lua_filepath = os.path.join(
-            settings.SRC_DIR, "tipping", "footy_tips_submitter.lua"
-        )
-
-        with open(lua_filepath) as lua_file:
-            lua_source = "".join(lua_file.readlines())
-
-        response = self.browser.post(
-            self.splash_host + "/execute",
-            json={
-                "lua_source": lua_source,
-                # We try to navigate directly to the tipping page, because we will be
-                # redirected there once we log in, minimising the number of steps
-                "url": FOOTY_TIPS_FORM_URL,
-                "username": os.environ["FOOTY_TIPS_USERNAME"],
-                "password": os.environ["FOOTY_TIPS_PASSWORD"],
-                "predictions": predictions,
-                "team_translations": settings.TEAM_TRANSLATIONS,
-            },
-        )
+        predicted_winners = self._transform_into_tipping_input(predictions)
+        response = self._call_splash_service(predicted_winners)
 
         if not 200 <= response.status_code < 300:
             if "WARNING" in response.text:
@@ -272,8 +254,10 @@ class FootyTipsSubmitter:
             print("Tips submitted!")
 
     def _transform_into_tipping_input(
-        self, predicted_winners: List[MatchPrediction]
+        self, predictions: pd.DataFrame
     ) -> Dict[str, int]:
+        predicted_winners = cast(List[MatchPrediction], convert_to_dict(predictions))
+
         return {
             # We round predicted_margin, because the margin input for footytips
             # only accepts integers.
@@ -290,6 +274,28 @@ class FootyTipsSubmitter:
             return settings.TEAM_TRANSLATIONS[element_text]
 
         return element_text
+
+    def _call_splash_service(self, predictions: Dict[str, int]) -> requests.Response:
+        lua_filepath = os.path.join(
+            settings.SRC_DIR, "tipping", "footy_tips_submitter.lua"
+        )
+
+        with open(lua_filepath) as lua_file:
+            lua_source = "".join(lua_file.readlines())
+
+        return self.browser.post(
+            self.splash_host + "/execute",
+            json={
+                "lua_source": lua_source,
+                # We try to navigate directly to the tipping page, because we will be
+                # redirected there once we log in, minimising the number of steps
+                "url": FOOTY_TIPS_FORM_URL,
+                "username": os.environ["FOOTY_TIPS_USERNAME"],
+                "password": os.environ["FOOTY_TIPS_PASSWORD"],
+                "predictions": predictions,
+                "team_translations": settings.TEAM_TRANSLATIONS,
+            },
+        )
 
 
 class Tipper:
@@ -374,13 +380,12 @@ class Tipper:
             print("Predictions received!")
 
         match_predictions = pivot_team_matches_to_matches(prediction_data)
-
-        data_export.update_match_predictions(match_predictions)
+        predictions_response = data_export.update_match_predictions(match_predictions)
 
         if self.verbose == 1:
             print("Match predictions sent!")
 
-        self._submit_tips(match_predictions)
+        self._submit_tips(predictions_response)
 
         return None
 

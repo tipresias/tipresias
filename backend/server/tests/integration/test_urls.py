@@ -19,7 +19,7 @@ class TestUrls(TestCase):
 
     def test_predictions(self):
         ml_model = MLModel.objects.get(is_principal=True)
-        matches = [factories.FullMatchFactory() for _ in range(N_MATCHES)]
+        matches = [factories.FullMatchFactory(future=True) for _ in range(N_MATCHES)]
         prediction_data = pd.concat(
             [
                 data_factories.fake_prediction_data(

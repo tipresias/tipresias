@@ -8,7 +8,6 @@ from dateutil import parser
 from django.http import HttpRequest, HttpResponse
 from django.conf import settings
 
-from server.models import Prediction
 from server import api
 from server.types import FixtureData, MatchData
 
@@ -28,9 +27,7 @@ def predictions(request: HttpRequest, verbose=1):
     body = json.loads(request.body)
     prediction_data = body["data"]
 
-    for pred in prediction_data:
-        Prediction.update_or_create_from_raw_data(pred)
-
+    api.update_future_match_predictions(prediction_data)
     prediction_records = list(api.fetch_latest_round_predictions(verbose=verbose))
 
     return HttpResponse(

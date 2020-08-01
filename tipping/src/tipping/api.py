@@ -134,9 +134,9 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
     return None
 
 
-def update_match_results(verbose=1) -> None:
+def update_matches(verbose=1) -> None:
     """
-    Fetch match results data and send them to the main app.
+    Fetch match data and send them to the main app.
 
     verbose: How much information to print. 1 prints all messages; 0 prints none.
     """
@@ -145,19 +145,19 @@ def update_match_results(verbose=1) -> None:
     end_of_year = datetime(right_now.year, DEC, THIRTY_FIRST)
 
     if verbose == 1:
-        print(f"Fetching match results for season {right_now.year}")
+        print(f"Fetching match data for season {right_now.year}")
 
-    match_data = data_import.fetch_match_results_data(
+    match_data = data_import.fetch_match_data(
         str(start_of_year), str(end_of_year), fetch_data=True
     )
 
     if verbose == 1:
-        print("Match results reveived!")
+        print("Match data reveived!")
 
-    data_export.update_match_results(match_data)
+    data_export.update_matches(match_data)
 
     if verbose == 1:
-        print("Match results sent!")
+        print("Match data sent!")
 
 
 def fetch_match_predictions(
@@ -192,7 +192,7 @@ def fetch_match_predictions(
     return pivot_team_matches_to_matches(prediction_data)
 
 
-def fetch_match_results(
+def fetch_matches(
     start_date: str, end_date: str, fetch_data: bool = False
 ) -> pd.DataFrame:
     """
@@ -211,9 +211,7 @@ def fetch_match_results(
     --------
         List of match results data dicts.
     """
-    return data_import.fetch_match_results_data(
-        start_date, end_date, fetch_data=fetch_data
-    )
+    return data_import.fetch_match_data(start_date, end_date, fetch_data=fetch_data)
 
 
 def fetch_ml_models() -> pd.DataFrame:

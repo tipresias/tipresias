@@ -68,7 +68,7 @@ def update_match_predictions(prediction_data: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(predictions)
 
 
-def update_match_results(match_data: pd.DataFrame):
+def update_matches(match_data: pd.DataFrame):
     """
     POST match data to main Tipresias app.
 

@@ -70,7 +70,7 @@ def update_match_results(_event, _context, verbose=1):
 
     verbose: How much information to print. 1 prints all messages; 0 prints none.
     """
-    api.update_match_results(verbose=verbose)
+    api.update_matches(verbose=verbose)
 
     return _response("Success")
 
@@ -123,9 +123,9 @@ def fetch_match_predictions(event, _context):
     return _response(response_data)
 
 
-def fetch_match_results(event, _context) -> Response:
+def fetch_matches(event, _context) -> Response:
     """
-    Fetch results data for past matches.
+    Fetch data for past matches.
 
     Params:
     -------
@@ -139,7 +139,7 @@ def fetch_match_results(event, _context) -> Response:
 
     Returns:
     --------
-    List of match results data in a JSON body.
+    List of match data in a JSON body.
     """
     if not _request_is_authorized(event):
         return _response("Unauthorized", status_code=401)
@@ -151,7 +151,7 @@ def fetch_match_results(event, _context) -> Response:
     response_data = cast(
         List[MatchData],
         convert_to_dict(
-            api.fetch_match_results(event["start_date"], event["end_date"], **kwargs)
+            api.fetch_matches(event["start_date"], event["end_date"], **kwargs)
         ),
     )
 

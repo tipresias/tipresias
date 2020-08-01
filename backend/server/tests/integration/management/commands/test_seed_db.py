@@ -63,7 +63,7 @@ class TestSeedDb(TestCase):
         mock_data_import.fetch_match_predictions = MagicMock(
             return_value=pd.concat(prediction_data).reset_index().to_dict("records")
         )
-        mock_data_import.fetch_match_results = MagicMock(
+        mock_data_import.fetch_matches = MagicMock(
             side_effect=self.__match_results_side_effect
         )
         mock_data_import.fetch_ml_models = MagicMock(

@@ -47,7 +47,7 @@ class TestTipper(TestCase):
         mock_data_import.fetch_fixture_data = Mock(
             side_effect=self.fixture_return_values[:1] + self.fixture_return_values
         )
-        mock_data_import.fetch_match_results_data = Mock(
+        mock_data_import.fetch_match_data = Mock(
             return_value=match_results_return_values[0]
         )
 

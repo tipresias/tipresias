@@ -27,11 +27,11 @@ class DataImporter:
         """
         return cast(List[MLModel], self._fetch_data("ml_models"))
 
-    def fetch_match_results(
+    def fetch_matches(
         self, start_date: str, end_date: str, fetch_data: bool = False
     ) -> List[MatchData]:
         """
-        Fetch results data for past matches.
+        Fetch data for past matches.
 
         Params:
         -------
@@ -44,7 +44,7 @@ class DataImporter:
 
         Returns:
         --------
-            List of match results data dicts.
+            List of match data dicts.
         """
         return cast(
             List[MatchData],
@@ -236,7 +236,7 @@ class Command(BaseCommand):
         return ml_models
 
     def _create_matches(self) -> None:
-        match_data = self.data_importer.fetch_match_results(
+        match_data = self.data_importer.fetch_matches(
             start_date=f"{self._year_range[0]}-01-01",
             end_date=f"{self._year_range[1] - 1}-12-31",
             fetch_data=self.fetch_data,

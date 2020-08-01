@@ -153,21 +153,21 @@ class TestApi(TestCase):
         self.assertEqual(N_MATCHES, len(prediction_response))
 
     @patch("tipping.api.data_import")
-    def test_fetch_match_results(self, mock_data_import):
+    def test_fetch_matches(self, mock_data_import):
         matches = data_factories.fake_match_results_data(N_MATCHES, YEAR_RANGE)
-        mock_data_import.fetch_match_results_data = MagicMock(return_value=matches)
+        mock_data_import.fetch_match_data = MagicMock(return_value=matches)
 
         match_dates = np.random.choice(matches["date"], size=2)
         fetch_data = bool(np.random.randint(0, 2))
 
-        match_response = self.api.fetch_match_results(
+        match_response = self.api.fetch_matches(
             start_date=min(match_dates),
             end_date=max(match_dates),
             fetch_data=fetch_data,
         )
 
-        # It calls fetch_match_results_data with the same params
-        mock_data_import.fetch_match_results_data.assert_called_with(
+        # It calls fetch_match_data with the same params
+        mock_data_import.fetch_match_data.assert_called_with(
             min(match_dates), max(match_dates), fetch_data=fetch_data,
         )
         # It returns match data

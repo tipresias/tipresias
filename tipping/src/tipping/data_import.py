@@ -137,11 +137,11 @@ def fetch_fixture_data(start_date: datetime, end_date: datetime) -> pd.DataFrame
     return fixtures
 
 
-def fetch_match_results_data(
+def fetch_match_data(
     start_date: str, end_date: str, fetch_data: bool = False
 ) -> pd.DataFrame:
     """
-    Fetch results data for past matches from machine_learning module.
+    Fetch data for past matches from machine_learning module.
 
     Params:
     -------
@@ -154,19 +154,19 @@ def fetch_match_results_data(
 
     Returns:
     --------
-    pandas.DataFrame with match results data.
+    pandas.DataFrame with match data.
     """
-    match_results = pd.DataFrame(
+    matches = pd.DataFrame(
         _fetch_data(
-            "match_results",
+            "matches",
             {"start_date": start_date, "end_date": end_date, "fetch_data": fetch_data},
         )
     )
 
-    if any(match_results):
-        return match_results.assign(date=_parse_dates)
+    if any(matches):
+        return matches.assign(date=_parse_dates)
 
-    return match_results
+    return matches
 
 
 def fetch_ml_model_info() -> pd.DataFrame:

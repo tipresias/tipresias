@@ -117,7 +117,7 @@ def _matches_by_year(
     return [_matches_by_round(row_count, year) for year in range(*year_range)]
 
 
-def fake_match_results_data(
+def fake_match_data(
     row_count: int, year_range: Tuple[int, int], clean=False
 ) -> pd.DataFrame:
     """Return minimally-valid dummy match results data."""

@@ -161,7 +161,7 @@ def update_matches(verbose=1) -> None:
     )
 
     if verbose == 1:
-        print("Match data reveived!")
+        print("Match data received!")
 
     data_export.update_matches(match_data)
 

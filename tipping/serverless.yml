@@ -70,12 +70,12 @@ functions:
           # Sunday-Saturday, 9pm UTC (next day, 7am/8am Melbourne time, depending on DST)
           rate: cron(0 21 ? * 1-7 *)
           enabled: true
-  update_match_results:
-    handler: handler.update_match_results
+  update_matches:
+    handler: handler.update_matches
     events:
       - schedule:
-          # Monday-Tuesday, 9pm UTC (next day, 7am/8am Melbourne time, depending on DST)
-          rate: cron(0 21 ? * 2-3 *)
+          # Tuesday, 9pm UTC (next day, 7am/8am Melbourne time, depending on DST)
+          rate: cron(0 21 ? * 3 *)
           enabled: true
   fetch_match_predictions:
     handler: handler.fetch_match_predictions

@@ -94,8 +94,6 @@ class TestApi(TestCase):
         mock_submitter.submit_tips = MagicMock()
 
         with self.subTest("with no future match records available"):
-            mock_data_import.fetch_fixture_data = MagicMock(return_value=pd.DataFrame())
-
             self.api.update_match_predictions(
                 tips_submitters=[mock_submitter, mock_submitter], verbose=0
             )
@@ -108,20 +106,17 @@ class TestApi(TestCase):
             mock_submitter.submit_tips.assert_not_called()
 
         with self.subTest("with at least one future match record"):
-            mock_data_import.fetch_fixture_data = MagicMock(
-                return_value=self.fixture_return_values[0]
-            )
+            with freeze_time(TIP_DATES[0]):
+                self.api.update_match_predictions(
+                    tips_submitters=[mock_submitter, mock_submitter], verbose=0
+                )
 
-            self.api.update_match_predictions(
-                tips_submitters=[mock_submitter, mock_submitter], verbose=0
-            )
-
-            # It fetches predictions
-            mock_data_import.fetch_prediction_data.assert_called()
-            # It sends predictions to Tipresias app
-            mock_data_export.update_match_predictions.assert_called()
-            # It submits tips to all competitions
-            self.assertEqual(mock_submitter.submit_tips.call_count, 2)
+                # It fetches predictions
+                mock_data_import.fetch_prediction_data.assert_called()
+                # It sends predictions to Tipresias app
+                mock_data_export.update_match_predictions.assert_called()
+                # It submits tips to all competitions
+                self.assertEqual(mock_submitter.submit_tips.call_count, 2)
 
     @patch("tipping.api.data_import")
     def test_fetch_match_predictions(self, mock_data_import):

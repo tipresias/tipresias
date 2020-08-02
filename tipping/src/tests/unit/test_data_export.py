@@ -109,4 +109,33 @@ class TestDataExport(TestCase):
             mock_response.status_code = 400
 
             with self.assertRaisesRegex(Exception, "Bad response"):
-                self.data_export.update_match_predictions(fake_matches)
+                self.data_export.update_matches(fake_matches)
+
+    @patch("tipping.data_export.requests")
+    def test_update_match_results(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.headers = {}
+        mock_response.text = "Stuff happened"
+
+        mock_requests.post = MagicMock(return_value=mock_response)
+
+        url = settings.TIPRESIAS_APP + "/match_results"
+        fake_match_results = data_factories.fake_match_results_data(
+            N_MATCHES, YEAR_RANGE
+        )
+        self.data_export.update_match_results(fake_match_results)
+
+        # It posts the data
+        match_results_response = fake_match_results.astype({"date": str}).to_dict(
+            "records"
+        )
+        mock_requests.post.assert_called_with(
+            url, json={"data": match_results_response}, headers={}
+        )
+
+        with self.subTest("when the status code isn't 2xx"):
+            mock_response.status_code = 400
+
+            with self.assertRaisesRegex(Exception, "Bad response"):
+                self.data_export.update_match_results(fake_match_results)

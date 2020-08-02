@@ -81,3 +81,18 @@ def update_matches(match_data: pd.DataFrame):
     }
 
     _send_data("/matches", body=body)
+
+
+def update_match_results(match_results_data: pd.DataFrame):
+    """
+    POST match results data to main Tipresias app.
+
+    Params:
+    -------
+    match_results_data: Minimal results data from played matches.
+    """
+    body = {
+        "data": convert_to_dict(match_results_data),
+    }
+
+    _send_data("/match_results", body=body)

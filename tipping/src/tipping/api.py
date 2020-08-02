@@ -169,6 +169,35 @@ def update_matches(verbose=1) -> None:
         print("Match data sent!")
 
 
+def update_match_results(verbose=1) -> None:
+    """
+    Fetch minimal match results data and send them to the main app.
+
+    verbose: How much information to print. 1 prints all messages; 0 prints none.
+    """
+    matches_from_current_round = _fetch_current_round_fixture(verbose)
+
+    if matches_from_current_round is None:
+        return None
+
+    current_round = matches_from_current_round["round_number"].min()
+
+    if verbose == 1:
+        print(f"Fetching match results for round {current_round}")
+
+    match_results_data = data_import.fetch_match_results_data(current_round)
+
+    if verbose == 1:
+        print("Match results data received!")
+
+    data_export.update_match_results(match_results_data)
+
+    if verbose == 1:
+        print("Match data sent!")
+
+    return None
+
+
 def fetch_match_predictions(
     year_range: str,
     round_number: Optional[int] = None,

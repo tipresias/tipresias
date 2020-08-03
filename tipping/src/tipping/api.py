@@ -1,6 +1,6 @@
 """External-facing API for fetching and updating application data."""
 
-from typing import Optional, List, Tuple
+from typing import Optional, List
 from datetime import datetime
 from warnings import warn
 import pytz
@@ -17,62 +17,78 @@ JAN = 1
 FIRST = 1
 
 
-def _select_upcoming_matches(
-    fixture_data_frame: pd.DataFrame, right_now: datetime
-) -> Tuple[Optional[int], Optional[pd.DataFrame]]:
+def _select_matches_from_current_round(
+    fixture_data_frame: pd.DataFrame, beginning_of_today: datetime
+) -> Optional[pd.DataFrame]:
     if not fixture_data_frame.any().any():
         warn(
             "Fixture for the upcoming round haven't been posted yet, "
             "so there's nothing to tip. Try again later."
         )
 
-        return None, None
+        return None
 
     latest_match_date = fixture_data_frame["date"].max()
 
-    if right_now > latest_match_date:
+    if beginning_of_today > latest_match_date:
         warn(
-            f"No matches found after {right_now}. The latest match "
+            f"No matches found after {beginning_of_today}. The latest match "
             f"found is at {latest_match_date}\n"
         )
 
-        return None, None
+        return None
 
-    upcoming_round = int(
-        fixture_data_frame.query("date > @right_now").loc[:, "round_number"].min()
+    current_round = int(  # pylint: disable=unused-variable
+        fixture_data_frame.query("date > @beginning_of_today")
+        .loc[:, "round_number"]
+        .min()
     )
-    fixture_for_upcoming_round = fixture_data_frame.query(
-        "round_number == @upcoming_round"
+    fixture_for_current_round = fixture_data_frame.query(
+        "round_number == @current_round"
     )
 
-    return upcoming_round, fixture_for_upcoming_round
+    return fixture_for_current_round
 
 
-def update_fixture_data(verbose=1) -> None:
-    """
-    Fetch fixture data and send upcoming match data to the main app.
-
-    verbose: How much information to print. 1 prints all messages; 0 prints none.
-    """
+def _fetch_current_round_fixture(verbose) -> Optional[pd.DataFrame]:
     right_now = datetime.now(tz=pytz.UTC)
-    year = right_now.year
+    beginning_of_today = right_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    beginning_of_this_year = datetime(
+        beginning_of_today.year, JAN, FIRST, tzinfo=pytz.UTC
+    )
+    end_of_this_year = datetime(
+        beginning_of_today.year, DEC, THIRTY_FIRST, tzinfo=pytz.UTC
+    )
 
     if verbose == 1:
-        print(f"Fetching fixture for {year}...\n")
+        print(f"Fetching fixture for matches after {beginning_of_today}...\n")
 
     fixture_data_frame = data_import.fetch_fixture_data(
-        start_date=datetime(year, 1, 1, tzinfo=pytz.UTC),
-        end_date=datetime(year, 12, 31, tzinfo=pytz.UTC),
+        start_date=beginning_of_this_year, end_date=end_of_this_year,
     )
 
-    upcoming_round, upcoming_matches = _select_upcoming_matches(
+    matches_from_current_round = _select_matches_from_current_round(
         fixture_data_frame, right_now
     )
 
-    if upcoming_round is None or upcoming_matches is None:
+    return matches_from_current_round
+
+
+def update_fixture_data(verbose: int = 1) -> None:
+    """
+    Fetch fixture data and send upcoming match data to the main app.
+
+    Params:
+    -------
+    verbose: How much information to print. 1 prints all messages; 0 prints none.
+    """
+    matches_from_current_round = _fetch_current_round_fixture(verbose)
+
+    if matches_from_current_round is None:
         return None
 
-    data_export.update_fixture_data(upcoming_matches, upcoming_round)
+    current_round = matches_from_current_round["round_number"].drop_duplicates().iloc[0]
+    data_export.update_fixture_data(matches_from_current_round, current_round)
 
     return None
 
@@ -83,26 +99,19 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
 
     verbose: How much information to print. 1 prints all messages; 0 prints none.
     """
-    right_now = datetime.now(tz=pytz.UTC)
-    end_of_year = datetime(right_now.year, DEC, THIRTY_FIRST, tzinfo=pytz.UTC)
-    upcoming_matches = data_import.fetch_fixture_data(right_now, end_of_year)
+    matches_from_current_round = _fetch_current_round_fixture(verbose)
 
-    if not upcoming_matches.any().any():
-        if verbose == 1:
-            print("There are no upcoming matches to predict.")
+    if matches_from_current_round is None:
         return None
 
-    next_match = upcoming_matches.sort_values("date").iloc[0, :]
-    upcoming_round = int(next_match["round_number"])
-    upcoming_season = int(next_match["year"])
+    current_round = matches_from_current_round["round_number"].min()
+    current_season = matches_from_current_round["date"].min().year
 
     if verbose == 1:
-        print(
-            "Fetching predictions for round " f"{upcoming_round}, {upcoming_season}..."
-        )
+        print("Fetching predictions for round " f"{current_round}, {current_season}...")
 
     prediction_data = data_import.fetch_prediction_data(
-        f"{upcoming_season}-{upcoming_season + 1}", round_number=upcoming_round,
+        f"{current_season}-{current_season + 1}", round_number=current_round,
     )
 
     if verbose == 1:
@@ -152,12 +161,41 @@ def update_matches(verbose=1) -> None:
     )
 
     if verbose == 1:
-        print("Match data reveived!")
+        print("Match data received!")
 
     data_export.update_matches(match_data)
 
     if verbose == 1:
         print("Match data sent!")
+
+
+def update_match_results(verbose=1) -> None:
+    """
+    Fetch minimal match results data and send them to the main app.
+
+    verbose: How much information to print. 1 prints all messages; 0 prints none.
+    """
+    matches_from_current_round = _fetch_current_round_fixture(verbose)
+
+    if matches_from_current_round is None:
+        return None
+
+    current_round = matches_from_current_round["round_number"].min()
+
+    if verbose == 1:
+        print(f"Fetching match results for round {current_round}")
+
+    match_results_data = data_import.fetch_match_results_data(current_round)
+
+    if verbose == 1:
+        print("Match results data received!")
+
+    data_export.update_match_results(match_results_data)
+
+    if verbose == 1:
+        print("Match data sent!")
+
+    return None
 
 
 def fetch_match_predictions(

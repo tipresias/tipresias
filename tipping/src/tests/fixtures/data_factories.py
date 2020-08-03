@@ -1,7 +1,7 @@
 """Module for factory functions that create raw data objects."""
 
 from typing import List, Dict, Tuple, Union
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import itertools
 import pytz
 
@@ -117,7 +117,7 @@ def _matches_by_year(
     return [_matches_by_round(row_count, year) for year in range(*year_range)]
 
 
-def fake_match_results_data(
+def fake_match_data(
     row_count: int, year_range: Tuple[int, int], clean=False
 ) -> pd.DataFrame:
     """Return minimally-valid dummy match results data."""
@@ -170,6 +170,60 @@ def fake_fixture_data(row_count: int, year_range: Tuple[int, int]) -> pd.DataFra
     reduced_data = list(itertools.chain.from_iterable(data))
 
     return pd.DataFrame(list(reduced_data))
+
+
+def _results_by_match(round_number: int, team_names: CyclicalTeamNames):
+    home_team = team_names.next_team()
+    away_team = team_names.next_team()
+    winner = np.random.choice([home_team, away_team])
+    match_date = FAKE.date_time_between_dates(
+        **_min_max_datetimes_by_year(date.today().year)
+    )
+
+    return {
+        "date": str(match_date),
+        "tz": "+10:00",
+        "updated": str(match_date + timedelta(hours=3)),
+        "round": round_number,
+        "roundname": f"Round {round_number}",
+        "year": date.today().year,
+        "hbehinds": FAKE.pyint(1, 15),
+        "hgoals": FAKE.pyint(1, 15),
+        "hscore": FAKE.pyint(20, 120),
+        "hteam": home_team,
+        "hteamid": settings.TEAM_NAMES.index(home_team),
+        "abehinds": FAKE.pyint(1, 15),
+        "agoals": FAKE.pyint(1, 15),
+        "ascore": FAKE.pyint(20, 120),
+        "ateam": away_team,
+        "ateamid": settings.TEAM_NAMES.index(away_team),
+        "winner": winner,
+        "winnerteamid": settings.TEAM_NAMES.index(winner),
+        "is_grand_final": 0,
+        "complete": 100,
+        "is_final": 0,
+        "id": FAKE.pyint(1, 200),
+        "venue": np.random.choice(list(settings.VENUE_CITIES.keys())),
+    }
+
+
+def fake_match_results_data(row_count: int, round_number: int) -> pd.DataFrame:
+    """
+    Generate dummy data that replicates match results data.
+
+    Params
+    ------
+    row_count: Number of match rows to return
+
+    Returns
+    -------
+    DataFrame of match results data
+    """
+    team_names = CyclicalTeamNames()
+
+    return pd.DataFrame(
+        [_results_by_match(round_number, team_names) for _ in range(row_count)]
+    )
 
 
 def fake_prediction_data(

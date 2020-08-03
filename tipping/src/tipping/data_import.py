@@ -169,6 +169,28 @@ def fetch_match_data(
     return matches
 
 
+def fetch_match_results_data(round_number: int) -> pd.DataFrame:
+    """
+    Fetch minimal match results data.
+
+    Params:
+    -------
+    round_number: Fetch results for the given round.
+
+    Returns:
+    --------
+    pandas.DataFrame with match data.
+    """
+    match_results = pd.DataFrame(
+        _fetch_data("match_results", {"round_number": round_number},)
+    )
+
+    if any(match_results):
+        return match_results.assign(date=_parse_dates)
+
+    return match_results
+
+
 def fetch_ml_model_info() -> pd.DataFrame:
     """
     Fetch general info about all saved ML models.

@@ -63,6 +63,23 @@ class TestApi(TestCase):
 
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import")
+    def test_update_matches(self, mock_data_import, mock_data_export):
+        this_year = datetime.now().year
+        matches = data_factories.fake_match_data(N_MATCHES, (this_year, this_year + 1))
+
+        mock_data_import.fetch_match_data = MagicMock(return_value=matches)
+        mock_data_export.update_matches = MagicMock()
+
+        self.api.update_matches(verbose=0)
+
+        # It posts data to main app
+        mock_data_export.update_matches.assert_called()
+        call_args = mock_data_export.update_matches.call_args[0]
+        data_are_equal = (call_args[0] == matches).all().all()
+        self.assertTrue(data_are_equal)
+
+    @patch("tipping.api.data_export")
+    @patch("tipping.api.data_import")
     def test_update_match_predictions(self, mock_data_import, mock_data_export):
         mock_data_export.update_match_predictions = MagicMock()
         mock_data_import.fetch_prediction_data = MagicMock(
@@ -77,8 +94,6 @@ class TestApi(TestCase):
         mock_submitter.submit_tips = MagicMock()
 
         with self.subTest("with no future match records available"):
-            mock_data_import.fetch_fixture_data = MagicMock(return_value=pd.DataFrame())
-
             self.api.update_match_predictions(
                 tips_submitters=[mock_submitter, mock_submitter], verbose=0
             )
@@ -91,24 +106,21 @@ class TestApi(TestCase):
             mock_submitter.submit_tips.assert_not_called()
 
         with self.subTest("with at least one future match record"):
-            mock_data_import.fetch_fixture_data = MagicMock(
-                return_value=self.fixture_return_values[0]
-            )
+            with freeze_time(TIP_DATES[0]):
+                self.api.update_match_predictions(
+                    tips_submitters=[mock_submitter, mock_submitter], verbose=0
+                )
 
-            self.api.update_match_predictions(
-                tips_submitters=[mock_submitter, mock_submitter], verbose=0
-            )
-
-            # It fetches predictions
-            mock_data_import.fetch_prediction_data.assert_called()
-            # It sends predictions to Tipresias app
-            mock_data_export.update_match_predictions.assert_called()
-            # It submits tips to all competitions
-            self.assertEqual(mock_submitter.submit_tips.call_count, 2)
+                # It fetches predictions
+                mock_data_import.fetch_prediction_data.assert_called()
+                # It sends predictions to Tipresias app
+                mock_data_export.update_match_predictions.assert_called()
+                # It submits tips to all competitions
+                self.assertEqual(mock_submitter.submit_tips.call_count, 2)
 
     @patch("tipping.api.data_import")
     def test_fetch_match_predictions(self, mock_data_import):
-        matches = data_factories.fake_match_results_data(N_MATCHES, YEAR_RANGE)
+        matches = data_factories.fake_match_data(N_MATCHES, YEAR_RANGE)
         predictions = pd.concat(
             [
                 data_factories.fake_prediction_data(match)
@@ -154,7 +166,7 @@ class TestApi(TestCase):
 
     @patch("tipping.api.data_import")
     def test_fetch_matches(self, mock_data_import):
-        matches = data_factories.fake_match_results_data(N_MATCHES, YEAR_RANGE)
+        matches = data_factories.fake_match_data(N_MATCHES, YEAR_RANGE)
         mock_data_import.fetch_match_data = MagicMock(return_value=matches)
 
         match_dates = np.random.choice(matches["date"], size=2)

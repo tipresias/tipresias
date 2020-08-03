@@ -5,7 +5,7 @@ from unittest import TestCase
 import pandas as pd
 import numpy as np
 
-from tests.fixtures.data_factories import fake_prediction_data, fake_match_results_data
+from tests.fixtures.data_factories import fake_prediction_data, fake_match_data
 from tipping.helpers import pivot_team_matches_to_matches, convert_to_dict
 
 
@@ -30,7 +30,7 @@ class TestHelpers(TestCase):
         self.assertNotIn("oppo_team", match_df.columns)
 
     def test_convert_to_dict(self):
-        match_df = fake_match_results_data(N_MATCHES, YEAR_RANGE)
+        match_df = fake_match_data(N_MATCHES, YEAR_RANGE)
         match_df.loc[:, "crowd"] = np.nan
         match_records = convert_to_dict(match_df)
 

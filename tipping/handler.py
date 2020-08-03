@@ -64,13 +64,24 @@ def update_match_predictions(_event, _context, verbose=1):
     return _response("Success")
 
 
-def update_match_results(_event, _context, verbose=1):
+def update_matches(_event, _context, verbose=1):
     """
-    Fetch match results data and send them to the main app.
+    Fetch match data and send them to the main app.
 
     verbose: How much information to print. 1 prints all messages; 0 prints none.
     """
     api.update_matches(verbose=verbose)
+
+    return _response("Success")
+
+
+def update_match_results(_event, _context, verbose=1):
+    """
+    Fetch match data and send them to the main app.
+
+    verbose: How much information to print. 1 prints all messages; 0 prints none.
+    """
+    api.update_match_results(verbose=verbose)
 
     return _response("Success")
 

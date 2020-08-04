@@ -95,4 +95,4 @@ def update_match_results(match_results_data: pd.DataFrame):
         "data": convert_to_dict(match_results_data),
     }
 
-    _send_data("/match_results", body=body)
+    _send_data("/matches", body=body)

@@ -98,7 +98,7 @@ function main(splash)
   -- to actually get submitted
   local submit_btn = splash:select('.tipform-submit-button')
   assert(submit_btn:mouse_click())
-  splash:wait(1.0)
+  splash:wait(2.0)
 
   local success_page = "https://www.footytips.com.au/tipping/afl/tipspost"
   assert(string.find(splash:url(), success_page),

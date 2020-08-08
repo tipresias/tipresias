@@ -5,6 +5,7 @@ pandas>=0.23.0,<1.1
 # App packages
 requests
 pytz
+simplejson
 
 # Browser automation
 MechanicalSoup

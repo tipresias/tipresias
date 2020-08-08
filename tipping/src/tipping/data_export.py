@@ -6,6 +6,7 @@ import json
 
 import pandas as pd
 import requests
+import simplejson
 
 from tipping.helpers import convert_to_dict
 from tipping import settings
@@ -14,6 +15,13 @@ from tipping.types import MatchPrediction
 
 def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> requests.Response:
     body = body or {}
+
+    # I don't feel great about this, but there isn't a good way of converting Numpy
+    # data types for JSON. Since requests expects dicts that it converts to JSON for us,
+    # we call dumps then loads to avoid nested stringified weirdness.
+    stringifiable_body = simplejson.loads(
+        simplejson.dumps(body, ignore_nan=True, default=str)
+    )
 
     app_host = settings.TIPRESIAS_APP
     headers = (

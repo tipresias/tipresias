@@ -31,7 +31,7 @@ def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> requests.Res
     )
     service_url = urljoin(app_host, path)
 
-    response = requests.post(service_url, json=body, headers=headers)
+    response = requests.post(service_url, json=stringifiable_body, headers=headers)
 
     if 200 <= response.status_code < 300:
         return response

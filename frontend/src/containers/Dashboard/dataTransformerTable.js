@@ -30,15 +30,16 @@ const dataTransformerTable = (
     acc[currentIndex] = acc[currentIndex] || [];
 
     const [date] = startDateTime.split('T');
+    const formattedpredictedMargin = (Math.round(predictedMargin * 10) / 10).toString();
     const formattedWinProbability = `
-      ${(Math.round(predictedWinProbability * 100)).toString()}%
+      ${(Math.round(predictedWinProbability * 1000) / 10).toString()}%
     `;
     const resultIcon = determineResultIcon(isCorrect);
 
     acc[currentIndex] = [
       date,
       predictedWinner,
-      predictedMargin.toString(),
+      formattedpredictedMargin,
       formattedWinProbability,
       resultIcon,
     ];

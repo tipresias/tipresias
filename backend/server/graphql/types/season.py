@@ -64,7 +64,7 @@ class MatchPredictionType(graphene.ObjectType):
 
     match__start_date_time = graphene.NonNull(graphene.DateTime, name="startDateTime")
     predicted_winner__name = graphene.NonNull(graphene.String, name="predictedWinner")
-    predicted_margin = graphene.NonNull(graphene.Int)
+    predicted_margin = graphene.NonNull(graphene.Float)
     predicted_win_probability = graphene.NonNull(graphene.Float)
     is_correct = graphene.Boolean()
 

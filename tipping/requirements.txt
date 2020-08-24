@@ -12,7 +12,7 @@ MechanicalSoup
 
 # Testing/Linting
 pylint==2.5.3
-pydocstyle==5.0.2
+pydocstyle==5.1.0
 black
 pytest
 pytest-env

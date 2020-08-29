@@ -11,7 +11,7 @@ simplejson
 MechanicalSoup
 
 # Testing/Linting
-pylint==2.5.3
+pylint==2.6.0
 pydocstyle==5.1.0
 black
 pytest

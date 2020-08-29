@@ -18,7 +18,7 @@ gunicorn
 MechanicalSoup
 
 # Testing/Linting
-pylint==2.5.3
+pylint==2.6.0
 pylint-django
 pydocstyle==5.1.0
 black

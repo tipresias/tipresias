@@ -129,14 +129,23 @@ class TestApi(TestCase):
         )
 
     def test_update_future_match_predictions(self):
+        prediction_data = self.prediction_data[0].to_dict("records")
+
+        with self.subTest("when there are no future matches"):
+            with self.assertRaisesRegex(AssertionError, r"No future matches exist"):
+                self.api.update_future_match_predictions(prediction_data)
+
         for fixture_datum in self.fixture_data[0].to_dict("records"):
             match = Match.get_or_create_from_raw_data(fixture_datum)
             TeamMatch.get_or_create_from_raw_data(match, fixture_datum)
 
-        prediction_data = self.prediction_data[0].to_dict("records")
-
         with self.subTest("when the predictions are for past matches"):
             with freeze_time(TIP_DATES[1]):
+                # Need at least one future match to avoid errors
+                factories.MatchFactory(
+                    start_date_time=(timezone.now() + timedelta(days=1))
+                )
+
                 self.assertEqual(Prediction.objects.count(), 0)
 
                 self.api.update_future_match_predictions(prediction_data)

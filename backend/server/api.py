@@ -159,6 +159,15 @@ def fetch_next_match() -> Optional[MatchDict]:
 
 def update_future_match_predictions(predictions: List[CleanPredictionData]) -> None:
     """Update or create prediction records for upcoming matches."""
+    future_match_count = Match.objects.filter(
+        start_date_time__gt=timezone.now()
+    ).count()
+
+    assert future_match_count > 0, (
+        "No future matches exist in the DB. Try updating fixture data, "
+        "then updating predictions again."
+    )
+
     for pred in predictions:
         Prediction.update_or_create_from_raw_data(pred, future_only=True)
 

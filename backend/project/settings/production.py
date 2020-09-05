@@ -5,7 +5,7 @@ import dj_database_url
 # pylint: disable=W0401,W0614
 from project.settings.common import *
 
-DEBUG = False
+DEBUG = True
 ENVIRONMENT = "production"
 
 SECRET_KEY = os.environ["SECRET_KEY"]

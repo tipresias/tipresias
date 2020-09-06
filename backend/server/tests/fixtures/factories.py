@@ -48,22 +48,27 @@ class TeamFactory(DjangoModelFactory):
 
 def _fake_datetime(match_factory, n, start_month_day=(MAR, FIRST)) -> datetime:
     round_week_delta = timedelta(days=ONE_WEEK)
-    start_round_week_delta = round_week_delta * (
-        # We cycle through six month periods, because the sequence doesn't reset
-        # between tests and eventually hits the end of the year for every test.
-        math.ceil(n / TYPICAL_N_MATCHES_PER_ROUND)
-        % SIX_MONTHS_IN_WEEKS
-    )
+
     # Since we create match records per year, we don't want want dates running
     # into the next year.
     max_datetime = timezone.make_aware(datetime(match_factory.year, DEC, THIRTY_FIRST))
+    now_for_factory = timezone.make_aware(
+        datetime(match_factory.year, *start_month_day)
+    )
+
+    # We cycle through six month periods (or however many weeks are left in the year,
+    # whichever is less), because the sequence doesn't reset between tests
+    # and eventually hits the end of the year for every test, resulting in duplicate
+    # venue/date combinations that raise validation errors.
+    n_weeks_left_in_year = round((max_datetime - now_for_factory).days / ONE_WEEK)
+    n_weeks_left_in_season = min([n_weeks_left_in_year, SIX_MONTHS_IN_WEEKS])
+    start_round_week_delta = round_week_delta * (
+        math.ceil(n / TYPICAL_N_MATCHES_PER_ROUND) % n_weeks_left_in_season
+    )
 
     try:
         # The AFL season typically starts in March
-        datetime_start = (
-            timezone.make_aware(datetime(match_factory.year, *start_month_day))
-            + start_round_week_delta
-        )
+        datetime_start = now_for_factory + start_round_week_delta
     except ValueError:
         # Trying to create a datetime for 29 Feb in a non-leap year raises an error,
         # (e.g. 2018-2-29 doesn't exist), so we retry with an extra day in the future

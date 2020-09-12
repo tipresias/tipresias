@@ -5,12 +5,12 @@ import dj_database_url
 # pylint: disable=W0401,W0614
 from project.settings.common import *
 
-DEBUG = True
 ENVIRONMENT = "production"
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 API_TOKEN = os.environ["API_TOKEN"]
 TIPPING_SERVICE_TOKEN = os.environ["TIPPING_SERVICE_TOKEN"]
+ROLLBAR_TOKEN = os.getenv("ROLLBAR_TOKEN", "")
 
 TIPPING_SERVICE = "TBD"
 
@@ -25,6 +25,7 @@ INSTALLED_APPS.append("whitenoise.runserver_nostatic")
 
 # Must insert after SecurityMiddleware, which is first in settings/common.py
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+MIDDLEWARE.append("rollbar.contrib.django.middleware.RollbarNotifierMiddleware")
 
 # Add build directory created by Create React App to serve webpage
 TEMPLATES = [
@@ -53,3 +54,10 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "../", "frontend", "build", "static")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 WHITENOISE_ROOT = os.path.join(BASE_DIR, "../", "frontend", "build", "root")
+
+ROLLBAR = {
+    "access_token": ROLLBAR_TOKEN,
+    "environment": ENVIRONMENT,
+    "branch": "master",
+    "root": BASE_DIR,
+}

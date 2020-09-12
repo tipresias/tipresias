@@ -7,6 +7,8 @@ import json
 import os
 import sys
 
+import rollbar
+
 SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
 
 if SRC_DIR not in sys.path:
@@ -16,6 +18,10 @@ from tipping import api
 from tipping import settings
 from tipping.types import CleanPredictionData, MatchData, MLModelInfo
 from tipping.helpers import convert_to_dict
+
+
+rollbar_token = os.getenv("ROLLBAR_TOKEN", "missing_api_key")
+rollbar.init(rollbar_token, settings.ENVIRONMENT)
 
 
 class Response(TypedDict):
@@ -42,6 +48,7 @@ def _request_is_authorized(http_request) -> bool:
     return True
 
 
+@rollbar.lambda_function
 def update_fixture_data(_event, _context, verbose=1):
     """
     Fetch fixture data and send upcoming match data to the main app.
@@ -53,6 +60,7 @@ def update_fixture_data(_event, _context, verbose=1):
     return _response("Success")
 
 
+@rollbar.lambda_function
 def update_match_predictions(_event, _context, verbose=1):
     """
     Fetch predictions from ML models and send them to the main app.
@@ -64,6 +72,7 @@ def update_match_predictions(_event, _context, verbose=1):
     return _response("Success")
 
 
+@rollbar.lambda_function
 def update_matches(_event, _context, verbose=1):
     """
     Fetch match data and send them to the main app.
@@ -75,6 +84,7 @@ def update_matches(_event, _context, verbose=1):
     return _response("Success")
 
 
+@rollbar.lambda_function
 def update_match_results(_event, _context, verbose=1):
     """
     Fetch match data and send them to the main app.
@@ -86,6 +96,7 @@ def update_match_results(_event, _context, verbose=1):
     return _response("Success")
 
 
+@rollbar.lambda_function
 def fetch_match_predictions(event, _context):
     """
     Get match predictions from ML models.
@@ -134,6 +145,7 @@ def fetch_match_predictions(event, _context):
     return _response(response_data)
 
 
+@rollbar.lambda_function
 def fetch_matches(event, _context) -> Response:
     """
     Fetch data for past matches.
@@ -169,6 +181,7 @@ def fetch_matches(event, _context) -> Response:
     return _response(response_data)
 
 
+@rollbar.lambda_function
 def fetch_ml_models(event, _context) -> Response:
     """
     Fetch general info about all saved ML models.

@@ -6,6 +6,7 @@ pandas>=0.23.0,<1.2
 requests
 pytz
 simplejson
+rollbar
 
 # Browser automation
 MechanicalSoup

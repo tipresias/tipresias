@@ -3,16 +3,13 @@ from django.test import TestCase
 
 from server.models import TeamMatch
 from server.tests.fixtures.factories import MatchFactory, TeamMatchFactory
-from server.tests.fixtures.data_factories import (
-    fake_fixture_data,
-    fake_match_results_data,
-)
+from server.tests.fixtures import data_factories
 
 
 class TestTeamMatch(TestCase):
     def setUp(self):
         self.match = MatchFactory()
-        self.fixture_data = fake_fixture_data(2, (2015, 2016)).to_dict("records")
+        self.fixture_data = data_factories.fake_fixture_data((2015, 2016))
 
     def test_get_or_create_from_raw_data(self):
         self.assertEqual(TeamMatch.objects.count(), 0)
@@ -46,7 +43,9 @@ class TestTeamMatch(TestCase):
 
         with self.subTest("when the raw data has match results"):
             new_match = MatchFactory()
-            match_data = fake_match_results_data(1, (2016, 2017)).to_dict("records")[0]
+            match_data = data_factories.fake_match_results_data(
+                1, (2016, 2017)
+            ).to_dict("records")[0]
 
             home_team, away_team = TeamMatch.get_or_create_from_raw_data(
                 new_match, match_data
@@ -56,7 +55,9 @@ class TestTeamMatch(TestCase):
             self.assertEqual(away_team.score, match_data["away_score"])
 
     def test_update_score(self):
-        match_result = fake_match_results_data(1, (2014, 2015)).iloc[0, :]
+        match_result = data_factories.fake_match_results_data(1, (2014, 2015)).iloc[
+            0, :
+        ]
 
         team_match = TeamMatchFactory(
             team__name=match_result["home_team"], at_home=True, score=0

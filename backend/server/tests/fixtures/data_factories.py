@@ -1,18 +1,36 @@
 """Module for factory functions that create raw data objects."""
 
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Tuple, Union, cast, Any
 from datetime import datetime, timedelta
 import itertools
 import pytz
+from dateutil import parser
 
 from faker import Faker
 import numpy as np
 import pandas as pd
 from django.utils import timezone
 from django.conf import settings
+import candystore
+from mypy_extensions import TypedDict
 
 from server.types import FixtureData, MatchData
 from server.models import Match
+
+
+RawFixtureData = TypedDict(
+    "RawFixtureData",
+    {
+        "date": str,
+        "season": int,
+        "season_game": int,
+        "round": int,
+        "home_team": str,
+        "away_team": str,
+        "venue": str,
+    },
+)
+
 
 FIRST = 1
 SECOND = 2
@@ -133,45 +151,31 @@ def fake_match_results_data(
     return data_frame
 
 
-def _fixture_data(year: int, team_names: Tuple[str, str]) -> FixtureData:
-    return {
-        "date": FAKE.date_time_between_dates(
-            **_min_max_datetimes_by_year(year, force_future=True), tzinfo=pytz.UTC
-        ),
-        "year": year,
-        "round_number": 1,
-        "home_team": team_names[0],
-        "away_team": team_names[1],
-        "venue": FAKE.city(),
+def _clean_fixture(fixture: RawFixtureData) -> FixtureData:
+    clean_fixture: Dict[str, Any] = {
+        **cast(Dict[str, Any], fixture),
+        "year": fixture["season"],
+        "round_number": fixture["round"],
     }
 
+    del clean_fixture["season_game"]
 
-def _fixture_by_round(row_count: int, year: int) -> List[FixtureData]:
-    team_names = CyclicalTeamNames()
+    # Recreates data cleaning performed in views.fixtures
+    clean_fixture["date"] = parser.parse(fixture["date"]).replace(tzinfo=pytz.UTC)
 
-    return [
-        _fixture_data(year, (team_names.next_team(), team_names.next_team()))
-        for idx in range(row_count)
-    ]
+    return cast(FixtureData, clean_fixture)
 
 
-def _fixture_by_year(
-    row_count: int, year_range: Tuple[int, int]
-) -> List[List[FixtureData]]:
-    return [_fixture_by_round(row_count, year) for year in range(*year_range)]
-
-
-def fake_fixture_data(row_count: int, year_range: Tuple[int, int]) -> pd.DataFrame:
+def fake_fixture_data(year_range: Tuple[int, int]) -> List[FixtureData]:
     """
     Return minimally-valid data for fixture data.
 
     These matches are usually unplayed, future matches, but it is also possible to get
     data for past fixtures.
     """
-    data = _fixture_by_year(row_count, year_range)
-    reduced_data = list(itertools.chain.from_iterable(data))
-
-    return pd.DataFrame(list(reduced_data))
+    return [
+        _clean_fixture(fixture) for fixture in candystore.generate_fixtures(year_range)
+    ]
 
 
 def fake_prediction_data(
@@ -181,7 +185,7 @@ def fake_prediction_data(
 ) -> pd.DataFrame:
     """Return minimally-valid prediction data."""
     if match_data is None:
-        match_data_for_pred = fake_fixture_data(1, (2018, 2019)).iloc[0, :]
+        match_data_for_pred = fake_fixture_data((2018, 2019))[0]
     elif isinstance(match_data, Match):
         match_data_for_pred = {
             "date": match_data.start_date_time,
@@ -189,6 +193,7 @@ def fake_prediction_data(
             "away_team": match_data.teammatch_set.get(at_home=0).team.name,
             "year": match_data.start_date_time.year,
             "round_number": match_data.round_number,
+            "venue": FAKE.city(),
         }
     else:
         match_data_for_pred = match_data

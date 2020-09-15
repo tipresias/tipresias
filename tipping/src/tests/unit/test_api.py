@@ -43,23 +43,32 @@ class TestApi(TestCase):
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import")
     def test_update_fixture_data(self, mock_data_import, mock_data_export):
-        this_year = datetime.now().year
-        fixture = data_factories.fake_fixture_data(
-            N_MATCHES, (this_year, this_year + 1)
-        )
-        upcoming_round = int(fixture["round_number"].min())
+        with freeze_time(datetime(2020, 5, 1, tzinfo=pytz.UTC)):
+            right_now = datetime.now(tz=pytz.UTC)
+            this_year = right_now.year
+            fixture = pd.DataFrame(
+                data_factories.fake_fixture_data((this_year, this_year + 1))
+            )
+            upcoming_round = int(
+                fixture.query("date > @right_now")["round_number"].min()
+            )
 
-        mock_data_import.fetch_fixture_data = MagicMock(return_value=fixture)
-        mock_data_export.update_fixture_data = MagicMock()
+            mock_data_import.fetch_fixture_data = MagicMock(return_value=fixture)
+            mock_data_export.update_fixture_data = MagicMock()
 
-        self.api.update_fixture_data()
+            self.api.update_fixture_data()
 
-        # It posts data to main app
-        mock_data_export.update_fixture_data.assert_called()
-        call_args = mock_data_export.update_fixture_data.call_args[0]
-        data_are_equal = (call_args[0] == fixture).all().all()
-        self.assertTrue(data_are_equal)
-        self.assertEqual(call_args[1], upcoming_round)
+            # It posts data to main app
+            mock_data_export.update_fixture_data.assert_called()
+            call_args = mock_data_export.update_fixture_data.call_args[0]
+
+            data_are_equal = (
+                (call_args[0] == fixture.query("round_number == @upcoming_round"))
+                .all()
+                .all()
+            )
+            self.assertTrue(data_are_equal)
+            self.assertEqual(call_args[1], upcoming_round)
 
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import")
@@ -180,7 +189,9 @@ class TestApi(TestCase):
 
         # It calls fetch_match_data with the same params
         mock_data_import.fetch_match_data.assert_called_with(
-            min(match_dates), max(match_dates), fetch_data=fetch_data,
+            min(match_dates),
+            max(match_dates),
+            fetch_data=fetch_data,
         )
         # It returns match data
         self.assertEqual(
@@ -226,17 +237,17 @@ class TestApi(TestCase):
             year = tomorrow.year
 
             # Mock footywire fixture data
-            fixture_data = data_factories.fake_fixture_data(N_MATCHES, (year, year + 1))
+            fixture_data = data_factories.fake_fixture_data((year, year + 1))
 
             prediction_match_data = [
                 (self._build_prediction_and_match_results_data(match_data))
-                for match_data in fixture_data.to_dict("records")
+                for match_data in fixture_data
             ]
 
             prediction_data, match_results_data = zip(*prediction_match_data)
 
         return (
-            fixture_data,
+            pd.DataFrame(fixture_data),
             pd.concat(prediction_data),
             pd.DataFrame(list(match_results_data)),
         )

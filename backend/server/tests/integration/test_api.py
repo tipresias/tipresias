@@ -25,9 +25,11 @@ class TestApi(TestCase):
             name="test_estimator", is_principal=True, used_in_competitions=True
         )
 
-        (self.fixture_data, self.prediction_data, self.match_results_data,) = zip(
-            *[self._build_imported_data_mocks(tip_date) for tip_date in TIP_DATES]
-        )
+        (
+            self.fixture_data,
+            self.prediction_data,
+            self.match_results_data,
+        ) = zip(*[self._build_imported_data_mocks(tip_date) for tip_date in TIP_DATES])
 
         self.api = api
 
@@ -50,20 +52,26 @@ class TestApi(TestCase):
                 )
 
                 # It creates records
-                self.assertEqual(Match.objects.count(), ROW_COUNT)
-                self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
+                self.assertEqual(Match.objects.count(), len(future_fixture_data))
+                self.assertEqual(
+                    TeamMatch.objects.count(), len(future_fixture_data) * 2
+                )
 
             with self.subTest("with the match records already saved in the DB"):
-                self.assertEqual(Match.objects.count(), ROW_COUNT)
-                self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
+                self.assertEqual(Match.objects.count(), len(future_fixture_data))
+                self.assertEqual(
+                    TeamMatch.objects.count(), len(future_fixture_data) * 2
+                )
 
                 self.api.update_fixture_data(
                     future_fixture_data, min_future_round, verbose=0
                 )
 
                 # It doesn't create new records
-                self.assertEqual(Match.objects.count(), ROW_COUNT)
-                self.assertEqual(TeamMatch.objects.count(), ROW_COUNT * 2)
+                self.assertEqual(Match.objects.count(), len(future_fixture_data))
+                self.assertEqual(
+                    TeamMatch.objects.count(), len(future_fixture_data) * 2
+                )
 
         with freeze_time(TIP_DATES[1]):
             right_now = timezone.now()  # pylint: disable=unused-variable
@@ -157,7 +165,7 @@ class TestApi(TestCase):
             self.api.update_future_match_predictions(prediction_data)
 
             # It creates prediction records
-            self.assertEqual(Prediction.objects.count(), ROW_COUNT)
+            self.assertEqual(Prediction.objects.count(), len(self.fixture_data[0]))
 
     def fetch_latest_round_predictions(self):
         # FullMatchFactory produces two predictions per match by default
@@ -190,7 +198,7 @@ class TestApi(TestCase):
             year = tomorrow.year
 
             # Mock footywire fixture data
-            fixture_data = data_factories.fake_fixture_data(ROW_COUNT, (year, year + 1))
+            fixture_data = data_factories.fake_fixture_data((year, year + 1))
 
             prediction_match_data, _ = zip(
                 *[
@@ -198,14 +206,14 @@ class TestApi(TestCase):
                         self._build_prediction_and_match_results_data(match_data),
                         self._build_teams(match_data),
                     )
-                    for match_data in fixture_data.to_dict("records")
+                    for match_data in fixture_data
                 ]
             )
 
             prediction_data, match_results_data = zip(*prediction_match_data)
 
         return (
-            fixture_data,
+            pd.DataFrame(fixture_data),
             pd.concat(prediction_data),
             pd.DataFrame(list(match_results_data)),
         )

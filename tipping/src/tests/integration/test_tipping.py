@@ -11,10 +11,7 @@ import pandas as pd
 from faker import Faker
 from requests import Response
 
-from tests.fixtures.data_factories import (
-    fake_fixture_data,
-    fake_prediction_data,
-)
+from tests.fixtures import data_factories
 from tipping.tipping import Tipper, FootyTipsSubmitter, MonashSubmitter
 
 
@@ -84,13 +81,20 @@ class TestTipper(TestCase):
             # Have to get creative with checking args because we can't compare
             # data frames with a simple equality check
             mock_update_fixture_data.assert_called_once()
+
+            fixture_arg = mock_update_fixture_data.mock_calls[0].args[0]
+            expected_fixture_arg = fixture_data.query(
+                'round_number == @min_future_round'
+            )
             self.assertTrue(
-                (mock_update_fixture_data.mock_calls[0].args[0] == fixture_data)
+                (fixture_arg == expected_fixture_arg)
                 .all()
                 .all()
             )
+
+            round_number_arg = mock_update_fixture_data.mock_calls[0].args[1]
             self.assertEqual(
-                mock_update_fixture_data.mock_calls[0].args[1], min_future_round
+                round_number_arg, min_future_round
             )
 
         with freeze_time(TIP_DATES[2]):
@@ -145,23 +149,23 @@ class TestTipper(TestCase):
             year = tomorrow.year
 
             # Mock footywire fixture data
-            fixture_data = fake_fixture_data(ROW_COUNT, (year, year + 1))
+            fixture_data = data_factories.fake_fixture_data((year, year + 1))
 
             prediction_match_data = [
                 (self._build_prediction_and_match_results_data(match_data))
-                for match_data in fixture_data.to_dict("records")
+                for match_data in fixture_data
             ]
 
             prediction_data, match_results_data = zip(*prediction_match_data)
 
         return (
-            fixture_data,
+            pd.DataFrame(fixture_data),
             pd.concat(prediction_data),
             pd.DataFrame(list(match_results_data)),
         )
 
     def _build_prediction_and_match_results_data(self, match_data):
-        match_predictions = fake_prediction_data(match_data=match_data)
+        match_predictions = data_factories.fake_prediction_data(match_data=match_data)
 
         return (
             match_predictions,

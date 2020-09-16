@@ -193,7 +193,9 @@ def fetch_latest_round_predictions(verbose=1) -> List[PredictionValues]:
         .select_related("match")
         .prefetch_related("match__teammatch_set__team")
         .values(
-            "predicted_winner__name", "predicted_margin", "predicted_win_probability",
+            "predicted_winner__name",
+            "predicted_margin",
+            "predicted_win_probability",
         )
     )
 

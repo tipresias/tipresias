@@ -170,9 +170,12 @@ class TestViews(TestCase):
                     )
 
     def test_fixtures(self):
+        right_now = timezone.now()  # pylint: disable=unused-variable
         max_round = Match.objects.order_by("-round_number").first().round_number
-        fixture_data = data_factories.fake_fixture_data(N_MATCHES, YEAR_RANGE).assign(
-            round_number=(max_round + 1)
+        fixture_data = (
+            pd.DataFrame(data_factories.fake_fixture_data(YEAR_RANGE))
+            .query("date > @right_now")
+            .assign(round_number=(max_round + 1))
         )
         fixtures = {
             "data": fixture_data.to_dict("records"),
@@ -211,8 +214,11 @@ class TestViews(TestCase):
                 request.headers = {"Authorization": "Bearer token"}
                 response = views.fixtures(request, verbose=0)
 
-                # It creates fixtures
-                self.assertEqual(Match.objects.count(), N_MATCHES * 2)
+                # It creates a future match per row of fixture data
+                self.assertEqual(
+                    Match.objects.filter().count(),
+                    len(fixture_data) + N_MATCHES,
+                )
                 # It returns success response
                 self.assertEqual(response.status_code, 200)
 

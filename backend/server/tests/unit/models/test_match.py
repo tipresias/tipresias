@@ -1,8 +1,8 @@
 # pylint: disable=missing-docstring
 from copy import copy
 from unittest.mock import patch, call
-
 from datetime import datetime, timedelta
+
 from django.test import TestCase
 from django.utils import timezone
 from django.db.utils import DataError
@@ -10,10 +10,7 @@ from django.core.exceptions import ValidationError
 import pandas as pd
 
 from server.models import Match, Team
-from server.tests.fixtures.data_factories import (
-    fake_fixture_data,
-    fake_match_results_data,
-)
+from server.tests.fixtures import data_factories
 from server.tests.fixtures.factories import FullMatchFactory
 
 
@@ -39,7 +36,7 @@ class TestMatch(TestCase):
         )
 
     def test_get_or_create_from_raw_data(self):
-        fixture_data = fake_fixture_data(1, ONE_YEAR_RANGE).to_dict("records")[0]
+        fixture_data = data_factories.fake_fixture_data(ONE_YEAR_RANGE)[0]
         match_count = Match.objects.count()
 
         with self.subTest("with validation error"):
@@ -117,7 +114,7 @@ class TestMatch(TestCase):
 
     @patch("server.models.match.Match.update_result")
     def test_update_results(self, mock_update_result):
-        match_results = fake_match_results_data(3, ONE_YEAR_RANGE)
+        match_results = data_factories.fake_match_results_data(3, ONE_YEAR_RANGE)
         calls = []
 
         for _idx, match_result in match_results.iterrows():
@@ -151,7 +148,8 @@ class TestMatch(TestCase):
             self.assertEqual(score_sum, 0)
             # It doesn't update prediction correctness
             self.assertEqual(
-                match.prediction_set.filter(is_correct__in=[True, False]).count(), 0,
+                match.prediction_set.filter(is_correct__in=[True, False]).count(),
+                0,
             )
 
         with self.subTest("When the match doesn't have results yet"):
@@ -204,7 +202,7 @@ class TestMatch(TestCase):
                     0,
                 )
 
-        match_results = fake_match_results_data(1, ONE_YEAR_RANGE)
+        match_results = data_factories.fake_match_results_data(1, ONE_YEAR_RANGE)
         match_result = match_results.iloc[0, :]
 
         match = FullMatchFactory(

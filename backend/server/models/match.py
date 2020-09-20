@@ -178,7 +178,12 @@ class Match(models.Model):
 
         assert match_result.any().any(), (
             "Didn't find any match data rows that matched match record:\n"
-            f"{self.__dict__}"
+            "{\n"
+            f"    start_date_time: {self.start_date_time},\n"
+            f"    round_number: {self.round_number},\n"
+            f"    venue: {self.venue},\n"
+            f"    teammatch_set: {self.teammatch_set.values('team__name', 'at_home')}"
+            "}"
         )
 
         return True

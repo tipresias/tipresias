@@ -44,6 +44,7 @@ services:
       DATA_SCIENCE_SERVICE: http://host.docker.internal:8008
       TIPRESIAS_APP: http://backend:8000
       AWS_SHARED_CREDENTIALS_FILE: .aws/credentials
+      ROLLBAR_TOKEN: rollbar_token
     ports:
       - "3333:3333"
     stdin_open: true

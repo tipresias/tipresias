@@ -1,16 +1,15 @@
 """Module for factory functions that create raw data objects."""
 
-from typing import List, Dict, Tuple, Union, Any, cast
+from typing import List, Dict, Tuple, Union
 from datetime import datetime, timedelta, date
 import itertools
 import pytz
-from dateutil import parser
 
 from faker import Faker
 import numpy as np
 import pandas as pd
 from mypy_extensions import TypedDict
-import candystore
+from candystore import CandyStore
 
 from tipping import settings
 from tipping.types import FixtureData, MatchData
@@ -149,21 +148,6 @@ def fake_match_data(
     return data_frame
 
 
-def _clean_fixture(fixture: RawFixtureData) -> FixtureData:
-    clean_fixture: Dict[str, Any] = {
-        **cast(Dict[str, Any], fixture),
-        "year": fixture["season"],
-        "round_number": fixture["round"],
-    }
-
-    del clean_fixture["season_game"]
-
-    # Recreates data cleaning performed in views.fixtures
-    clean_fixture["date"] = parser.parse(fixture["date"]).replace(tzinfo=pytz.UTC)
-
-    return cast(FixtureData, clean_fixture)
-
-
 def fake_fixture_data(year_range: Tuple[int, int]) -> List[FixtureData]:
     """
     Return minimally-valid data for fixture data.
@@ -171,7 +155,15 @@ def fake_fixture_data(year_range: Tuple[int, int]) -> List[FixtureData]:
     These matches are usually unplayed, future matches, but it is also possible to get
     data for past fixtures.
     """
-    return [_clean_fixture(match) for match in candystore.generate_fixtures(year_range)]
+    return (
+        CandyStore(seasons=year_range)
+        .fixtures(to_dict=None)
+        .rename(columns={"season": "year", "round": "round_number"})
+        .drop("season_game", axis=1)
+        # Recreates data cleaning performed in views.fixtures
+        .assign(date=lambda df: pd.to_datetime(df["date"], utc=True))
+        .to_dict("records")
+    )
 
 
 def _results_by_match(round_number: int, team_names: CyclicalTeamNames):

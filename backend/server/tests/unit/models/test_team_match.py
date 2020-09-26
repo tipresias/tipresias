@@ -43,9 +43,9 @@ class TestTeamMatch(TestCase):
 
         with self.subTest("when the raw data has match results"):
             new_match = MatchFactory()
-            match_data = data_factories.fake_match_results_data(
-                1, (2016, 2017)
-            ).to_dict("records")[0]
+            match_data = data_factories.fake_match_results_data((2016, 2017)).to_dict(
+                "records"
+            )[0]
 
             home_team, away_team = TeamMatch.get_or_create_from_raw_data(
                 new_match, match_data
@@ -55,9 +55,7 @@ class TestTeamMatch(TestCase):
             self.assertEqual(away_team.score, match_data["away_score"])
 
     def test_update_score(self):
-        match_result = data_factories.fake_match_results_data(1, (2014, 2015)).iloc[
-            0, :
-        ]
+        match_result = data_factories.fake_match_results_data((2014, 2015)).iloc[0, :]
 
         team_match = TeamMatchFactory(
             team__name=match_result["home_team"], at_home=True, score=0

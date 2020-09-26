@@ -16,9 +16,6 @@ from server.tests.fixtures.data_factories import (
 )
 
 
-MATCH_COUNT_PER_YEAR = 5
-
-
 class TestSeedDb(TestCase):
     def setUp(self):
         joblib.dump = MagicMock()
@@ -34,9 +31,7 @@ class TestSeedDb(TestCase):
         # of training data
         data_years = (self.years[0] - 1, self.years[1])
 
-        self.match_results_data_frame = fake_match_results_data(
-            MATCH_COUNT_PER_YEAR, data_years, clean=True
-        )
+        self.match_results_data_frame = fake_match_results_data(data_years)
 
         prediction_data = []
 
@@ -81,16 +76,18 @@ class TestSeedDb(TestCase):
 
         self.assertGreater(Team.objects.count(), 0)
         self.assertEqual(MLModel.objects.count(), 1)
-        self.assertEqual(
-            Match.objects.count(), MATCH_COUNT_PER_YEAR * len(range(*self.years))
+
+        expected_match_count = len(
+            self.match_results_data_frame.query(
+                "year >= @self.years[0] & year < @self.years[1]"
+            )
         )
+        self.assertEqual(Match.objects.count(), expected_match_count)
         self.assertEqual(
             TeamMatch.objects.count(),
-            MATCH_COUNT_PER_YEAR * len(range(*self.years)) * 2,
+            expected_match_count * 2,
         )
-        self.assertEqual(
-            Prediction.objects.count(), MATCH_COUNT_PER_YEAR * len(range(*self.years))
-        )
+        self.assertEqual(Prediction.objects.count(), expected_match_count)
         self.assertEqual(TeamMatch.objects.filter(score=0).count(), 0)
 
     def test_handle_errors(self):

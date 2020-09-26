@@ -114,7 +114,7 @@ class TestMatch(TestCase):
 
     @patch("server.models.match.Match.update_result")
     def test_update_results(self, mock_update_result):
-        match_results = data_factories.fake_match_results_data(3, ONE_YEAR_RANGE)
+        match_results = data_factories.fake_match_results_data(ONE_YEAR_RANGE)
         calls = []
 
         for _idx, match_result in match_results.iterrows():
@@ -125,12 +125,13 @@ class TestMatch(TestCase):
                 round_number=match_result["round_number"],
                 home_team_match__team__name=match_result["home_team"],
                 away_team_match__team__name=match_result["away_team"],
+                venue=match_result["venue"],
             )
             calls.append(call(match_result))
 
         Match.update_results(match_results)
 
-        self.assertEqual(mock_update_result.call_count, 3)
+        self.assertEqual(mock_update_result.call_count, len(match_results))
 
     def test_update_result(self):
         with self.subTest("When the match hasn't been played yet"):
@@ -202,7 +203,7 @@ class TestMatch(TestCase):
                     0,
                 )
 
-        match_results = data_factories.fake_match_results_data(1, ONE_YEAR_RANGE)
+        match_results = data_factories.fake_match_results_data(ONE_YEAR_RANGE)
         match_result = match_results.iloc[0, :]
 
         match = FullMatchFactory(
@@ -222,7 +223,8 @@ class TestMatch(TestCase):
 
         winner = Team.objects.get(name=winner_name)
         match.prediction_set.update(predicted_winner=winner)
-        match.update_result(match_results)
+        # We expect a data frame, so can't reuse the match_result series
+        match.update_result(match_results.iloc[:1, :])
 
         # It updates match scores
         match_scores = set(match.teammatch_set.values_list("score", flat=True))

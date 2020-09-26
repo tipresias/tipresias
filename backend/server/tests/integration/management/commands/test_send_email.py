@@ -21,7 +21,7 @@ class TestSendEmail(TestCase):
 
     def setUp(self):
         self.match_results_data = fake_match_results_data(
-            (PREDICTION_YEAR, PREDICTION_YEAR + 1)
+            seasons=(PREDICTION_YEAR, PREDICTION_YEAR + 1)
         )
 
         ml_models = [

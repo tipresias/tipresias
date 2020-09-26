@@ -173,7 +173,7 @@ class TestViews(TestCase):
         right_now = timezone.now()  # pylint: disable=unused-variable
         max_round = Match.objects.order_by("-round_number").first().round_number
         fixture_data = (
-            pd.DataFrame(data_factories.fake_fixture_data(CURRENT_YEAR_RANGE))
+            pd.DataFrame(data_factories.fake_fixture_data(seasons=CURRENT_YEAR_RANGE))
             .query("date > @right_now")
             .assign(round_number=(max_round + 1))
         )

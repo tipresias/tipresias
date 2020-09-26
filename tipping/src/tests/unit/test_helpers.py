@@ -11,7 +11,7 @@ from tipping.helpers import pivot_team_matches_to_matches, convert_to_dict
 
 class TestHelpers(TestCase):
     def setUp(self):
-        self.team_match_df = pd.DataFrame(fake_prediction_data())
+        self.team_match_df = fake_prediction_data()
 
     def test_pivot_team_matches_to_matches(self):
         match_df = pivot_team_matches_to_matches(self.team_match_df)

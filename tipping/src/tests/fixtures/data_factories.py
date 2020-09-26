@@ -13,9 +13,6 @@ from tipping.types import FixtureData
 
 
 FAKE = Faker()
-CONTEMPORARY_TEAM_NAMES = [
-    name for name in settings.TEAM_NAMES if name not in settings.DEFUNCT_TEAM_NAMES
-]
 
 MATCH_RESULTS_COLS = [
     "date",
@@ -43,59 +40,48 @@ MATCH_RESULTS_COLS = [
     "venue",
 ]
 
-
-class CyclicalTeamNames:
-    """Cycles through real team names per data config."""
-
-    def __init__(self, team_names: List[str] = CONTEMPORARY_TEAM_NAMES):
-        """
-        Instantiate a CyclicalTeamNames object.
-
-        Params:
-        -------
-        team_names: List of team names to cycle through. Defaults to all teams
-            currently in the AFL.
-        """
-        self.team_names = team_names
-        self.cyclical_team_names = (name for name in self.team_names)
-
-    def next_team(self) -> str:
-        """Return the next team name or start over from the beginning."""
-        try:
-            return next(self.cyclical_team_names)
-        except StopIteration:
-            self.cyclical_team_names = (name for name in self.team_names)
-
-            return next(self.cyclical_team_names)
+TEAM_TYPES = ("home", "away")
 
 
-def fake_match_data(seasons: Union[Tuple[int, int], int] = 1) -> pd.DataFrame:
+def fake_match_data(
+    match_results: Optional[pd.DataFrame] = None,
+    seasons: Union[Tuple[int, int], int] = 1,
+) -> pd.DataFrame:
     """Return minimally-valid dummy match results data."""
-    return (
-        CandyStore(seasons=seasons)
-        .match_results(to_dict=None)
-        .rename(
-            columns={
-                "season": "year",
-                "home_points": "home_score",
-                "away_points": "away_score",
-            }
-        )
+    match_results = (
+        CandyStore(seasons=seasons).match_results(to_dict=None)
+        if match_results is None
+        else match_results
+    )
+
+    return match_results.rename(
+        columns={
+            "season": "year",
+            "home_points": "home_score",
+            "away_points": "away_score",
+        }
     )
 
 
-def fake_fixture_data(seasons: Union[Tuple[int, int], int] = 1) -> List[FixtureData]:
+def fake_fixture_data(
+    fixtures: Optional[pd.DataFrame] = None,
+    seasons: Union[Tuple[int, int], int] = 1,
+) -> List[FixtureData]:
     """
     Return minimally-valid data for fixture data.
 
     These matches are usually unplayed, future matches, but it is also possible to get
     data for past fixtures.
     """
+    fixtures = (
+        CandyStore(seasons=seasons).fixtures(to_dict=None)
+        if fixtures is None
+        else fixtures
+    )
+
     return (
-        CandyStore(seasons=seasons)
-        .fixtures(to_dict=None)
-        .rename(columns={"season": "year", "round": "round_number"})
-        .drop("season_game", axis=1)
+        fixtures.rename(columns={"season": "year", "round": "round_number"})
+        .drop("season_game", axis=1, errors="ignore")
         # Recreates data cleaning performed in views.fixtures
         .assign(date=lambda df: pd.to_datetime(df["date"], utc=True))
         .to_dict("records")
@@ -103,14 +89,14 @@ def fake_fixture_data(seasons: Union[Tuple[int, int], int] = 1) -> List[FixtureD
 
 
 def fake_match_results_data(
-    match_data: Optional[pd.DataFrame] = None, round_number: Optional[int] = None
+    match_results: Optional[pd.DataFrame] = None, round_number: Optional[int] = None
 ) -> pd.DataFrame:
     """
     Generate dummy data that replicates match results data.
 
     Params
     ------
-    match_data: Match data on which to base the match results data set.
+    match_results: Match data on which to base the match results data set.
     round_number: Round number to use for match results data (because it's fetched
         one round at a time).
 
@@ -118,17 +104,17 @@ def fake_match_results_data(
     -------
     DataFrame of match results data
     """
-    match_data = match_data or fake_match_data()
+    match_results = fake_match_data() if match_results is None else match_results
     round_number = round_number or np.random.randint(
-        1, match_data["round_number"].max()
+        1, match_results["round_number"].max()
     )
 
     assert (
-        len(match_data["year"].drop_duplicates()) == 1
+        len(match_results["year"].drop_duplicates()) == 1
     ), "Match results data is fetched one season at a time."
 
     return (
-        match_data.query("round_number == @round_number")
+        match_results.query("round_number == @round_number")
         .assign(
             updated=lambda df: pd.to_datetime(df["date"]) + timedelta(hours=3),
             tz="+10:00",
@@ -166,46 +152,53 @@ def fake_match_results_data(
     ).loc[:, MATCH_RESULTS_COLS]
 
 
+def _build_team_matches(match_data: pd.DataFrame, team_type: str) -> pd.DataFrame:
+    at_home = 1 if team_type == "home" else 0
+    oppo_team_type = "away" if at_home else "home"
+    team_match_data = {
+        "team": match_data[f"{team_type}_team"],
+        "at_home": at_home,
+        "oppo_team": match_data[f"{oppo_team_type}_team"],
+        "year": match_data["year"],
+        "round_number": match_data["round_number"],
+    }
+
+    return pd.DataFrame(team_match_data)
+
+
 def fake_prediction_data(
-    match_data: Union[FixtureData, None] = None,
+    fixtures: Optional[pd.DataFrame] = None,
     ml_model_name="test_estimator",
     predict_margin=True,
 ) -> pd.DataFrame:
-    """Return minimally-valid prediction data."""
-    if match_data is None:
-        match_data_for_pred = fake_fixture_data()[0]
-    else:
-        match_data_for_pred = match_data
+    """
+    Return minimally-valid prediction data.
 
-    predicted_home_margin = np.random.rand() * 50 if predict_margin else None
-    predicted_away_margin = np.random.rand() * 50 if predict_margin else None
-    predicted_home_proba = np.random.rand() if not predict_margin else None
-    predicted_away_proba = np.random.rand() if not predict_margin else None
+    Params:
+    -------
+    fixtures: Fixture data to base predictions on. Random fixture data will be generated
+        if missing.
+    ml_model_name: Name of the MLModel making the predictions.
+    predict_margin: Whether to predict the margin. Predicts win probability if false.
 
-    predictions = [
-        {
-            "team": match_data_for_pred["home_team"],
-            "year": match_data_for_pred["year"],
-            "round_number": match_data_for_pred["round_number"],
-            "at_home": 1,
-            "oppo_team": match_data_for_pred["away_team"],
-            "ml_model": ml_model_name,
-            "predicted_margin": predicted_home_margin,
-            "predicted_win_probability": predicted_home_proba,
-        },
-        {
-            "team": match_data_for_pred["away_team"],
-            "year": match_data_for_pred["year"],
-            "round_number": match_data_for_pred["round_number"],
-            "at_home": 0,
-            "oppo_team": match_data_for_pred["home_team"],
-            "ml_model": ml_model_name,
-            "predicted_margin": predicted_away_margin,
-            "predicted_win_probability": predicted_away_proba,
-        },
-    ]
+    Returns:
+    --------
+    Two predictions, one for each team, per match row.
+    """
+    fixture_data = pd.DataFrame(fake_fixture_data(fixtures))
+    match_count = len(fixture_data)
 
-    return pd.DataFrame(predictions)
+    return pd.concat(
+        [_build_team_matches(fixture_data, team_type) for team_type in TEAM_TYPES]
+    ).assign(
+        predicted_margin=np.random.rand(match_count * 2) * 50
+        if predict_margin
+        else None,
+        predicted_win_probability=None
+        if predict_margin
+        else np.random.rand(match_count * 2),
+        ml_model=ml_model_name,
+    )
 
 
 def fake_ml_model_data(n_models: int = 1) -> pd.DataFrame:

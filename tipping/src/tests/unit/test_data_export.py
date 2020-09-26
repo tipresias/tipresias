@@ -121,7 +121,7 @@ class TestDataExport(TestCase):
         mock_requests.post = MagicMock(return_value=mock_response)
 
         url = settings.TIPRESIAS_APP + "/matches"
-        fake_match_results = data_factories.fake_match_results_data(N_MATCHES, 2)
+        fake_match_results = data_factories.fake_match_results_data()
         self.data_export.update_match_results(fake_match_results)
 
         # It posts the data

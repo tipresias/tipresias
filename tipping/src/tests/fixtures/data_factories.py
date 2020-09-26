@@ -1,44 +1,48 @@
 """Module for factory functions that create raw data objects."""
 
-from typing import List, Dict, Tuple, Union
-from datetime import datetime, timedelta, date
-import itertools
-import pytz
+from typing import List, Tuple, Union, Optional
+from datetime import timedelta
 
 from faker import Faker
 import numpy as np
 import pandas as pd
-from mypy_extensions import TypedDict
 from candystore import CandyStore
 
 from tipping import settings
-from tipping.types import FixtureData, MatchData
+from tipping.types import FixtureData
 
 
-RawFixtureData = TypedDict(
-    "RawFixtureData",
-    {
-        "date": str,
-        "season": int,
-        "season_game": int,
-        "round": int,
-        "home_team": str,
-        "away_team": str,
-        "venue": str,
-    },
-)
-
-
-FIRST = 1
-SECOND = 2
-JAN = 1
-DEC = 12
-THIRTY_FIRST = 31
 FAKE = Faker()
 CONTEMPORARY_TEAM_NAMES = [
     name for name in settings.TEAM_NAMES if name not in settings.DEFUNCT_TEAM_NAMES
 ]
-BASELINE_BET_PAYOUT = 1.92
+DEFAULT_YEAR_RANGE = (2015, 2016)
+
+MATCH_RESULTS_COLS = [
+    "date",
+    "tz",
+    "updated",
+    "round",
+    "roundname",
+    "year",
+    "hbehinds",
+    "hgoals",
+    "hscore",
+    "hteam",
+    "hteamid",
+    "abehinds",
+    "agoals",
+    "ascore",
+    "ateam",
+    "ateamid",
+    "winner",
+    "winnerteamid",
+    "is_grand_final",
+    "complete",
+    "is_final",
+    "id",
+    "venue",
+]
 
 
 class CyclicalTeamNames:
@@ -64,74 +68,6 @@ class CyclicalTeamNames:
             self.cyclical_team_names = (name for name in self.team_names)
 
             return next(self.cyclical_team_names)
-
-
-def _min_max_datetimes_by_year(
-    year: int, force_future: bool = False
-) -> Dict[str, datetime]:
-    # About as early as matches ever start
-    MIN_MATCH_HOUR = 12
-    # About as late as matches ever start
-    MAX_MATCH_HOUR = 20
-
-    if force_future:
-        today = datetime.now(tz=pytz.UTC)
-
-        # Running tests on 28 Feb of a leap year breaks them, because the given year
-        # generally won't be a leap year (e.g. 2018-2-29 doesn't exist),
-        # so we retry with two days in the future (e.g. 2018-3-1).
-        try:
-            tomorrow = today + timedelta(hours=24)
-            datetime_start = datetime(
-                year, tomorrow.month, tomorrow.day, MIN_MATCH_HOUR, tzinfo=pytz.UTC
-            )
-        except ValueError:
-            tomorrow = today + timedelta(hours=48)
-            datetime_start = datetime(
-                year, tomorrow.month, tomorrow.day, MIN_MATCH_HOUR, tzinfo=pytz.UTC
-            )
-    else:
-        datetime_start = datetime(year, JAN, FIRST, MIN_MATCH_HOUR, tzinfo=pytz.UTC)
-
-    return {
-        "datetime_start": datetime_start,
-        "datetime_end": datetime(
-            year, DEC, THIRTY_FIRST, MAX_MATCH_HOUR, tzinfo=pytz.UTC
-        ),
-    }
-
-
-def _raw_match_data(year: int, team_names: Tuple[str, str]) -> MatchData:
-    return {
-        "date": FAKE.date_time_between_dates(
-            **_min_max_datetimes_by_year(year), tzinfo=pytz.UTC
-        ),
-        "year": year,
-        "round": "R1",
-        "round_number": 1,
-        "home_team": team_names[0],
-        "away_team": team_names[1],
-        "venue": FAKE.city(),
-        "home_score": np.random.randint(50, 150),
-        "away_score": np.random.randint(50, 150),
-        "match_id": FAKE.ean(),
-        "crowd": np.random.randint(10000, 30000),
-    }
-
-
-def _matches_by_round(row_count: int, year: int) -> List[MatchData]:
-    team_names = CyclicalTeamNames()
-
-    return [
-        _raw_match_data(year, (team_names.next_team(), team_names.next_team()))
-        for _ in range(row_count)
-    ]
-
-
-def _matches_by_year(
-    row_count: int, year_range: Tuple[int, int]
-) -> List[List[MatchData]]:
-    return [_matches_by_round(row_count, year) for year in range(*year_range)]
 
 
 def fake_match_data(year_range: Tuple[int, int]) -> pd.DataFrame:
@@ -167,58 +103,68 @@ def fake_fixture_data(year_range: Tuple[int, int]) -> List[FixtureData]:
     )
 
 
-def _results_by_match(round_number: int, team_names: CyclicalTeamNames):
-    home_team = team_names.next_team()
-    away_team = team_names.next_team()
-    winner = np.random.choice([home_team, away_team])
-    match_date = FAKE.date_time_between_dates(
-        **_min_max_datetimes_by_year(date.today().year)
-    )
-
-    return {
-        "date": str(match_date),
-        "tz": "+10:00",
-        "updated": str(match_date + timedelta(hours=3)),
-        "round": round_number,
-        "roundname": f"Round {round_number}",
-        "year": date.today().year,
-        "hbehinds": FAKE.pyint(1, 15),
-        "hgoals": FAKE.pyint(1, 15),
-        "hscore": FAKE.pyint(20, 120),
-        "hteam": home_team,
-        "hteamid": settings.TEAM_NAMES.index(home_team),
-        "abehinds": FAKE.pyint(1, 15),
-        "agoals": FAKE.pyint(1, 15),
-        "ascore": FAKE.pyint(20, 120),
-        "ateam": away_team,
-        "ateamid": settings.TEAM_NAMES.index(away_team),
-        "winner": winner,
-        "winnerteamid": settings.TEAM_NAMES.index(winner),
-        "is_grand_final": 0,
-        "complete": 100,
-        "is_final": 0,
-        "id": FAKE.pyint(1, 200),
-        "venue": np.random.choice(list(settings.VENUE_CITIES.keys())),
-    }
-
-
-def fake_match_results_data(row_count: int, round_number: int) -> pd.DataFrame:
+def fake_match_results_data(
+    match_data: Optional[pd.DataFrame] = None, round_number: Optional[int] = None
+) -> pd.DataFrame:
     """
     Generate dummy data that replicates match results data.
 
     Params
     ------
-    row_count: Number of match rows to return
+    match_data: Match data on which to base the match results data set.
+    round_number: Round number to use for match results data (because it's fetched
+        one round at a time).
 
     Returns
     -------
     DataFrame of match results data
     """
-    team_names = CyclicalTeamNames()
-
-    return pd.DataFrame(
-        [_results_by_match(round_number, team_names) for _ in range(row_count)]
+    match_data = match_data or fake_match_data(DEFAULT_YEAR_RANGE)
+    round_number = round_number or np.random.randint(
+        1, match_data["round_number"].max()
     )
+
+    assert (
+        len(match_data["year"].drop_duplicates()) == 1
+    ), "Match results data is fetched one season at a time."
+
+    return (
+        match_data.query("round_number == @round_number")
+        .assign(
+            updated=lambda df: pd.to_datetime(df["date"]) + timedelta(hours=3),
+            tz="+10:00",
+            # AFLTables match_results already have a 'round' column,
+            # so we have to replace rather than rename.
+            round=lambda df: df["round_number"],
+            roundname=lambda df: "Round " + df["round_number"].astype(str),
+            hteam=lambda df: df["home_team"].map(
+                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
+            ),
+            ateam=lambda df: df["away_team"].map(
+                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
+            ),
+            hteamid=lambda df: df["hteam"].map(settings.TEAM_NAMES.index),
+            ateamid=lambda df: df["ateam"].map(settings.TEAM_NAMES.index),
+            winner=lambda df: np.where(df["margin"] >= 0, df["hteam"], df["ateam"]),
+            winnerteamid=lambda df: df["winner"].map(settings.TEAM_NAMES.index),
+            is_grand_final=0,
+            complete=100,
+            is_final=0,
+        )
+        .astype({"updated": str})
+        .reset_index(drop=False)
+        .rename(
+            columns={
+                "index": "id",
+                "home_behinds": "hbehinds",
+                "home_goals": "hgoals",
+                "away_behinds": "abehinds",
+                "away_goals": "agoals",
+                "home_score": "hscore",
+                "away_score": "ascore",
+            }
+        )
+    ).loc[:, MATCH_RESULTS_COLS]
 
 
 def fake_prediction_data(

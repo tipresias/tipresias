@@ -13,7 +13,6 @@ from server.tests.fixtures.data_factories import fake_match_results_data
 from server.tests.fixtures.factories import FullMatchFactory
 
 FAKE = Faker()
-ROW_COUNT = 10
 PREDICTION_YEAR = 2016
 
 
@@ -22,7 +21,7 @@ class TestSendEmail(TestCase):
 
     def setUp(self):
         self.match_results_data = fake_match_results_data(
-            ROW_COUNT, (PREDICTION_YEAR, PREDICTION_YEAR + 1)
+            seasons=(PREDICTION_YEAR, PREDICTION_YEAR + 1)
         )
 
         ml_models = [

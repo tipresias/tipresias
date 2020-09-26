@@ -1,21 +1,24 @@
 # pylint: disable=missing-docstring
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from freezegun import freeze_time
 from django.test import TestCase
 from django.utils import timezone
-import pandas as pd
+from candystore import CandyStore
 
 from server.models import Match, TeamMatch, Prediction
 from server import api
 from server.tests.fixtures import data_factories, factories
 
 
-ROW_COUNT = 5
+TODAY = date.today()
+CURRENT_YEAR = TODAY.year
+CURRENT_YEAR_RANGE = (CURRENT_YEAR, CURRENT_YEAR + 1)
+
+TIP_SEASON_RANGE = (2016, 2018)
 TIP_DATES = [
-    timezone.make_aware(datetime(2016, 1, 1)),
-    timezone.make_aware(datetime(2017, 1, 1)),
+    timezone.make_aware(datetime(season, 1, 1)) for season in range(*TIP_SEASON_RANGE)
 ]
 
 
@@ -25,11 +28,27 @@ class TestApi(TestCase):
             name="test_estimator", is_principal=True, used_in_competitions=True
         )
 
-        (
-            self.fixture_data,
-            self.prediction_data,
-            self.match_results_data,
-        ) = zip(*[self._build_imported_data_mocks(tip_date) for tip_date in TIP_DATES])
+        candy = CandyStore(seasons=TIP_SEASON_RANGE)
+        fixtures = data_factories.fake_fixture_data(
+            fixtures=candy.fixtures(to_dict=None)
+        )
+        predictions = data_factories.fake_prediction_data(
+            match_data=candy.fixtures(to_dict=None)
+        )
+        match_results = data_factories.fake_match_results_data(
+            match_results=candy.match_results(to_dict=None)
+        )
+
+        self.fixture_data = [
+            fixtures.query("year == @season") for season in range(*TIP_SEASON_RANGE)
+        ]
+        self.prediction_data = [
+            predictions.query("year == @season") for season in range(*TIP_SEASON_RANGE)
+        ]
+        self.match_results_data = [
+            match_results.query("year == @season")
+            for season in range(*TIP_SEASON_RANGE)
+        ]
 
         self.api = api
 
@@ -168,10 +187,11 @@ class TestApi(TestCase):
             self.assertEqual(Prediction.objects.count(), len(self.fixture_data[0]))
 
     def fetch_latest_round_predictions(self):
+        MATCH_COUNT = 5
         # FullMatchFactory produces two predictions per match by default
         N_PREDICTION_MODELS = 2
 
-        for idx in range(ROW_COUNT * 2):
+        for idx in range(MATCH_COUNT * 2):
             factories.FullMatchFactory(future=(idx % 2 == 0), with_predictions=True)
 
         next_match = (
@@ -191,58 +211,3 @@ class TestApi(TestCase):
         self.assertEqual(
             latest_matches.count(), len(latest_predictions) / N_PREDICTION_MODELS
         )
-
-    def _build_imported_data_mocks(self, tip_date):
-        with freeze_time(tip_date):
-            tomorrow = timezone.localtime() + timedelta(days=1)
-            year = tomorrow.year
-
-            # Mock footywire fixture data
-            fixture_data = data_factories.fake_fixture_data((year, year + 1))
-
-            prediction_match_data, _ = zip(
-                *[
-                    (
-                        self._build_prediction_and_match_results_data(match_data),
-                        self._build_teams(match_data),
-                    )
-                    for match_data in fixture_data
-                ]
-            )
-
-            prediction_data, match_results_data = zip(*prediction_match_data)
-
-        return (
-            pd.DataFrame(fixture_data),
-            pd.concat(prediction_data),
-            pd.DataFrame(list(match_results_data)),
-        )
-
-    def _build_prediction_and_match_results_data(self, fixture_data):
-        match_predictions = data_factories.fake_prediction_data(
-            match_data=fixture_data, ml_model_name=self.ml_model.name
-        )
-
-        return (
-            match_predictions,
-            self._build_match_results_data(fixture_data, match_predictions),
-        )
-
-    @staticmethod
-    def _build_match_results_data(fixture_data, match_predictions):
-        # Making all predictions correct, because trying to get fancy with it
-        # resulted in flakiness that was difficult to fix
-        return {
-            "date": fixture_data["date"],
-            "year": fixture_data["year"],
-            "round_number": fixture_data["round_number"],
-            "home_team": fixture_data["home_team"],
-            "away_team": fixture_data["away_team"],
-            "home_score": match_predictions["home_predicted_margin"].iloc[0],
-            "away_score": match_predictions["away_predicted_margin"].iloc[0],
-        }
-
-    @staticmethod
-    def _build_teams(match_data):
-        factories.TeamFactory(name=match_data["home_team"])
-        factories.TeamFactory(name=match_data["away_team"])

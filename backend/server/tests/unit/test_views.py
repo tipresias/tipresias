@@ -13,7 +13,7 @@ from server.models import Prediction, Match, TeamMatch
 from server import views
 
 N_MATCHES = 9
-YEAR_RANGE = (timezone.now().year, timezone.now().year + 1)
+CURRENT_YEAR_RANGE = (timezone.now().year, timezone.now().year + 1)
 
 
 class TestViews(TestCase):
@@ -173,7 +173,7 @@ class TestViews(TestCase):
         right_now = timezone.now()  # pylint: disable=unused-variable
         max_round = Match.objects.order_by("-round_number").first().round_number
         fixture_data = (
-            pd.DataFrame(data_factories.fake_fixture_data(YEAR_RANGE))
+            data_factories.fake_fixture_data(seasons=CURRENT_YEAR_RANGE)
             .query("date > @right_now")
             .assign(round_number=(max_round + 1))
         )

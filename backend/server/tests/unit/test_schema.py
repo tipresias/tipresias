@@ -630,11 +630,23 @@ class TestSchema(TestCase):
                 self.assertGreater(data["cumulativeMarginDifference"], 0)
 
     def _assert_correct_prediction_results(self, results, expected_results):
+        sorted_results = self._sort_results(results)
+        sorted_expected_results = self._sort_results(expected_results)
         # graphene returns OrderedDicts instead of dicts, which makes asserting
         # on results a little more complicated
-        for idx, result in enumerate(results):
-            expected_result = expected_results[idx]
+        for idx, result in enumerate(sorted_results):
+            expected_result = sorted_expected_results[idx]
 
             self.assertEqual(dict(result["match"]), expected_result["match"])
             self.assertEqual(dict(result["mlModel"]), expected_result["mlModel"])
             self.assertEqual(result["isCorrect"], expected_result["isCorrect"])
+
+    @staticmethod
+    def _sort_results(results):
+        return sorted(
+            sorted(
+                sorted(results, key=lambda result: result["mlModel"]["name"]),
+                key=lambda result: result["match"]["roundNumber"],
+            ),
+            key=lambda result: result["match"]["year"],
+        )

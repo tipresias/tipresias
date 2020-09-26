@@ -6,7 +6,6 @@ from dateutil import parser
 from django.test import TestCase
 from django.utils import timezone
 import joblib
-import pandas as pd
 
 from server.models import Match, TeamMatch, Team, MLModel, Prediction
 from server.management.commands import seed_db
@@ -14,9 +13,6 @@ from server.tests.fixtures.data_factories import (
     fake_match_results_data,
     fake_prediction_data,
 )
-
-
-MATCH_COUNT_PER_YEAR = 5
 
 
 class TestSeedDb(TestCase):
@@ -34,34 +30,22 @@ class TestSeedDb(TestCase):
         # of training data
         data_years = (self.years[0] - 1, self.years[1])
 
-        self.match_results_data_frame = fake_match_results_data(
-            MATCH_COUNT_PER_YEAR, data_years, clean=True
-        )
+        self.match_results_data_frame = fake_match_results_data(seasons=data_years)
 
         prediction_data = []
 
-        for match_result in self.match_results_data_frame.query(
+        matches_to_predict = self.match_results_data_frame.query(
             # Only returning prediction data for matches in seed_db year range
             "year >= @min_seed_year"
-        ).to_dict("records"):
+        )
 
-            match_data = {
-                "date": match_result["date"],
-                "home_team": match_result["home_team"],
-                "away_team": match_result["away_team"],
-                "year": match_result["year"],
-                "round_number": match_result["round_number"],
-            }
-
-            prediction_data.append(
-                fake_prediction_data(
-                    match_data=match_data, ml_model_name="test_estimator"
-                )
-            )
+        prediction_data = fake_prediction_data(
+            match_data=matches_to_predict, ml_model_name="test_estimator"
+        )
 
         mock_data_import = MagicMock()
         mock_data_import.fetch_match_predictions = MagicMock(
-            return_value=pd.concat(prediction_data).reset_index().to_dict("records")
+            return_value=prediction_data.to_dict("records")
         )
         mock_data_import.fetch_matches = MagicMock(
             side_effect=self.__match_results_side_effect
@@ -81,16 +65,18 @@ class TestSeedDb(TestCase):
 
         self.assertGreater(Team.objects.count(), 0)
         self.assertEqual(MLModel.objects.count(), 1)
-        self.assertEqual(
-            Match.objects.count(), MATCH_COUNT_PER_YEAR * len(range(*self.years))
+
+        expected_match_count = len(
+            self.match_results_data_frame.query(
+                "year >= @self.years[0] & year < @self.years[1]"
+            )
         )
+        self.assertEqual(Match.objects.count(), expected_match_count)
         self.assertEqual(
             TeamMatch.objects.count(),
-            MATCH_COUNT_PER_YEAR * len(range(*self.years)) * 2,
+            expected_match_count * 2,
         )
-        self.assertEqual(
-            Prediction.objects.count(), MATCH_COUNT_PER_YEAR * len(range(*self.years))
-        )
+        self.assertEqual(Prediction.objects.count(), expected_match_count)
         self.assertEqual(TeamMatch.objects.filter(score=0).count(), 0)
 
     def test_handle_errors(self):

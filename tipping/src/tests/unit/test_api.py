@@ -32,8 +32,8 @@ TIP_DATES = [
 class TestApi(TestCase):
     def setUp(self):
         candy = CandyStore(seasons=MATCH_SEASON_RANGE)
-        fixtures = pd.DataFrame(
-            data_factories.fake_fixture_data(fixtures=candy.fixtures(to_dict=None))
+        fixtures = data_factories.fake_fixture_data(
+            fixtures=candy.fixtures(to_dict=None)
         )
         predictions = data_factories.fake_prediction_data(
             fixtures=candy.fixtures(to_dict=None)
@@ -58,8 +58,8 @@ class TestApi(TestCase):
         with freeze_time(datetime(2020, 5, 1, tzinfo=pytz.UTC)):
             right_now = datetime.now(tz=pytz.UTC)
             this_year = right_now.year
-            fixture = pd.DataFrame(
-                data_factories.fake_fixture_data(seasons=(this_year, this_year + 1))
+            fixture = data_factories.fake_fixture_data(
+                seasons=(this_year, this_year + 1)
             )
             upcoming_round = int(
                 fixture.query("date > @right_now")["round_number"].min()
@@ -139,9 +139,7 @@ class TestApi(TestCase):
 
     @patch("tipping.api.data_import")
     def test_fetch_match_predictions(self, mock_data_import):
-        fixtures = pd.DataFrame(
-            data_factories.fake_fixture_data(seasons=CURRENT_YEAR_RANGE)
-        )
+        fixtures = data_factories.fake_fixture_data(seasons=CURRENT_YEAR_RANGE)
         predictions = data_factories.fake_prediction_data(fixtures=fixtures)
         mock_data_import.fetch_prediction_data = MagicMock(return_value=predictions)
 

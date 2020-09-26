@@ -9,7 +9,7 @@ from server.tests.fixtures import data_factories
 class TestTeamMatch(TestCase):
     def setUp(self):
         self.match = MatchFactory()
-        self.fixture_data = data_factories.fake_fixture_data()
+        self.fixture_data = data_factories.fake_fixture_data().to_dict("records")
 
     def test_get_or_create_from_raw_data(self):
         self.assertEqual(TeamMatch.objects.count(), 0)

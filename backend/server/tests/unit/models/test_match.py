@@ -33,7 +33,7 @@ class TestMatch(TestCase):
         )
 
     def test_get_or_create_from_raw_data(self):
-        fixture_data = data_factories.fake_fixture_data()[0]
+        fixture_data = data_factories.fake_fixture_data().to_dict("records")[0]
         match_count = Match.objects.count()
 
         with self.subTest("with validation error"):

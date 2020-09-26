@@ -30,9 +30,7 @@ class TestTipper(TestCase):
     @patch("tipping.data_import")
     def setUp(self, mock_data_import):  # pylint: disable=arguments-differ
         candy = CandyStore(seasons=MATCH_SEASON_RANGE)
-        fixtures = pd.DataFrame(
-            data_factories.fake_fixture_data(fixtures=candy.fixtures(to_dict=None))
-        )
+        fixtures = data_factories.fake_fixture_data(fixtures=candy.fixtures(to_dict=None))
         predictions = data_factories.fake_prediction_data(
             fixtures=candy.fixtures(to_dict=None)
         )

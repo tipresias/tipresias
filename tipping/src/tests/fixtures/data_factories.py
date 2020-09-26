@@ -1,6 +1,6 @@
 """Module for factory functions that create raw data objects."""
 
-from typing import List, Tuple, Union, Optional
+from typing import Tuple, Union, Optional
 from datetime import timedelta
 
 from faker import Faker
@@ -9,7 +9,6 @@ import pandas as pd
 from candystore import CandyStore
 
 from tipping import settings
-from tipping.types import FixtureData
 
 
 FAKE = Faker()
@@ -66,7 +65,7 @@ def fake_match_data(
 def fake_fixture_data(
     fixtures: Optional[pd.DataFrame] = None,
     seasons: Union[Tuple[int, int], int] = 1,
-) -> List[FixtureData]:
+) -> pd.DataFrame:
     """
     Return minimally-valid data for fixture data.
 
@@ -80,11 +79,11 @@ def fake_fixture_data(
     )
 
     return (
-        fixtures.rename(columns={"season": "year", "round": "round_number"})
-        .drop("season_game", axis=1, errors="ignore")
+        fixtures.rename(columns={"season": "year", "round": "round_number"}).drop(
+            "season_game", axis=1, errors="ignore"
+        )
         # Recreates data cleaning performed in views.fixtures
         .assign(date=lambda df: pd.to_datetime(df["date"], utc=True))
-        .to_dict("records")
     )
 
 
@@ -185,7 +184,7 @@ def fake_prediction_data(
     --------
     Two predictions, one for each team, per match row.
     """
-    fixture_data = pd.DataFrame(fake_fixture_data(fixtures))
+    fixture_data = fake_fixture_data(fixtures)
     match_count = len(fixture_data)
 
     return pd.concat(

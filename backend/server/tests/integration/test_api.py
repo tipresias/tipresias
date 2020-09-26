@@ -29,8 +29,8 @@ class TestApi(TestCase):
         )
 
         candy = CandyStore(seasons=TIP_SEASON_RANGE)
-        fixtures = pd.DataFrame(
-            data_factories.fake_fixture_data(fixtures=candy.fixtures(to_dict=None))
+        fixtures = data_factories.fake_fixture_data(
+            fixtures=candy.fixtures(to_dict=None)
         )
         predictions = data_factories.fake_prediction_data(
             match_data=candy.fixtures(to_dict=None)

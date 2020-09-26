@@ -9,9 +9,6 @@ from tests.fixtures.data_factories import fake_prediction_data, fake_match_data
 from tipping.helpers import pivot_team_matches_to_matches, convert_to_dict
 
 
-YEAR_RANGE = (2013, 2014)
-
-
 class TestHelpers(TestCase):
     def setUp(self):
         self.team_match_df = pd.DataFrame(fake_prediction_data())
@@ -29,7 +26,7 @@ class TestHelpers(TestCase):
         self.assertNotIn("oppo_team", match_df.columns)
 
     def test_convert_to_dict(self):
-        match_df = fake_match_data(YEAR_RANGE)
+        match_df = fake_match_data()
         match_df.loc[:, "crowd"] = np.nan
         match_records = convert_to_dict(match_df)
 

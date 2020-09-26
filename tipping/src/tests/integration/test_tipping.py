@@ -15,7 +15,6 @@ from tests.fixtures import data_factories
 from tipping.tipping import Tipper, FootyTipsSubmitter, MonashSubmitter
 
 
-ROW_COUNT = 5
 TIP_DATES = [
     datetime(2016, 1, 1, tzinfo=pytz.UTC),
     datetime(2017, 1, 1, tzinfo=pytz.UTC),
@@ -149,7 +148,7 @@ class TestTipper(TestCase):
             year = tomorrow.year
 
             # Mock footywire fixture data
-            fixture_data = data_factories.fake_fixture_data((year, year + 1))
+            fixture_data = data_factories.fake_fixture_data(seasons=(year, year + 1))
 
             prediction_match_data = [
                 (self._build_prediction_and_match_results_data(match_data))

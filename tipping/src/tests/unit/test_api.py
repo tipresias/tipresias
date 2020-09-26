@@ -3,7 +3,7 @@
 from typing import Tuple
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import pytz
 
 import pandas as pd
@@ -15,7 +15,9 @@ from tipping import api
 from tipping.tipping import FootyTipsSubmitter
 
 
-YEAR_RANGE = (2016, 2017)
+TODAY = date.today()
+CURRENT_YEAR = TODAY.year
+CURRENT_YEAR_RANGE = (CURRENT_YEAR, CURRENT_YEAR + 1)
 
 TIP_DATES = [
     datetime(2016, 1, 1, tzinfo=pytz.UTC),
@@ -72,8 +74,7 @@ class TestApi(TestCase):
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import")
     def test_update_matches(self, mock_data_import, mock_data_export):
-        this_year = datetime.now().year
-        matches = data_factories.fake_match_data((this_year, this_year + 1))
+        matches = data_factories.fake_match_data()
 
         mock_data_import.fetch_match_data = MagicMock(return_value=matches)
         mock_data_export.update_matches = MagicMock()
@@ -128,7 +129,7 @@ class TestApi(TestCase):
 
     @patch("tipping.api.data_import")
     def test_fetch_match_predictions(self, mock_data_import):
-        matches = data_factories.fake_match_data(YEAR_RANGE)
+        matches = data_factories.fake_match_data(seasons=CURRENT_YEAR_RANGE)
         predictions = pd.concat(
             [
                 data_factories.fake_prediction_data(match)
@@ -142,7 +143,7 @@ class TestApi(TestCase):
         train_models = bool(np.random.randint(0, 2))
 
         prediction_response = self.api.fetch_match_predictions(
-            YEAR_RANGE,
+            CURRENT_YEAR_RANGE,
             round_number=round_number,
             ml_models=ml_models,
             train_models=train_models,
@@ -150,7 +151,7 @@ class TestApi(TestCase):
 
         # It calls fetch_prediction_data with the same params
         mock_data_import.fetch_prediction_data.assert_called_with(
-            YEAR_RANGE,
+            CURRENT_YEAR_RANGE,
             round_number=round_number,
             ml_models=ml_models,
             train_models=train_models,
@@ -174,7 +175,7 @@ class TestApi(TestCase):
 
     @patch("tipping.api.data_import")
     def test_fetch_matches(self, mock_data_import):
-        matches = data_factories.fake_match_data(YEAR_RANGE)
+        matches = data_factories.fake_match_data()
         mock_data_import.fetch_match_data = MagicMock(return_value=matches)
 
         match_dates = np.random.choice(matches["date"], size=2)

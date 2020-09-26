@@ -1,6 +1,6 @@
 # pylint: disable=missing-docstring
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from freezegun import freeze_time
 from django.test import TestCase
@@ -12,7 +12,10 @@ from server import api
 from server.tests.fixtures import data_factories, factories
 
 
-ROW_COUNT = 5
+TODAY = date.today()
+CURRENT_YEAR = TODAY.year
+CURRENT_YEAR_RANGE = (CURRENT_YEAR, CURRENT_YEAR + 1)
+MATCH_COUNT = 5
 TIP_DATES = [
     timezone.make_aware(datetime(2016, 1, 1)),
     timezone.make_aware(datetime(2017, 1, 1)),
@@ -171,7 +174,7 @@ class TestApi(TestCase):
         # FullMatchFactory produces two predictions per match by default
         N_PREDICTION_MODELS = 2
 
-        for idx in range(ROW_COUNT * 2):
+        for idx in range(MATCH_COUNT * 2):
             factories.FullMatchFactory(future=(idx % 2 == 0), with_predictions=True)
 
         next_match = (
@@ -194,11 +197,8 @@ class TestApi(TestCase):
 
     def _build_imported_data_mocks(self, tip_date):
         with freeze_time(tip_date):
-            tomorrow = timezone.localtime() + timedelta(days=1)
-            year = tomorrow.year
-
             # Mock footywire fixture data
-            fixture_data = data_factories.fake_fixture_data((year, year + 1))
+            fixture_data = data_factories.fake_fixture_data(seasons=CURRENT_YEAR_RANGE)
 
             prediction_match_data, _ = zip(
                 *[

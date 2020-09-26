@@ -16,7 +16,6 @@ FAKE = Faker()
 CONTEMPORARY_TEAM_NAMES = [
     name for name in settings.TEAM_NAMES if name not in settings.DEFUNCT_TEAM_NAMES
 ]
-DEFAULT_YEAR_RANGE = (2015, 2016)
 
 MATCH_RESULTS_COLS = [
     "date",
@@ -70,10 +69,10 @@ class CyclicalTeamNames:
             return next(self.cyclical_team_names)
 
 
-def fake_match_data(year_range: Tuple[int, int]) -> pd.DataFrame:
+def fake_match_data(seasons: Union[Tuple[int, int], int] = 1) -> pd.DataFrame:
     """Return minimally-valid dummy match results data."""
     return (
-        CandyStore(seasons=year_range)
+        CandyStore(seasons=seasons)
         .match_results(to_dict=None)
         .rename(
             columns={
@@ -85,7 +84,7 @@ def fake_match_data(year_range: Tuple[int, int]) -> pd.DataFrame:
     )
 
 
-def fake_fixture_data(year_range: Tuple[int, int]) -> List[FixtureData]:
+def fake_fixture_data(seasons: Union[Tuple[int, int], int] = 1) -> List[FixtureData]:
     """
     Return minimally-valid data for fixture data.
 
@@ -93,7 +92,7 @@ def fake_fixture_data(year_range: Tuple[int, int]) -> List[FixtureData]:
     data for past fixtures.
     """
     return (
-        CandyStore(seasons=year_range)
+        CandyStore(seasons=seasons)
         .fixtures(to_dict=None)
         .rename(columns={"season": "year", "round": "round_number"})
         .drop("season_game", axis=1)
@@ -119,7 +118,7 @@ def fake_match_results_data(
     -------
     DataFrame of match results data
     """
-    match_data = match_data or fake_match_data(DEFAULT_YEAR_RANGE)
+    match_data = match_data or fake_match_data()
     round_number = round_number or np.random.randint(
         1, match_data["round_number"].max()
     )
@@ -174,7 +173,7 @@ def fake_prediction_data(
 ) -> pd.DataFrame:
     """Return minimally-valid prediction data."""
     if match_data is None:
-        match_data_for_pred = fake_fixture_data((2018, 2019))[0]
+        match_data_for_pred = fake_fixture_data()[0]
     else:
         match_data_for_pred = match_data
 

@@ -12,7 +12,6 @@ from tipping import data_export, settings
 
 
 N_MATCHES = 5
-YEAR_RANGE = (2016, 2017)
 
 
 class TestDataExport(TestCase):
@@ -29,7 +28,7 @@ class TestDataExport(TestCase):
         mock_requests.post = MagicMock(return_value=mock_response)
 
         url = settings.TIPRESIAS_APP + "/fixtures"
-        fake_fixture = pd.DataFrame(data_factories.fake_fixture_data(YEAR_RANGE))
+        fake_fixture = pd.DataFrame(data_factories.fake_fixture_data())
         upcoming_round = np.random.randint(1, 24)
         self.data_export.update_fixture_data(fake_fixture, upcoming_round)
 
@@ -96,7 +95,7 @@ class TestDataExport(TestCase):
         mock_requests.post = MagicMock(return_value=mock_response)
 
         url = settings.TIPRESIAS_APP + "/matches"
-        fake_matches = data_factories.fake_match_data(YEAR_RANGE)
+        fake_matches = data_factories.fake_match_data()
         self.data_export.update_matches(fake_matches)
 
         # It posts the data

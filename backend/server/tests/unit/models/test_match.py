@@ -14,9 +14,6 @@ from server.tests.fixtures import data_factories
 from server.tests.fixtures.factories import FullMatchFactory
 
 
-ONE_YEAR_RANGE = (2014, 2015)
-
-
 class TestMatch(TestCase):
     fixtures = ["ml_models.json"]
 
@@ -36,7 +33,7 @@ class TestMatch(TestCase):
         )
 
     def test_get_or_create_from_raw_data(self):
-        fixture_data = data_factories.fake_fixture_data(ONE_YEAR_RANGE)[0]
+        fixture_data = data_factories.fake_fixture_data()[0]
         match_count = Match.objects.count()
 
         with self.subTest("with validation error"):
@@ -114,7 +111,7 @@ class TestMatch(TestCase):
 
     @patch("server.models.match.Match.update_result")
     def test_update_results(self, mock_update_result):
-        match_results = data_factories.fake_match_results_data(ONE_YEAR_RANGE)
+        match_results = data_factories.fake_match_results_data()
         calls = []
 
         for _idx, match_result in match_results.iterrows():
@@ -203,7 +200,7 @@ class TestMatch(TestCase):
                     0,
                 )
 
-        match_results = data_factories.fake_match_results_data(ONE_YEAR_RANGE)
+        match_results = data_factories.fake_match_results_data()
         match_result = match_results.iloc[0, :]
 
         match = FullMatchFactory(

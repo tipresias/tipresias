@@ -15,10 +15,10 @@ from server.models import Match
 FAKE = Faker()
 
 
-def fake_match_results_data(year_range: Tuple[int, int]) -> pd.DataFrame:
+def fake_match_results_data(seasons: Union[Tuple[int, int], int] = 1) -> pd.DataFrame:
     """Return minimally-valid dummy match results data."""
     return (
-        CandyStore(seasons=year_range)
+        CandyStore(seasons=seasons)
         .match_results(to_dict=None)
         .assign(date=lambda df: pd.to_datetime(df["date"]).map(timezone.make_aware))
         .rename(
@@ -31,7 +31,7 @@ def fake_match_results_data(year_range: Tuple[int, int]) -> pd.DataFrame:
     )
 
 
-def fake_fixture_data(year_range: Tuple[int, int]) -> List[FixtureData]:
+def fake_fixture_data(seasons: Union[Tuple[int, int], int] = 1) -> List[FixtureData]:
     """
     Return minimally-valid data for fixture data.
 
@@ -39,7 +39,7 @@ def fake_fixture_data(year_range: Tuple[int, int]) -> List[FixtureData]:
     data for past fixtures.
     """
     return (
-        CandyStore(seasons=year_range)
+        CandyStore(seasons=seasons)
         .fixtures(to_dict=None)
         .rename(columns={"season": "year", "round": "round_number"})
         .drop("season_game", axis=1)
@@ -56,7 +56,7 @@ def fake_prediction_data(
 ) -> pd.DataFrame:
     """Return minimally-valid prediction data."""
     if match_data is None:
-        match_data_for_pred = fake_fixture_data((2018, 2019))[0]
+        match_data_for_pred = fake_fixture_data()[0]
     elif isinstance(match_data, Match):
         match_data_for_pred = {
             "date": match_data.start_date_time,

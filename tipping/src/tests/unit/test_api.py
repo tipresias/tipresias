@@ -15,7 +15,6 @@ from tipping import api
 from tipping.tipping import FootyTipsSubmitter
 
 
-N_MATCHES = 5
 YEAR_RANGE = (2016, 2017)
 
 TIP_DATES = [
@@ -74,7 +73,7 @@ class TestApi(TestCase):
     @patch("tipping.api.data_import")
     def test_update_matches(self, mock_data_import, mock_data_export):
         this_year = datetime.now().year
-        matches = data_factories.fake_match_data(N_MATCHES, (this_year, this_year + 1))
+        matches = data_factories.fake_match_data((this_year, this_year + 1))
 
         mock_data_import.fetch_match_data = MagicMock(return_value=matches)
         mock_data_export.update_matches = MagicMock()
@@ -129,7 +128,7 @@ class TestApi(TestCase):
 
     @patch("tipping.api.data_import")
     def test_fetch_match_predictions(self, mock_data_import):
-        matches = data_factories.fake_match_data(N_MATCHES, YEAR_RANGE)
+        matches = data_factories.fake_match_data(YEAR_RANGE)
         predictions = pd.concat(
             [
                 data_factories.fake_prediction_data(match)
@@ -171,11 +170,11 @@ class TestApi(TestCase):
             },
             set(prediction_response.columns),
         )
-        self.assertEqual(N_MATCHES, len(prediction_response))
+        self.assertEqual(len(matches), len(prediction_response))
 
     @patch("tipping.api.data_import")
     def test_fetch_matches(self, mock_data_import):
-        matches = data_factories.fake_match_data(N_MATCHES, YEAR_RANGE)
+        matches = data_factories.fake_match_data(YEAR_RANGE)
         mock_data_import.fetch_match_data = MagicMock(return_value=matches)
 
         match_dates = np.random.choice(matches["date"], size=2)
@@ -193,24 +192,25 @@ class TestApi(TestCase):
             max(match_dates),
             fetch_data=fetch_data,
         )
+
+        match_columns = set(match_response.columns)
+        required_columns = {
+            "date",
+            "year",
+            "round",
+            "round_number",
+            "home_team",
+            "away_team",
+            "venue",
+            "home_score",
+            "away_score",
+        }
         # It returns match data
         self.assertEqual(
-            {
-                "date",
-                "year",
-                "round",
-                "round_number",
-                "home_team",
-                "away_team",
-                "venue",
-                "home_score",
-                "away_score",
-                "match_id",
-                "crowd",
-            },
-            set(match_response.columns),
+            match_columns & required_columns,
+            required_columns,
         )
-        self.assertEqual(N_MATCHES, len(match_response))
+        self.assertEqual(len(matches), len(match_response))
 
     @patch("tipping.api.data_import")
     def test_fetch_ml_models(self, mock_data_import):

@@ -134,18 +134,19 @@ def _matches_by_year(
     return [_matches_by_round(row_count, year) for year in range(*year_range)]
 
 
-def fake_match_data(
-    row_count: int, year_range: Tuple[int, int], clean=False
-) -> pd.DataFrame:
+def fake_match_data(year_range: Tuple[int, int]) -> pd.DataFrame:
     """Return minimally-valid dummy match results data."""
-    data = _matches_by_year(row_count, year_range)
-    reduced_data = list(itertools.chain.from_iterable(data))
-    data_frame = pd.DataFrame(list(reduced_data))
-
-    if clean:
-        return data_frame.rename(columns={"season": "year"})
-
-    return data_frame
+    return (
+        CandyStore(seasons=year_range)
+        .match_results(to_dict=None)
+        .rename(
+            columns={
+                "season": "year",
+                "home_points": "home_score",
+                "away_points": "away_score",
+            }
+        )
+    )
 
 
 def fake_fixture_data(year_range: Tuple[int, int]) -> List[FixtureData]:

@@ -63,7 +63,7 @@ class TestSeedDb(TestCase):
     def test_handle(self):
         self.seed_command.handle(year_range=f"{self.years[0]}-{self.years[1]}")
 
-        self.assertGreater(Team.objects.count(), 0)
+        self.assertGreater(Team.count(), 0)
         self.assertEqual(MLModel.objects.count(), 1)
 
         expected_match_count = len(
@@ -117,6 +117,6 @@ class TestSeedDb(TestCase):
 
     @staticmethod
     def __clear_db():
-        Team.objects.all().delete()
+        Team.all().delete()
         Match.objects.all().delete()
         MLModel.objects.all().delete()

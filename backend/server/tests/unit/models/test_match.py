@@ -22,8 +22,8 @@ class TestMatch(TestCase):
         self.match = Match.objects.create(
             start_date_time=match_datetime, round_number=5, venue="Corporate Stadium"
         )
-        self.home_team = Team.objects.create(name="Richmond")
-        self.away_team = Team.objects.create(name="Melbourne")
+        self.home_team = Team.create(name="Richmond")
+        self.away_team = Team.create(name="Melbourne")
 
         self.match.teammatch_set.create(
             team=self.home_team, match=self.match, at_home=True, score=50
@@ -218,7 +218,7 @@ class TestMatch(TestCase):
             else match_result["away_team"]
         )
 
-        winner = Team.objects.get(name=winner_name)
+        winner = Team.get(name=winner_name)
         match.prediction_set.update(predicted_winner=winner)
         # We expect a data frame, so can't reuse the match_result series
         match.update_result(match_results.iloc[:1, :])

@@ -130,9 +130,9 @@ class Prediction(models.Model):
             predicted_margin = np.mean(np.abs([home_margin, away_margin]))
 
         if home_margin > away_margin:
-            predicted_winner = Team.objects.get(name=home_team)
+            predicted_winner = Team.get(name=home_team)
         elif away_margin > home_margin:
-            predicted_winner = Team.objects.get(name=away_team)
+            predicted_winner = Team.get(name=away_team)
         else:
             raise ValueError(
                 "Predicted home and away margins are equal, which is basically "
@@ -167,7 +167,7 @@ class Prediction(models.Model):
         predicted_winner_name = (
             home_team if home_probability > away_probability else away_team
         )
-        predicted_winner = Team.objects.get(name=predicted_winner_name)
+        predicted_winner = Team.get(name=predicted_winner_name)
 
         return predicted_win_probability, predicted_winner
 

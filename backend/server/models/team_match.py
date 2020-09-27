@@ -71,7 +71,7 @@ class TeamMatch(models.Model):
     def _create_from_raw_data(cls, match: Match, match_data, at_home: bool) -> T:
         team_prefix = "home" if at_home else "away"
         team_name = match_data[f"{team_prefix}_team"]
-        team, _was_created = Team.objects.get_or_create(name=team_name)
+        team, _was_created = Team.get_or_create(name=team_name)
 
         team_score = match_data.get(f"{team_prefix}_score", 0)
         team_match = TeamMatch(

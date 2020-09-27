@@ -17,8 +17,8 @@ class TestPrediction(TestCase):
         )
         self.ml_model = MLModel.objects.create(name="test_model")
 
-        self.home_team = Team.objects.create(name="Richmond")
-        self.away_team = Team.objects.create(name="Melbourne")
+        self.home_team = Team.create(name="Richmond")
+        self.away_team = Team.create(name="Melbourne")
 
         self.match.teammatch_set.create(team=self.home_team, at_home=True, score=150)
         self.match.teammatch_set.create(team=self.away_team, at_home=False, score=100)
@@ -44,8 +44,8 @@ class TestPrediction(TestCase):
                     round_number=5,
                     venue="Corporate Stadium",
                 )
-                future_home_team = Team.objects.create(name="Collingwood")
-                future_away_team = Team.objects.create(name="GWS")
+                future_home_team = Team.create(name="Collingwood")
+                future_away_team = Team.create(name="GWS")
 
                 future_match.teammatch_set.create(
                     team=future_home_team, at_home=True, score=0

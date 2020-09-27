@@ -122,7 +122,10 @@ def backfill_recent_match_results(match_results: List[MatchData], verbose=1) -> 
         print("Results data is not yet available to update match records.")
         return None
 
-    # Subtract a day to have a buffer to allow for mismatched start times
+    # Subtract a day to have a buffer to allow for mismatched start times,
+    # because fixture data have correct start times, but match results data
+    # just have basic dates, which means they're given dummy start times,
+    # which will be ealier than the actual fixture start time.
     date_time_filter = (  # pylint: disable=unused-variable
         earliest_date_time_without_results - timedelta(days=1)
     )

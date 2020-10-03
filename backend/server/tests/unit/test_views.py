@@ -13,19 +13,32 @@ from server.models import Prediction, Match, TeamMatch
 from server import views
 
 N_MATCHES = 9
-CURRENT_YEAR_RANGE = (timezone.now().year, timezone.now().year + 1)
+CURRENT_YEAR = timezone.now().year
+CURRENT_YEAR_RANGE = (CURRENT_YEAR, CURRENT_YEAR + 1)
+APR = 4
+SEPT = 9
+# We reduce the range from that of a typical season to allow for some past
+# and future matches (relative to match records) in imported data sets.
+MONTH = np.random.randint(APR, SEPT)
+DAY = np.random.randint(1, 31)
+HOUR = np.random.randint(1, 24)
+
+RIGHT_NOW = timezone.datetime(CURRENT_YEAR, MONTH, DAY, HOUR)
 
 
 class TestViews(TestCase):
+    @freeze_time(RIGHT_NOW)
     def setUp(self):
         self.factory = RequestFactory()
         self.ml_model = factories.MLModelFactory(
             name="test_estimator", is_principal=True, used_in_competitions=True
         )
+
         self.matches = [
             factories.FullMatchFactory(future=True, round_number=5)
             for _ in range(N_MATCHES)
         ]
+
         self.views = views
 
     def test_predictions(self):
@@ -169,6 +182,7 @@ class TestViews(TestCase):
                         played_match_prediction.predicted_margin,
                     )
 
+    @freeze_time(RIGHT_NOW)
     def test_fixtures(self):
         right_now = timezone.now()  # pylint: disable=unused-variable
         max_round = Match.objects.order_by("-round_number").first().round_number
@@ -177,6 +191,7 @@ class TestViews(TestCase):
             .query("date > @right_now")
             .assign(round_number=(max_round + 1))
         )
+
         fixtures = {
             "data": fixture_data.to_dict("records"),
             "upcoming_round": int(fixture_data["round_number"].min()),

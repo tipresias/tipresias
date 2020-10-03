@@ -75,7 +75,7 @@ def _calculate_absolute_margin_difference():
 
 def _get_match_winner_name():
     return Subquery(
-        TeamMatch.objects.filter(match_id=OuterRef("match_id"))
+        TeamMatch.filter(match_id=OuterRef("match_id"))
         .order_by("-score")
         .values_list("team__name")[:1]
     )
@@ -90,7 +90,8 @@ def _calculate_tip_points():
 
 
 def cumulative_metrics_query(
-    prediction_query_set: QuerySet, additional_values: Optional[List[str]] = None,
+    prediction_query_set: QuerySet,
+    additional_values: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Chain methods onto a Prediction query set to calculate cumulative model metrics.

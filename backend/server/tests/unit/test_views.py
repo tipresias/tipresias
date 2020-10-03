@@ -257,7 +257,7 @@ class TestViews(TestCase):
         matches = {"data": match_results_data}
 
         # Pretend the scores haven't been updated yet
-        TeamMatch.objects.all().update(score=0)
+        TeamMatch.all().update(score=0)
         self.assertEqual(Match.objects.filter(teammatch__score__gt=0).count(), 0)
 
         with self.subTest("GET request"):
@@ -294,10 +294,8 @@ class TestViews(TestCase):
 
                 # It updates match scores
                 self.assertEqual(
-                    TeamMatch.objects.filter(score__gt=0).count(),
-                    TeamMatch.objects.filter(
-                        match__start_date_time__lt=timezone.now()
-                    ).count(),
+                    TeamMatch.filter(score__gt=0).count(),
+                    TeamMatch.filter(match__start_date_time__lt=timezone.now()).count(),
                 )
                 # It returns success response
                 self.assertEqual(response.status_code, 200)

@@ -73,11 +73,11 @@ class TestSeedDb(TestCase):
         )
         self.assertEqual(Match.objects.count(), expected_match_count)
         self.assertEqual(
-            TeamMatch.objects.count(),
+            TeamMatch.count(),
             expected_match_count * 2,
         )
         self.assertEqual(Prediction.objects.count(), expected_match_count)
-        self.assertEqual(TeamMatch.objects.filter(score=0).count(), 0)
+        self.assertEqual(TeamMatch.filter(score=0).count(), 0)
 
     def test_handle_errors(self):
         with self.subTest(

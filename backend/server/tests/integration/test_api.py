@@ -64,7 +64,7 @@ class TestApi(TestCase):
 
             with self.subTest("with no existing match records in DB"):
                 self.assertEqual(Match.objects.count(), 0)
-                self.assertEqual(TeamMatch.objects.count(), 0)
+                self.assertEqual(TeamMatch.count(), 0)
 
                 self.api.update_fixture_data(
                     future_fixture_data, min_future_round, verbose=0
@@ -72,15 +72,11 @@ class TestApi(TestCase):
 
                 # It creates records
                 self.assertEqual(Match.objects.count(), len(future_fixture_data))
-                self.assertEqual(
-                    TeamMatch.objects.count(), len(future_fixture_data) * 2
-                )
+                self.assertEqual(TeamMatch.count(), len(future_fixture_data) * 2)
 
             with self.subTest("with the match records already saved in the DB"):
                 self.assertEqual(Match.objects.count(), len(future_fixture_data))
-                self.assertEqual(
-                    TeamMatch.objects.count(), len(future_fixture_data) * 2
-                )
+                self.assertEqual(TeamMatch.count(), len(future_fixture_data) * 2)
 
                 self.api.update_fixture_data(
                     future_fixture_data, min_future_round, verbose=0
@@ -88,9 +84,7 @@ class TestApi(TestCase):
 
                 # It doesn't create new records
                 self.assertEqual(Match.objects.count(), len(future_fixture_data))
-                self.assertEqual(
-                    TeamMatch.objects.count(), len(future_fixture_data) * 2
-                )
+                self.assertEqual(TeamMatch.count(), len(future_fixture_data) * 2)
 
         with freeze_time(TIP_DATES[1]):
             right_now = timezone.now()  # pylint: disable=unused-variable
@@ -117,7 +111,7 @@ class TestApi(TestCase):
             TeamMatch.get_or_create_from_raw_data(match, fixture_datum)
 
         with freeze_time(TIP_DATES[1]):
-            self.assertEqual(TeamMatch.objects.filter(score__gt=0).count(), 0)
+            self.assertEqual(TeamMatch.filter(score__gt=0).count(), 0)
             self.assertEqual(Prediction.objects.filter(is_correct=True).count(), 0)
 
             self.api.backfill_recent_match_results(
@@ -126,7 +120,7 @@ class TestApi(TestCase):
 
             # It updates scores for past matches
             self.assertEqual(
-                TeamMatch.objects.filter(
+                TeamMatch.filter(
                     match__start_date_time__lt=timezone.now(), score=0
                 ).count(),
                 0,

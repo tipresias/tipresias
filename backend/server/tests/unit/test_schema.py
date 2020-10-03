@@ -480,9 +480,9 @@ class TestSchema(TestCase):
 
             with freeze_time(fake_datetime):
                 # Need to set scores for "future" matches to 0
-                TeamMatch.objects.filter(
-                    match__start_date_time__gte=fake_datetime
-                ).update(score=0)
+                TeamMatch.filter(match__start_date_time__gte=fake_datetime).update(
+                    score=0
+                )
 
                 past_executed = self.client.execute(
                     query, variables={"mlModelName": "predictanator"}
@@ -596,7 +596,7 @@ class TestSchema(TestCase):
         self.assertNotEqual(data["cumulativeBits"], 0)
 
         with self.subTest("when the last matches don't have updated results yet"):
-            TeamMatch.objects.filter(
+            TeamMatch.filter(
                 match__start_date_time__year=YEAR, match__round_number=ROUND_COUNT
             ).update(score=0)
 

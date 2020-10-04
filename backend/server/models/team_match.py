@@ -1,7 +1,7 @@
 """Data model for the join table for matches and teams."""
 
 from __future__ import annotations
-from typing import Type, TypeVar, Union, Tuple, Dict
+from typing import Type, TypeVar, Union, Tuple
 
 from django.db import models, transaction
 import pandas as pd
@@ -17,62 +17,6 @@ T = TypeVar("T", bound="TeamMatch")
 NO_SCORE = 0
 
 
-class TeamMatchCollection:
-    """Collection of team records that can trigger further DB queries."""
-
-    def __init__(self, team_matches: models.QuerySet):
-        self.team_matches = team_matches
-
-    def __len__(self):
-        return len(self.team_matches)
-
-    def __iter__(self):
-        return (team for team in self.team_matches)
-
-    def delete(self) -> Tuple[int, Dict[str, int]]:
-        """Delete all team match records in the collection."""
-        return self.team_matches.delete()
-
-    def count(self) -> int:
-        """
-        Get the number of team match records in the collection.
-
-        Returns:
-        --------
-        Count of team match records.
-        """
-        return self.team_matches.count()
-
-    def order_by(self, ordering_attribute: str) -> TeamMatchCollection:
-        """
-        Order the collection elements by the given attribute(s).
-
-        Params:
-        -------
-        ordering_attribute: Name of the attribute. Optionally prepend '-'
-            to sort in descending order.
-
-        Returns:
-        --------
-        Sorted team match collection.
-        """
-        return self.team_matches.order_by(ordering_attribute)
-
-    def update(self, **attributes) -> TeamMatchCollection:
-        """
-        Update all TeamMatch records in the collection with the given attribute values.
-
-        Params:
-        -------
-        attributes: TeamMatch attribute values to update.
-
-        Returns:
-        --------
-        Count of updated records.
-        """
-        return self.team_matches.update(**attributes)
-
-
 class TeamMatch(models.Model):
     """Data model for the join table for matches and teams."""
 
@@ -80,88 +24,6 @@ class TeamMatch(models.Model):
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     at_home = models.BooleanField()
     score = models.PositiveSmallIntegerField(default=0)
-
-    @classmethod
-    def create(cls, **attributes) -> Team:
-        """
-        Create a TeamMatch record in the database.
-
-        Params:
-        -------
-        attributes: TeamMatch attributes for the created record.
-
-        Returns:
-        --------
-        An instance of the created team match.
-        """
-        return cls.objects.create(**attributes)
-
-    @classmethod
-    def count(cls) -> int:
-        """
-        Get the number of TeamMatch records in the database.
-
-        Returns:
-        --------
-        Count of team match records.
-        """
-        return cls.objects.count()
-
-    @classmethod
-    def get(cls, **attributes) -> Team:
-        """
-        Get a TeamMatch record that matches the given attributes from the database.
-
-        Params:
-        -------
-        attributes: TeamMatch attributes for the created record.
-
-        Returns:
-        --------
-        The requested team match record.
-        """
-        return cls.objects.get(**attributes)
-
-    @classmethod
-    def get_or_create(cls, **attributes) -> Tuple[Team, bool]:
-        """
-        Get a TeamMatch record that matches the given attributes or create it if missing.
-
-        Params:
-        -------
-        attributes: TeamMatch attributes for the requested/created record.
-
-        Returns:
-        --------
-        The requested team match record and whether it was created.
-        """
-        return cls.objects.get_or_create(**attributes)
-
-    @classmethod
-    def all(cls) -> TeamMatchCollection:
-        """
-        Get all TeamMatch records from the database.
-
-        Returns:
-        --------
-        A list of team match records.
-        """
-        return TeamMatchCollection(cls.objects.all())
-
-    @classmethod
-    def filter(cls, **attributes) -> TeamMatchCollection:
-        """
-        Get all TeamMatch records that match the given filter values.
-
-        Params:
-        -------
-        attributes: TeamMatch attributes to filter by.
-
-        Returns:
-        --------
-        A list of team match records.
-        """
-        return TeamMatchCollection(cls.objects.filter(**attributes))
 
     @classmethod
     def get_or_create_from_raw_data(

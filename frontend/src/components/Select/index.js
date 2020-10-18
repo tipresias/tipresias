@@ -2,8 +2,9 @@
 import React from 'react';
 import type { Node } from 'react';
 import styled from 'styled-components/macro';
+import type { StyledComponent } from 'styled-components';
 
-export const SelectStyled = styled.select`
+export const SelectStyled: StyledComponent = styled.select`
 display: block;
 font-size: 1rem;
 font-family: sans-serif;

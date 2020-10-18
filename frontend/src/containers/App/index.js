@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Route, BrowserRouter as Router } from 'react-router-dom';
 import { useQuery } from '@apollo/react-hooks';
 import { ThemeProvider } from 'styled-components';
+import type { Node } from 'react';
 import darkTheme from '../../themes/dark';
 import lightTheme from '../../themes/light';
 import PageHeader from '../../components/PageHeader';
@@ -21,7 +22,7 @@ const isDarkModeStored = () => {
   if (stored === 'true') { return true; } return false;
 };
 
-const App = () => {
+const App = (): Node => {
   const [isDarkMode, setIsDarkMode] = useState(isDarkModeStored());
 
   const { data, loading, error } = useQuery<fetchModelsAndYears>(FETCH_CHART_PARAMETERS_QUERY);

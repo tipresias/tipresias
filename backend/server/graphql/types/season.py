@@ -11,10 +11,7 @@ import numpy as np
 from mypy_extensions import TypedDict
 
 from server.models import MLModel
-from server.graphql.calculations import (
-    cumulative_metrics_query,
-    calculate_cumulative_metrics,
-)
+from server.graphql.calculations import calculate_cumulative_metrics
 from .models import MLModelType
 
 
@@ -31,7 +28,8 @@ ModelMetric = TypedDict(
 )
 
 RoundModelMetrics = TypedDict(
-    "RoundModelMetrics", {"match__round_number": int, "model_metrics": pd.DataFrame},
+    "RoundModelMetrics",
+    {"match__round_number": int, "model_metrics": pd.DataFrame},
 )
 
 RoundPredictions = TypedDict(
@@ -261,7 +259,10 @@ class RoundType(graphene.ObjectType):
 
     @staticmethod
     def resolve_model_metrics(
-        root, _info, ml_model_name=None, for_competition_only=False,
+        root,
+        _info,
+        ml_model_name=None,
+        for_competition_only=False,
     ) -> List[ModelMetric]:
         """Calculate metrics related to the quality of models' predictions."""
         model_metrics_to_dict = lambda df: [
@@ -408,7 +409,24 @@ class SeasonType(graphene.ObjectType):
     ) -> List[RoundModelMetrics]:
         """Return model performance metrics for the season grouped by round."""
 
-        metric_values = cumulative_metrics_query(prediction_query_set)
+        metric_values = (
+            prediction_query_set.select_related("ml_model", "match")
+            # We don't want to include matches without results, which would impact
+            # mean-based metrics like accuracy and MAE
+            .filter(match__margin__isnull=False).values(
+                "match__margin",
+                "match__round_number",
+                "match__start_date_time",
+                "match__winner__name",
+                "ml_model__name",
+                "ml_model__used_in_competitions",
+                "predicted_margin",
+                "predicted_winner__name",
+                "predicted_win_probability",
+                "is_correct",
+            )
+        )
+
         return calculate_cumulative_metrics(metric_values, round_number).pipe(
             _collect_data_by_round
         )

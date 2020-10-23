@@ -3,18 +3,6 @@
 from typing import Optional, List, Dict, Any
 from functools import partial
 
-from django.db.models import (
-    Case,
-    When,
-    Value,
-    IntegerField,
-    Func,
-    F,
-    Sum,
-    Window,
-    Avg,
-    QuerySet,
-)
 import pandas as pd
 import numpy as np
 
@@ -40,63 +28,29 @@ GROUP_BY_LVL = 0
 MIN_LOG_VAL = 1 * 10 ** -10
 
 
-def _calculate_cumulative_accuracy():
-    return Window(
-        expression=Avg("tip_point"),
-        partition_by=F("ml_model_id"),
-        order_by=F("match__start_date_time").asc(),
-    )
-
-
-def _calculate_cumulative_correct():
-    return Window(
-        expression=Sum("tip_point"),
-        partition_by=F("ml_model_id"),
-        order_by=F("match__start_date_time").asc(),
-    )
-
-
-def _calculate_absolute_margin_difference():
-    return Case(
-        When(
-            is_correct=True,
-            then=Func(F("predicted_margin") - F("match__margin"), function="ABS"),
-        ),
-        default=(F("predicted_margin") + F("match__margin")),
-        output_field=IntegerField(),
-    )
-
-
-def _calculate_tip_points():
-    return Case(
-        When(is_correct=True, then=Value(1)),
-        default=Value(0),
-        output_field=IntegerField(),
-    )
-
-
-def cumulative_metrics_query(
-    prediction_query_set: QuerySet,
-    additional_values: Optional[List[str]] = None,
-) -> List[Dict[str, Any]]:
-    """
-    Chain methods onto a Prediction query set to calculate cumulative model metrics.
-    """
-    values_args = CUMULATIVE_METRICS_VALUES + (additional_values or [])
-
+def _calculate_cumulative_accuracy(data_frame):
     return (
-        prediction_query_set.select_related("ml_model", "match")
-        .order_by("match__start_date_time")
-        # We don't want to include matches without results, which would impact
-        # mean-based metrics like accuracy and MAE
-        .filter(match__margin__isnull=False)
-        .annotate(
-            tip_point=_calculate_tip_points(),
-            absolute_margin_diff=_calculate_absolute_margin_difference(),
-            cumulative_correct_count=_calculate_cumulative_correct(),
-            cumulative_accuracy=_calculate_cumulative_accuracy(),
-        )
-        .values(*values_args)
+        data_frame.groupby("ml_model__name")
+        .expanding()["tip_point"]
+        .mean()
+        .reset_index(level=GROUP_BY_LVL, drop=True)
+    )
+
+
+def _calculate_cumulative_correct(data_frame):
+    return (
+        data_frame.groupby("ml_model__name")
+        .expanding()["tip_point"]
+        .sum()
+        .reset_index(level=GROUP_BY_LVL, drop=True)
+    )
+
+
+def _calculate_absolute_margin_difference(data_frame):
+    return np.where(
+        data_frame["is_correct"],
+        (data_frame["match__margin"] - data_frame["predicted_margin"]).abs(),
+        data_frame["match__margin"] + data_frame["predicted_margin"],
     )
 
 
@@ -118,7 +72,6 @@ def _calculate_cumulative_bits(data_frame: pd.DataFrame):
         data_frame.groupby("ml_model__name")
         .expanding()["bits"]
         .sum()
-        .rename("cumulative_bits")
         .reset_index(level=GROUP_BY_LVL, drop=True)
     )
 
@@ -156,7 +109,6 @@ def _calculate_cumulative_mae(data_frame: pd.DataFrame):
         .expanding()["absolute_margin_diff"]
         .mean()
         .round(2)
-        .rename("cumulative_mean_absolute_error")
         .reset_index(level=GROUP_BY_LVL, drop=True)
     )
 
@@ -166,7 +118,6 @@ def _calculate_cumulative_margin_difference(data_frame: pd.DataFrame):
         data_frame.groupby("ml_model__name")
         .expanding()["absolute_margin_diff"]
         .sum()
-        .rename("cumulative_margin_difference")
         .reset_index(level=GROUP_BY_LVL, drop=True)
     )
 
@@ -177,17 +128,20 @@ def calculate_cumulative_metrics(
     """Calculate cumulative methods that can't be calculated via the ORM."""
     return (
         pd.DataFrame(metric_values)
-        # We fill missing win probabilities with 0.5, because that's the equivalent
-        # of not picking a winner. 0 would represent an extreme prediction
-        # and result in large negative bits calculations.
-        .fillna({"predicted_win_probability": 0.5})
-        .fillna(0)
-        .assign(bits=_calculate_bits)
+        .sort_values("match__start_date_time")
         .assign(
+            tip_point=lambda df: df["is_correct"].astype(int),
+            absolute_margin_diff=_calculate_absolute_margin_difference,
+            bits=_calculate_bits,
+        )
+        .assign(
+            cumulative_correct_count=_calculate_cumulative_correct,
+            cumulative_accuracy=_calculate_cumulative_accuracy,
             cumulative_margin_difference=_calculate_cumulative_margin_difference,
             cumulative_bits=_calculate_cumulative_bits,
             cumulative_mean_absolute_error=_calculate_cumulative_mae,
         )
+        .fillna(0)
         .groupby(["match__round_number", "ml_model__name"])
         .last()
         .pipe(partial(_filter_by_round, round_number=round_number))

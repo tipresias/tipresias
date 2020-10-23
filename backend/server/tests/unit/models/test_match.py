@@ -149,6 +149,9 @@ class TestMatch(TestCase):
                 match.prediction_set.filter(is_correct__in=[True, False]).count(),
                 0,
             )
+            # It doesn't update match winner or margin
+            self.assertIsNone(match.winner)
+            self.assertIsNone(match.margin)
 
         with self.subTest("When the match doesn't have results yet"):
             with self.subTest("and has been played within the last week"):
@@ -162,6 +165,8 @@ class TestMatch(TestCase):
                     prediction__is_correct=None,
                     prediction_two__is_correct=None,
                 )
+                match.winner = None
+                match.margin = None
 
                 match.update_result(pd.DataFrame())
 
@@ -173,6 +178,9 @@ class TestMatch(TestCase):
                     match.prediction_set.filter(is_correct__in=[True, False]).count(),
                     0,
                 )
+                # It doesn't update match winner or margin
+                self.assertIsNone(match.winner)
+                self.assertIsNone(match.margin)
 
             with self.subTest("and has been played over a week ago"):
                 eight_days_ago = timezone.now() - timedelta(days=8)
@@ -229,12 +237,12 @@ class TestMatch(TestCase):
         self.assertEqual(match_scores, match_data_scores)
         # It updates prediction correctness
         self.assertGreaterEqual(match.prediction_set.filter(is_correct=True).count(), 1)
+        # It updates match winner and margin
+        self.assertEqual(match.winner, winner)
+        self.assertEqual(match.margin, max(match_scores) - min(match_scores))
 
     def test_year(self):
         self.assertEqual(self.match.year, 2018)
-
-    def test_winner(self):
-        self.assertEqual(self.match.winner, self.away_team)
 
     def test_is_draw(self):
         self.assertFalse(self.match.is_draw)

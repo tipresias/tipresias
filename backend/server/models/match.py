@@ -8,6 +8,7 @@ from warnings import warn
 
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 import pandas as pd
@@ -34,6 +35,10 @@ class Match(models.Model):
     start_date_time = models.DateTimeField(validators=[validate_is_utc])
     round_number = models.PositiveSmallIntegerField()
     venue = models.CharField(max_length=100, null=True, blank=True)
+    winner = models.ForeignKey(Team, null=True, blank=True, on_delete=models.SET_NULL)
+    margin = models.IntegerField(
+        null=True, blank=True, validators=[MinValueValidator(0)]
+    )
 
     class Meta:
         """Meta class for including more-advanced attributes & validations."""
@@ -142,16 +147,17 @@ class Match(models.Model):
         match_result: Raw data for a single match.
         """
 
-        if not self.has_been_played:
-            return None
-
-        if not self._validate_results_data_presence(match_result):
+        if not self.has_been_played or not self._validate_results_data_presence(
+            match_result
+        ):
             return None
 
         self._validate_one_result_row(match_result)
 
         for team_match in self.teammatch_set.all():
             team_match.update_score(match_result.iloc[0, :])
+
+        self._save_result()
 
         for prediction in self.prediction_set.all():
             prediction.update_correctness()
@@ -204,24 +210,6 @@ class Match(models.Model):
         )
 
     @property
-    def winner(self):
-        """Return the record for the winning team of the match."""
-        if not self.has_results or self.is_draw:
-            return None
-
-        return max(self.teammatch_set.all(), key=lambda tm: tm.score).team
-
-    @property
-    def margin(self):
-        """Return the absolute difference between the two match scores."""
-        if not self.has_been_played:
-            return 0
-
-        return reduce(
-            lambda score_x, score_y: abs(score_x - score_y), self._match_scores
-        )
-
-    @property
     def year(self):
         """Return the year in which the match is played."""
         return self.start_date_time.year
@@ -255,3 +243,24 @@ class Match(models.Model):
     @property
     def _match_scores(self):
         return self.teammatch_set.all().values_list("score", flat=True)
+
+    def _save_result(self):
+        self.margin = self._calculate_margin()
+        self.winner = self._calculate_winner()
+        self.full_clean()
+        self.save()
+
+    def _calculate_margin(self):
+        if not self.has_been_played:
+            return None
+
+        return reduce(
+            lambda score_x, score_y: abs(score_x - score_y), self._match_scores
+        )
+
+    def _calculate_winner(self):
+        """Return the record for the winning team of the match."""
+        if not self.has_been_played or self.is_draw:
+            return None
+
+        return max(self.teammatch_set.all(), key=lambda tm: tm.score).team

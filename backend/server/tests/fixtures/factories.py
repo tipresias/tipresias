@@ -153,6 +153,13 @@ class TeamMatchFactory(DjangoModelFactory):
         else 0
     )
 
+    @factory.post_generation
+    def save_match_result(
+        obj, _create, _extracted, **_kwargs
+    ):  # pylint: disable=no-self-argument
+        """Update associated match with result."""
+        obj.match._save_result()  # pylint: disable=protected-access
+
 
 class MLModelFactory(DjangoModelFactory):
     """Factory class for the MLModel data model."""

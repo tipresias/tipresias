@@ -483,6 +483,9 @@ class TestSchema(TestCase):
                 TeamMatch.objects.filter(
                     match__start_date_time__gte=fake_datetime
                 ).update(score=0)
+                Match.objects.filter(start_date_time__gte=fake_datetime).update(
+                    winner=None, margin=None
+                )
 
                 past_executed = self.client.execute(
                     query, variables={"mlModelName": "predictanator"}

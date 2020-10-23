@@ -8,10 +8,6 @@ from django.db.models import (
     When,
     Value,
     IntegerField,
-    Subquery,
-    OuterRef,
-    Max,
-    Min,
     Func,
     F,
     Sum,
@@ -21,8 +17,6 @@ from django.db.models import (
 )
 import pandas as pd
 import numpy as np
-
-from server.models import TeamMatch
 
 
 CUMULATIVE_METRICS_VALUES = [
@@ -73,14 +67,6 @@ def _calculate_absolute_margin_difference():
     )
 
 
-def _get_match_winner_name():
-    return Subquery(
-        TeamMatch.objects.filter(match_id=OuterRef("match_id"))
-        .order_by("-score")
-        .values_list("team__name")[:1]
-    )
-
-
 def _calculate_tip_points():
     return Case(
         When(is_correct=True, then=Value(1)),
@@ -90,7 +76,8 @@ def _calculate_tip_points():
 
 
 def cumulative_metrics_query(
-    prediction_query_set: QuerySet, additional_values: Optional[List[str]] = None,
+    prediction_query_set: QuerySet,
+    additional_values: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Chain methods onto a Prediction query set to calculate cumulative model metrics.
@@ -102,13 +89,9 @@ def cumulative_metrics_query(
         .order_by("match__start_date_time")
         # We don't want to include matches without results, which would impact
         # mean-based metrics like accuracy and MAE
-        .filter(match__teammatch__score__gt=0)
+        .filter(match__margin__isnull=False)
         .annotate(
             tip_point=_calculate_tip_points(),
-            match__winner__name=_get_match_winner_name(),
-            match__margin=(
-                Max("match__teammatch__score") - Min("match__teammatch__score")
-            ),
             absolute_margin_diff=_calculate_absolute_margin_difference(),
             cumulative_correct_count=_calculate_cumulative_correct(),
             cumulative_accuracy=_calculate_cumulative_accuracy(),

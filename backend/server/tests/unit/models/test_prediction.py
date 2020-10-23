@@ -6,25 +6,30 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 from server.models import Match, MLModel, Team, Prediction
-from server.tests.fixtures.data_factories import fake_prediction_data
+from server.tests.fixtures import data_factories, factories
 
 
 class TestPrediction(TestCase):
     def setUp(self):
         match_datetime = timezone.make_aware(datetime(2018, 5, 5))
-        self.match = Match.objects.create(
-            start_date_time=match_datetime, round_number=5, venue="Corporate Stadium"
+        self.match = factories.FullMatchFactory(
+            with_predictions=False,
+            start_date_time=match_datetime,
+            round_number=5,
+            venue="Corporate Stadium",
+            home_team_match__team__name="Richmond",
+            home_team_match__score=150,
+            away_team_match__team__name="Melbourne",
+            away_team_match__score=100,
         )
         self.ml_model = MLModel.objects.create(name="test_model")
-
-        self.home_team = Team.objects.create(name="Richmond")
-        self.away_team = Team.objects.create(name="Melbourne")
-
-        self.match.teammatch_set.create(team=self.home_team, at_home=True, score=150)
-        self.match.teammatch_set.create(team=self.away_team, at_home=False, score=100)
+        self.home_team = self.match.teammatch_set.get(at_home=True).team
+        self.away_team = self.match.teammatch_set.get(at_home=False).team
 
     def test_update_or_create_from_raw_data(self):
-        data = fake_prediction_data(self.match, ml_model_name=self.ml_model.name)
+        data = data_factories.fake_prediction_data(
+            self.match, ml_model_name=self.ml_model.name
+        )
 
         with self.subTest("when future_only is True"):
             with self.subTest("and the match has already been played"):
@@ -54,7 +59,7 @@ class TestPrediction(TestCase):
                     team=future_away_team, at_home=False, score=0
                 )
 
-                future_data = fake_prediction_data(
+                future_data = data_factories.fake_prediction_data(
                     future_match, ml_model_name=self.ml_model.name
                 )
 
@@ -171,7 +176,7 @@ class TestPrediction(TestCase):
             )
 
         with self.subTest("when predicting win probability"):
-            proba_data = fake_prediction_data(
+            proba_data = data_factories.fake_prediction_data(
                 self.match, ml_model_name=self.ml_model.name, predict_margin=False
             )
 

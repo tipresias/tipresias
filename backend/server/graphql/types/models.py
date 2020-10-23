@@ -32,7 +32,6 @@ class MatchType(DjangoObjectType):
 
         model = Match
 
-    winner = graphene.Field(TeamType)
     year = graphene.Int(required=True)
     home_team = graphene.Field(TeamType)
     away_team = graphene.Field(TeamType)

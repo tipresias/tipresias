@@ -1,6 +1,7 @@
 """Data model for AFL matches."""
 
-from typing import Optional, TypeVar, Type, Union
+from __future__ import annotations
+from typing import Optional, Union
 from functools import reduce
 from datetime import datetime, timedelta
 from warnings import warn
@@ -13,8 +14,6 @@ import pandas as pd
 
 from server.types import FixtureData, MatchData
 from .team import Team
-
-T = TypeVar("T", bound="Match")
 
 # Rough estimate, but exactitude isn't necessary here
 GAME_LENGTH_HRS = 3
@@ -48,8 +47,8 @@ class Match(models.Model):
 
     @classmethod
     def get_or_create_from_raw_data(
-        cls: Type[T], match_data: Union[FixtureData, MatchData]
-    ) -> T:
+        cls, match_data: Union[FixtureData, MatchData]
+    ) -> Match:
         """
         Get or create a match record from a row of raw match data.
 

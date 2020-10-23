@@ -1,6 +1,6 @@
 """Module for factory functions that create raw data objects."""
 
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, Dict
 
 from faker import Faker
 import numpy as np
@@ -60,14 +60,26 @@ def fake_fixture_data(
     )
 
 
-def fake_prediction_data(
-    match_data: Optional[Union[pd.DataFrame, Match]] = None,
-    ml_model_name="test_estimator",
-    predict_margin=True,
-) -> pd.DataFrame:
-    """Return minimally-valid prediction data."""
+def _fake_prediction_results(match_count, predict_margin) -> Dict[str, Optional[float]]:
+    if predict_margin:
+        return {
+            "home_predicted_margin": np.random.uniform(25.0, 125.0, size=match_count),
+            "away_predicted_margin": np.random.uniform(25.0, 125.0, size=match_count),
+            "home_predicted_win_probability": None,
+            "away_predicted_win_probability": None,
+        }
+
+    return {
+        "home_predicted_margin": None,
+        "away_predicted_margin": None,
+        "home_predicted_win_probability": np.random.uniform(0.1, 0.9, size=match_count),
+        "away_predicted_win_probability": np.random.uniform(0.1, 0.9, size=match_count),
+    }
+
+
+def _fake_match_data_for_pred(match_data):
     if isinstance(match_data, Match):
-        match_data_for_pred = pd.DataFrame(
+        return pd.DataFrame(
             [
                 {
                     "date": match_data.start_date_time,
@@ -79,25 +91,21 @@ def fake_prediction_data(
                 }
             ]
         )
-    else:
-        match_data_for_pred = fake_fixture_data(fixtures=match_data)
 
+    return fake_fixture_data(fixtures=match_data)
+
+
+def fake_prediction_data(
+    match_data: Optional[Union[pd.DataFrame, Match]] = None,
+    ml_model_name="test_estimator",
+    predict_margin=True,
+) -> pd.DataFrame:
+    """Return minimally-valid prediction data."""
+    match_data_for_pred = _fake_match_data_for_pred(match_data)
     match_count = len(match_data_for_pred)
 
     return match_data_for_pred.loc[
         :, ["date", "home_team", "away_team", "year", "round_number"]
     ].assign(
-        ml_model=ml_model_name,
-        home_predicted_margin=np.random.uniform(25.0, 125.0, size=match_count)
-        if predict_margin
-        else None,
-        away_predicted_margin=np.random.uniform(25.0, 125.0, size=match_count)
-        if predict_margin
-        else None,
-        home_predicted_win_probability=None
-        if predict_margin
-        else np.random.uniform(0.1, 0.9, size=match_count),
-        away_predicted_win_probability=None
-        if predict_margin
-        else np.random.uniform(0.1, 0.9, size=match_count),
+        ml_model=ml_model_name, **_fake_prediction_results(match_count, predict_margin)
     )

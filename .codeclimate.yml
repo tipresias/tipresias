@@ -1,3 +1,9 @@
 version: "2"
 exclude_patterns:
   - "**/flow-typed/"
+  - "**/test/"
+  - "**/tests/"
+  - "**/__tests__"
+checks:
+  file-lines:
+    enabled: false

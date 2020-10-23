@@ -208,6 +208,12 @@ class Command(BaseCommand):
             )
             print(f"\nSeeding DB{ml_model_msg}...\n")
 
+        self._create_db_records()
+
+        if self.verbose == 1:
+            print("\n...DB seeded!\n")
+
+    def _create_db_records(self) -> None:
         with transaction.atomic():
             self._create_ml_models()
 
@@ -217,9 +223,6 @@ class Command(BaseCommand):
                 self._create_matches()
 
             self._make_predictions()
-
-            if self.verbose == 1:
-                print("\n...DB seeded!\n")
 
     def _create_ml_models(self) -> List[MLModel]:
         ml_models = [

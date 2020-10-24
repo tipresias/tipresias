@@ -47,19 +47,18 @@ class Command(BaseCommand):
         upcoming_match_year = upcoming_match.start_date_time.year
         upcoming_round = upcoming_match.round_number
 
-        upcoming_matches = (
-            Match.objects.filter(
-                start_date_time__gt=timezone.make_aware(
-                    datetime(upcoming_match_year, JAN, FIRST)
-                ),
-                round_number=upcoming_round,
-            )
-            .prefetch_related("teammatch_set", "prediction_set")
-            .order_by("start_date_time")
-        )
+        upcoming_matches = Match.objects.filter(
+            start_date_time__gt=timezone.make_aware(
+                datetime(upcoming_match_year, JAN, FIRST)
+            ),
+            round_number=upcoming_round,
+        ).prefetch_related("teammatch_set", "prediction_set")
 
         prediction_rows = [
-            self.__map_prediction_to_row(match) for match in upcoming_matches
+            self.__map_prediction_to_row(match)
+            for match in sorted(
+                upcoming_matches, key=lambda match: match.start_date_time
+            )
         ]
 
         self.__send_tips_email(prediction_rows, upcoming_round)

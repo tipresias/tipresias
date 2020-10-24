@@ -275,10 +275,11 @@ class TestSchema(TestCase):
             data = executed["data"]["fetchSeasonModelMetrics"]["roundModelMetrics"]
 
             self.assertEqual(len(data), 1)
-            self.assertEqual(
-                data[0]["roundNumber"],
-                Match.objects.order_by("round_number").last().round_number,
-            )
+
+            max_round_number = max(
+                Match.objects.all(), key=lambda match: match.round_number
+            ).round_number
+            self.assertEqual(data[0]["roundNumber"], max_round_number)
 
     def test_fetch_latest_round_predictions(self):
         ml_models = list(MLModel.objects.all())
@@ -435,6 +436,7 @@ class TestSchema(TestCase):
             """
 
         with self.subTest("for a 'Win Probability' model"):
+            print("win probability")
             executed = self.client.execute(
                 query, variables={"mlModelName": "accurate_af"}
             )
@@ -495,10 +497,9 @@ class TestSchema(TestCase):
                     "roundModelMetrics"
                 ][0]
 
-                max_match_round = (
-                    Match.objects.all().order_by("-round_number").first().round_number
-                )
-
+                max_match_round = max(
+                    Match.objects.all(), key=lambda match: match.round_number
+                ).round_number
                 self.assertLess(data["roundNumber"], max_match_round)
                 # Last played match will be from day before, because "now" and the
                 # start time for "today's match" are equal
@@ -620,9 +621,9 @@ class TestSchema(TestCase):
 
                 data = past_executed["data"]["fetchLatestRoundMetrics"]
 
-                max_match_round = (
-                    Match.objects.all().order_by("-round_number").first().round_number
-                )
+                max_match_round = max(
+                    Match.objects.all(), key=lambda match: match.round_number
+                ).round_number
                 self.assertLess(data["roundNumber"], max_match_round)
                 # Last played match will be from day before, because "now" and the
                 # start time for "today's match" are equal

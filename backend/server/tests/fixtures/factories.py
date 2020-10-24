@@ -196,13 +196,17 @@ class PredictionFactory(DjangoModelFactory):
 
         force_correct = factory.Trait(
             predicted_winner=factory.LazyAttribute(
-                lambda pred: pred.match.teammatch_set.order_by("-score").first().team
+                lambda pred: max(
+                    pred.match.teammatch_set.all(), key=lambda pred: pred.score
+                ).team
             )
         )
 
         force_incorrect = factory.Trait(
             predicted_winner=factory.LazyAttribute(
-                lambda pred: pred.match.teammatch_set.order_by("score").first().team
+                lambda pred: min(
+                    pred.match.teammatch_set.all(), key=lambda pred: pred.score
+                ).team
             )
         )
 

@@ -106,7 +106,7 @@ class RoundPredictionType(graphene.ObjectType):
                 "predicted_win_probability",
                 "is_correct",
             )
-        )
+        ).sort_values("match__start_date_time")
 
         principal_predictions = predictions.query(
             "ml_model__is_principal == True"

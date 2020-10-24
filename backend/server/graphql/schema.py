@@ -213,10 +213,11 @@ class Query(graphene.ObjectType):
         """
         return {
             "available_seasons": (
-                Prediction.objects.select_related("match")
-                .distinct("match__start_date_time__year")
-                .order_by("match__start_date_time__year")
-                .values_list("match__start_date_time__year", flat=True)
+                sorted(
+                    Prediction.objects.select_related("match")
+                    .distinct("match__start_date_time__year")
+                    .values_list("match__start_date_time__year", flat=True)
+                )
             ),
             "available_ml_models": (
                 MLModel.objects.prefetch_related("prediction_set")
@@ -235,18 +236,18 @@ class Query(graphene.ObjectType):
     @staticmethod
     def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPredictions:
         """Return predictions and model metrics for the latest available round."""
-        max_match_with_predictions = (
-            Match.objects.annotate(prediction_count=Count("prediction"))
-            .filter(prediction_count__gt=0)
-            .order_by("-start_date_time")
-            .first()
+        matches_with_predictions = Match.objects.annotate(
+            prediction_count=Count("prediction")
+        ).filter(prediction_count__gt=0)
+        max_match_with_predictions = max(
+            matches_with_predictions, key=lambda match: match.start_date_time
         )
 
         prediction_query = Prediction.objects.filter(
             match__start_date_time__year=max_match_with_predictions.start_date_time.year,
             match__round_number=max_match_with_predictions.round_number,
             ml_model__used_in_competitions=True,
-        ).order_by("match__start_date_time")
+        )
 
         return {
             "round_number": max_match_with_predictions.round_number,
@@ -258,12 +259,11 @@ class Query(graphene.ObjectType):
         """
         Return performance metrics for competition models through the last-played round.
         """
-        max_match_with_results = (
-            Match.objects.filter(
-                start_date_time__lt=timezone.now(), teammatch__score__gt=0
-            )
-            .order_by("-start_date_time")
-            .first()
+        matches_with_results = Match.objects.filter(
+            start_date_time__lt=timezone.now(), teammatch__score__gt=0
+        )
+        max_match_with_results = max(
+            matches_with_results, key=lambda match: match.start_date_time
         )
 
         metric_values = (

@@ -3,7 +3,8 @@ exclude_patterns:
   - "**/flow-typed/"
   - "**/test/"
   - "**/tests/"
-  - "**/__tests__"
+  - "**/__tests__/"
+  - "**/migrations/"
 checks:
   file-lines:
     enabled: false

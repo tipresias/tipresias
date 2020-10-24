@@ -92,7 +92,14 @@ def _fake_match_data_for_pred(match_data):
             ]
         )
 
-    return fake_fixture_data(fixtures=match_data)
+    ROUND_COLS = set(["round", "round_number"])
+    match_data_for_fixture = (
+        match_data.drop("round", axis=1)
+        if ROUND_COLS & set(match_data.columns) == ROUND_COLS
+        else match_data
+    )
+
+    return fake_fixture_data(fixtures=match_data_for_fixture)
 
 
 def fake_prediction_data(

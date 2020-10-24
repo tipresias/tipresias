@@ -194,11 +194,8 @@ class TestApi(TestCase):
         for idx in range(MATCH_COUNT * 2):
             factories.FullMatchFactory(future=(idx % 2 == 0), with_predictions=True)
 
-        next_match = (
-            Match.objects.filter(start_date_time__gt=timezone.now())
-            .order_by("start_date_time")
-            .first()
-        )
+        future_matches = Match.objects.filter(start_date_time__gt=timezone.now())
+        next_match = min(future_matches, key=lambda match: match.start_date_time)
 
         latest_predictions = self.api.fetch_latest_round_predictions()
         latest_matches = Match.objects.filter(

@@ -149,21 +149,29 @@ class TestViews(TestCase):
                 ).iloc[1]
 
                 with freeze_time(second_match_date):
-                    original_predicted_margins = list(
-                        Prediction.objects.all()
-                        .order_by("match__start_date_time")
-                        .values_list("predicted_margin", flat=True)
+                    original_predictions = sorted(
+                        Prediction.objects.all().values(
+                            "predicted_margin", "match__start_date_time"
+                        ),
+                        key=lambda pred: pred["match__start_date_time"],
                     )
+                    original_predicted_margins = [
+                        pred["predicted_margin"] for pred in original_predictions
+                    ]
 
                     for prediction in Prediction.objects.all():
                         prediction.predicted_margin += 5
                         prediction.save()
 
-                    new_predicted_margins = list(
-                        Prediction.objects.all()
-                        .order_by("match__start_date_time")
-                        .values_list("predicted_margin", flat=True)
+                    new_predictions = sorted(
+                        Prediction.objects.all().values(
+                            "predicted_margin", "match__start_date_time"
+                        ),
+                        key=lambda pred: pred["match__start_date_time"],
                     )
+                    new_predicted_margins = [
+                        pred["predicted_margin"] for pred in new_predictions
+                    ]
 
                     self.assertNotEqual(
                         original_predicted_margins, new_predicted_margins
@@ -172,10 +180,9 @@ class TestViews(TestCase):
                     response = views.predictions(request)
 
                     # It doesn't update predictions for played matches
-                    played_match_prediction = (
-                        Prediction.objects.all()
-                        .order_by("match__start_date_time")
-                        .first()
+                    played_match_prediction = min(
+                        Prediction.objects.all(),
+                        key=lambda pred: pred.match.start_date_time,
                     )
                     self.assertEqual(
                         new_predicted_margins[0],
@@ -185,11 +192,13 @@ class TestViews(TestCase):
     @freeze_time(RIGHT_NOW)
     def test_fixtures(self):
         right_now = timezone.now()  # pylint: disable=unused-variable
-        max_round = Match.objects.order_by("-round_number").first().round_number
+        max_match_round = max(
+            Match.objects.all(), key=lambda match: match.round_number
+        ).round_number
         fixture_data = (
             data_factories.fake_fixture_data(seasons=CURRENT_YEAR_RANGE)
             .query("date > @right_now")
-            .assign(round_number=(max_round + 1))
+            .assign(round_number=(max_match_round + 1))
         )
 
         fixtures = {

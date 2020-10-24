@@ -11,10 +11,7 @@ import numpy as np
 
 from server.models import Prediction, Match, MLModel
 from server.types import RoundMetrics
-from server.graphql.calculations import (
-    cumulative_metrics_query,
-    calculate_cumulative_metrics,
-)
+from server.graphql.calculations import calculate_cumulative_metrics
 from .types import (
     SeasonType,
     PredictionType,
@@ -216,10 +213,11 @@ class Query(graphene.ObjectType):
         """
         return {
             "available_seasons": (
-                Prediction.objects.select_related("match")
-                .distinct("match__start_date_time__year")
-                .order_by("match__start_date_time__year")
-                .values_list("match__start_date_time__year", flat=True)
+                sorted(
+                    Prediction.objects.select_related("match")
+                    .distinct("match__start_date_time__year")
+                    .values_list("match__start_date_time__year", flat=True)
+                )
             ),
             "available_ml_models": (
                 MLModel.objects.prefetch_related("prediction_set")
@@ -238,18 +236,18 @@ class Query(graphene.ObjectType):
     @staticmethod
     def resolve_fetch_latest_round_predictions(_root, _info) -> RoundPredictions:
         """Return predictions and model metrics for the latest available round."""
-        max_match_with_predictions = (
-            Match.objects.annotate(prediction_count=Count("prediction"))
-            .filter(prediction_count__gt=0)
-            .order_by("-start_date_time")
-            .first()
+        matches_with_predictions = Match.objects.annotate(
+            prediction_count=Count("prediction")
+        ).filter(prediction_count__gt=0)
+        max_match_with_predictions = max(
+            matches_with_predictions, key=lambda match: match.start_date_time
         )
 
         prediction_query = Prediction.objects.filter(
             match__start_date_time__year=max_match_with_predictions.start_date_time.year,
             match__round_number=max_match_with_predictions.round_number,
             ml_model__used_in_competitions=True,
-        ).order_by("match__start_date_time")
+        )
 
         return {
             "round_number": max_match_with_predictions.round_number,
@@ -261,25 +259,36 @@ class Query(graphene.ObjectType):
         """
         Return performance metrics for competition models through the last-played round.
         """
-        max_match_with_results = (
-            Match.objects.filter(
-                start_date_time__lt=timezone.now(), teammatch__score__gt=0
-            )
-            .order_by("-start_date_time")
-            .first()
+        matches_with_results = Match.objects.filter(
+            start_date_time__lt=timezone.now(), teammatch__score__gt=0
+        )
+        max_match_with_results = max(
+            matches_with_results, key=lambda match: match.start_date_time
         )
 
-        prediction_query_set = Prediction.objects.filter(
-            match__start_date_time__year=max_match_with_results.year,
-            ml_model__used_in_competitions=True,
-        )
-        additional_metric_values = [
-            "match__start_date_time__year",
-            "match__id",
-            "ml_model__is_principal",
-        ]
-        metric_values = cumulative_metrics_query(
-            prediction_query_set, additional_metric_values,
+        metric_values = (
+            Prediction.objects.filter(
+                match__start_date_time__year=max_match_with_results.year,
+                ml_model__used_in_competitions=True,
+                # We don't want to include matches without results, which would impact
+                # mean-based metrics like accuracy and MAE
+                match__teammatch__score__gt=0,
+            )
+            .select_related("ml_model", "match")
+            .values(
+                "match__id",
+                "match__margin",
+                "match__winner__name",
+                "match__round_number",
+                "match__start_date_time",
+                "ml_model__is_principal",
+                "ml_model__name",
+                "ml_model__used_in_competitions",
+                "predicted_margin",
+                "predicted_winner__name",
+                "predicted_win_probability",
+                "is_correct",
+            )
         )
 
         metrics_df = calculate_cumulative_metrics(

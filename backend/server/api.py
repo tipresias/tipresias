@@ -59,14 +59,14 @@ def update_fixture_data(
 
         return None
 
-    past_matches = [
+    past_fixture_matches = [
         fixture_datum
         for fixture_datum in fixture_data
         if fixture_datum["date"] < right_now
     ]
-    assert not any(past_matches), (
+    assert not any(past_fixture_matches), (
         "Expected future matches only, but received some past matches as well:\n"
-        f"{past_matches}"
+        f"{past_fixture_matches}"
     )
 
     if verbose == 1:
@@ -75,10 +75,11 @@ def update_fixture_data(
     round_number = {match_data["round_number"] for match_data in fixture_data}.pop()
     year = {match_data["year"] for match_data in fixture_data}.pop()
 
+    past_matches = Match.objects.filter(start_date_time__lt=right_now)
     prev_match = (
-        Match.objects.filter(start_date_time__lt=right_now)
-        .order_by("-start_date_time")
-        .first()
+        max(past_matches, key=lambda match: match.start_date_time)
+        if any(past_matches)
+        else None
     )
 
     if prev_match is not None:
@@ -145,14 +146,12 @@ def backfill_recent_match_results(match_results: List[MatchData], verbose=1) -> 
 
 def fetch_next_match() -> Optional[MatchDict]:
     """Get the record for the next match to be played."""
-    next_match = (
-        Match.objects.filter(start_date_time__gt=timezone.now())
-        .order_by("start_date_time")
-        .first()
-    )
+    future_matches = Match.objects.filter(start_date_time__gt=timezone.now())
 
-    if next_match is None:
+    if not any(future_matches):
         return None
+
+    next_match = min(future_matches, key=lambda match: match.start_date_time)
 
     return {
         "round_number": next_match.round_number,

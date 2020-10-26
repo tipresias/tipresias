@@ -64,11 +64,12 @@ def _fetch_current_round_fixture(verbose) -> Optional[pd.DataFrame]:
         print(f"Fetching fixture for matches after {beginning_of_today}...\n")
 
     fixture_data_frame = data_import.fetch_fixture_data(
-        start_date=beginning_of_this_year, end_date=end_of_this_year,
+        start_date=beginning_of_this_year,
+        end_date=end_of_this_year,
     )
 
     matches_from_current_round = _select_matches_from_current_round(
-        fixture_data_frame, right_now
+        fixture_data_frame, beginning_of_today
     )
 
     return matches_from_current_round
@@ -111,7 +112,8 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
         print("Fetching predictions for round " f"{current_round}, {current_season}...")
 
     prediction_data = data_import.fetch_prediction_data(
-        f"{current_season}-{current_season + 1}", round_number=current_round,
+        f"{current_season}-{current_season + 1}",
+        round_number=current_round,
     )
 
     if verbose == 1:

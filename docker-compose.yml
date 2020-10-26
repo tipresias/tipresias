@@ -67,6 +67,11 @@ services:
     image: postgres:11.6
     environment:
       - POSTGRES_DB=$DATABASE_NAME
+  faunadb:
+    image: fauna/faunadb:latest
+    ports:
+      - "8443:8443"
+      - "8084:8084"
   splash:
     image: scrapinghub/splash
     ports:

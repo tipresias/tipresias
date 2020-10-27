@@ -18,7 +18,7 @@ FIRST = 1
 
 
 def _select_matches_from_current_round(
-    fixture_data_frame: pd.DataFrame, beginning_of_today: datetime
+    fixture_data_frame: pd.DataFrame, beginning_of_today: datetime, after=True
 ) -> Optional[pd.DataFrame]:
     if not fixture_data_frame.any().any():
         warn(
@@ -30,7 +30,7 @@ def _select_matches_from_current_round(
 
     latest_match_date = fixture_data_frame["date"].max()
 
-    if beginning_of_today > latest_match_date:
+    if beginning_of_today > latest_match_date and after:
         warn(
             f"No matches found after {beginning_of_today}. The latest match "
             f"found is at {latest_match_date}\n"
@@ -38,11 +38,14 @@ def _select_matches_from_current_round(
 
         return None
 
+    date_comparison = ">" if after else "<"
+    latest_round_numbers = fixture_data_frame.query(
+        f"date {date_comparison} @beginning_of_today"
+    ).loc[:, "round_number"]
     current_round = int(  # pylint: disable=unused-variable
-        fixture_data_frame.query("date > @beginning_of_today")
-        .loc[:, "round_number"]
-        .min()
+        latest_round_numbers.min() if after else latest_round_numbers.max()
     )
+
     fixture_for_current_round = fixture_data_frame.query(
         "round_number == @current_round"
     )
@@ -50,7 +53,7 @@ def _select_matches_from_current_round(
     return fixture_for_current_round
 
 
-def _fetch_current_round_fixture(verbose) -> Optional[pd.DataFrame]:
+def _fetch_current_round_fixture(verbose, after=True) -> Optional[pd.DataFrame]:
     right_now = datetime.now(tz=pytz.UTC)
     beginning_of_today = right_now.replace(hour=0, minute=0, second=0, microsecond=0)
     beginning_of_this_year = datetime(
@@ -61,14 +64,16 @@ def _fetch_current_round_fixture(verbose) -> Optional[pd.DataFrame]:
     )
 
     if verbose == 1:
-        print(f"Fetching fixture for matches after {beginning_of_today}...\n")
+        preposition = "after" if after else "up to"
+        print(f"Fetching fixture for matches {preposition} {beginning_of_today}...\n")
 
     fixture_data_frame = data_import.fetch_fixture_data(
-        start_date=beginning_of_this_year, end_date=end_of_this_year,
+        start_date=beginning_of_this_year,
+        end_date=end_of_this_year,
     )
 
     matches_from_current_round = _select_matches_from_current_round(
-        fixture_data_frame, right_now
+        fixture_data_frame, beginning_of_today, after=after
     )
 
     return matches_from_current_round
@@ -111,7 +116,8 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
         print("Fetching predictions for round " f"{current_round}, {current_season}...")
 
     prediction_data = data_import.fetch_prediction_data(
-        f"{current_season}-{current_season + 1}", round_number=current_round,
+        f"{current_season}-{current_season + 1}",
+        round_number=current_round,
     )
 
     if verbose == 1:
@@ -175,7 +181,7 @@ def update_match_results(verbose=1) -> None:
 
     verbose: How much information to print. 1 prints all messages; 0 prints none.
     """
-    matches_from_current_round = _fetch_current_round_fixture(verbose)
+    matches_from_current_round = _fetch_current_round_fixture(verbose, after=False)
 
     if matches_from_current_round is None:
         return None

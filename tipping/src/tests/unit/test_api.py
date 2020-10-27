@@ -42,7 +42,6 @@ class TestApi(TestCase):
         self.fixture_return_values = [
             fixtures.query("year == @season") for season in MOCK_IMPORT_SEASONS
         ]
-        # self.first_season_fixture = season_fixtures[0]
         self.prediction_return_values = [
             predictions.query("year == @season") for season in MOCK_IMPORT_SEASONS
         ]
@@ -97,6 +96,42 @@ class TestApi(TestCase):
         call_args = mock_data_export.update_matches.call_args[0]
         data_are_equal = (call_args[0] == matches).all().all()
         self.assertTrue(data_are_equal)
+
+    @patch("tipping.api.data_export")
+    @patch("tipping.api.data_import")
+    def test_update_match_results(self, mock_data_import, mock_data_export):
+        season = MATCH_SEASON_RANGE[0]
+        seasons = (season, season + 1)
+        # We want a date roughly in the middle of the season to make sure
+        # we get matches before and after in the fixture
+        with freeze_time(datetime(season, 7, 1, tzinfo=pytz.UTC)):
+            matches = data_factories.fake_match_data(seasons=seasons)
+
+            right_now = datetime.now(tz=pytz.UTC)  # pylint: disable=unused-variable
+            last_match_round_number = matches.query("date < @right_now")[
+                "round_number"
+            ].max()
+            match_results = data_factories.fake_match_results_data(
+                matches, round_number=last_match_round_number
+            )
+
+            mock_data_import.fetch_fixture_data = MagicMock(return_value=matches)
+            mock_data_import.fetch_match_results_data = MagicMock(
+                return_value=match_results
+            )
+            mock_data_export.update_match_results = MagicMock()
+
+            self.api.update_match_results(verbose=0)
+
+            # It posts data to main app
+            mock_data_export.update_match_results.assert_called()
+
+            # It posts data for the round from the most-recent match
+            call_args = mock_data_export.update_match_results.call_args[0]
+            data_are_equal = (
+                (call_args[0]["round"] == last_match_round_number).all().all()
+            )
+            self.assertTrue(data_are_equal)
 
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import")

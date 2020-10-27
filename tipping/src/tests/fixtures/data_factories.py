@@ -53,12 +53,16 @@ def fake_match_data(
         else match_results
     )
 
-    return match_results.rename(
-        columns={
-            "season": "year",
-            "home_points": "home_score",
-            "away_points": "away_score",
-        }
+    return (
+        match_results.rename(
+            columns={
+                "season": "year",
+                "home_points": "home_score",
+                "away_points": "away_score",
+            }
+        )
+        # Recreates data cleaning performed in data_import
+        .assign(date=lambda df: pd.to_datetime(df["date"], utc=True))
     )
 
 
@@ -82,7 +86,7 @@ def fake_fixture_data(
         fixtures.rename(columns={"season": "year", "round": "round_number"}).drop(
             "season_game", axis=1, errors="ignore"
         )
-        # Recreates data cleaning performed in views.fixtures
+        # Recreates data cleaning performed in data_import
         .assign(date=lambda df: pd.to_datetime(df["date"], utc=True))
     )
 

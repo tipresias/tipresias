@@ -55,7 +55,6 @@ Seed the DB with raw data:
 
 - To `ssh` into the server, run `./scripts/ssh.sh`.
   - To run a command instead of opening a bash session, you can add a string as an argument.
-- To run the tipping command, run `./scripts/tip.sh`.
 
 ### A note on architecture
 
@@ -69,7 +68,7 @@ Seed the DB with raw data:
   - Note: Pass CI=true as an env var to skip some of the longer end-to-end tests.
 - Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
   - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
-- Type checking: `docker-compsoe run mypy <python modules you want to check>`
+- Type checking: `docker-compose run mypy <python modules you want to check>`
 
 #### Run Javascript tests
 
@@ -87,7 +86,7 @@ Seed the DB with raw data:
 
 ### Deploy
 
-The app is deployed to Google Cloud with every merge/push to `main`. You can manually deploy in two ways:
+The app is deployed to DigitalOcean/AWS with every merge/push to `main`. You can manually deploy in two ways:
 
 - **Recommended:** Manually trigger a build in Travis CI via the "More options" menu.
 - Run `./scripts/deploy.sh`, but be careful with which env vars you have in your shell.

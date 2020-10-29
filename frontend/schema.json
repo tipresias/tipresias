@@ -24,7 +24,7 @@
                   "name": "Int",
                   "ofType": null
                 },
-                "defaultValue": null
+                "defaultValue": "null"
               }
             ],
             "type": {
@@ -214,7 +214,7 @@
         "fields": [
           {
             "name": "id",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -230,7 +230,7 @@
           },
           {
             "name": "createdAt",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -246,7 +246,7 @@
           },
           {
             "name": "updatedAt",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -262,7 +262,7 @@
           },
           {
             "name": "match",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -278,7 +278,7 @@
           },
           {
             "name": "mlModel",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -294,7 +294,7 @@
           },
           {
             "name": "predictedWinner",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -310,7 +310,7 @@
           },
           {
             "name": "predictedMargin",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -322,7 +322,7 @@
           },
           {
             "name": "predictedWinProbability",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -334,7 +334,7 @@
           },
           {
             "name": "isCorrect",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -387,7 +387,7 @@
         "fields": [
           {
             "name": "id",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -403,7 +403,7 @@
           },
           {
             "name": "startDateTime",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -419,7 +419,7 @@
           },
           {
             "name": "roundNumber",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -435,7 +435,7 @@
           },
           {
             "name": "venue",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -447,7 +447,7 @@
           },
           {
             "name": "winner",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "OBJECT",
@@ -459,7 +459,7 @@
           },
           {
             "name": "margin",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -471,7 +471,7 @@
           },
           {
             "name": "predictionSet",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -495,7 +495,7 @@
           },
           {
             "name": "teammatchSet",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -569,7 +569,7 @@
                   "name": "String",
                   "ofType": null
                 },
-                "defaultValue": null
+                "defaultValue": "null"
               }
             ],
             "type": {
@@ -615,7 +615,7 @@
         "fields": [
           {
             "name": "id",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -631,7 +631,7 @@
           },
           {
             "name": "name",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -647,7 +647,7 @@
           },
           {
             "name": "matchSet",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -671,7 +671,7 @@
           },
           {
             "name": "predictedWins",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -695,7 +695,7 @@
           },
           {
             "name": "teammatchSet",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -730,7 +730,7 @@
         "fields": [
           {
             "name": "id",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -746,7 +746,7 @@
           },
           {
             "name": "team",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -762,7 +762,7 @@
           },
           {
             "name": "match",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -778,7 +778,7 @@
           },
           {
             "name": "atHome",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -794,7 +794,7 @@
           },
           {
             "name": "score",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -821,7 +821,7 @@
         "fields": [
           {
             "name": "id",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -837,7 +837,7 @@
           },
           {
             "name": "name",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -853,7 +853,7 @@
           },
           {
             "name": "description",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -897,14 +897,14 @@
           },
           {
             "name": "predictionType",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
                 "kind": "ENUM",
-                "name": "MLModelPredictionType",
+                "name": "ServerMLModelPredictionTypeChoices",
                 "ofType": null
               }
             },
@@ -913,7 +913,7 @@
           },
           {
             "name": "predictionSet",
-            "description": "",
+            "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -943,7 +943,7 @@
       },
       {
         "kind": "ENUM",
-        "name": "MLModelPredictionType",
+        "name": "ServerMLModelPredictionTypeChoices",
         "description": "An enumeration.",
         "fields": null,
         "inputFields": null,
@@ -1056,7 +1056,7 @@
                   "name": "Int",
                   "ofType": null
                 },
-                "defaultValue": null
+                "defaultValue": "null"
               }
             ],
             "type": {
@@ -1118,7 +1118,7 @@
                   "name": "String",
                   "ofType": null
                 },
-                "defaultValue": null
+                "defaultValue": "null"
               },
               {
                 "name": "forCompetitionOnly",

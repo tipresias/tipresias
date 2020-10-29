@@ -11,16 +11,21 @@ docker-compose up -d faunadb
 # wait-for-it doesn't give the DB time to be ready to receive commands, so we sleep for a bit
 sleep 2
 
-[ -z $(fauna list-endpoints | grep localhost) ] \
+[ -z "$(fauna list-endpoints | grep localhost)" ] \
   && fauna add-endpoint http://localhost:8443/ --alias localhost --key secret
 
-[ -z $(fauna list-databases --endpoint=localhost | grep tipresias) ] \
+[ -z "$(fauna list-databases --endpoint=localhost | grep tipresias)" ] \
   && fauna create-database tipresias --endpoint=localhost
 
-# create-key command includes the line "secret: <API token string>"
-FAUNADB_KEY=$(fauna create-key tipresias --endpoint=localhost | grep secret: | cut -d " " -f 2)
-echo "FAUNADB_KEY=${FAUNADB_KEY}" >> .env
+touch .env
 
-direnv reload
+if [ -z "$(cat .env | grep FAUNADB_KEY)" ]
+then
+  # create-key command includes the line "  secret: <API token string>"
+  FAUNADB_KEY="$(fauna create-key tipresias --endpoint=localhost | grep secret: | cut -d " " -f 4)"
+  echo "FAUNADB_KEY=${FAUNADB_KEY}" >> .env
 
-docker-compose run --rm backend python3 scripts/seed_fauna_db.py
+  direnv reload
+fi
+
+docker-compose run --rm backend python3 scripts/reset_faunadb.py

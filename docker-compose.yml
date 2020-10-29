@@ -11,6 +11,7 @@ services:
     depends_on:
       - db
       - splash
+      - faunadb
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-project.settings.development}

@@ -21,6 +21,7 @@ Check out the site, with a dashboard for model performance, at [tipresias.net](h
 - Install [`direnv`](https://direnv.net/)
   - Loads env vars from `.env`, which is convenient
 - Install Docker
+- Install [FaunaDB Shell](https://docs.fauna.com/fauna/current/start/cloud#install)
 - Optional: install `doctl`, the DigitalOcean CLI tool (just a convenient way to interact with DO resources)
 
 #### Set up development environment and the app itself
@@ -28,6 +29,9 @@ Check out the site, with a dashboard for model performance, at [tipresias.net](h
 - To manage environment variables:
   - Add `eval "$(direnv hook bash)"` to the bottom of `~/.bashrc`
   - Run `direnv allow .` inside the project directory
+- To set up FaunaDB:
+  - Pull the FaunaDB Docker image: `docker pull fauna/faunadb`
+  - Run `./scripts/set_up_faunadb.sh`
 - To set up the app:
   - Create the `node_modules` volume: `docker volume create tipresias_node_modules`
   - To build and run the app: `docker-compose up --build`

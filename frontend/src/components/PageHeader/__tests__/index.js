@@ -18,20 +18,15 @@ describe('PageHeader', () => {
       <PageHeader links={[{ url: '/about', text: 'About' }]} />,
       TEST_THEME,
     );
-    expect(wrapper.find('PageHeader__ListStyled').children().length).toBe(1);
+    expect(wrapper.find('PageHeader__ListStyled').children().length).toBe(2);
   });
 
-  it('renders PageHeader with children', () => {
+  it('renders PageHeader with toggle button', () => {
     const wrapper = shallowWithTheme(
-      <PageHeader links={[{ url: '/about', text: 'About' }]}>
-        <input
-          className="favorite styled"
-          type="button"
-          value="Add to favorites"
-        />
-      </PageHeader>,
+      <PageHeader links={[{ url: '/about', text: 'About' }]} />,
       TEST_THEME,
     );
-    expect(wrapper.find('input[type="button"]').exists()).toBe(true);
+
+    expect(wrapper.find('PageHeader__ToggleThemeButton').exists()).toBe(true);
   });
 });

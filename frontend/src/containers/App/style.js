@@ -22,13 +22,3 @@ export const MainStyled = styled.main`
     grid-column: 2 / -2;
   }
 `;
-
-
-export const ToggleThemeButton = styled.button`
-  background: ${props => props.theme.colors.buttonBackground};
-  color: ${props => props.theme.colors.buttonColor};
-   padding: 0.2rem;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  `;

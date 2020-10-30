@@ -11,6 +11,7 @@ services:
     depends_on:
       - db
       - splash
+      - faunadb
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-project.settings.development}
@@ -67,6 +68,11 @@ services:
     image: postgres:11.6
     environment:
       - POSTGRES_DB=$DATABASE_NAME
+  faunadb:
+    image: fauna/faunadb:latest
+    ports:
+      - "8443:8443"
+      - "8084:8084"
   splash:
     image: scrapinghub/splash
     ports:

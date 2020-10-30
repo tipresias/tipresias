@@ -9,7 +9,7 @@ docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
 
 ./scripts/wait-for-it.sh localhost:3000 -t 30 -- \
   docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm frontend \
-    yarn run apollo client:download-schema --config=src/apollo.config.js
+    yarn run apollo client:download-schema
 
 docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm frontend \
   yarn run apollo client:codegen graphql-types \

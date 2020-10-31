@@ -221,7 +221,7 @@ class PredictionFactory(DjangoModelFactory):
         lambda pred: pred.match.teammatch_set.all()[np.random.randint(0, 2)].team
     )
     predicted_margin = factory.LazyAttribute(
-        lambda pred: FAKE.pyint(min_value=0, max_value=50)
+        lambda pred: np.random.random() * 50
         if pred.ml_model.prediction_type == PredictionType.MARGIN
         else None
     )

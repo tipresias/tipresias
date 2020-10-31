@@ -2,6 +2,7 @@
 import React from 'react';
 import type { Node } from 'react';
 import styled from 'styled-components/macro';
+import { log } from '../../helpers';
 
 const EmptyStatusStyled = styled.div`
   border: 1px solid orange;
@@ -31,7 +32,10 @@ type Props = {
 
 const StatusBar = ({ error, empty, text }: Props): Node => {
   if (empty) return <EmptyStatusStyled>{text}</EmptyStatusStyled>;
-  if (error) return <ErrorStatusStyled>{text}</ErrorStatusStyled>;
+  if (error) {
+    log.error(error);
+    return <ErrorStatusStyled>{text}</ErrorStatusStyled>;
+  }
   return <DefaultStatusStyled>{text}</DefaultStatusStyled>;
 };
 

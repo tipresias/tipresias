@@ -22,7 +22,7 @@ ModelMetric = TypedDict(
         "cumulative_correct_count": int,
         "cumulative_accuracy": float,
         "cumulative_mean_absolute_error": float,
-        "cumulative_margin_difference": int,
+        "cumulative_margin_difference": float,
         "cumulative_bits": float,
     },
 )
@@ -197,7 +197,7 @@ class ModelMetricsByRoundType(graphene.ObjectType):
         default_value=0,
         required=True,
     )
-    cumulative_margin_difference = graphene.Int(
+    cumulative_margin_difference = graphene.Float(
         description=(
             "Cumulative difference between predicted margin and actual margin "
             "for the given season."

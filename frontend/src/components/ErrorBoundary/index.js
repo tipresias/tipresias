@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { log } from '../../helpers';
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -7,12 +9,8 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Catch errors in any components below and re-render with error message
-    this.setState({
-      error,
-      errorInfo,
-    });
-    // You can also log error messages to an error reporting service here
+    this.setState({ error, errorInfo });
+    log.error(error);
   }
 
   render() {

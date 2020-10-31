@@ -15,6 +15,7 @@ import {
   AppContainerStyled, MainStyled, ToggleThemeButton,
 } from './style';
 import type { fetchModelsAndYears } from '../../graphql/graphql-types/fetchModelsAndYears';
+import { log } from '../../helpers';
 
 const isDarkModeStored = () => {
   const stored = localStorage.getItem('isDarkMode');
@@ -26,7 +27,10 @@ const App = () => {
 
   const { data, loading, error } = useQuery<fetchModelsAndYears>(FETCH_CHART_PARAMETERS_QUERY);
   if (loading) return <div>Loading Tipresias....</div>;
-  if (error) return <div>Error: Something happened, try again later.</div>;
+  if (error) {
+    log.error(error);
+    return <div>Error: Something happened, try again later.</div>;
+  }
   if (data === undefined) return <p>Error: Data not defined.</p>;
 
   const {

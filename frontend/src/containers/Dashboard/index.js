@@ -26,6 +26,7 @@ import {
 } from './style';
 import dataTransformerTable from './dataTransformerTable';
 import dataTransformerLineChart from './dataTransformerLineChart';
+import { log } from '../../helpers';
 
 export type ModelType = {
   name: string,
@@ -106,7 +107,11 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
           >
             {({ loading, error, data }: fetchSeasonModelMetricsResponse): Node => {
               if (loading) return <ChartLoading text="Brrrrr ..." />;
-              if (error) return <StatusBar text={error.message} error />;
+              if (error) {
+                log.error(error);
+                return <StatusBar text={error.message} error />;
+              }
+
               const { roundModelMetrics } = data.fetchSeasonModelMetrics;
 
               if (roundModelMetrics.length === 0) {
@@ -181,7 +186,10 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
           <Query query={FETCH_LATEST_ROUND_PREDICTIONS_QUERY}>
             {({ loading, error, data }: fetchLatestRoundPredictionsResponse): Node => {
               if (loading) return <p>Brrrrrr...</p>;
-              if (error) return <StatusBar text={error.message} error />;
+              if (error) {
+                log.error(error);
+                return <StatusBar text={error.message} error />;
+              }
               if (data.fetchLatestRoundPredictions.matchPredictions.length === 0) {
                 return (
                   <StatusBar
@@ -222,7 +230,10 @@ const Dashboard = ({ years, models, metrics }: DashboardProps) => {
           <Query query={FETCH_LATEST_ROUND_METRICS_QUERY}>
             {({ loading, error, data }: fetchLatestRoundMetricsResponse): Node => {
               if (loading) return <p>Brrrrr...</p>;
-              if (error) return <StatusBar text={error.message} error />;
+              if (error) {
+                log.error(error);
+                return <StatusBar text={error.message} error />;
+              }
               const {
                 season,
                 roundNumber,

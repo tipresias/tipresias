@@ -19,14 +19,14 @@ describe("HomePage", function(){
     });
 
     it("theme is light by default", () => {
-      cy.get("button[class*=ToggleThemeButton]").contains('Off');
+      cy.get("button[class*=ToggleThemeButton]").contains('Off').should('be.visible');
     });
   });
 
   describe("Theme switcher", () => {
     it("toggles to dark theme", () => {
       cy.get("button[class*=ToggleThemeButton]").click();
-      cy.get("button[class*=ToggleThemeButton]").contains('On');
+      cy.get("button[class*=ToggleThemeButton]").contains('On').should('be.visible');
       cy.get("[class*=AppContainerStyled]").should('have.css', 'background-color', 'rgb(21, 32, 43)');
     });
   })
@@ -34,7 +34,7 @@ describe("HomePage", function(){
   describe("Main chart widget", () => {
     it("refreshes when year is selected", () => {
       cy.get("select").select('2019').should('have.value', '2019');
-      cy.get(".WidgetHeading__selected-year").contains('year: 2019');
+      cy.get(".WidgetHeading__selected-year").contains('year: 2019').should('be.visible');
       cy.get(".recharts-responsive-container").should('be.visible');
     });
 

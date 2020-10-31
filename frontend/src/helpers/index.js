@@ -10,11 +10,11 @@ const rollbar = new Rollbar({
 // eslint-disable-next-line import/prefer-default-export
 export const log = {
   error: (error) => {
-    console.error(error);
+    if (process.env.NODE_ENV !== 'test') console.error(error);
     rollbar.error(error);
   },
   warning: (warning) => {
-    console.warn(warning);
+    if (process.env.NODE_ENV !== 'test') console.warn(warning);
     rollbar.warning(warning);
   },
   info: message => console.log(message),

@@ -12,15 +12,12 @@ import Glossary from '../Glossary';
 import About from '../About';
 import { FETCH_CHART_PARAMETERS_QUERY } from '../../graphql';
 import {
-  AppContainerStyled, MainStyled, ToggleThemeButton,
+  AppContainerStyled, MainStyled,
 } from './style';
 import type { fetchModelsAndYears } from '../../graphql/graphql-types/fetchModelsAndYears';
 import { log } from '../../helpers';
 
-const isDarkModeStored = () => {
-  const stored = localStorage.getItem('isDarkMode');
-  if (stored === 'true') { return true; } return false;
-};
+const isDarkModeStored = () => localStorage.getItem('isDarkMode') === 'true';
 
 const App = () => {
   const [isDarkMode, setIsDarkMode] = useState(isDarkModeStored());
@@ -40,7 +37,6 @@ const App = () => {
     },
   } = data;
 
-
   const metrics = [
     'cumulativeAccuracy',
     'cumulativeBits',
@@ -48,30 +44,26 @@ const App = () => {
     'cumulativeCorrectCount',
   ];
 
+  const toggleDarkMode = () => {
+    if (isDarkModeStored()) {
+      setIsDarkMode(false);
+      localStorage.setItem('isDarkMode', 'false');
+      return;
+    }
+
+    setIsDarkMode(true);
+    localStorage.setItem('isDarkMode', 'true');
+  };
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <Router>
         <AppContainerStyled>
-          <PageHeader links={[{ url: '/about', text: 'About' }]}>
-            <ToggleThemeButton
-              aria-pressed={isDarkMode}
-              onClick={() => {
-                if (!isDarkModeStored()) {
-                  setIsDarkMode(true);
-                  localStorage.setItem('isDarkMode', 'true');
-                } else {
-                  setIsDarkMode(false);
-                  localStorage.setItem('isDarkMode', 'false');
-                }
-              }}
-            >
-              Dark theme:
-              <span aria-hidden="true">{isDarkMode ? 'On' : 'Off'}</span>
-            </ToggleThemeButton>
-
-
-          </PageHeader>
+          <PageHeader
+            links={[{ url: '/about', text: 'About' }]}
+            isDarkMode={isDarkMode}
+            toggleDarkMode={toggleDarkMode}
+          />
           <MainStyled>
             <Route
               exact

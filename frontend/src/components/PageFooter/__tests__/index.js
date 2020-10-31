@@ -1,6 +1,7 @@
 import React from 'react';
 import { StaticRouter } from 'react-router-dom';
-import mountWithTheme from '../../../test-support/mountWithTheme';
+import { mount } from 'enzyme';
+import renderWithTheme from '../../../test-support/renderWithTheme';
 import PageFooter from '../index';
 
 const TEST_THEME = {
@@ -13,7 +14,7 @@ const PageFooterWithRouter = () => (<StaticRouter location="someLocation"><PageF
 
 describe('PageFooter', () => {
   it('renders PageFooter', () => {
-    const wrapper = mountWithTheme(<PageFooterWithRouter />, TEST_THEME);
+    const wrapper = renderWithTheme(<PageFooterWithRouter />, TEST_THEME, mount);
     expect(wrapper.html()).toMatchSnapshot();
   });
 });

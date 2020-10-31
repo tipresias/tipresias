@@ -61,12 +61,22 @@ const TextLink = styled.a`
   }
 `;
 
+const ToggleThemeButton = styled.button`
+  background: ${props => props.theme.colors.buttonBackground};
+  color: ${props => props.theme.colors.buttonColor};
+  padding: 0.2rem;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+`;
+
 type Props = {
   links: Array<{url: string, text: string}>;
-  children?: Node;
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
 }
 
-const PageHeader = ({ links, children }: Props): Node => (
+const PageHeader = ({ links, isDarkMode, toggleDarkMode }: Props): Node => (
   <Header>
     <Link to="/">
       <Logo src={logo} alt="Tipresias" width="120" />
@@ -82,17 +92,18 @@ const PageHeader = ({ links, children }: Props): Node => (
             ),
           )
         }
-        {children && (
-          <ListItem displayInMobile>
-            {children}
-          </ListItem>
-        )}
+        <ListItem displayInMobile>
+          <ToggleThemeButton
+            aria-pressed={isDarkMode}
+            onClick={toggleDarkMode}
+          >
+            Dark theme:
+            <span aria-hidden="true">{isDarkMode ? 'On' : 'Off'}</span>
+          </ToggleThemeButton>
+        </ListItem>
       </ListStyled>
     </nav>
   </Header>
 );
 
-PageHeader.defaultProps = {
-  children: null,
-};
 export default PageHeader;

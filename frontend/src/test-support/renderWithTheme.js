@@ -1,10 +1,10 @@
 import React from 'react';
-import { mount } from 'enzyme';
+import { shallow } from 'enzyme';
 import { ThemeProvider } from 'styled-components';
 
-function mountWithTheme(child, theme) {
-  return mount(child, {
+function renderWithTheme(child, theme, render = shallow) {
+  return render(child, {
     wrappingComponent: ({ children }) => <ThemeProvider theme={theme}>{children}</ThemeProvider>,
   });
 }
-export default mountWithTheme;
+export default renderWithTheme;

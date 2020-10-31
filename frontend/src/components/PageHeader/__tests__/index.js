@@ -1,5 +1,5 @@
 import React from 'react';
-import shallowWithTheme from '../../../test-support/shallowWithTheme';
+import renderWithTheme from '../../../test-support/renderWithTheme';
 import PageHeader from '../index';
 
 // @todo check jest-styled-components and  enzyme-to-json why this packages are not working
@@ -14,7 +14,7 @@ const TEST_THEME = {
 
 describe('PageHeader', () => {
   it('renders PageHeader', () => {
-    const wrapper = shallowWithTheme(
+    const wrapper = renderWithTheme(
       <PageHeader links={[{ url: '/about', text: 'About' }]} />,
       TEST_THEME,
     );
@@ -22,7 +22,7 @@ describe('PageHeader', () => {
   });
 
   it('renders PageHeader with toggle button', () => {
-    const wrapper = shallowWithTheme(
+    const wrapper = renderWithTheme(
       <PageHeader links={[{ url: '/about', text: 'About' }]} />,
       TEST_THEME,
     );

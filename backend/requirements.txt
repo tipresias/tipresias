@@ -7,7 +7,7 @@ django==3.1.2
 whitenoise
 graphene==3.0.0b6
 graphene-django==3.0.0b6
-gql==3.0.0a3
+gql==3.0.0a4
 graphql-core>=3.0,<4.0
 psycopg2-binary
 dj-database-url

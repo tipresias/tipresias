@@ -1,0 +1,47 @@
+type Match {
+  startDateTime: Time!
+  roundNumber: Int!
+  venue: String!
+  winner: Team
+  margin: Int
+  teamMatches: [TeamMatch!] @relation
+  predictons: [Prediction] @relation
+}
+
+type Team {
+  name: String! @unique
+}
+
+type TeamMatch {
+  team: Team!
+  match: Match!
+  atHome: Boolean!
+  score: Int!
+}
+
+type Prediction {
+  match: Match!
+  mlModel: MlModel!
+  predictedWinner: Team!
+  predictedMargin: Float
+  predictedWinProbability: Float
+  isCorrect: Boolean
+}
+
+type MlModel {
+  name: String! @unique
+  description: String
+  isPrincipal: Boolean!
+  usedInCompetitions: Boolean!
+  predictionType: String!
+  predictions: [Prediction] @relation
+}
+
+type Query {
+  allMatches: [Match!]
+  allTeams: [Team!]
+  allTeamMatches: [TeamMatch!]
+  allPredictions: [Prediction!]
+  allMlModels: [MlModel!]
+  filterTeams(name: String): [Team!]
+}

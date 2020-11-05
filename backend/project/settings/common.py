@@ -89,7 +89,6 @@ DATABASES = {
         "PORT": 5432,
     }
 }
-FAUNADB_KEY = os.getenv("FAUNADB_KEY", "")
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators

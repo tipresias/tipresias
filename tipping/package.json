@@ -1,26 +1,27 @@
 {
-    "name": "tipresias",
-    "version": "1.0.0",
-    "description": "Application for a footy-tipping model",
-    "main": "index.js",
-    "scripts": {
-        "start": "npx sls offline --httpPort ${PORT} --host 0.0.0.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/tipresias/tipresias.git"
-    },
-    "author": "Craig Franklin",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/tipresias/tipresias/issues"
-    },
-    "homepage": "https://github.com/tipresias/tipresias#readme",
-    "dependencies": {
-        "serverless-python-requirements": "^5.1.0"
-    },
-    "devDependencies": {
-        "serverless": "^2.9.0",
-        "serverless-offline": "^6.8.0"
-    }
+  "name": "tipresias",
+  "version": "1.0.0",
+  "description": "Application for a footy-tipping model",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx sls offline --httpPort ${PORT} --host 0.0.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tipresias/tipresias.git"
+  },
+  "author": "Craig Franklin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tipresias/tipresias/issues"
+  },
+  "homepage": "https://github.com/tipresias/tipresias#readme",
+  "dependencies": {
+    "serverless-python-requirements": "^5.1.0"
+  },
+  "devDependencies": {
+    "fauna-shell": "^0.11.5",
+    "serverless": "^2.9.0",
+    "serverless-offline": "^6.8.0"
+  }
 }

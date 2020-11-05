@@ -6,17 +6,13 @@ import os
 import sys
 import json
 
-import django
-from django.conf import settings
-
 PROJECT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 
 if PROJECT_PATH not in sys.path:
     sys.path.append(PROJECT_PATH)
 
-django.setup()
-
-from server.db.faunadb import FaunadbClient
+from tipping.db.faunadb import FaunadbClient
+from tipping import settings
 
 RECORD_IDS: Dict[str, Dict[str, str]] = {
     "team": {},
@@ -27,7 +23,7 @@ RECORD_IDS: Dict[str, Dict[str, str]] = {
 }
 
 
-def _create_predictions(prediction_data):
+def _create_predictions(prediction_data, client):
     query = """
         mutation(
             $matchId: ID,
@@ -64,13 +60,13 @@ def _create_predictions(prediction_data):
             "isCorrect": fields["is_correct"],
         }
 
-        result = FaunadbClient.graphql(query, variables=variables)
+        result = client.graphql(query, variables=variables)
         new_id = result["createPrediction"]["_id"]
 
         RECORD_IDS["prediction"][old_id] = new_id
 
 
-def _create_ml_models(ml_model_data):
+def _create_ml_models(ml_model_data, client):
     query = """
         mutation(
             $name: String!
@@ -101,13 +97,13 @@ def _create_ml_models(ml_model_data):
             "predictionType": fields["prediction_type"],
         }
 
-        result = FaunadbClient.graphql(query, variables=variables)
+        result = client.graphql(query, variables=variables)
         new_id = result["createMlModel"]["_id"]
 
         RECORD_IDS["mlmodel"][old_id] = new_id
 
 
-def _create_team_matches(team_match_data):
+def _create_team_matches(team_match_data, client):
     query = """
         mutation(
             $teamId: ID,
@@ -137,13 +133,13 @@ def _create_team_matches(team_match_data):
             "score": fields["score"],
         }
 
-        result = FaunadbClient.graphql(query, variables=variables)
+        result = client.graphql(query, variables=variables)
         new_id = result["createTeamMatch"]["_id"]
 
         RECORD_IDS["teammatch"][old_id] = new_id
 
 
-def _create_matches(match_data):
+def _create_matches(match_data, client):
     query = """
         mutation(
             $startDateTime: Time!,
@@ -210,13 +206,13 @@ def _create_matches(match_data):
             winner_id = RECORD_IDS["team"][str(fields["winner"])]
             variables["winnerId"] = winner_id
 
-        result = FaunadbClient.graphql(query, variables=variables)
+        result = client.graphql(query, variables=variables)
         new_id = result["createMatch"]["_id"]
 
         RECORD_IDS["match"][old_id] = new_id
 
 
-def _create_teams(team_data):
+def _create_teams(team_data, client):
     query = """
         mutation($name: String!) {
             createTeam(data: { name: $name }) { _id }
@@ -228,7 +224,7 @@ def _create_teams(team_data):
         fields = team["fields"]
         variables = {"name": fields["name"]}
 
-        result = FaunadbClient.graphql(query, variables=variables)
+        result = client.graphql(query, variables=variables)
         new_id = result["createTeam"]["_id"]
 
         RECORD_IDS["team"][old_id] = new_id
@@ -257,7 +253,8 @@ def _separate_data(data) -> RecordDict:
 
 def main():
     """Load existing data from Postgres DB dump to FaunaDB."""
-    FaunadbClient.import_schema(mode="override")
+    client = FaunadbClient()
+    client.import_schema(mode="override")
 
     data_filepath = os.path.join(settings.BASE_DIR, "server/db/backups/db_dump.json")
     with open(data_filepath, "r") as f:
@@ -267,11 +264,11 @@ def main():
 
     # Creating records is order sensitive, as we create parent records first,
     # then children records
-    _create_teams(separated_models["server.team"])
-    _create_matches(separated_models["server.match"])
-    _create_team_matches(separated_models["server.teammatch"])
-    _create_ml_models(separated_models["server.mlmodel"])
-    _create_predictions(separated_models["server.prediction"])
+    _create_teams(separated_models["server.team"], client)
+    _create_matches(separated_models["server.match"], client)
+    _create_team_matches(separated_models["server.teammatch"], client)
+    _create_ml_models(separated_models["server.mlmodel"], client)
+    _create_predictions(separated_models["server.prediction"], client)
 
 
 if __name__ == "__main__":

@@ -12,6 +12,8 @@ TIPRESIAS_APP_TOKEN = os.getenv("TIPRESIAS_APP_TOKEN", "")
 DATA_SCIENCE_SERVICE = os.environ["DATA_SCIENCE_SERVICE"]
 DATA_SCIENCE_SERVICE_TOKEN = os.getenv("DATA_SCIENCE_SERVICE_TOKEN", "")
 
+FAUNADB_KEY = os.getenv("FAUNADB_KEY", "")
+
 TEAM_TRANSLATIONS = {
     "Tigers": "Richmond",
     "Blues": "Carlton",

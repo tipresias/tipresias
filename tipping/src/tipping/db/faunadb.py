@@ -6,8 +6,9 @@ import json
 import logging
 
 import requests
-from django.conf import settings
 from gql import gql, Client, AIOHTTPTransport
+
+from tipping import settings
 
 ImportMode = Union[Literal["merge"], Literal["overwrite"]]
 
@@ -21,8 +22,15 @@ FAUNADB_DOMAIN = (
 class FaunadbClient:
     """API client for calling FaunaDB endpoints."""
 
-    @classmethod
-    def import_schema(cls, mode: ImportMode = "merge"):
+    def __init__(self, faunadb_key=None):
+        """
+        Params:
+        -------
+        faunadb_key: API key to use to access a FaunaDB database.
+        """
+        self.faunadb_key = faunadb_key or settings.FAUNADB_KEY
+
+    def import_schema(self, mode: ImportMode = "merge"):
         """Import a GQL schema.
 
         Params:
@@ -31,7 +39,7 @@ class FaunadbClient:
             or "overwrite" to replace it.
         """
         url = f"{FAUNADB_DOMAIN}/import?mode={mode}"
-        schema_filepath = os.path.join(settings.BASE_DIR, "server/db/schema.gql")
+        schema_filepath = os.path.join(settings.SRC_DIR, "tipping/db/schema.gql")
 
         with open(schema_filepath, "rb") as f:
             schema_file = f.read()
@@ -40,15 +48,11 @@ class FaunadbClient:
             url,
             data=schema_file,
             params={"mode": mode},
-            headers={
-                "Authorization": f"Bearer {settings.FAUNADB_KEY}",
-                "X-Schema-Preview": "partial-update-mutation",
-            },
+            headers=self._headers,
         )
 
-    @classmethod
     def graphql(
-        cls, query: str, variables: Optional[Dict[str, Any]] = None
+        self, query: str, variables: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Send a GraphQL query to a FaunaDB endpoint.
 
@@ -58,10 +62,7 @@ class FaunadbClient:
         """
         transport = AIOHTTPTransport(
             url=f"{FAUNADB_DOMAIN}/graphql",
-            headers={
-                "Authorization": f"Bearer {settings.FAUNADB_KEY}",
-                "X-Schema-Preview": "partial-update-mutation",
-            },
+            headers=self._headers,
         )
         graphql_client = Client(transport=transport)
 
@@ -83,3 +84,10 @@ class FaunadbClient:
             raise Exception(json.dumps(errors, indent=2))
 
         return result
+
+    @property
+    def _headers(self):
+        return {
+            "Authorization": f"Bearer {self.faunadb_key}",
+            "X-Schema-Preview": "partial-update-mutation",
+        }

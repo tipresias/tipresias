@@ -2,7 +2,6 @@
 
 from typing import Literal, Union, Any, Dict, Optional
 import os
-import json
 import logging
 
 import requests
@@ -10,13 +9,17 @@ from gql import gql, Client, AIOHTTPTransport
 
 from tipping import settings
 
-ImportMode = Union[Literal["merge"], Literal["overwrite"]]
+ImportMode = Union[Literal["merge"], Literal["override"]]
 
 FAUNADB_DOMAIN = (
     "https://graphql.fauna.com"
     if settings.ENVIRONMENT == "production"
     else "http://faunadb:8084"
 )
+
+
+class GraphQLError(Exception):
+    """Errors related to GraphQL queries."""
 
 
 class FaunadbClient:
@@ -36,7 +39,7 @@ class FaunadbClient:
         Params:
         -------
         mode: how to update the GQL schema. Accepts "merge" to update existing schema
-            or "overwrite" to replace it.
+            or "override" to replace it.
         """
         url = f"{FAUNADB_DOMAIN}/import?mode={mode}"
         schema_filepath = os.path.join(settings.SRC_DIR, "tipping/db/schema.gql")
@@ -75,13 +78,13 @@ class FaunadbClient:
             )
         except Exception as err:
             logging.error(graphql_variables)
-            raise err
+            raise GraphQLError(err) from err
 
         errors = result.get("errors", [])
 
         if any(errors):
             logging.error(graphql_variables)
-            raise Exception(json.dumps(errors, indent=2))
+            raise GraphQLError(errors)
 
         return result
 

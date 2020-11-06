@@ -1,7 +1,5 @@
 # pylint: disable=missing-docstring
 
-from unittest.mock import patch
-
 import pytest
 from faker import Faker
 
@@ -11,10 +9,7 @@ from tipping.db.faunadb import GraphQLError
 FAKE = Faker()
 
 
-@patch("tipping.models.team.FaunadbClient")
-def test_saving_valid_team(mock_faunadb, faunadb_client):
-    mock_faunadb.return_value = faunadb_client
-
+def test_saving_valid_team(faunadb_client):
     team_name = FAKE.company()
     team = Team(name=team_name)
     saved_team = team.save()
@@ -28,10 +23,7 @@ def test_saving_valid_team(mock_faunadb, faunadb_client):
     assert result["findTeamByID"]["_id"]
 
 
-@patch("tipping.models.team.FaunadbClient")
-def test_saving_duplicate_team(mock_faunadb, faunadb_client):
-    mock_faunadb.return_value = faunadb_client
-
+def test_saving_duplicate_team(faunadb_client):  # pylint: disable=unused-argument
     team_name = FAKE.company()
     Team(name=team_name).save()
     team = Team(name=team_name)

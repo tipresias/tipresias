@@ -2,3 +2,4 @@
 
 from .team import Team
 from .match import Match
+from .team_match import TeamMatch

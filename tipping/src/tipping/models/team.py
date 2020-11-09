@@ -1,7 +1,8 @@
 """Data model for AFL teams."""
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Dict, Any
+import re
 
 from cerberus import Validator
 
@@ -26,6 +27,11 @@ class Team:
         self.name = name
         self._validator = Validator(self._schema, purge_unknown=True)
         self._db_client = FaunadbClient()
+
+    @property
+    def attributes(self) -> Dict[str, Any]:
+        """Model attributes that get saved in the DB."""
+        return {k: v for k, v in self.__dict__.items() if not re.match("_+", k)}
 
     def save(self) -> Team:
         """Save the team in the DB."""

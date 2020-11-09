@@ -3,12 +3,9 @@
 from unittest.mock import patch
 
 import pytest
-from faker import Faker
 
-from tipping.models import Team
+from tests.fixtures.factories import TeamFactory
 from tipping.models.team import ValidationError
-
-FAKE = Faker()
 
 
 @pytest.mark.parametrize(
@@ -21,7 +18,7 @@ FAKE = Faker()
 )
 @patch("tipping.models.team.FaunadbClient.graphql")
 def test_saving_invalid_team(mock_graphql, team_name, error_message):
-    team = Team(name=team_name)
+    team = TeamFactory.build(name=team_name)
 
     # It raises a ValidateionError
     with pytest.raises(ValidationError, match=error_message):

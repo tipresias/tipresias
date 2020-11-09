@@ -1,17 +1,13 @@
 # pylint: disable=missing-docstring
 
 import pytest
-from faker import Faker
 
-from tipping.models import Team
+from tests.fixtures.factories import TeamFactory
 from tipping.db.faunadb import GraphQLError
-
-FAKE = Faker()
 
 
 def test_saving_valid_team(faunadb_client):
-    team_name = FAKE.company()
-    team = Team(name=team_name)
+    team = TeamFactory.build()
     saved_team = team.save()
 
     # It returns the saved team
@@ -24,10 +20,9 @@ def test_saving_valid_team(faunadb_client):
 
 
 def test_saving_duplicate_team(faunadb_client):  # pylint: disable=unused-argument
-    team_name = FAKE.company()
-    Team(name=team_name).save()
-    team = Team(name=team_name)
+    saved_team = TeamFactory.create()
+    new_team = TeamFactory.build(name=saved_team.name)
 
     # It raises an error
     with pytest.raises(GraphQLError, match=r"Instance is not unique"):
-        team.save()
+        new_team.save()

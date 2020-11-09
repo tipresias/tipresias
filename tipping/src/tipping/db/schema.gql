@@ -1,5 +1,6 @@
 type Match {
   startDateTime: Time!
+  season: Int!
   roundNumber: Int!
   venue: String!
   winner: Team

@@ -8,7 +8,7 @@ from tipping.db.faunadb import GraphQLError
 
 def test_saving_valid_team(faunadb_client):
     team = TeamFactory.build()
-    saved_team = team.save()
+    saved_team = team.create()
 
     # It returns the saved team
     assert saved_team == team
@@ -25,4 +25,4 @@ def test_saving_duplicate_team(faunadb_client):  # pylint: disable=unused-argume
 
     # It raises an error
     with pytest.raises(GraphQLError, match=r"Instance is not unique"):
-        new_team.save()
+        new_team.create()

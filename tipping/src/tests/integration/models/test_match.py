@@ -8,8 +8,7 @@ from tipping.models import Match
 
 
 def test_creating_valid_match(faunadb_client):
-    winner = TeamFactory.create()
-    match = MatchFactory.build(winner=winner)
+    match = MatchFactory.build()
     saved_match = match.create()
 
     # It returns the saved match

@@ -6,15 +6,11 @@ from datetime import datetime, timedelta
 
 from cerberus import Validator, TypeDefinition
 
-from tipping.db.faunadb import FaunadbClient
 from .team import Team
+from .base_model import BaseModel
 
 
-class ValidationError(Exception):
-    """Exceptions for model validation violations."""
-
-
-class Match:
+class Match(BaseModel):
     """Data model for AFL matches."""
 
     def __init__(
@@ -36,18 +32,17 @@ class Match:
         winner: The winning team.
         margin: The number of points that winner won by.
         """
-        self.id = None
+        team_type = TypeDefinition("team", (Team,), ())
+        Validator.types_mapping["team"] = team_type
+
+        super().__init__(Validator)
+
         self.start_date_time = start_date_time
         self.season = season
         self.round_number = round_number
         self.venue = venue
         self.winner = winner
         self.margin = margin
-
-        team_type = TypeDefinition("team", (Team,), ())
-        Validator.types_mapping["team"] = team_type
-        self._validator = Validator(self._schema, purge_unknown=True)
-        self._db_client = FaunadbClient()
 
     @classmethod
     def filter(
@@ -78,10 +73,14 @@ class Match:
 
         """
 
-    def save(self) -> Match:
-        """Save the match in the DB."""
-        if not self._is_valid:
-            raise ValidationError(self._errors)
+    def create(self) -> Match:
+        """Create the match in the DB.
+
+        Returns:
+        --------
+        The created match object.
+        """
+        self._validate()
 
         query = f"""
             mutation(
@@ -116,7 +115,6 @@ class Match:
             variables["winnerId"] = self.winner.id
 
         result = self._db_client.graphql(query, variables)
-
         self.id = result["createMatch"]["_id"]
 
         return self
@@ -135,14 +133,6 @@ class Match:
             self.start_date_time.replace(tzinfo=None, microsecond=0).isoformat()
             + ".000Z"
         )
-
-    @property
-    def _is_valid(self):
-        return self._validator.validate(self.__dict__)
-
-    @property
-    def _errors(self):
-        return self._validator.errors
 
     @property
     def _schema(self):

@@ -7,7 +7,7 @@ from faker import Faker
 import numpy as np
 
 from tests.fixtures.factories import TeamFactory, MatchFactory
-from tipping.models.match import ValidationError
+from tipping.models.base_model import ValidationError
 
 
 FAKE = Faker()
@@ -26,13 +26,13 @@ BIG_NUMBER = 999
         ({"margin": np.random.randint(-BIG_NUMBER, 0)}, "min value is 0"),
     ],
 )
-@patch("tipping.models.match.FaunadbClient.graphql")
-def test_saving_invalid_team(mock_graphql, invalid_attribute, error_message):
+@patch("tipping.models.base_model.FaunadbClient.graphql")
+def test_saving_invalid_match(mock_graphql, invalid_attribute, error_message):
     match = MatchFactory.build(**invalid_attribute)
 
     # It raises a ValidateionError
     with pytest.raises(ValidationError, match=error_message):
-        match.save()
+        match.create()
 
-    # It doesn't save the team
+    # It doesn't save the match
     mock_graphql.assert_not_called()

@@ -8,7 +8,7 @@ def test_saving_valid_team(faunadb_client):
     match = MatchFactory.create(winner=team)
 
     team_match = TeamMatchFactory.build(team=team, match=match)
-    saved_team_match = team_match.save()
+    saved_team_match = team_match.create()
 
     # It returns the saved team-match
     assert saved_team_match == team_match

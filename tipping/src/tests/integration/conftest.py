@@ -2,10 +2,14 @@
 
 import os
 from unittest.mock import patch
+import re
 
 import pytest
 
 from tipping.db.faunadb import FaunadbClient
+
+
+CAPTURED_MATCH = 1
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -20,12 +24,12 @@ def faunadb_client():
     """Set up and tear down test DB in local FaunaDB instance."""
     os.system("npx fauna create-database test --endpoint localhost")
 
+    create_key_output = os.popen(
+        "npx fauna create-key test --endpoint=localhost"
+    ).read()
+
     faunadb_key = (
-        os.popen(
-            "npx fauna create-key test --endpoint=localhost | grep secret: | cut -d ' ' -f 4"
-        )
-        .read()
-        .strip()
+        re.search("secret: (.+)", create_key_output).group(CAPTURED_MATCH).strip()
     )
 
     client = FaunadbClient(faunadb_key=faunadb_key)

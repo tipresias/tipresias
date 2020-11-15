@@ -1,6 +1,7 @@
 """Abstract base model from which all models inherit."""
 
-from typing import Dict, Any
+from __future__ import annotations
+from typing import Dict, Any, Optional
 import re
 
 from cerberus import Validator
@@ -17,8 +18,22 @@ class BaseModel:
 
     def __init__(self, validator: Validator = Validator):
         self._validator = validator(self._schema, purge_unknown=True)
-        self._db_client = FaunadbClient()
         self.id = None
+
+    @classmethod
+    def db_client(cls):
+        """Create a client for querying the DB.
+
+        Returns:
+        --------
+        Instance of FaunadbClient.
+        """
+        return FaunadbClient()
+
+    @classmethod
+    def from_db_response(cls, record: Optional[Dict[str, Any]]) -> Optional[BaseModel]:
+        """Convert GraphQL response dict into model instance."""
+        raise NotImplementedError
 
     @property
     def attributes(self) -> Dict[str, Any]:

@@ -69,7 +69,7 @@ class TeamMatch(BaseModel):
             "score": self.score,
         }
 
-        result = self._db_client.graphql(query, variables)
+        result = self.db_client().graphql(query, variables)
         self.id = result["createTeamMatch"]["_id"]
 
         return self

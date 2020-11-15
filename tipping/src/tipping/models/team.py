@@ -1,7 +1,7 @@
 """Data model for AFL teams."""
 
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from .base_model import BaseModel
 
@@ -20,6 +20,23 @@ class Team(BaseModel):
 
         self.name = name
 
+    @classmethod
+    def from_db_response(cls, record: Dict[str, Any]) -> Team:
+        """Convert a DB record object into an instance of Team.
+
+        Params:
+        -------
+        team_record: GraphQL response dictionary that represents the team record.
+
+        Returns:
+        --------
+        A Team with the attributes of the team record.
+        """
+        team = Team(name=record["name"])
+        team.id = record["_id"]
+
+        return team
+
     def create(self) -> Team:
         """Create the team in the DB."""
         self._validate()
@@ -33,7 +50,7 @@ class Team(BaseModel):
         """
         variables = {"name": self.name}
 
-        result = self._db_client.graphql(query, variables)
+        result = self.db_client().graphql(query, variables)
         self.id = result["createTeam"]["_id"]
 
         return self

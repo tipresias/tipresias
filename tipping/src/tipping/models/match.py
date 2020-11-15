@@ -1,13 +1,71 @@
 """Data model for AFL matches."""
 
 from __future__ import annotations
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
+from dateutil import parser
 
 from cerberus import Validator, TypeDefinition
+import numpy as np
 
 from .team import Team
 from .base_model import BaseModel
+
+
+class _MatchRecordCollection:
+    """Collection of match match objects associated with records in FaunaDB."""
+
+    def __init__(self, records: List[Optional[Match]]):
+        """
+        Params:
+        -------
+        records: List of Match objects created from FaunaDB match records.
+        """
+        self.records = records
+
+    def count(self) -> int:
+        """Get the number of model objects in the collection.
+
+        Returns:
+        --------
+        Count of records.
+        """
+        return len(self.records)
+
+    def filter(self, **kwargs) -> _MatchRecordCollection:
+        """Filter collection objects by attribute values.
+
+        Params:
+        -------
+        Attribute key/value pairs.
+
+        Returns:
+        --------
+        The filtered collection.
+        """
+        filtered_records = [
+            record
+            for record in self.records
+            if self._attributes_match(record, **kwargs)
+        ]
+
+        return self.__class__(records=filtered_records)
+
+    @staticmethod
+    def _attributes_match(record, **kwargs) -> bool:
+        return all([getattr(record, key) == val for key, val in kwargs.items()])
+
+    def __len__(self):
+        return len(self.records)
+
+    def __iter__(self):
+        return (record for record in self.records)
+
+    def __array__(self):
+        return np.array(list(self.records))
+
+    def __getitem__(self, key):
+        return self.records[key]
 
 
 class Match(BaseModel):
@@ -45,33 +103,71 @@ class Match(BaseModel):
         self.margin = margin
 
     @classmethod
-    def filter(
-        cls,
-        start_date_time: Optional[datetime] = None,
-        season: Optional[int] = None,
-        round_number: Optional[int] = None,
-        venue: Optional[str] = None,
-        winner: Optional[Team] = None,
-        margin: Optional[int] = None,
-    ) -> List[Match]:
-        """Fetch matches from the DB filtered by the given param values.
+    def filter_by_season(cls, season: Optional[int] = None) -> _MatchRecordCollection:
+        """Fetch match records from the DB filtered by season year.
 
         Params:
         -------
-        start_date_time: Timezone-aware date-time when the match is scheduled to start.
-        season: The year in which the match takes place.
-        round_number: Round number in which the match is played.
-        venue: Name of the venue where the match is played.
-        winner: The winning team.
-        margin: The number of points that winner won by.
+        season: Filter by season year. Defaults to current year.
 
         Returns:
         --------
-        List of match objects.
+        Collection of matches.
         """
-        query = f"""
+        query = """
+            query($season: Int) {
+                filterMatchesBySeason(season: $season) {
+                    data {
+                        _id
+                        startDateTime
+                        season
+                        roundNumber
+                        venue
+                        winner { _id name }
+                        margin
+                    }
+                }
+            }
+        """
+        # We filter by current year, because after the season ends
+        # we don't have fixtures for next season until after the start of the new year.
+        variables = {"season": season or datetime.now().year}
 
+        result = cls.db_client().graphql(query, variables)
+
+        records = [
+            cls.from_db_response(match_record)
+            for match_record in result["filterMatchesBySeason"]["data"]
+        ]
+
+        return _MatchRecordCollection(records=records)
+
+    @classmethod
+    def from_db_response(cls, record: Optional[Dict[str, Any]]) -> Optional[Match]:
+        """Convert a DB record object into an instance of Match.
+
+        Params:
+        -------
+        record: GraphQL response dictionary that represents the match record.
+
+        Returns:
+        --------
+        A Match with the attributes of the match record.
         """
+        if record is None:
+            return None
+
+        match = Match(
+            start_date_time=parser.parse(record["startDateTime"]),
+            season=record["season"],
+            round_number=record["roundNumber"],
+            venue=record["venue"],
+            margin=record["margin"],
+            winner=Team.from_db_response(record["winner"]),
+        )
+        match.id = record["_id"]
+
+        return match
 
     def create(self) -> Match:
         """Create the match in the DB.
@@ -114,7 +210,7 @@ class Match(BaseModel):
         if self.winner:
             variables["winnerId"] = self.winner.id
 
-        result = self._db_client.graphql(query, variables)
+        result = self.db_client().graphql(query, variables)
         self.id = result["createMatch"]["_id"]
 
         return self

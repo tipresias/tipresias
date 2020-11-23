@@ -32,4 +32,4 @@ mypy>=0.70
 freezegun==1.0.0
 factory_boy
 coverage
-candystore==0.2.1
+candystore==0.3.0

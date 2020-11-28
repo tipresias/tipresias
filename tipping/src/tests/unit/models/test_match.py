@@ -8,6 +8,7 @@ from faker import Faker
 import numpy as np
 
 from tests.fixtures.factories import TeamFactory, MatchFactory
+from tests.fixtures.data_factories import fake_fixture_data
 from tipping.models.base_model import ValidationError
 from tipping.models.match import Match, _MatchRecordCollection
 
@@ -111,3 +112,31 @@ def test_from_db_response():
             assert v.attributes == match_from_record.attributes[k].attributes
         else:
             assert v == match_from_record.attributes[k]
+
+
+@patch("tipping.models.base_model.FaunadbClient.graphql")
+def test_getting_or_creating_match_from_raw_data_with_errors(mock_graphql):
+    fixture_data = fake_fixture_data().iloc[0, :]
+    mock_responses = {
+        "filterMatchesBySeason": {
+            "data": [
+                {
+                    "_id": "1234",
+                    "startDateTime": str(fixture_data["date"]),
+                    "season": fixture_data["year"],
+                    "roundNumber": fixture_data["round_number"],
+                    "venue": fixture_data["venue"],
+                    "winner": None,
+                    "margin": None,
+                }
+                for _ in range(2)
+            ]
+        }
+    }
+
+    mock_graphql.return_value = mock_responses
+    error_message = "either one match record or none"
+
+    # It raises an AssertionError
+    with pytest.raises(AssertionError, match=error_message):
+        Match.get_or_create_from_raw_data(fixture_data)

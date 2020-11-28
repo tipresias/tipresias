@@ -1,13 +1,15 @@
 """Data model for AFL matches."""
 
 from __future__ import annotations
-from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta
+from typing import Optional, Dict, Any, Union, Sequence
+from datetime import datetime, timedelta, timezone
 from dateutil import parser
 
 from cerberus import Validator, TypeDefinition
 import numpy as np
+import pandas as pd
 
+from tipping.types import FixtureData, MatchData
 from .team import Team
 from .base_model import BaseModel
 
@@ -15,7 +17,7 @@ from .base_model import BaseModel
 class _MatchRecordCollection:
     """Collection of match match objects associated with records in FaunaDB."""
 
-    def __init__(self, records: List[Optional[Match]]):
+    def __init__(self, records: Sequence[Optional[Match]]):
         """
         Params:
         -------
@@ -143,7 +145,51 @@ class Match(BaseModel):
         return _MatchRecordCollection(records=records)
 
     @classmethod
-    def from_db_response(cls, record: Optional[Dict[str, Any]]) -> Optional[Match]:
+    def get_or_create_from_raw_data(
+        cls, match_data: Union[FixtureData, MatchData]
+    ) -> Match:
+        """
+        Get or create a match record from a row of raw match data.
+
+        Params:
+        -------
+        match_data: A row of raw match data. Can be from fixture or match results data.
+
+        Returns:
+        --------
+        A Match object.
+        """
+        raw_date = (
+            match_data["date"].to_pydatetime()
+            if isinstance(match_data["date"], pd.Timestamp)
+            else match_data["date"]
+        )
+
+        match_date = raw_date.astimezone(timezone.utc)
+
+        match_params = {
+            "start_date_time": match_date,
+            "season": match_date.year,
+            "round_number": int(match_data["round_number"]),
+            "venue": match_data["venue"],
+        }
+
+        filtered_matches = Match.filter_by_season(match_date.year).filter(
+            **match_params
+        )
+
+        assert len(filtered_matches) <= 1, (
+            f"Expected the params {match_params} to match either one match "
+            f"record or none, but received {len(filtered_matches)} match records."
+        )
+
+        if len(filtered_matches) == 1:
+            return filtered_matches[0]
+
+        return cls(**match_params).create()
+
+    @classmethod
+    def from_db_response(cls, record: Dict[str, Any]) -> Match:
         """Convert a DB record object into an instance of Match.
 
         Params:
@@ -154,16 +200,15 @@ class Match(BaseModel):
         --------
         A Match with the attributes of the match record.
         """
-        if record is None:
-            return None
-
         match = Match(
             start_date_time=parser.parse(record["startDateTime"]),
             season=record["season"],
             round_number=record["roundNumber"],
             venue=record["venue"],
             margin=record["margin"],
-            winner=Team.from_db_response(record["winner"]),
+            winner=None
+            if record["winner"] is None
+            else Team.from_db_response(record["winner"]),
         )
         match.id = record["_id"]
 

@@ -1,7 +1,7 @@
 """Abstract base model from which all models inherit."""
 
 from __future__ import annotations
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import re
 
 from cerberus import Validator
@@ -31,7 +31,7 @@ class BaseModel:
         return FaunadbClient()
 
     @classmethod
-    def from_db_response(cls, record: Optional[Dict[str, Any]]) -> Optional[BaseModel]:
+    def from_db_response(cls, record: Dict[str, Any]) -> BaseModel:
         """Convert GraphQL response dict into model instance."""
         raise NotImplementedError
 

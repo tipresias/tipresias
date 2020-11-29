@@ -49,6 +49,8 @@ plugins:
 custom:
   pythonRequirements:
     dockerizePip: false # We run sls inside Docker already
+    slim: true
+    fileName: requirements.prod.txt
   prune:
     automatic: true
     includeLayers: true

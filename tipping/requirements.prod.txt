@@ -1,0 +1,13 @@
+# Data packages
+numpy
+pandas>=0.23.0,<1.2
+
+# App packages
+requests
+pytz
+simplejson
+rollbar
+gql==3.0.0a3
+
+# Browser automation
+MechanicalSoup

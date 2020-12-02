@@ -20,7 +20,7 @@
     "serverless-python-requirements": "^5.1.0"
   },
   "devDependencies": {
-    "fauna-shell": "^0.11.5",
+    "fauna-shell": "^0.12.1",
     "serverless": "^2.14.0",
     "serverless-offline": "^6.8.0",
     "serverless-prune-plugin": "^1.4.3"

@@ -1,7 +1,7 @@
 """Data model for AFL matches."""
 
 from __future__ import annotations
-from typing import Optional, Dict, Any, Union, Sequence
+from typing import Optional, Dict, Any, Union, Sequence, List
 from datetime import datetime, timedelta, timezone
 from dateutil import parser
 
@@ -70,6 +70,146 @@ class _MatchRecordCollection:
         return self.records[key]
 
 
+class TeamMatch(BaseModel):
+    """Data model for the connection between matches and teams."""
+
+    def __init__(
+        self,
+        team: Optional[Team] = None,
+        match: Optional[Match] = None,
+        at_home: Optional[bool] = None,
+        score: int = 0,
+    ):
+        """
+        Params:
+        -------
+        team: The associated Team,
+        match: The associated Match,
+        at_home: Whether the Team is playing at home for the given Match,
+        score: How many points the Team scored during the given Match,
+        """
+        team_type = TypeDefinition("team", (Team,), ())
+        Validator.types_mapping["team"] = team_type
+
+        match_type = TypeDefinition("match", (Match,), ())
+        Validator.types_mapping["match"] = match_type
+
+        super().__init__(Validator)
+
+        self.team = team
+        self.match = match
+        self.at_home = at_home
+        self.score = score
+        self.id = None
+
+        if self.match is not None:
+            self.match.team_matches.append(self)
+
+    @classmethod
+    def from_db_response(cls, record: Dict[str, Any]) -> TeamMatch:
+        """Convert a DB record object into an instance of TeamMatch.
+
+        Params:
+        -------
+        record: GraphQL response dictionary that represents the team-match record.
+
+        Returns:
+        --------
+        A TeamMatch with the attributes of the team-match record.
+        """
+        team_match = cls(
+            team=Team.from_db_response(record["team"]),
+            match=Match.from_db_response(record["match"]),
+            at_home=record["atHome"],
+            score=record["score"],
+        )
+        team_match.id = record["_id"]
+
+        return team_match
+
+    @classmethod
+    def from_raw_data(
+        cls, match_data: pd.Series, match: Optional[Match] = None
+    ) -> List[TeamMatch]:
+        """
+        Build two team-match objects from a row of raw match data.
+
+        Params:
+        -------
+        match_data: A row of raw match data. Can be from fixture or match results data.
+
+        Returns:
+        --------
+        A TeamMatch object.
+        """
+        team_matches = []
+
+        for team_type in ["home", "away"]:
+            team = Team.find_by(name=match_data[f"{team_type}_team"])
+            params = {
+                "team": team,
+                "at_home": team_type == "home",
+                "score": match_data.get(f"{team_type}_score")
+                or match_data.get(f"{team_type[0]}score"),
+                "match": match,
+            }
+            team_matches.append(cls(**params))
+
+        return team_matches
+
+    def create(self) -> TeamMatch:
+        """Create the TeamMatch in the DB.
+
+        Returns:
+        --------
+        The created TeamMatch object.
+        """
+        self.validate()
+
+        query = """
+            mutation(
+                $teamId: ID!,
+                $matchId: ID!,
+                $atHome: Boolean!,
+                $score: Int!
+            ) {
+                createTeamMatch(data: {
+                    team: { connect: $teamId },
+                    match: { connect: $matchId },
+                    atHome: $atHome,
+                    score: $score
+                }) {
+                    _id
+                }
+            }
+        """
+        variables = {
+            "teamId": self.team and self.team.id,
+            "matchId": self.match and self.match.id,
+            "atHome": self.at_home,
+            "score": self.score,
+        }
+
+        result = self.db_client().graphql(query, variables)
+        self.id = result["createTeamMatch"]["_id"]
+
+        return self
+
+    @property
+    def _schema(self):
+        return {
+            "team": {"type": "team", "check_with": self._idfulness},
+            "match": {"type": "match", "check_with": self._idfulness},
+            "at_home": {"type": "boolean"},
+            "score": {"type": "integer", "min": 0},
+        }
+
+    @staticmethod
+    def _idfulness(field, value, error):
+        if value and value.id is None:
+            error(field, "must have an ID")
+
+
 class Match(BaseModel):
     """Data model for AFL matches."""
 
@@ -81,6 +221,7 @@ class Match(BaseModel):
         venue: Optional[str] = None,
         winner: Optional[Team] = None,
         margin: Optional[int] = None,
+        team_matches: Optional[List[TeamMatch]] = None,
     ):
         """
         Params:
@@ -91,6 +232,7 @@ class Match(BaseModel):
         venue: Name of the venue where the match is played.
         winner: The winning team.
         margin: The number of points that winner won by.
+        team_matches: Models representing each team's participation in the match.
         """
         team_type = TypeDefinition("team", (Team,), ())
         Validator.types_mapping["team"] = team_type
@@ -103,6 +245,11 @@ class Match(BaseModel):
         self.venue = venue
         self.winner = winner
         self.margin = margin
+        self.team_matches = team_matches or []
+        self.id = None
+
+        for team_match in self.team_matches:
+            team_match.match = self
 
     @classmethod
     def filter_by_season(cls, season: Optional[int] = None) -> _MatchRecordCollection:
@@ -127,6 +274,14 @@ class Match(BaseModel):
                         venue
                         winner { _id name }
                         margin
+                        teamMatches {
+                            data {
+                                _id
+                                team { _id name }
+                                atHome
+                                score
+                            }
+                        }
                     }
                 }
             }
@@ -200,15 +355,23 @@ class Match(BaseModel):
         --------
         A Match with the attributes of the match record.
         """
+        winner = record.get("winner") and Team.from_db_response(record["winner"])
+
+        team_match_records = (
+            [] if record.get("teamMatches") is None else record["teamMatches"]["data"]
+        )
+        team_matches: List[TeamMatch] = [
+            TeamMatch.from_db_response(team_match) for team_match in team_match_records
+        ]
+
         match = Match(
             start_date_time=parser.parse(record["startDateTime"]),
             season=record["season"],
             round_number=record["roundNumber"],
             venue=record["venue"],
             margin=record["margin"],
-            winner=None
-            if record["winner"] is None
-            else Team.from_db_response(record["winner"]),
+            winner=winner,
+            team_matches=team_matches,
         )
         match.id = record["_id"]
 
@@ -221,7 +384,7 @@ class Match(BaseModel):
         --------
         The created match object.
         """
-        self._validate()
+        self.validate()
 
         query = f"""
             mutation(
@@ -230,7 +393,7 @@ class Match(BaseModel):
                 $startDateTime: Time!,
                 $season: Int!,
                 $roundNumber: Int!,
-                $venue: String!
+                $venue: String!,
             ) {{
                 createMatch(data: {{
                     {"winner: { connect: $winnerId }," if self.winner else ""}
@@ -244,6 +407,7 @@ class Match(BaseModel):
                 }}
             }}
         """
+
         variables = {
             "startDateTime": self._start_date_time_iso8601,
             "season": self.season,

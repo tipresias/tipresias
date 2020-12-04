@@ -44,13 +44,14 @@ class BaseModel:
         """Create the model in the DB."""
         raise NotImplementedError
 
+    def validate(self):
+        """Validate the model against its schema."""
+        if not self._is_valid:
+            raise ValidationError(self._errors)
+
     @property
     def _schema(self):
         raise NotImplementedError
-
-    def _validate(self):
-        if not self._is_valid:
-            raise ValidationError(self._errors)
 
     @property
     def _is_valid(self):

@@ -7,8 +7,9 @@ import pytest
 from faker import Faker
 import numpy as np
 
-from tests.fixtures.factories import TeamFactory, MatchFactory
+from tests.fixtures.factories import TeamFactory, MatchFactory, TeamMatchFactory
 from tests.fixtures.data_factories import fake_fixture_data
+from tests.helpers.model_helpers import assert_deep_equal_attributes
 from tipping.models.base_model import ValidationError
 from tipping.models.match import Match, _MatchRecordCollection
 
@@ -107,11 +108,7 @@ def test_from_db_response():
     assert isinstance(match_from_record, Match)
 
     # It has matching attributes
-    for k, v in match.attributes.items():
-        if k == "winner":
-            assert v.attributes == match_from_record.attributes[k].attributes
-        else:
-            assert v == match_from_record.attributes[k]
+    assert_deep_equal_attributes(match, match_from_record)
 
 
 @patch("tipping.models.base_model.FaunadbClient.graphql")

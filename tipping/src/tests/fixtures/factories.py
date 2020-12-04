@@ -165,6 +165,10 @@ class MatchFactory(TippingFactory):
         if model_instance.winner and model_instance.winner.id is None:
             model_instance.winner.create()
 
+        for team_match in model_instance.team_matches:
+            if team_match.id is None:
+                team_match.create()
+
         model_instance.create()
         return model_instance
 
@@ -177,11 +181,11 @@ class TeamMatchFactory(TippingFactory):
 
         model = TeamMatch
 
-    team = TeamFactory.build()
-    match = MatchFactory.build()
-    at_home = factory.Faker("pybool")
+    team = factory.SubFactory(TeamFactory)
+    match = factory.SubFactory(MatchFactory)
+    at_home = factory.LazyAttributeSequence(lambda _, n: bool(n % 2))
     score = factory.LazyAttribute(
-        lambda team_match: np.random.randint(REASONABLE_MIN_SCORE, REASONABLE_MAX_SCORE)
+        lambda team_match: FAKE.pyint(min_value=50, max_value=150)
         if team_match.match.start_date_time < datetime.now(tz=timezone.utc)
         else 0
     )
@@ -198,3 +202,9 @@ class TeamMatchFactory(TippingFactory):
 
         model_instance.create()
         return model_instance
+
+
+class FullMatchFactory(MatchFactory):
+    """Factory for creating a match with all associated records."""
+
+    team_matches = factory.RelatedFactoryList(TeamMatchFactory, "match", size=2)

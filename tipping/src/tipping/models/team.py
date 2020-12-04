@@ -19,6 +19,33 @@ class Team(BaseModel):
         super().__init__()
 
         self.name = name
+        self.id = None
+
+    @classmethod
+    def find_by(cls, name: str):
+        """Fetch a team from the DB by its name.
+
+        Params:
+        -------
+        name: Name of the team to be fetched.
+
+        Returns:
+        --------
+        A Team with the given name.
+        """
+        query = """
+            query($name: String!) {
+                findTeamByName(name: $name) {
+                    _id
+                    name
+                }
+            }
+        """
+        variables = {"name": name}
+
+        result = cls.db_client().graphql(query, variables)
+
+        return cls.from_db_response(result["findTeamByName"])
 
     @classmethod
     def from_db_response(cls, record: Dict[str, Any]) -> Team:
@@ -39,7 +66,7 @@ class Team(BaseModel):
 
     def create(self) -> Team:
         """Create the team in the DB."""
-        self._validate()
+        self.validate()
 
         query = """
             mutation($name: String!) {

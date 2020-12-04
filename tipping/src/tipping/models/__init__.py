@@ -1,5 +1,4 @@
 """Data models for the tipping service."""
 
 from .team import Team
-from .match import Match
-from .team_match import TeamMatch
+from .match import Match, TeamMatch

@@ -4,6 +4,7 @@ import pytest
 
 from tests.fixtures.factories import TeamFactory
 from tipping.db.faunadb import GraphQLError
+from tipping.models import Team
 
 
 def test_saving_valid_team(faunadb_client):
@@ -26,3 +27,12 @@ def test_saving_duplicate_team(faunadb_client):  # pylint: disable=unused-argume
     # It raises an error
     with pytest.raises(GraphQLError, match=r"Instance is not unique"):
         new_team.create()
+
+
+def test_finding_by_name(faunadb_client):  # pylint: disable=unused-argument
+    team = TeamFactory.create()
+
+    found_team = Team.find_by(name=team.name)
+
+    # It finds the correct team
+    assert team.name == found_team.name

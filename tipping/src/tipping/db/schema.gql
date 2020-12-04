@@ -44,6 +44,6 @@ type Query {
   allTeamMatches: [TeamMatch!]
   allPredictions: [Prediction!]
   allMlModels: [MlModel!]
-  filterTeams(name: String): [Team!]
   filterMatchesBySeason(season: Int): [Match!]
+  findTeamByName(name: String!): Team
 }

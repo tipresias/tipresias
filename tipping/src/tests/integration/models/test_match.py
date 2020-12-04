@@ -57,7 +57,6 @@ def test_getting_or_creating_match_from_raw_data(faunadb_client):
     result = faunadb_client.graphql(query)
     assert result["findMatchByID"]["_id"]
 
-    gotten_match = Match.get_or_create_from_raw_data(fixture_data)
-
     # It gets the same match
+    gotten_match = Match.get_or_create_from_raw_data(fixture_data)
     assert created_match.id == gotten_match.id

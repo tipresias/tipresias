@@ -51,9 +51,12 @@ class TestApi(TestCase):
 
         self.api = api
 
+    @patch("tipping.models.base_model.FaunadbClient.graphql")
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import")
-    def test_update_fixture_data(self, mock_data_import, mock_data_export):
+    def test_update_fixture_data(
+        self, mock_data_import, mock_data_export, mock_graphql
+    ):
         with freeze_time(datetime(2020, 5, 1, tzinfo=pytz.UTC)):
             right_now = datetime.now(tz=pytz.UTC)
             this_year = right_now.year
@@ -74,12 +77,24 @@ class TestApi(TestCase):
             call_args = mock_data_export.update_fixture_data.call_args[0]
 
             data_are_equal = (
-                (call_args[0] == fixture.query("round_number == @upcoming_round"))
+                (
+                    call_args[0]
+                    == fixture.query(
+                        "round_number == @upcoming_round & date > @right_now"
+                    )
+                )
                 .all()
                 .all()
             )
             self.assertTrue(data_are_equal)
             self.assertEqual(call_args[1], upcoming_round)
+
+            # It posts data to FaunaDB
+            graphql_queries = "\n".join(
+                [call_args.args[0] for call_args in mock_graphql.call_args_list]
+            )
+            self.assertIn("createMatch", graphql_queries)
+            self.assertIn("createTeamMatch", graphql_queries)
 
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import")

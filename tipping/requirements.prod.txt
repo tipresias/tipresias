@@ -8,6 +8,7 @@ pytz
 simplejson
 rollbar
 gql==3.0.0a3
+cerberus
 
 # Browser automation
 MechanicalSoup

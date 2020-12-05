@@ -1,7 +1,7 @@
 """Data model for AFL matches."""
 
 from __future__ import annotations
-from typing import Optional, Dict, Any, Union, Sequence, List
+from typing import Optional, Dict, Any, Sequence, List
 from datetime import datetime, timedelta, timezone
 from dateutil import parser
 
@@ -9,7 +9,6 @@ from cerberus import Validator, TypeDefinition
 import numpy as np
 import pandas as pd
 
-from tipping.types import FixtureData, MatchData
 from .team import Team
 from .base_model import BaseModel
 
@@ -142,6 +141,11 @@ class TeamMatch(BaseModel):
         --------
         A TeamMatch object.
         """
+        get_score = (
+            lambda team_type: match_data.get(f"{team_type}_score")
+            or match_data.get(f"{team_type[0]}score")
+            or 0
+        )
         team_matches = []
 
         for team_type in ["home", "away"]:
@@ -149,8 +153,7 @@ class TeamMatch(BaseModel):
             params = {
                 "team": team,
                 "at_home": team_type == "home",
-                "score": match_data.get(f"{team_type}_score")
-                or match_data.get(f"{team_type[0]}score"),
+                "score": get_score(team_type),
                 "match": match,
             }
             team_matches.append(cls(**params))
@@ -300,9 +303,7 @@ class Match(BaseModel):
         return _MatchRecordCollection(records=records)
 
     @classmethod
-    def get_or_create_from_raw_data(
-        cls, match_data: Union[FixtureData, MatchData]
-    ) -> Match:
+    def get_or_create_from_raw_data(cls, match_data: pd.Series) -> Match:
         """
         Get or create a match record from a row of raw match data.
 

@@ -4,7 +4,6 @@ from datetime import datetime, timezone, timedelta, date
 import math
 
 import factory
-import numpy as np
 from faker import Faker
 
 from tipping.models import Team, Match, TeamMatch

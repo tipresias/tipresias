@@ -4,7 +4,7 @@ from datetime import date
 
 import numpy as np
 
-from tests.fixtures.factories import MatchFactory, TeamFactory
+from tests.fixtures.factories import MatchFactory
 from tests.fixtures.data_factories import fake_fixture_data
 from tipping.models import Match
 

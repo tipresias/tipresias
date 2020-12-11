@@ -38,13 +38,14 @@ def test_filtering_matches(faunadb_client):  # pylint: disable=unused-argument
         MatchFactory.create(season=season)
 
     filter_season = np.random.choice(filter_seasons)
+    default_season = date.today().year
     matches = Match.filter_by_season(season=filter_season)
 
     # It returns at least one match
     assert len(matches) > 0
 
     # It only returns matches in the given season
-    assert all([match.season == filter_season for match in matches])
+    assert all([match.season == filter_season or default_season for match in matches])
 
 
 def test_getting_or_creating_match_from_raw_data(faunadb_client):

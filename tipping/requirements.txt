@@ -7,6 +7,7 @@ black
 pytest
 pytest-env
 faker==5.0.2
+pytest-watch
 mypy>=0.70
 freezegun==1.0.0
 factory_boy

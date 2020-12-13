@@ -165,11 +165,7 @@ class MatchFactory(TippingFactory):
         lambda n: math.ceil((n + 1) / TYPICAL_N_MATCHES_PER_ROUND)
         % N_ROUNDS_PER_REGULAR_SEASON
     )
-    venue = factory.LazyFunction(
-        lambda: settings.VENUES[
-            FAKE.pyint(min_value=0, max_value=(len(settings.VENUES) - 1))
-        ]
-    )
+    venue = factory.LazyFunction(lambda: np.random.choice(settings.VENUES))
 
     class Params:
         """Params for modifying the factory's default attributes."""

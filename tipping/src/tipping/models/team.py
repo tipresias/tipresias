@@ -9,7 +9,7 @@ from .base_model import BaseModel
 class Team(BaseModel):
     """Data model for AFL teams."""
 
-    def __init__(self, name: Optional[str] = None):  # pylint: disable=redefined-builtin
+    def __init__(self, name: Optional[str] = None):
         """
         Params:
         -------

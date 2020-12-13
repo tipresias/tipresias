@@ -5,8 +5,9 @@ import math
 
 import factory
 from faker import Faker
+import numpy as np
 
-from tipping.models import Team, Match, TeamMatch
+from tipping.models import Team, Match, TeamMatch, MLModel
 from tipping import settings
 
 FAKE = Faker()
@@ -120,6 +121,28 @@ class TeamFactory(TippingFactory):
         model = Team
 
     name = factory.Faker("company")
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        model_instance = model_class(**kwargs)
+        model_instance.create()
+        return model_instance
+
+
+class MLModelFactory(TippingFactory):
+    """Factory class for the MLModel data model."""
+
+    class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
+        model = MLModel
+
+    name = factory.Faker("company")
+    is_principal = False
+    used_in_competitions = False
+    prediction_type = factory.LazyFunction(
+        lambda: np.random.choice(MLModel.PREDICTION_TYPES)
+    )
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):

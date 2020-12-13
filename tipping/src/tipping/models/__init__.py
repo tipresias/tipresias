@@ -2,3 +2,4 @@
 
 from .team import Team
 from .match import Match, TeamMatch
+from .ml_model import MLModel

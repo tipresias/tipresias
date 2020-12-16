@@ -6,11 +6,11 @@ set -euo pipefail
 APP_DIR=/var/www/${PROJECT_ID}
 APP_DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_app:latest
 PORT=80
-TRAVIS=${TRAVIS:-""}
+CI=${CI:-""}
 
 echo "Deploying main app to DigitalOcean..."
 
-if [ "${TRAVIS}" ]
+if [ "${CI}" ]
 then
   sudo chmod 600 ~/.ssh/deploy_rsa
   sudo chmod 755 ~/.ssh

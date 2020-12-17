@@ -44,3 +44,7 @@ updates:
     interval: weekly
     day: friday
   open-pull-requests-limit: 25
+  ignore:
+    # Because it's breaking builds now, and it's annoying to fix,
+    # and I want to move to typescript eventually
+    - dependency-name: "flow-bin"

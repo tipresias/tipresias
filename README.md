@@ -1,6 +1,6 @@
 # Tipresias
 
-[![Build Status](https://travis-ci.com/tipresias/tipresias.svg?branch=main)](https://travis-ci.com/tipresias/tipresias)
+![build](https://github.com/tipresias/tipresias/workflows/build/badge.svg)
 <a href="https://codeclimate.com/github/tipresias/tipresias/maintainability"><img src="https://api.codeclimate.com/v1/badges/b6a40f7f72b307763b88/maintainability" /></a>
 <a href="https://codeclimate.com/github/tipresias/tipresias/test_coverage"><img src="https://api.codeclimate.com/v1/badges/b6a40f7f72b307763b88/test_coverage" /></a>
 

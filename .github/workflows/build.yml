@@ -1,0 +1,117 @@
+name: build
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PORT: 80
+      DOCKER_COMPOSE_VERSION: 1.25.5
+      GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/.gcloud/keyfile.json
+      CC_TEST_REPORTER_ID: 116e680b22e379b7a9da04e84696bc363d3e145776a92884de4b6b6b2a253fe5
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up code coverage monitoring
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter before-build
+      - name: Build images
+        run: |
+          docker pull cfranklin11/tipresias_backend:latest
+          docker pull cfranklin11/tipresias_frontend:latest
+          docker pull cfranklin11/tipresias_browser_test:latest
+          docker pull cfranklin11/tipresias_tipping:latest
+
+          docker build --cache-from cfranklin11/tipresias_backend:latest -t cfranklin11/tipresias_backend:latest ./backend
+          docker build --cache-from cfranklin11/tipresias_frontend:latest -t cfranklin11/tipresias_frontend:latest ./frontend
+          docker build --cache-from cfranklin11/tipresias_browser_test:latest -t cfranklin11/tipresias_browser_test:latest ./browser_test
+          docker build --cache-from cfranklin11/tipresias_tipping:latest -t cfranklin11/tipresias_tipping:latest ./tipping
+      - name: Set up cloud credentials
+        env:
+          ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD }}
+        # We use gcloud/gsutil to upload screenshot artifacts on browser test failures,
+        # so we have to add credentials before running system tests
+        run: |
+          gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPTION_PASSWORD" --output secrets.tar secrets.tar.gpg
+          tar xvf secrets.tar
+          mkdir ${HOME}/.gcloud && mv keyfile.json ${HOME}/.gcloud/
+          mkdir ${HOME}/.ssh && mv deploy_rsa ${HOME}/.ssh/
+          mkdir ${HOME}/.aws && mv credentials ${HOME}/.aws/
+      - name: Lint
+        if: ${{ always() }}
+        run: |
+          docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
+          docker run cfranklin11/tipresias_tipping:latest pylint --disable=R src handler.py
+          docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
+      - name: Check types
+        if: ${{ always() }}
+        run: |
+          docker run cfranklin11/tipresias_backend:latest mypy server project scripts
+          docker run cfranklin11/tipresias_tipping:latest mypy src handler.py
+          docker run cfranklin11/tipresias_frontend:latest yarn run flow
+      - name: Check documentation
+        if: ${{ always() }}
+        run: |
+          docker run cfranklin11/tipresias_backend:latest pydocstyle server project scripts
+          docker run cfranklin11/tipresias_tipping:latest pydocstyle src handler.py
+      - name: Run unit tests
+        if: ${{ always() }}
+        run: |
+          docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
+      - name: Run integration/system tests
+        if: ${{ always() }}
+        run: |
+          ./scripts/update_frontend_gql_types.sh docker-compose.ci.yml
+          ./scripts/integration_tests.sh docker-compose.ci.yml
+          ./scripts/browser_tests.sh docker-compose.ci.yml
+      - name: Upload test coverage report
+        if: ${{ github.ref }} == 'refs/heads/main'
+          # Only way I could get it to work was running format-coverage from each app's root.
+          # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,
+          # and the --prefix option is to turn absolute paths into relative paths,
+          # not to find files in subdirectories.
+          #
+          # Also, trying to run the code coverage tool inside docker was more trouble than it's worth.
+          #
+          # Need to move coverage files to frontend, because filenames are relative to frontend root
+        run: |
+          cd ./backend && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.backend.json && cd ..
+          cd ./tipping && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.tipping.json && cd ..
+          sudo chmod 755 ./browser_test && sudo mv ./browser_test/coverage ./frontend
+          cd ./frontend && ../cc-test-reporter format-coverage -t lcov -o ../coverage/codeclimate.frontend.json && cd ..
+          ./cc-test-reporter sum-coverage ./coverage/codeclimate.*.json -p 3
+          ./cc-test-reporter upload-coverage
+      - name: Login to Docker Hub
+        if: ${{ github.ref }} == 'refs/heads/main'
+        uses: docker/login-action@v1
+        with:
+          username: cfranklin11
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Push updated images
+        if: ${{ github.ref }} == 'refs/heads/main'
+        run: |
+          docker push cfranklin11/tipresias_backend:latest
+          docker push cfranklin11/tipresias_tipping:latest
+          docker push cfranklin11/tipresias_frontend:latest
+          docker push cfranklin11/tipresias_browser_test:latest
+      - name: Deploy
+        if: ${{ github.ref }} == 'refs/heads/main'
+        env:
+          CI: true
+          DATA_SCIENCE_SERVICE: ${{ secrets.DATA_SCIENCE_SERVICE }}
+          DATA_SCIENCE_SERVICE_TOKEN: ${{ secrets.DATA_SCIENCE_SERVICE_TOKEN }}
+          DIGITAL_OCEAN_USER: ${{ secrets.DIGITAL_OCEAN_USER }}
+          FOOTY_TIPS_USERNAME: ${{ secrets.FOOTY_TIPS_USERNAME }}
+          FOOTY_TIPS_PASSWORD: ${{ secrets.FOOTY_TIPS_PASSWORD }}
+          MONASH_USERNAME: ${{ secrets.MONASH_USERNAME }}
+          MONASH_PASSWORD: ${{ secrets.MONASH_PASSWORD }}
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}
+          ROLLBAR_TOKEN: ${{ secrets.ROLLBAR_TOKEN }}
+          SPLASH_SERVICE: ${{ secrets.SPLASH_SERVICE }}
+          TIPPING_SERVICE_TOKEN: ${{ secrets.TIPPING_SERVICE_TOKEN }}
+          TIPRESIAS_APP: ${{ secrets.TIPRESIAS_APP }}
+          TIPRESIAS_APP_TOKEN: ${{ secrets.TIPRESIAS_APP_TOKEN }}
+        run: ./scripts/deploy.sh

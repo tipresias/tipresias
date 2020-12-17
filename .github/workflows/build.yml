@@ -67,7 +67,7 @@ jobs:
           ./scripts/integration_tests.sh docker-compose.ci.yml
           ./scripts/browser_tests.sh docker-compose.ci.yml
       - name: Upload test coverage report
-        if: ${{ github.ref }} == 'refs/heads/main'
+        if: ${{ github.ref == 'refs/heads/main' }}
           # Only way I could get it to work was running format-coverage from each app's root.
           # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,
           # and the --prefix option is to turn absolute paths into relative paths,
@@ -84,20 +84,20 @@ jobs:
           ./cc-test-reporter sum-coverage ./coverage/codeclimate.*.json -p 3
           ./cc-test-reporter upload-coverage
       - name: Login to Docker Hub
-        if: ${{ github.ref }} == 'refs/heads/main'
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: docker/login-action@v1
         with:
           username: cfranklin11
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push updated images
-        if: ${{ github.ref }} == 'refs/heads/main'
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           docker push cfranklin11/tipresias_backend:latest
           docker push cfranklin11/tipresias_tipping:latest
           docker push cfranklin11/tipresias_frontend:latest
           docker push cfranklin11/tipresias_browser_test:latest
       - name: Deploy
-        if: ${{ github.ref }} == 'refs/heads/main'
+        if: ${{ github.ref == 'refs/heads/main' }}
         env:
           CI: true
           DATA_SCIENCE_SERVICE: ${{ secrets.DATA_SCIENCE_SERVICE }}

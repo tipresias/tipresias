@@ -6,9 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      PORT: 80
-      DOCKER_COMPOSE_VERSION: 1.25.5
       CC_TEST_REPORTER_ID: 116e680b22e379b7a9da04e84696bc363d3e145776a92884de4b6b6b2a253fe5
+      PROJECT_ID: ${{ secrets.PROJECT_ID }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up code coverage monitoring
@@ -67,6 +66,10 @@ jobs:
           docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
       - name: Run integration/system tests
         if: ${{ always() }}
+        env:
+          DATA_SCIENCE_SERVICE: ${{ secrets.DATA_SCIENCE_SERVICE }}
+          DATA_SCIENCE_SERVICE_TOKEN: ${{ secrets.DATA_SCIENCE_SERVICE_TOKEN }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
         run: |
           ./scripts/update_frontend_gql_types.sh docker-compose.ci.yml
           ./scripts/integration_tests.sh docker-compose.ci.yml
@@ -114,7 +117,6 @@ jobs:
           MONASH_USERNAME: ${{ secrets.MONASH_USERNAME }}
           MONASH_PASSWORD: ${{ secrets.MONASH_PASSWORD }}
           PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
-          PROJECT_ID: ${{ secrets.PROJECT_ID }}
           ROLLBAR_TOKEN: ${{ secrets.ROLLBAR_TOKEN }}
           SPLASH_SERVICE: ${{ secrets.SPLASH_SERVICE }}
           TIPPING_SERVICE_TOKEN: ${{ secrets.TIPPING_SERVICE_TOKEN }}

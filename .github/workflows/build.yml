@@ -11,7 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up code coverage monitoring
-        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
@@ -75,16 +74,14 @@ jobs:
           ./scripts/integration_tests.sh docker-compose.ci.yml
           ./scripts/browser_tests.sh docker-compose.ci.yml
       - name: Upload test coverage report
-        if:
-          ${{ github.ref == 'refs/heads/main' }}
-          # Only way I could get it to work was running format-coverage from each app's root.
-          # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,
-          # and the --prefix option is to turn absolute paths into relative paths,
-          # not to find files in subdirectories.
-          #
-          # Also, trying to run the code coverage tool inside docker was more trouble than it's worth.
-          #
-          # Need to move coverage files to frontend, because filenames are relative to frontend root
+        # Only way I could get it to work was running format-coverage from each app's root.
+        # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,
+        # and the --prefix option is to turn absolute paths into relative paths,
+        # not to find files in subdirectories.
+        #
+        # Also, trying to run the code coverage tool inside docker was more trouble than it's worth.
+        #
+        # Need to move coverage files to frontend, because filenames are relative to frontend root
         run: |
           cd ./backend && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.backend.json && cd ..
           cd ./tipping && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.tipping.json && cd ..

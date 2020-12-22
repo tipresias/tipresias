@@ -37,7 +37,7 @@ jobs:
       - name: Set up Google Cloud SDK
         # We use gcloud/gsutil to upload screenshot artifacts on browser test failures,
         # so we have to add credentials before running system tests
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@master
         with:
           project_id: ${{ secrets.PROJECT_ID }}
           service_account_key: ${{ secrets.GC_SA_KEY }}

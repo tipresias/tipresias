@@ -41,7 +41,7 @@ describe("HomePage", function(){
     it("refreshes when models are unchecked", () => {
       cy.get("[type=checkbox]").uncheck();
       cy.get(".recharts-responsive-container").should('be.visible');
-      cy.get(".recharts-default-legend").should('not.be.visible');
+      cy.get(".recharts-default-legend").should('not.exist');
     });
 
   });

@@ -53,10 +53,11 @@ EXIT_CODE=$?
 
 #### CLEANUP ####
 # Need to stop before exiting to reset to non-test env vars
-docker-compose exec db psql
+docker-compose exec db psql \
   -U postgres \
   -d ${DATABASE_NAME} \
   --command "DROP DATABASE ${DATABASE_NAME}"
+
 docker-compose -f ${DOCKER_COMPOSE_FILE} stop
 
 export DJANGO_SETTINGS_MODULE=${DEFAULT_DJANGO_SETTINGS_MODULE}
@@ -79,9 +80,6 @@ BUCKET_DIR=`date +%Y-%m-%d"_"%H_%M_%S`
 if [ -d "${LOCAL_DIR}" ] && [ "${CI}" = "true" ]
 then
   echo "Uploading screenshots to Google Cloud Storage."
-
-  gcloud auth activate-service-account ${GC_SERVICE_ACCOUNT} \
-    --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
 
   gsutil cp -r ${LOCAL_DIR} gs://${PROJECT_ID}_travis_artifacts/${BUCKET_DIR}
 fi

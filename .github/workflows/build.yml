@@ -6,10 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      PORT: 80
-      DOCKER_COMPOSE_VERSION: 1.25.5
-      GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/.gcloud/keyfile.json
       CC_TEST_REPORTER_ID: 116e680b22e379b7a9da04e84696bc363d3e145776a92884de4b6b6b2a253fe5
+      PROJECT_ID: ${{ secrets.PROJECT_ID }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up code coverage monitoring
@@ -32,14 +30,19 @@ jobs:
       - name: Set up cloud credentials
         env:
           ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD }}
-        # We use gcloud/gsutil to upload screenshot artifacts on browser test failures,
-        # so we have to add credentials before running system tests
         run: |
           gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPTION_PASSWORD" --output secrets.tar secrets.tar.gpg
           tar xvf secrets.tar
-          mkdir ${HOME}/.gcloud && mv keyfile.json ${HOME}/.gcloud/
           mkdir ${HOME}/.ssh && mv deploy_rsa ${HOME}/.ssh/
           mkdir ${HOME}/.aws && mv credentials ${HOME}/.aws/
+      - name: Set up Google Cloud SDK
+        # We use gcloud/gsutil to upload screenshot artifacts on browser test failures,
+        # so we have to add credentials before running system tests
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+          service_account_key: ${{ secrets.GC_SA_KEY }}
+          export_default_credentials: true
       - name: Lint
         if: ${{ always() }}
         run: |
@@ -63,12 +66,17 @@ jobs:
           docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
       - name: Run integration/system tests
         if: ${{ always() }}
+        env:
+          DATA_SCIENCE_SERVICE: ${{ secrets.DATA_SCIENCE_SERVICE }}
+          DATA_SCIENCE_SERVICE_TOKEN: ${{ secrets.DATA_SCIENCE_SERVICE_TOKEN }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
         run: |
           ./scripts/update_frontend_gql_types.sh docker-compose.ci.yml
           ./scripts/integration_tests.sh docker-compose.ci.yml
           ./scripts/browser_tests.sh docker-compose.ci.yml
       - name: Upload test coverage report
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if:
+          ${{ github.ref == 'refs/heads/main' }}
           # Only way I could get it to work was running format-coverage from each app's root.
           # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,
           # and the --prefix option is to turn absolute paths into relative paths,
@@ -109,7 +117,6 @@ jobs:
           MONASH_USERNAME: ${{ secrets.MONASH_USERNAME }}
           MONASH_PASSWORD: ${{ secrets.MONASH_PASSWORD }}
           PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
-          PROJECT_ID: ${{ secrets.PROJECT_ID }}
           ROLLBAR_TOKEN: ${{ secrets.ROLLBAR_TOKEN }}
           SPLASH_SERVICE: ${{ secrets.SPLASH_SERVICE }}
           TIPPING_SERVICE_TOKEN: ${{ secrets.TIPPING_SERVICE_TOKEN }}

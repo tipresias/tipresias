@@ -1,9 +1,67 @@
 """Data model for AFL ml_models."""
 
 from __future__ import annotations
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Sequence
+
+import numpy as np
 
 from .base_model import BaseModel, ValidationError
+
+
+class _MLModelRecordCollection:
+    """Collection of MLModel objects associated with records in FaunaDB."""
+
+    def __init__(self, records: Sequence[Optional[MLModel]]):
+        """
+        Params:
+        -------
+        records: List of MLModel objects created from FaunaDB ML model records.
+        """
+        self.records = records
+
+    def count(self) -> int:
+        """Get the number of model objects in the collection.
+
+        Returns:
+        --------
+        Count of records.
+        """
+        return len(self.records)
+
+    def filter(self, **kwargs) -> _MLModelRecordCollection:
+        """Filter collection objects by attribute values.
+
+        Params:
+        -------
+        Attribute key/value pairs.
+
+        Returns:
+        --------
+        The filtered collection.
+        """
+        filtered_records = [
+            record
+            for record in self.records
+            if self._attributes_match(record, **kwargs)
+        ]
+
+        return self.__class__(records=filtered_records)
+
+    @staticmethod
+    def _attributes_match(record, **kwargs) -> bool:
+        return all([getattr(record, key) == val for key, val in kwargs.items()])
+
+    def __len__(self):
+        return len(self.records)
+
+    def __iter__(self):
+        return (record for record in self.records)
+
+    def __array__(self):
+        return np.array(list(self.records))
+
+    def __getitem__(self, key):
+        return self.records[key]
 
 
 class MLModel(BaseModel):
@@ -55,6 +113,31 @@ class MLModel(BaseModel):
         ml_model.id = record["_id"]
 
         return ml_model
+
+    @classmethod
+    def all(cls) -> _MLModelRecordCollection:
+        """Fetch all MLModel records from the DB."""
+        query = """
+            query {
+                allMLModels {
+                    data {
+                        _id
+                        name
+                        isPrincipal
+                        usedInCompetitions
+                        predictionType
+                    }
+                }
+            }
+        """
+
+        result = cls.db_client().graphql(query)
+        records = [
+            cls.from_db_response(ml_model_record)
+            for ml_model_record in result["allMLModels"]["data"]
+        ]
+
+        return _MLModelRecordCollection(records=records)
 
     def create(self) -> MLModel:
         """Create the ml_model in the DB."""

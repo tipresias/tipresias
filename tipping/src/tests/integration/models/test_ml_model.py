@@ -67,3 +67,19 @@ def test_saving_valid_ml_model(faunadb_client):
     query = "query { findMLModelByID(id: %s) { _id } }" % (saved_ml_model.id)
     result = faunadb_client.graphql(query)
     assert result["findMLModelByID"]["_id"]
+
+
+def test_fetching_all_ml_models(faunadb_client):  # pylint: disable=unused-argument
+    ml_model_count = np.random.randint(1, 11)
+
+    for _ in range(ml_model_count):
+        MLModelFactory.create()
+
+    result = MLModel.all()
+
+    # It returns MLModel objects
+    for ml_model in result:
+        assert isinstance(ml_model, MLModel)
+
+    # It returns all ML models in the DB
+    assert len(result) == ml_model_count

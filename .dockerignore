@@ -97,6 +97,7 @@ deploy_rsa.enc
 *.sql
 data_science
 db/backups
+.github
 
 # GCP files
 .gcloud

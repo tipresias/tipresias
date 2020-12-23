@@ -8,9 +8,11 @@ WORKDIR /app
 # Build static files
 RUN yarn run build \
   && mkdir -p frontend/build/root \
-  # Have to move all static files other than index.html to root/
-  # for whitenoise middleware
-  && mv build/*.ico build/*.js build/*.json frontend/build/root/ \
+  # Have to move all static files other than index.html to 'root'
+  # for whitenoise middleware.
+  # Moving all files except one is more complicated than I would have guessed
+  # and varies by shell implementation, hence the convoluted command below.
+  && find frontend/build -type f -maxdepth 1 -not -name index.html -exec mv {} frontend/build/root \; \
   && mv build/* frontend/build/
 
 # Using Python base image instead of backend image, because we leave out

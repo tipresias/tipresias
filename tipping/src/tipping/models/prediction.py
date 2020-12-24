@@ -4,11 +4,26 @@ from __future__ import annotations
 from typing import Optional, Dict, Any
 
 from cerberus import Validator, TypeDefinition
+from mypy_extensions import TypedDict
 
 from .match import Match
 from .ml_model import MLModel
 from .team import Team
-from .base_model import BaseModel
+from .base_model import BaseModel, ValidationError
+
+
+PredictionAttributes = TypedDict(
+    "PredictionAttributes",
+    {
+        "match": Match,
+        "ml_model": MLModel,
+        "predicted_winner": Team,
+        "predicted_margin": float,
+        "predicted_win_probability": float,
+        "was_correct": bool,
+    },
+    total=False,
+)
 
 
 class Prediction(BaseModel):
@@ -116,6 +131,55 @@ class Prediction(BaseModel):
 
         result = self.db_client().graphql(query, variables)
         self.id = result["createPrediction"]["_id"]
+
+        return self
+
+    def update(self, **attribute_kwargs) -> Prediction:
+        """Update the prediction in the DB."""
+        if self.id is None:
+            raise ValidationError("must have an ID")
+
+        for key, value in attribute_kwargs.items():
+            setattr(self, key, value)
+
+        self.validate()
+
+        query = """
+            mutation(
+                $id: ID!,
+                $matchId: ID!,
+                $mlModelId: ID!,
+                $predictedWinnerId: ID!,
+                $predictedMargin: Float,
+                $predictedWinProbability: Float,
+                $wasCorrect: Boolean
+            ) {
+                updatePrediction(
+                    id: $id,
+                    data: {
+                        match: { connect: $matchId },
+                        mlModel: { connect: $mlModelId },
+                        predictedWinner: { connect: $predictedWinnerId },
+                        predictedMargin: $predictedMargin,
+                        predictedWinProbability: $predictedWinProbability,
+                        wasCorrect: $wasCorrect
+                    }
+                ) {
+                    _id
+                }
+            }
+        """
+        variables = {
+            "id": self.id,
+            "matchId": self.match and self.match.id,
+            "mlModelId": self.ml_model and self.ml_model.id,
+            "predictedWinnerId": self.predicted_winner and self.predicted_winner.id,
+            "predictedMargin": self.predicted_margin,
+            "predictedWinProbability": self.predicted_win_probability,
+            "wasCorrect": self.was_correct,
+        }
+
+        self.db_client().graphql(query, variables)
 
         return self
 

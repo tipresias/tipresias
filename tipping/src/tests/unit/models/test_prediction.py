@@ -27,7 +27,7 @@ FAKE = Faker()
     ],
 )
 @patch("tipping.models.base_model.FaunadbClient.graphql")
-def test_saving_invalid_prediction(mock_graphql, invalid_attribute, error_message):
+def test_creating_invalid_prediction(mock_graphql, invalid_attribute, error_message):
     prediction = PredictionFactory.build(**invalid_attribute)
 
     # It raises a ValidateionError
@@ -38,12 +38,39 @@ def test_saving_invalid_prediction(mock_graphql, invalid_attribute, error_messag
     mock_graphql.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    ["invalid_attribute", "error_message"],
+    [
+        (
+            {"predicted_margin": -5.3},
+            "min value is 0.0",
+        ),
+        (
+            {"predicted_win_probability": -0.3},
+            "min value is 0.0",
+        ),
+        ({"not_a_real": "attribute"}, "unknown field"),
+    ],
+)
+@patch("tipping.models.base_model.FaunadbClient.graphql")
+def test_updating_invalid_prediction(mock_graphql, invalid_attribute, error_message):
+    prediction = PredictionFactory.build(add_id=True)
+
+    # It raises a ValidationError
+    with pytest.raises(ValidationError, match=error_message):
+        prediction.update(**invalid_attribute)
+
+    # It doesn't save the prediction
+    mock_graphql.assert_not_called()
+
+
 def test_from_db_response():
     match = MatchFactory.build(add_id=True, team_matches__add_id=True)
-    print(match.attributes)
-    prediction = PredictionFactory.build(match=match, add_id=True)
-    predicted_winner = TeamFactory.build(add_id=True)
     ml_model = MLModelFactory.build(add_id=True)
+    predicted_winner = TeamFactory.build(add_id=True)
+    prediction = PredictionFactory.build(
+        match=match, ml_model=ml_model, predicted_winner=predicted_winner, add_id=True
+    )
     db_record = {
         "_id": prediction.id,
         "match": {
@@ -56,6 +83,17 @@ def test_from_db_response():
             if match.winner is None
             else {"name": match.winner.name, "_id": match.winner.id},
             "_id": match.id,
+            "teamMatches": {
+                "data": [
+                    {
+                        "atHome": tm.at_home,
+                        "score": tm.score,
+                        "team": {"_id": tm.team.id, "name": tm.team.name},
+                        "_id": tm.id,
+                    }
+                    for tm in match.team_matches
+                ]
+            },
         },
         "mlModel": {
             "_id": ml_model.id,

@@ -105,7 +105,12 @@ class TeamMatch(BaseModel):
             self.match.team_matches.append(self)
 
     @classmethod
-    def from_db_response(cls, record: Dict[str, Any]) -> TeamMatch:
+    def from_db_response(  # pylint: disable=arguments-differ
+        cls,
+        record: Dict[str, Any],
+        match: Optional[Match] = None,
+        team: Optional[Team] = None,
+    ) -> TeamMatch:
         """Convert a DB record object into an instance of TeamMatch.
 
         Params:
@@ -117,8 +122,8 @@ class TeamMatch(BaseModel):
         A TeamMatch with the attributes of the team-match record.
         """
         team_match = cls(
-            team=Team.from_db_response(record["team"]),
-            match=Match.from_db_response(record["match"]),
+            team=(team or Team.from_db_response(record["team"])),
+            match=(match or Match.from_db_response(record["match"])),
             at_home=record["atHome"],
             score=record["score"],
         )
@@ -251,9 +256,6 @@ class Match(BaseModel):
         self.team_matches = team_matches or []
         self.id = None
 
-        for team_match in self.team_matches:
-            team_match.match = self
-
     @classmethod
     def filter_by_season(cls, season: Optional[int] = None) -> _MatchRecordCollection:
         """Fetch match records from the DB filtered by season year.
@@ -358,13 +360,6 @@ class Match(BaseModel):
         """
         winner = record.get("winner") and Team.from_db_response(record["winner"])
 
-        team_match_records = (
-            [] if record.get("teamMatches") is None else record["teamMatches"]["data"]
-        )
-        team_matches: List[TeamMatch] = [
-            TeamMatch.from_db_response(team_match) for team_match in team_match_records
-        ]
-
         match = Match(
             start_date_time=parser.parse(record["startDateTime"]),
             season=record["season"],
@@ -372,9 +367,17 @@ class Match(BaseModel):
             venue=record["venue"],
             margin=record["margin"],
             winner=winner,
-            team_matches=team_matches,
         )
         match.id = record["_id"]
+
+        team_match_records = (
+            [] if record.get("teamMatches") is None else record["teamMatches"]["data"]
+        )
+        team_matches: List[TeamMatch] = [
+            TeamMatch.from_db_response(team_match, match=match)
+            for team_match in team_match_records
+        ]
+        match.team_matches = team_matches
 
         return match
 

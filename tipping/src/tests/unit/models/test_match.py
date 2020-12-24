@@ -38,7 +38,12 @@ def match_collection():
 )
 @patch("tipping.models.base_model.FaunadbClient.graphql")
 def test_saving_invalid_match(mock_graphql, invalid_attribute, error_message):
-    match = MatchFactory.build(**invalid_attribute)
+    valid_attributes = {
+        key: value
+        for key, value in MatchFactory.build().attributes.items()
+        if key not in ["id", "team_matches"]
+    }
+    match = Match(**{**valid_attributes, **{"team_matches": []}, **invalid_attribute})
 
     # It raises a ValidateionError
     with pytest.raises(ValidationError, match=error_message):
@@ -99,6 +104,17 @@ def test_from_db_response():
         "venue": match.venue,
         "margin": match.margin,
         "winner": {"name": match.winner.name, "_id": match.winner.id},
+        "teamMatches": {
+            "data": [
+                {
+                    "atHome": tm.at_home,
+                    "score": tm.score,
+                    "team": {"name": tm.team.name, "_id": tm.team.id},
+                    "_id": tm.id,
+                }
+                for tm in match.team_matches
+            ]
+        },
         "_id": match.id,
     }
 

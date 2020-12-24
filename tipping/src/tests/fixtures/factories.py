@@ -10,6 +10,7 @@ from faker import Faker
 import numpy as np
 
 from tipping.models import Team, Match, TeamMatch, MLModel, Prediction
+from tipping.models.base_model import BaseModel
 from tipping import settings
 
 FAKE = Faker()
@@ -101,15 +102,24 @@ class TippingFactory(factory.Factory):
     class Params:
         """Params for modifying the factory's default attributes."""
 
-        add_id = False
-
     @factory.post_generation
-    def build_id(obj, create, _extracted, **kwargs):
+    def add_id(obj, create, extracted, **_kwargs):
         """Add fake ID when using build strategy."""
-        if create or not kwargs.get("add_id"):
+        if create or not extracted:
             return
 
         obj.id = obj.id or FAKE.credit_card_number()
+
+        # It's a huge pain trying to make sure all associated models get IDs,
+        # because sometimes they aren't generated via RelatedFactory, so can't receive
+        # nested params, so we assume that if the given model should have an ID,
+        # all the rest should as well.
+        for attr, attr_value in obj.attributes.items():
+            if not isinstance(attr_value, BaseModel):
+                continue
+
+            associated_model = getattr(obj, attr)
+            setattr(associated_model, "id", FAKE.credit_card_number())
 
 
 class TeamFactory(TippingFactory):
@@ -234,7 +244,6 @@ class PredictionFactory(TippingFactory):
         """Factory attributes for recreating the associated model's attributes."""
 
         model = Prediction
-        exclude = ("ml_models",)
 
     class Params:
         """
@@ -272,7 +281,9 @@ class PredictionFactory(TippingFactory):
     # one prediction per model, and in cases where there are a lot of predictions,
     # we risk duplicate model names, which is invalid
     ml_model = factory.LazyAttributeSequence(
-        lambda ml_model_factory, n: ml_model_factory.ml_models[n]
+        lambda ml_model_factory, n: ml_model_factory.ml_models[
+            n % len(ml_model_factory.ml_models)
+        ]
     )
     # Have to make sure we get a team from the associated match
     # for realistic prediction metrics
@@ -297,3 +308,22 @@ class PredictionFactory(TippingFactory):
             == pred.predicted_winner
         )
     )
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        model_instance = model_class(**kwargs)
+
+        if (
+            model_instance.predicted_winner
+            and model_instance.predicted_winner.id is None
+        ):
+            model_instance.predicted_winner.create()
+
+        if model_instance.match and model_instance.match.id is None:
+            model_instance.match.create()
+
+        if model_instance.ml_model and model_instance.ml_model.id is None:
+            model_instance.ml_model.create()
+
+        model_instance.create()
+        return model_instance

@@ -1,4 +1,4 @@
-# pylint: disable=missing-docstring
+# pylint: disable=missing-docstring,unused-argument
 
 from unittest.mock import patch
 
@@ -115,3 +115,16 @@ def test_from_db_response():
 
     # It has matching attributes
     assert_deep_equal_attributes(prediction, prediction_from_record)
+
+
+@patch("tipping.models.base_model.FaunadbClient.graphql")
+def test_updating_correctness(mock_graphql):
+    prediction = PredictionFactory.build(add_id=True)
+
+    was_correct = prediction.was_correct
+    prediction.was_correct = not was_correct
+
+    prediction.update_correctness()
+
+    # It updates correctness per associated match results
+    assert prediction.was_correct == was_correct

@@ -1,16 +1,36 @@
 """Data model for AFL matches."""
 
 from __future__ import annotations
-from typing import Optional, Dict, Any, Sequence, List
+from typing import Optional, Dict, Any, Sequence, List, TYPE_CHECKING
 from datetime import datetime, timedelta, timezone
+from functools import reduce
 from dateutil import parser
 
 from cerberus import Validator, TypeDefinition
 import numpy as np
 import pandas as pd
+from mypy_extensions import TypedDict
 
 from .team import Team
 from .base_model import BaseModel
+
+
+if TYPE_CHECKING:
+    from .prediction import Prediction
+
+
+TeamMatchParams = TypedDict(
+    "TeamMatchParams",
+    {
+        "team": Optional[Team],
+        "at_home": Optional[bool],
+        "score": Optional[int],
+        "match": Optional["Match"],
+    },
+)
+
+# Rough estimate, but exactitude isn't necessary here
+GAME_LENGTH_HRS = 3
 
 
 class _MatchRecordCollection:
@@ -77,7 +97,7 @@ class TeamMatch(BaseModel):
         team: Optional[Team] = None,
         match: Optional[Match] = None,
         at_home: Optional[bool] = None,
-        score: int = 0,
+        score: Optional[int] = 0,
     ):
         """
         Params:
@@ -155,7 +175,7 @@ class TeamMatch(BaseModel):
 
         for team_type in ["home", "away"]:
             team = Team.find_by(name=match_data[f"{team_type}_team"])
-            params = {
+            params: TeamMatchParams = {
                 "team": team,
                 "at_home": team_type == "home",
                 "score": get_score(team_type),
@@ -251,10 +271,11 @@ class Match(BaseModel):
         self.season = season
         self.round_number = round_number
         self.venue = venue
-        self.winner = winner
         self.margin = margin
         self.team_matches = team_matches or []
+        self.winner = winner or self._calculate_winner()
         self.id = None
+        self._predictions: Optional[List["Prediction"]] = None
 
     @classmethod
     def filter_by_season(cls, season: Optional[int] = None) -> _MatchRecordCollection:
@@ -381,6 +402,28 @@ class Match(BaseModel):
 
         return match
 
+    @property
+    def has_been_played(self):
+        """Return whether a match has been played yet."""
+        match_end_time = self.start_date_time + timedelta(hours=GAME_LENGTH_HRS)
+
+        # We need to check the scores in case the data hasn't been updated since the
+        # match was played, because as far as the data is concerned it hasn't, even though
+        # the date has passed.
+        return match_end_time < datetime.now(tz=timezone.utc)
+
+    @property
+    def is_draw(self):
+        """Indicate whether a match result was a draw."""
+        return self._has_results and reduce(
+            lambda score_x, score_y: score_x == score_y, self._match_scores
+        )
+
+    @property
+    def _has_results(self):
+        """Return whether a match has a final score."""
+        return self.has_been_played and self._has_score
+
     def create(self) -> Match:
         """Create the match in the DB.
 
@@ -429,6 +472,53 @@ class Match(BaseModel):
         return self
 
     @property
+    def predictions(self) -> List[Prediction]:
+        """Fetch all associated prediction records from the DB.
+
+        Returns:
+        --------
+        List of prediction objects.
+        """
+        if self._predictions is not None:
+            return self._predictions
+
+        from .prediction import Prediction  # pylint: disable=import-outside-toplevel
+
+        query = """
+            query($id: ID!) {
+                findMatchByID(id: $id) {
+                    predictions {
+                        data {
+                            _id
+                            mlModel {
+                                _id
+                                name
+                                isPrincipal
+                                usedInCompetitions
+                                predictionType
+                            }
+                            predictedWinner { _id name }
+                            predictedMargin
+                            predictedWinProbability
+                            wasCorrect
+                        }
+                    }
+                }
+            }
+        """
+
+        variables = {"id": self.id}
+
+        result = self.db_client().graphql(query, variables)
+
+        self._predictions = [
+            Prediction.from_db_response(prediction, match=self)
+            for prediction in result["findMatchByID"]["predictions"]["data"]
+        ]
+
+        return self._predictions
+
+    @property
     def _start_date_time_iso8601(self):
         if self.start_date_time is None:
             return None
@@ -452,6 +542,8 @@ class Match(BaseModel):
             "venue": {"type": "string", "empty": False},
             "winner": {"type": "team", "nullable": True, "check_with": self._idfulness},
             "margin": {"type": "integer", "min": 0, "nullable": True},
+            "team_matches": {"type": "list"},
+            "_predictions": {"type": "list", "nullable": True},
         }
 
     @staticmethod
@@ -463,3 +555,18 @@ class Match(BaseModel):
     def _idfulness(field, value, error):
         if value and value.id is None:
             error(field, "must have an ID")
+
+    @property
+    def _match_scores(self):
+        return [team_match.score for team_match in self.team_matches]
+
+    @property
+    def _has_score(self):
+        return any([score > 0 for score in self._match_scores])
+
+    def _calculate_winner(self):
+        """Return the record for the winning team of the match."""
+        if not self.has_been_played or self.is_draw or not any(self.team_matches):
+            return None
+
+        return max(self.team_matches, key=lambda tm: tm.score).team

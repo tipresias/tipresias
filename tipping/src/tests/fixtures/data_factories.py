@@ -9,6 +9,7 @@ import pandas as pd
 from candystore import CandyStore
 
 from tipping import settings
+from tipping.helpers import pivot_team_matches_to_matches
 
 
 FAKE = Faker()
@@ -173,6 +174,7 @@ def fake_prediction_data(
     fixtures: Optional[pd.DataFrame] = None,
     ml_model_name="test_estimator",
     predict_margin=True,
+    pivot_home_away=False,
 ) -> pd.DataFrame:
     """
     Return minimally-valid prediction data.
@@ -191,7 +193,7 @@ def fake_prediction_data(
     fixture_data = fake_fixture_data(fixtures)
     match_count = len(fixture_data)
 
-    return pd.concat(
+    prediction_data = pd.concat(
         [_build_team_matches(fixture_data, team_type) for team_type in TEAM_TYPES]
     ).assign(
         predicted_margin=np.random.rand(match_count * 2) * 50
@@ -202,6 +204,11 @@ def fake_prediction_data(
         else np.random.rand(match_count * 2),
         ml_model=ml_model_name,
     )
+
+    if pivot_home_away:
+        return pivot_team_matches_to_matches(prediction_data)
+
+    return prediction_data
 
 
 def fake_ml_model_data(n_models: int = 1) -> pd.DataFrame:

@@ -191,6 +191,11 @@ class MatchFactory(TippingFactory):
         size=2,
     )
 
+    @factory.post_generation
+    def calculate_winner(obj, _create, _extracted, **_kwargs):
+        "Assign correct winner to the given match."
+        obj.winner = obj._calculate_winner()
+
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
         model_instance = model_class(**kwargs)

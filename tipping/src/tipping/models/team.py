@@ -22,7 +22,7 @@ class Team(BaseModel):
         self.id = None
 
     @classmethod
-    def find_by(cls, name: str):
+    def find_by(cls, name: str) -> Optional[Team]:
         """Fetch a team from the DB by its name.
 
         Params:

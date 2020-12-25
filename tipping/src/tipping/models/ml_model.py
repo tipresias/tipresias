@@ -139,6 +139,35 @@ class MLModel(BaseModel):
 
         return _MLModelRecordCollection(records=records)
 
+    @classmethod
+    def find_by_name(cls, name: Optional[str] = None) -> Optional[MLModel]:
+        """Fetch an ML model from the DB by name.
+
+        Params:
+        -------
+        name: Name of the ML model to be fetched.
+
+        Returns:
+        --------
+        An MLModel with the given name.
+        """
+        query = """
+            query($name: String) {
+                findMLModelByName(name: $name) {
+                    _id
+                    name
+                    isPrincipal
+                    predictionType
+                    usedInCompetitions
+                }
+            }
+        """
+        variables = {"name": name}
+
+        result = cls.db_client().graphql(query, variables)
+
+        return cls.from_db_response(result["findMLModelByName"])
+
     def create(self) -> MLModel:
         """Create the ml_model in the DB."""
         self.validate()
@@ -180,12 +209,12 @@ class MLModel(BaseModel):
 
         query = """
             query {
-                findMLModelBy(isPrincipal: true) { _id }
+                findMLModelByIsPrincipal(isPrincipal: true) { _id }
             }
         """
 
         result = self.db_client().graphql(query)
-        principal_model = result["findMLModelBy"]
+        principal_model = result["findMLModelByIsPrincipal"]
 
         if principal_model is None or principal_model["_id"] == self.id:
             return None

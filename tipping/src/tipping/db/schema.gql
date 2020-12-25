@@ -6,7 +6,7 @@ type Match {
   winner: Team
   margin: Int
   teamMatches: [TeamMatch!] @relation
-  predictons: [Prediction] @relation
+  predictions: [Prediction] @relation
 }
 
 type Team {
@@ -46,5 +46,6 @@ type Query {
   filterMatchesBySeason(season: Int): [Match!]
   filterMLModelsBy(usedInCompetitions: Boolean): [MLModel!]
   findTeamByName(name: String!): Team
-  findMLModelBy(isPrincipal: Boolean): MLModel
+  findMLModelByIsPrincipal(isPrincipal: Boolean): MLModel
+  findMLModelByName(name: String): MLModel
 }

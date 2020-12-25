@@ -1,18 +1,20 @@
-# pylint: disable=missing-docstring
+# pylint: disable=missing-docstring,unused-argument
 
 from datetime import date
 
 import numpy as np
 
-from tests.fixtures.factories import MatchFactory
+from tests.fixtures.factories import MatchFactory, PredictionFactory
 from tests.fixtures.data_factories import fake_fixture_data
-from tipping.models import Match
+from tipping.models import Match, Prediction
 
 REASONABLE_NUMBER_OF_RECORDS = 10
 
 
 def test_creating_valid_match(faunadb_client):
     match = MatchFactory.build()
+    # Need to create winner first, so it will have a valid ID when we create match
+    match.winner.create()
     saved_match = match.create()
 
     # It returns the saved match
@@ -61,3 +63,18 @@ def test_getting_or_creating_match_from_raw_data(faunadb_client):
     # It gets the same match
     gotten_match = Match.get_or_create_from_raw_data(fixture_data)
     assert created_match.id == gotten_match.id
+
+
+def test_getting_match_predictions(faunadb_client):
+    prediction_count = np.random.randint(1, 5)
+    match = MatchFactory.create()
+    PredictionFactory.create_batch(prediction_count, match=match)
+
+    predictions = match.predictions
+
+    # It returns predictions
+    for prediction in predictions:
+        assert isinstance(prediction, Prediction)
+
+    # It returns all predictions associated with the match
+    assert len(predictions) == prediction_count

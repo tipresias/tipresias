@@ -66,6 +66,8 @@ Seed the DB with raw data:
 
 - `docker-compose run --rm backend python3 -Wi manage.py test`
   - Note: Pass CI=true as an env var to skip some of the longer end-to-end tests.
+  - The `tipping` service uses `pytest` rather than Django's test runner.
+    - For watch mode, run `docker-compose run --rm tipping ptw -c -n -- <pytest args>` (`-c` clears output between runs, `-n` means "no beep" on test failures).
 - Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
   - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
 - Type checking: `docker-compose run mypy <python modules you want to check>`

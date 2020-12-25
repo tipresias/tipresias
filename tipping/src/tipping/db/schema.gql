@@ -6,7 +6,7 @@ type Match {
   winner: Team
   margin: Int
   teamMatches: [TeamMatch!] @relation
-  predictons: [Prediction] @relation
+  predictions: [Prediction] @relation
 }
 
 type Team {
@@ -22,16 +22,15 @@ type TeamMatch {
 
 type Prediction {
   match: Match!
-  mlModel: MlModel!
+  mlModel: MLModel!
   predictedWinner: Team!
   predictedMargin: Float
   predictedWinProbability: Float
-  isCorrect: Boolean
+  wasCorrect: Boolean
 }
 
-type MlModel {
+type MLModel {
   name: String! @unique
-  description: String
   isPrincipal: Boolean!
   usedInCompetitions: Boolean!
   predictionType: String!
@@ -40,10 +39,13 @@ type MlModel {
 
 type Query {
   allMatches: [Match!]
+  allMLModels: [MLModel!]
   allTeams: [Team!]
   allTeamMatches: [TeamMatch!]
   allPredictions: [Prediction!]
-  allMlModels: [MlModel!]
   filterMatchesBySeason(season: Int): [Match!]
+  filterMLModelsBy(usedInCompetitions: Boolean): [MLModel!]
   findTeamByName(name: String!): Team
+  findMLModelByIsPrincipal(isPrincipal: Boolean): MLModel
+  findMLModelByName(name: String): MLModel
 }

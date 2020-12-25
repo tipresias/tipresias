@@ -9,7 +9,7 @@ from .base_model import BaseModel
 class Team(BaseModel):
     """Data model for AFL teams."""
 
-    def __init__(self, name: Optional[str] = None):  # pylint: disable=redefined-builtin
+    def __init__(self, name: Optional[str] = None):
         """
         Params:
         -------
@@ -22,7 +22,7 @@ class Team(BaseModel):
         self.id = None
 
     @classmethod
-    def find_by(cls, name: str):
+    def find_by(cls, name: str) -> Optional[Team]:
         """Fetch a team from the DB by its name.
 
         Params:

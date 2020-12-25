@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Dict, Any
 import re
 
-from cerberus import Validator
+from cerberus import Validator, TypeDefinition
 
 from tipping.db.faunadb import FaunadbClient
 
@@ -17,7 +17,13 @@ class BaseModel:
     """Abstract base model from which all models inherit."""
 
     def __init__(self, validator: Validator = Validator):
-        self._validator = validator(self._schema, purge_unknown=True)
+        validator_type = TypeDefinition("validator", (Validator,), ())
+        Validator.types_mapping["validator"] = validator_type
+        base_schema = {
+            "_validator": {"type": "validator"},
+            "id": {"type": "string", "nullable": True},
+        }
+        self._validator = validator({**base_schema, **self._schema})
         self.id = None
 
     @classmethod

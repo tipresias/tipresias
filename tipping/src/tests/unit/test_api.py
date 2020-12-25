@@ -148,9 +148,12 @@ class TestApi(TestCase):
             )
             self.assertTrue(data_are_equal)
 
+    @patch("tipping.api.Prediction.update_or_create_from_raw_data")
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import")
-    def test_update_match_predictions(self, mock_data_import, mock_data_export):
+    def test_update_match_predictions(
+        self, mock_data_import, mock_data_export, mock_update_or_create_from_raw_data
+    ):
         mock_data_export.update_match_predictions = MagicMock()
         mock_data_import.fetch_prediction_data = MagicMock(
             side_effect=self.prediction_return_values
@@ -171,10 +174,14 @@ class TestApi(TestCase):
             mock_data_import.fetch_prediction_data.assert_not_called()
             # It doesn't send predictions to server API
             mock_data_export.update_match_predictions.assert_not_called()
+            # It doesn't update predictions in FaunaDB
+            mock_update_or_create_from_raw_data.assert_not_called()
             # It doesn't try to submit any tips
             mock_submitter.submit_tips.assert_not_called()
 
         with self.subTest("with at least one future match record"):
+            mock_update_or_create_from_raw_data.reset_mock()
+
             with freeze_time(TIP_DATES[0]):
                 self.api.update_match_predictions(
                     tips_submitters=[mock_submitter, mock_submitter], verbose=0
@@ -184,6 +191,12 @@ class TestApi(TestCase):
                 mock_data_import.fetch_prediction_data.assert_called()
                 # It sends predictions to Tipresias app
                 mock_data_export.update_match_predictions.assert_called()
+                # It updates prediction data in the DB
+                prediction_rows = len(self.prediction_return_values[0])
+                predicted_matches = prediction_rows / 2
+                self.assertEqual(
+                    mock_update_or_create_from_raw_data.call_count, predicted_matches
+                )
                 # It submits tips to all competitions
                 self.assertEqual(mock_submitter.submit_tips.call_count, 2)
 

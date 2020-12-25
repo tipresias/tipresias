@@ -1,12 +1,16 @@
+# pylint: disable=attribute-defined-outside-init,no-self-argument
 """Factory classes for generating realistic DB records for tests."""
 
+from __future__ import annotations
 from datetime import datetime, timezone, timedelta, date
 import math
 
 import factory
 from faker import Faker
+import numpy as np
 
-from tipping.models import Team, Match, TeamMatch
+from tipping.models import Team, Match, TeamMatch, MLModel, Prediction
+from tipping.models.base_model import BaseModel
 from tipping import settings
 
 FAKE = Faker()
@@ -98,17 +102,24 @@ class TippingFactory(factory.Factory):
     class Params:
         """Params for modifying the factory's default attributes."""
 
-        add_id = False
-
     @factory.post_generation
-    def build_id(obj, create, _extracted, **kwargs):  # pylint: disable=no-self-argument
+    def add_id(obj, create, extracted, **_kwargs):
         """Add fake ID when using build strategy."""
-        if create or not kwargs.get("add_id"):
+        if create or not extracted:
             return
 
-        obj.id = (  # pylint: disable=attribute-defined-outside-init
-            obj.id or FAKE.credit_card_number()
-        )
+        obj.id = obj.id or FAKE.credit_card_number()
+
+        # It's a huge pain trying to make sure all associated models get IDs,
+        # because sometimes they aren't generated via RelatedFactory, so can't receive
+        # nested params, so we assume that if the given model should have an ID,
+        # all the rest should as well.
+        for attr, attr_value in obj.attributes.items():
+            if not isinstance(attr_value, BaseModel):
+                continue
+
+            associated_model = getattr(obj, attr)
+            setattr(associated_model, "id", FAKE.credit_card_number())
 
 
 class TeamFactory(TippingFactory):
@@ -128,6 +139,28 @@ class TeamFactory(TippingFactory):
         return model_instance
 
 
+class MLModelFactory(TippingFactory):
+    """Factory class for the MLModel data model."""
+
+    class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
+        model = MLModel
+
+    name = factory.Faker("company")
+    is_principal = False
+    used_in_competitions = False
+    prediction_type = factory.LazyFunction(
+        lambda: np.random.choice(MLModel.PREDICTION_TYPES)
+    )
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        model_instance = model_class(**kwargs)
+        model_instance.create()
+        return model_instance
+
+
 class MatchFactory(TippingFactory):
     """Factory class for the Match data model."""
 
@@ -135,18 +168,6 @@ class MatchFactory(TippingFactory):
         """Factory attributes for recreating the associated model's attributes."""
 
         model = Match
-
-    start_date_time = factory.LazyAttributeSequence(_fake_datetime)
-    season = factory.SelfAttribute("start_date_time.year")
-    round_number = factory.Sequence(
-        lambda n: math.ceil((n + 1) / TYPICAL_N_MATCHES_PER_ROUND)
-        % N_ROUNDS_PER_REGULAR_SEASON
-    )
-    venue = factory.LazyFunction(
-        lambda: settings.VENUES[
-            FAKE.pyint(min_value=0, max_value=(len(settings.VENUES) - 1))
-        ]
-    )
 
     class Params:
         """Params for modifying the factory's default attributes."""
@@ -156,6 +177,24 @@ class MatchFactory(TippingFactory):
         future = factory.Trait(
             start_date_time=factory.LazyAttributeSequence(_fake_future_datetime)
         )
+
+    start_date_time = factory.LazyAttributeSequence(_fake_datetime)
+    season = factory.SelfAttribute("start_date_time.year")
+    round_number = factory.Sequence(
+        lambda n: math.ceil((n + 1) / TYPICAL_N_MATCHES_PER_ROUND)
+        % N_ROUNDS_PER_REGULAR_SEASON
+    )
+    venue = factory.LazyFunction(lambda: np.random.choice(settings.VENUES))
+    team_matches = factory.RelatedFactoryList(
+        "tests.fixtures.factories.TeamMatchFactory",
+        factory_related_name="match",
+        size=2,
+    )
+
+    @factory.post_generation
+    def calculate_winner(obj, _create, _extracted, **_kwargs):
+        "Assign correct winner to the given match."
+        obj.winner = obj._calculate_winner()
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -203,7 +242,93 @@ class TeamMatchFactory(TippingFactory):
         return model_instance
 
 
-class FullMatchFactory(MatchFactory):
-    """Factory for creating a match with all associated records."""
+class PredictionFactory(TippingFactory):
+    """Factory class for the Prediction data model."""
 
-    team_matches = factory.RelatedFactoryList(TeamMatchFactory, "match", size=2)
+    class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
+        model = Prediction
+
+    class Params:
+        """
+        Params for modifying the factory's default attributes.
+
+        Params:
+        -------
+        force_correct: A factory trait that, when present, forces the predicted_winner
+            to equal the actual match winner. We sometimes need this for tests
+            that check prediction metric calculations.
+        force_incorrect: A factory trait that, when present, forces the predicted_winner
+            to not equal the actual match winner.
+        """
+
+        force_correct = factory.Trait(
+            predicted_winner=factory.LazyAttribute(
+                lambda pred: max(
+                    pred.match.team_matches, key=lambda pred: pred.score
+                ).team
+            )
+        )
+
+        force_incorrect = factory.Trait(
+            predicted_winner=factory.LazyAttribute(
+                lambda pred: min(
+                    pred.match.team_matches, key=lambda pred: pred.score
+                ).team
+            )
+        )
+
+        ml_models = [MLModelFactory.build() for _ in range(5)]
+
+    match = factory.SubFactory(MatchFactory)
+    # Can't use SubFactory for associated MLModel, because it's not realistic to have
+    # one prediction per model, and in cases where there are a lot of predictions,
+    # we risk duplicate model names, which is invalid
+    ml_model = factory.LazyAttributeSequence(
+        lambda ml_model_factory, n: ml_model_factory.ml_models[
+            n % len(ml_model_factory.ml_models)
+        ]
+    )
+    # Have to make sure we get a team from the associated match
+    # for realistic prediction metrics
+    predicted_winner = factory.LazyAttribute(
+        lambda pred: pred.match.team_matches[np.random.randint(0, 2)].team
+    )
+    predicted_margin = factory.LazyAttribute(
+        lambda pred: np.random.random() * 50
+        if pred.ml_model.prediction_type == "margin"
+        else None
+    )
+    predicted_win_probability = factory.LazyAttribute(
+        lambda pred: np.random.uniform(0.5, 1.0)
+        if pred.ml_model.prediction_type == "win_probability"
+        else None
+    )
+    was_correct = factory.LazyAttribute(
+        lambda pred: (
+            None
+            if pred.match.start_date_time > datetime.now(tz=timezone.utc)
+            else sorted(pred.match.team_matches, key=lambda tm: tm.score)[-1].team
+            == pred.predicted_winner
+        )
+    )
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        model_instance = model_class(**kwargs)
+
+        if (
+            model_instance.predicted_winner
+            and model_instance.predicted_winner.id is None
+        ):
+            model_instance.predicted_winner.create()
+
+        if model_instance.match and model_instance.match.id is None:
+            model_instance.match.create()
+
+        if model_instance.ml_model and model_instance.ml_model.id is None:
+            model_instance.ml_model.create()
+
+        model_instance.create()
+        return model_instance

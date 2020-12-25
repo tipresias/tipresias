@@ -9,7 +9,7 @@ import pandas as pd
 from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.tipping import MonashSubmitter, FootyTipsSubmitter
-from tipping.models import Match, TeamMatch
+from tipping.models import Match, TeamMatch, Prediction
 
 DEC = 12
 THIRTY_FIRST = 31
@@ -167,10 +167,17 @@ def update_fixture_data(verbose: int = 1) -> None:
     return None
 
 
-def update_match_predictions(tips_submitters=None, verbose=1) -> None:
-    """
-    Fetch predictions from ML models and send them to the main app.
+def _update_faunadb_predictions(predictions: pd.DataFrame):
+    for _, pred in predictions.iterrows():
+        Prediction.update_or_create_from_raw_data(pred)
 
+
+def update_match_predictions(tips_submitters=None, verbose=1) -> None:
+    """Fetch predictions from ML models and send them to the main app.
+
+    Params:
+    -------
+    tips_submitters: Objects that handle submission of tips to competitions sites.
     verbose: How much information to print. 1 prints all messages; 0 prints none.
     """
     matches_from_current_round = _fetch_current_round_fixture(verbose)
@@ -194,6 +201,8 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
 
     match_predictions = pivot_team_matches_to_matches(prediction_data)
     updated_prediction_records = data_export.update_match_predictions(match_predictions)
+
+    _update_faunadb_predictions(match_predictions)
 
     if verbose == 1:
         print("Match predictions sent!")

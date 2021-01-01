@@ -427,6 +427,9 @@ class SeasonType(graphene.ObjectType):
             )
         )
 
+        if not any(metric_values):
+            return []
+
         return calculate_cumulative_metrics(metric_values, round_number).pipe(
             _collect_data_by_round
         )

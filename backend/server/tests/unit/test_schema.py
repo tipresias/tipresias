@@ -151,17 +151,18 @@ class TestSchema(TestCase):
 
         # Have to make sure at least one match has a different round_number to compare
         # later rounds to earlier ones
+        match_round_number = 50
+        match_start_date_time = timezone.make_aware(datetime(year, 10, 31))
         FullMatchFactory(
             with_predictions=True,
             year=year,
-            round_number=50,
-            start_date_time=timezone.make_aware(datetime(year, 10, 31)),
+            round_number=match_round_number,
+            start_date_time=match_start_date_time,
             prediction__ml_model=ml_models[0],
             prediction_two__ml_model=ml_models[1],
         )
 
-        executed = self.client.execute(
-            """
+        query = """
             query($season: Int) {
                 fetchSeasonModelMetrics(season: $season) {
                     season
@@ -178,9 +179,9 @@ class TestSchema(TestCase):
                     }
                 }
             }
-            """,
-            variables={"season": year},
-        )
+        """
+        variables = {"season": year}
+        executed = self.client.execute(query, variables=variables)
 
         data = executed["data"]["fetchSeasonModelMetrics"]
 
@@ -238,6 +239,22 @@ class TestSchema(TestCase):
         self.assertLessEqual(
             sum(earlier_round_cum_correct), sum(later_round_cum_correct)
         )
+
+        with self.subTest("when no matches have been played yet this year"):
+            unplayed_season = max(YEAR_RANGE)
+
+            with freeze_time(timezone.make_aware(datetime(unplayed_season, 1, 2))):
+                FullMatchFactory(
+                    with_predictions=True,
+                    year=unplayed_season,
+                    prediction__ml_model=ml_models[0],
+                    prediction_two__ml_model=ml_models[1],
+                )
+
+                executed = self.client.execute(
+                    query, variables={"season": unplayed_season}
+                )
+                self.assertEqual(executed.get("errors"), None)
 
         with self.subTest("with mlModelName argument 'predictanator'"):
             executed = self.client.execute(

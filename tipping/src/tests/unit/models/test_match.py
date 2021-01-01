@@ -96,15 +96,13 @@ def test_collection_filter(match_collection, match_attributes):
 
 
 def test_from_db_response():
-    winner = TeamFactory.build(add_id=True)
-    match = MatchFactory.build(winner=winner, add_id=True)
+    match = MatchFactory.build(add_id=True)
     db_record = {
         "startDateTime": match.start_date_time.isoformat(),
         "season": match.season,
         "roundNumber": match.round_number,
         "venue": match.venue,
         "margin": match.margin,
-        "winner": {"name": match.winner.name, "_id": match.winner.id},
         "teamMatches": {
             "data": [
                 {
@@ -118,6 +116,9 @@ def test_from_db_response():
         },
         "_id": match.id,
     }
+
+    if match.winner:
+        db_record["winner"] = {"name": match.winner.name, "_id": match.winner.id}
 
     match_from_record = Match.from_db_response(db_record)
 

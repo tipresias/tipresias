@@ -14,7 +14,8 @@ REASONABLE_NUMBER_OF_RECORDS = 10
 def test_creating_valid_match(faunadb_client):
     match = MatchFactory.build()
     # Need to create winner first, so it will have a valid ID when we create match
-    match.winner.create()
+    if match.winner:
+        match.winner.create()
     saved_match = match.create()
 
     # It returns the saved match

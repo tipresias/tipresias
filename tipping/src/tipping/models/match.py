@@ -273,7 +273,7 @@ class Match(BaseModel):
         self.venue = venue
         self.margin = margin
         self.team_matches = team_matches or []
-        self.winner = winner or self._calculate_winner()
+        self._winner = winner
         self.id = None
         self._predictions: Optional[List["Prediction"]] = None
 
@@ -403,8 +403,19 @@ class Match(BaseModel):
         return match
 
     @property
-    def has_been_played(self):
+    def winner(self) -> Optional[Team]:
+        """Team that won the match."""
+        if self._winner is None:
+            self._winner = self._calculate_winner()
+
+        return self._winner
+
+    @property
+    def has_been_played(self) -> bool:
         """Return whether a match has been played yet."""
+        if self.start_date_time is None:
+            return False
+
         match_end_time = self.start_date_time + timedelta(hours=GAME_LENGTH_HRS)
 
         # We need to check the scores in case the data hasn't been updated since the
@@ -413,16 +424,11 @@ class Match(BaseModel):
         return match_end_time < datetime.now(tz=timezone.utc)
 
     @property
-    def is_draw(self):
+    def is_draw(self) -> bool:
         """Indicate whether a match result was a draw."""
         return self._has_results and reduce(
             lambda score_x, score_y: score_x == score_y, self._match_scores
         )
-
-    @property
-    def _has_results(self):
-        """Return whether a match has a final score."""
-        return self.has_been_played and self._has_score
 
     def create(self) -> Match:
         """Create the match in the DB.
@@ -432,6 +438,7 @@ class Match(BaseModel):
         The created match object.
         """
         self.validate()
+        self._calculate_winner()
 
         query = f"""
             mutation(
@@ -519,6 +526,11 @@ class Match(BaseModel):
         return self._predictions
 
     @property
+    def _has_results(self):
+        """Return whether a match has a final score."""
+        return self.has_been_played and self._has_score
+
+    @property
     def _start_date_time_iso8601(self):
         if self.start_date_time is None:
             return None
@@ -540,7 +552,11 @@ class Match(BaseModel):
             "season": {"type": "integer", "min": 1},
             "round_number": {"type": "integer", "min": 1},
             "venue": {"type": "string", "empty": False},
-            "winner": {"type": "team", "nullable": True, "check_with": self._idfulness},
+            "_winner": {
+                "type": "team",
+                "nullable": True,
+                "check_with": self._idfulness,
+            },
             "margin": {"type": "integer", "min": 0, "nullable": True},
             "team_matches": {"type": "list"},
             "_predictions": {"type": "list", "nullable": True},

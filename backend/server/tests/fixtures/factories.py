@@ -49,7 +49,7 @@ class TeamFactory(DjangoModelFactory):
 def _fake_datetime(match_factory, n, start_month_day=(MAR, FIRST)) -> datetime:
     round_week_delta = timedelta(days=ONE_WEEK)
 
-    # Since we create match records per year, we don't want want dates running
+    # Since we create match records per year, we don't want dates running
     # into the next year.
     max_datetime = timezone.make_aware(datetime(match_factory.year, DEC, THIRTY_FIRST))
     now_for_factory = timezone.make_aware(
@@ -60,14 +60,17 @@ def _fake_datetime(match_factory, n, start_month_day=(MAR, FIRST)) -> datetime:
     # whichever is less), because the sequence doesn't reset between tests
     # and eventually hits the end of the year for every test, resulting in duplicate
     # venue/date combinations that raise validation errors.
-    n_weeks_left_in_year = round((max_datetime - now_for_factory).days / ONE_WEEK)
+    n_days_left_in_year = (max_datetime - now_for_factory).days
+    n_weeks_left_in_year = math.floor(n_days_left_in_year / ONE_WEEK)
     n_weeks_left_in_season = min([n_weeks_left_in_year, SIX_MONTHS_IN_WEEKS])
-    start_round_week_delta = round_week_delta * (
-        math.ceil(n / TYPICAL_N_MATCHES_PER_ROUND) % n_weeks_left_in_season
+    start_round_week_delta = (
+        timedelta(days=0)
+        if n_weeks_left_in_season == 0
+        else round_week_delta
+        * (math.ceil(n / TYPICAL_N_MATCHES_PER_ROUND) % n_weeks_left_in_season)
     )
 
     try:
-        # The AFL season typically starts in March
         datetime_start = now_for_factory + start_round_week_delta
     except ValueError:
         # Trying to create a datetime for 29 Feb in a non-leap year raises an error,
@@ -80,7 +83,7 @@ def _fake_datetime(match_factory, n, start_month_day=(MAR, FIRST)) -> datetime:
         )
 
     try:
-        # Rounds last about a week, so that's how big we make our date range per round.
+        # Rounds last about a week, so that's how big we make our date range per round
         datetime_end = datetime_start + round_week_delta
     except ValueError:
         # Trying to create a datetime for 29 Feb in a non-leap year raises an error,

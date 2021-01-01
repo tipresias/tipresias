@@ -215,6 +215,9 @@ class Query(graphene.ObjectType):
             "available_seasons": (
                 sorted(
                     Prediction.objects.select_related("match")
+                    # If we don't have any match/prediction results yet, there won't be
+                    # any performance metrics to calculate
+                    .filter(is_correct__isnull=False)
                     .distinct("match__start_date_time__year")
                     .values_list("match__start_date_time__year", flat=True)
                 )

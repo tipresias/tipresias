@@ -453,7 +453,6 @@ class TestSchema(TestCase):
             """
 
         with self.subTest("for a 'Win Probability' model"):
-            print("win probability")
             executed = self.client.execute(
                 query, variables={"mlModelName": "accurate_af"}
             )

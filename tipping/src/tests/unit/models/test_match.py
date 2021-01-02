@@ -17,6 +17,7 @@ from tipping.models.match import Match, _MatchRecordCollection
 
 FAKE = Faker()
 BIG_NUMBER = 999
+UNPLAYED_MATCH_SCORE = 0
 
 
 @pytest.fixture()
@@ -175,6 +176,7 @@ draw_score = np.random.randint(1, 100)
     ["delta_hours", "scores", "is_draw"],
     [
         (-1, (draw_score, draw_score), False),
+        (4, (UNPLAYED_MATCH_SCORE, UNPLAYED_MATCH_SCORE), False),
         (4, (np.random.randint(1, 50), np.random.randint(51, 100)), False),
         (4, (draw_score, draw_score), True),
     ],

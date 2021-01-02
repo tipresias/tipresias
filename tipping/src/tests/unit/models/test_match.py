@@ -8,7 +8,7 @@ from faker import Faker
 import numpy as np
 import freezegun
 
-from tests.fixtures.factories import TeamFactory, MatchFactory, TeamMatchFactory
+from tests.fixtures.factories import TeamFactory, MatchFactory
 from tests.fixtures.data_factories import fake_fixture_data
 from tests.helpers.model_helpers import assert_deep_equal_attributes
 from tipping.models.base_model import ValidationError
@@ -17,6 +17,7 @@ from tipping.models.match import Match, _MatchRecordCollection
 
 FAKE = Faker()
 BIG_NUMBER = 999
+UNPLAYED_MATCH_SCORE = 0
 
 
 @pytest.fixture()
@@ -168,26 +169,23 @@ def test_has_been_played(delta_hours, has_been_played):
         assert match.has_been_played == has_been_played
 
 
-drawn_team_matches = TeamMatchFactory.build_batch(2, score=np.random.randint(0, 100))
-unequal_team_matches = [
-    drawn_team_matches[0],
-    TeamMatchFactory.build(
-        score=(drawn_team_matches[0].score + np.random.randint(0, 25))
-    ),
-]
+draw_score = np.random.randint(1, 100)
 
 
 @pytest.mark.parametrize(
-    ["delta_hours", "team_matches", "is_draw"],
+    ["delta_hours", "scores", "is_draw"],
     [
-        (-1, drawn_team_matches, False),
-        (4, unequal_team_matches, False),
-        (4, drawn_team_matches, True),
+        (-1, (draw_score, draw_score), False),
+        (4, (UNPLAYED_MATCH_SCORE, UNPLAYED_MATCH_SCORE), False),
+        (4, (np.random.randint(1, 50), np.random.randint(51, 100)), False),
+        (4, (draw_score, draw_score), True),
     ],
 )
-def test_is_draw(delta_hours, team_matches, is_draw):
+def test_is_draw(delta_hours, scores, is_draw):
     match = MatchFactory.build()
-    match.team_matches = team_matches
+    for team_match, score in zip(match.team_matches, scores):
+        team_match.score = score
+
     fake_now_datetime = match.start_date_time + timedelta(hours=delta_hours)
 
     with freezegun.freeze_time(fake_now_datetime):

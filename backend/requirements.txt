@@ -6,7 +6,7 @@ pandas==1.2.0
 django==3.1.4
 whitenoise
 graphene==3.0.0b6
-graphene-django==3.0.0b6
+graphene-django==3.0.0b7
 gql==3.0.0a3
 graphql-core>=3.0,<4.0
 psycopg2-binary

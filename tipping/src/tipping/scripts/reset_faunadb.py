@@ -254,7 +254,7 @@ def _separate_data(data) -> RecordDict:
 def main():
     """Load existing data from Postgres DB dump to FaunaDB."""
     client = FaunadbClient()
-    client.import_schema(mode="override")
+    # client.import_schema(mode="override")
 
     data_filepath = os.path.join(settings.BASE_DIR, "server/db/backups/db_dump.json")
     with open(data_filepath, "r") as f:

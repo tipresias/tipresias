@@ -31,7 +31,7 @@ def _setup_teardown_test_db():
         re.search("secret: (.+)", create_key_output).group(CAPTURED_MATCH).strip()
     )
 
-    with patch("tipping.db.faunadb.settings.FAUNADB_KEY", secret_key):
+    with patch("tipping.db.faunadb.settings.FAUNA_SECRET", secret_key):
         try:
             yield secret_key
         finally:
@@ -45,8 +45,7 @@ def faunadb_client():
     Passes the created Faunadb client to the test function.
     """
     with _setup_teardown_test_db() as secret_key:
-        client = FaunadbClient(faunadb_key=secret_key)
-        client.import_schema()
+        client = FaunadbClient(secret=secret_key)
 
         yield client
 

@@ -9,7 +9,6 @@ import pandas as pd
 from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.tipping import MonashSubmitter, FootyTipsSubmitter
-from tipping.models import Match, TeamMatch, Prediction
 
 DEC = 12
 THIRTY_FIRST = 31
@@ -80,69 +79,6 @@ def _fetch_current_round_fixture(verbose, after=True) -> Optional[pd.DataFrame]:
     return matches_from_current_round
 
 
-def _update_faunadb_fixture_data(
-    fixture_data: pd.DataFrame, current_round: int, verbose: int = 1
-):
-    right_now = datetime.now(tz=timezone.utc)
-    season_matches = Match.filter_by_season(season=right_now.year)
-
-    saved_match_count = season_matches.filter(round=current_round).count()
-
-    if saved_match_count > 0:
-        if verbose == 1:
-            print(
-                f"Already have match records for round {current_round}. "
-                "No new data to update."
-            )
-
-        return None
-
-    past_fixture_matches = [
-        fixture_datum
-        for _, fixture_datum in fixture_data.iterrows()
-        if fixture_datum["date"] < right_now
-    ]
-    assert len(past_fixture_matches) == 0, (
-        "Expected future matches only, but received some past matches as well:\n"
-        f"{past_fixture_matches}"
-    )
-
-    if verbose == 1:
-        print(f"Creating new Match and TeamMatch records for round {current_round}...")
-
-    round_number = {
-        match_data["round_number"] for _, match_data in fixture_data.iterrows()
-    }.pop()
-    year = {match_data["year"] for _, match_data in fixture_data.iterrows()}.pop()
-
-    past_matches = season_matches.filter(start_date_time__lt=right_now)
-    prev_match = (
-        max(past_matches, key=lambda match: match.start_date_time)
-        if any(past_matches)
-        else None
-    )
-
-    if prev_match is not None:
-        assert round_number in (prev_match.round_number + 1, FIRST_ROUND), (
-            "Expected upcoming round number to be 1 greater than previous round "
-            f"or 1, but upcoming round is {round_number} in {year}, "
-            f" and previous round was {prev_match.round_number} "
-            f"in {prev_match.start_date_time.year}"
-        )
-
-    for _, fixture_datum in fixture_data.iterrows():
-        match = Match.get_or_create_from_raw_data(fixture_datum)
-        team_matches = TeamMatch.from_raw_data(fixture_datum, match=match)
-
-        for team_match in team_matches:
-            team_match.create()
-
-    if verbose == 1:
-        print("Match data saved!\n")
-
-    return None
-
-
 def update_fixture_data(verbose: int = 1) -> None:
     """
     Fetch fixture data and send upcoming match data to the main app.
@@ -162,14 +98,8 @@ def update_fixture_data(verbose: int = 1) -> None:
     future_matches = matches_from_current_round.query("date > @right_now")
 
     data_export.update_fixture_data(future_matches, current_round)
-    _update_faunadb_fixture_data(future_matches, current_round, verbose=verbose)
 
     return None
-
-
-def _update_faunadb_predictions(predictions: pd.DataFrame):
-    for _, pred in predictions.iterrows():
-        Prediction.update_or_create_from_raw_data(pred)
 
 
 def update_match_predictions(tips_submitters=None, verbose=1) -> None:
@@ -201,8 +131,6 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
 
     match_predictions = pivot_team_matches_to_matches(prediction_data)
     updated_prediction_records = data_export.update_match_predictions(match_predictions)
-
-    _update_faunadb_predictions(match_predictions)
 
     if verbose == 1:
         print("Match predictions sent!")

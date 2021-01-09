@@ -10,6 +10,7 @@ gql==3.0.0a3
 cerberus
 sqlalchemy==1.3.22
 faunadb==4.0.1
+sqlparse==0.4.1
 
 # Browser automation
 MechanicalSoup

@@ -1,8 +1,14 @@
 """DBAPI for use in the FaunaDialect."""
 
+from typing import Dict, Any, List, Tuple, Union, Optional
+from datetime import date, datetime, time
+
 from faunadb.client import FaunaClient
 
 from tipping.db.sqlalchemy_fauna import exceptions
+from tipping.db.faunadb import FaunadbClient
+
+ResultDescription = Tuple[Optional[str], Any, None, None, None, None, bool]
 
 
 def connect(**connect_kwargs):
@@ -40,11 +46,82 @@ def check_result(f):
     return g
 
 
+class FaunaQuery:
+    """Query object for Fauna."""
+
+    def __init__(self, client: FaunaClient):
+        self.client = client
+
+    def execute(self, query: str):
+        """Execute an SQL query as a Fauna query."""
+        payload = self.client.sql(query)
+
+        data = payload["data"]
+        description = self._get_description_from_data(data)
+
+        return [data, description]
+
+    def _get_description_from_data(
+        self, data: List[Dict[str, Any]]
+    ) -> List[Union[Tuple, ResultDescription]]:
+        """
+        Return description from the data.
+
+        We only return the name, type (inferred from the values) and if the values
+        can be NULL.
+        """
+        if not any(data):
+            return [
+                (
+                    None,  # name
+                    None,  # type_code
+                    None,  # [display_size]
+                    None,  # [internal_size]
+                    None,  # [precision]
+                    None,  # [scale]
+                    True,  # [null_ok]
+                )
+            ]
+
+        return [
+            (
+                key,  # name
+                self._infer_field_type(value),  # type_code
+                None,  # [display_size]
+                None,  # [internal_size]
+                None,  # [precision]
+                None,  # [scale]
+                True,  # [null_ok]
+            )
+            for key, value in data[0].items()
+        ]
+
+    @staticmethod
+    def _infer_field_type(value: Any) -> str:
+        if isinstance(value, str):
+            return "string"
+        if isinstance(value, (int, float)):
+            return "number"
+        if isinstance(value, bool):
+            return "boolean"
+        if isinstance(value, date):
+            return "date"
+        if isinstance(value, datetime):
+            return "datetime"
+        if isinstance(value, time):
+            return "timeofday"
+
+        raise Exception(f"{value} has unknown data type {type(value)}")
+
+
 class FaunaConnection:
     """Connection to a Fauna DB instance."""
 
     def __init__(self, host="", port=None, secret="", scheme=""):
-        self.client = FaunaClient(scheme=scheme, domain=host, port=port, secret=secret)
+        client = FaunadbClient(
+            scheme=scheme, domain=host, port=port, faunadb_key=secret
+        )
+        self._fauna_query = FaunaQuery(client=client)
         self.closed = False
         self.cursors = []
 
@@ -61,7 +138,7 @@ class FaunaConnection:
     @check_closed
     def cursor(self):
         """Return a new Cursor Object using the connection."""
-        cursor = FaunaCursor()
+        cursor = FaunaCursor(fauna_query=self._fauna_query)
         self.cursors.append(cursor)
 
         return cursor
@@ -79,14 +156,32 @@ class FaunaConnection:
         self.close()
 
 
-def _execute_query(_operation, _parameters):
-    return [("empty",)], "To be implemented"
+def apply_parameters(operation, parameters):
+    """Clean parameters and apply them to the DB query."""
+    escaped_parameters = {key: escape(value) for key, value in parameters.items()}
+    return operation % escaped_parameters
+
+
+def escape(value):
+    """Clean parameter values."""
+    if value == "*":
+        return value
+    if isinstance(value, str):
+        return "'{}'".format(value.replace("'", "''"))
+    if isinstance(value, bool):
+        return "TRUE" if value else "FALSE"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, (list, tuple)):
+        return "({0})".format(", ".join(escape(element) for element in value))
 
 
 class FaunaCursor:
     """Fauna connection cursor."""
 
-    def __init__(self):
+    def __init__(self, fauna_query: FaunaQuery):
+        self.fauna_query = fauna_query
+
         # This read/write attribute specifies the number of rows to fetch at a
         # time with .fetchmany(). It defaults to 1 meaning to fetch a single
         # row at a time.
@@ -118,8 +213,9 @@ class FaunaCursor:
         """Execute the query."""
         parameters = parameters or {}
         self.description = None
+        query = apply_parameters(operation, parameters)
 
-        self._results, self.description = _execute_query(operation, parameters)
+        self._results, self.description = self.fauna_query.execute(query)
         return self
 
     @check_closed

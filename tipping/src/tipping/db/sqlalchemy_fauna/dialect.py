@@ -65,10 +65,15 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
         return table_name in self.get_table_names(connection, schema)
 
     def get_table_names(
-        self, connection: FaunaConnection, schema=None, **kwargs
+        self, connection: FaunaConnection, schema=None, **_kwargs
     ) -> List[str]:
         """Get the names of all Fauna collections"""
-        raise Exception("TBI")
+        query = """
+            SELECT TABLE_NAME
+            FROM INFORMATION_SCHEMA.TABLES;
+        """
+        result = connection.execute(query)
+        return [row.name for row in result]
 
     def get_view_names(self, connection, schema=None, **_kwargs) -> List[str]:
         """Get the names of views."""
@@ -79,7 +84,7 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
         _connection,
         _table_name,
         schema=None,  # pylint: disable=unused-argument
-        **_kwargs
+        **_kwargs,
     ) -> Dict[str, Any]:
         """Get table options."""
         return {}
@@ -87,10 +92,11 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
     def get_columns(
         self, connection: FaunaConnection, table_name: str, schema=None, **_kwargs
     ) -> List[ColumnName]:
-        """Get all column names in the given table."""
-        raise Exception("TBI")
-
-        query = "some query"  # pylint: disable=unreachable
+        """Get all column names in the given collection."""
+        query = f"""
+            SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME = '{table_name}';
+        """
         result = connection.execute(query)
         return [
             {

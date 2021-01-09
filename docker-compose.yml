@@ -40,7 +40,7 @@ services:
       - backend
     env_file: .env
     environment:
-      PYTHONPATH: './src'
+      PYTHONPATH: "./src"
       PORT: 3333
       DATA_SCIENCE_SERVICE: http://host.docker.internal:8008
       TIPRESIAS_APP: http://backend:8000
@@ -68,11 +68,13 @@ services:
     image: postgres:11.6
     environment:
       - POSTGRES_DB=$DATABASE_NAME
+    ports:
+      - "5432:5432"
   faunadb:
     image: fauna/faunadb:latest
     ports:
-      - "8443:8443"
-      - "8084:8084"
+      - "8443:8443" # Base API
+      - "8084:8084" # GQL Api
   splash:
     image: scrapinghub/splash
     ports:

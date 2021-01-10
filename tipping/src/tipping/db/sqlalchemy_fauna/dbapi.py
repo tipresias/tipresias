@@ -1,6 +1,6 @@
 """DBAPI for use in the FaunaDialect."""
 
-from typing import Dict, Any, List, Tuple, Union, Optional
+from typing import Dict, Any, List, Tuple, Union, Optional, Sequence
 from datetime import date, datetime, time
 
 from faunadb.client import FaunaClient
@@ -8,7 +8,10 @@ from faunadb.client import FaunaClient
 from tipping.db.sqlalchemy_fauna import exceptions
 from tipping.db.faunadb import FaunadbClient
 
-ResultDescription = Tuple[Optional[str], Any, None, None, None, None, bool]
+
+PopulatedResultDescription = Tuple[Optional[str], Any, None, None, None, None, bool]
+ResultDescription = List[Union[Tuple, PopulatedResultDescription]]
+ResultData = List[Sequence]
 
 
 def connect(**connect_kwargs):
@@ -52,25 +55,24 @@ class FaunaQuery:
     def __init__(self, client: FaunaClient):
         self.client = client
 
-    def execute(self, query: str):
+    def execute(self, query: str) -> Tuple[ResultData, ResultDescription]:
         """Execute an SQL query as a Fauna query."""
-        payload = self.client.sql(query)
+        result = self.client.sql(query)
+        data: ResultData = [tuple(document.values()) for document in result]
+        description: ResultDescription = self._get_description_from_data(result)
 
-        data = payload["data"]
-        description = self._get_description_from_data(data)
-
-        return [data, description]
+        return data, description
 
     def _get_description_from_data(
-        self, data: List[Dict[str, Any]]
-    ) -> List[Union[Tuple, ResultDescription]]:
+        self, result: List[Dict[str, Any]]
+    ) -> ResultDescription:
         """
-        Return description from the data.
+        Return description from the result of the SQL query.
 
         We only return the name, type (inferred from the values) and if the values
         can be NULL.
         """
-        if not any(data):
+        if not any(result):
             return [
                 (
                     None,  # name
@@ -79,7 +81,7 @@ class FaunaQuery:
                     None,  # [internal_size]
                     None,  # [precision]
                     None,  # [scale]
-                    True,  # [null_ok]
+                    None,  # [null_ok]
                 )
             ]
 
@@ -93,7 +95,7 @@ class FaunaQuery:
                 None,  # [scale]
                 True,  # [null_ok]
             )
-            for key, value in data[0].items()
+            for key, value in result[0].items()
         ]
 
     @staticmethod
@@ -132,6 +134,14 @@ class FaunaConnection:
                 cursor.close()
             except exceptions.Error:
                 pass  # already closed
+
+    @check_closed
+    def commit(self):
+        """
+        Commit any pending transaction to the database.
+
+        Not supported.
+        """
 
     @check_closed
     def cursor(self):

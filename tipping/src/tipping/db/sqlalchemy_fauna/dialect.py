@@ -73,7 +73,12 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
             FROM INFORMATION_SCHEMA.TABLES;
         """
         result = connection.execute(query)
-        return [row.name for row in result]
+
+        if result.rowcount == 0:
+            return []
+
+        id_col = result.keys().index("id")
+        return [row[id_col] for row in result.fetchall()]
 
     def get_view_names(self, connection, schema=None, **_kwargs) -> List[str]:
         """Get the names of views."""

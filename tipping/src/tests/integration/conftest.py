@@ -1,11 +1,11 @@
 """Session setup/teardown for integration tests."""
 
 import os
-from unittest.mock import patch
 import re
 from contextlib import contextmanager
 
 import pytest
+from sqlalchemy import create_engine
 
 from tipping.db.faunadb import FaunadbClient
 
@@ -31,11 +31,10 @@ def _setup_teardown_test_db():
         re.search("secret: (.+)", create_key_output).group(CAPTURED_MATCH).strip()
     )
 
-    with patch("tipping.db.faunadb.settings.FAUNA_SECRET", secret_key):
-        try:
-            yield secret_key
-        finally:
-            os.system("npx fauna delete-database test --endpoint localhost")
+    try:
+        yield secret_key
+    finally:
+        os.system("npx fauna delete-database test --endpoint localhost")
 
 
 @pytest.fixture(scope="function")
@@ -58,3 +57,15 @@ def fauna_secret():
     """
     with _setup_teardown_test_db() as secret_key:
         yield secret_key
+
+
+@pytest.fixture(scope="function")
+def fauna_engine():
+    """Set up and tear down test DB in local Fauna instance.
+
+    Passes the SQLAlchemy engine for the test DB to the test function.
+    """
+    with _setup_teardown_test_db() as secret_key:
+        engine = create_engine(f"fauna://faunadb:8443/?secret={secret_key}")
+
+        yield engine

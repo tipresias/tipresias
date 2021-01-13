@@ -7,11 +7,15 @@ from faunadb import query as q
 from faunadb.objects import Ref
 import sqlparse
 from sqlparse.sql import Statement, Token
-from sqlparse.tokens import Keyword, Name
+from sqlparse.tokens import Keyword, Name, DDL, DML
 
 
 ImportMode = Union[Literal["merge"], Literal["override"]]
 SQLResult = List[Dict[str, Any]]
+
+
+class FaunaClientError(Exception):
+    """Errors raised by the FaunaClient while executing queries."""
 
 
 class FaunadbClient:
@@ -41,6 +45,7 @@ class FaunadbClient:
 
         sql_statement = sql_statements[0]
         result = self._execute_sql_statement(sql_statement)
+
         return [self._fauna_ref_to_dict(ref) for ref in result]
 
     def _execute_sql_statement(self, statement: Statement) -> List[Ref]:
@@ -48,14 +53,14 @@ class FaunadbClient:
             sql_token for sql_token in statement.tokens if not sql_token.is_whitespace
         ]
 
-        if f"{tokens[0]} {tokens[1]}".upper() == "SELECT TABLE_NAME":
+        if tokens[0].match(DML, "SELECT") and tokens[1].match(Keyword, "TABLE_NAME"):
             collections = self._client.query(q.paginate(q.collections()))
             return collections["data"]
 
-        if f"{tokens[0]} {tokens[1]}" == "CREATE TABLE":
+        if tokens[0].match(DDL, "CREATE") and tokens[1].match(Keyword, "TABLE"):
             table_name = tokens[2].get_name()
 
-            self._client.query(q.create_collection({"name": table_name}))
+            result = self._client.query(q.create_collection({"name": table_name}))
 
             # Fauna is document-based, so doesn't define fields on table creation.
             # So, we just need the primary key to create an index for finding documents
@@ -73,7 +78,15 @@ class FaunadbClient:
                     )
                 )
 
-        return []
+            return [result["ref"]]
+
+        if tokens[0].match(DDL, "DROP") and tokens[1].match(Keyword, "TABLE"):
+            table_name = tokens[2].get_name()
+
+            result = self._client.query(q.delete(q.collection(table_name)))
+            return [result["ref"]]
+
+        raise FaunaClientError(f"Unsupported SQL statement received:\n{statement}")
 
     def _extract_primary_key(
         self, tokens: Iterable[Token], found_primary=False

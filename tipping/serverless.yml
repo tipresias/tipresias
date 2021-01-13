@@ -40,7 +40,6 @@ provider:
     SPLASH_SERVICE: ${env:SPLASH_SERVICE}
     ROLLBAR_TOKEN: ${env:ROLLBAR_TOKEN}
 
-
 plugins:
   - serverless-offline
   - serverless-python-requirements
@@ -61,7 +60,7 @@ package:
     - handler.py
     - src/tipping/**
   exclude:
-    - '**'
+    - "**"
 
 functions:
   update_fixture_data:
@@ -96,18 +95,21 @@ functions:
           enabled: false
   fetch_match_predictions:
     handler: handler.fetch_match_predictions
+    timeout: 30
     events:
       - http:
           path: predictions
           method: get
   fetch_match_results:
     handler: handler.fetch_match_results
+    timeout: 30
     events:
       - http:
           path: matches
           method: get
   fetch_ml_models:
     handler: handler.fetch_ml_models
+    timeout: 30
     events:
       - http:
           path: ml_models

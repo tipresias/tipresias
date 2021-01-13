@@ -55,7 +55,6 @@ SERVICE_DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_tipping:latest
 # Need lots of deploy-specific env vars, so we use docker instead of docker-compose
 docker run \
   -v ${HOME}/.aws:/app/.aws \
-  -e PYTHONPATH=./src \
   -e AWS_SHARED_CREDENTIALS_FILE=".aws/credentials" \
   -e TIPRESIAS_APP=${TIPRESIAS_APP} \
   -e TIPRESIAS_APP_TOKEN=${TIPRESIAS_APP_TOKEN} \

@@ -14,7 +14,7 @@
     "@apollo/react-hoc": "^4.0.0",
     "@apollo/react-hooks": "^4.0.0",
     "@babel/core": "^7.12.10",
-    "apollo": "^2.32.0",
+    "apollo": "^2.32.1",
     "apollo-boost": "0.4.9",
     "apollo-cache-inmemory": "^1.6.6",
     "apollo-client": "^2.6.8",

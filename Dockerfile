@@ -27,7 +27,7 @@ FROM python:3.8.1-slim-buster@sha256:dc9c4de1bb38720f70af28e8071f324052725ba1228
 # Install linux packages
 RUN apt-get --no-install-recommends update \
   # g++ is a dependency of gcc, so must come before
-  && apt-get -y --no-install-recommends install g++ gcc \
+  && apt-get -y --no-install-recommends install g++ gcc curl \
   && rm -rf /var/lib/apt/lists/*
 
 # Set up backend dependencies & code

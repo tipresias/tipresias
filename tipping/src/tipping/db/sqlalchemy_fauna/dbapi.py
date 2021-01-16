@@ -285,6 +285,14 @@ class FaunaCursor:
         Not supported.
         """
 
+    # Apparently mypy doesn't play nice with multiple decorators
+    @property  # type: ignore
+    @check_result
+    @check_closed
+    def lastrowid(self):
+        """Return the last ID value inserted into current scope."""
+        return self.fetchone()[0]
+
     @check_closed
     def __iter__(self):
         """Iterate through results."""

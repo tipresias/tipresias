@@ -6,9 +6,12 @@ from contextlib import contextmanager
 
 import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.dialects import registry
 
 
 CAPTURED_MATCH = 1
+
+registry.register("fauna", "tipping.db.sqlalchemy_fauna.dialect", "FaunaDialect")
 
 
 @pytest.fixture(scope="session", autouse=True)

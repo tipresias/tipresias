@@ -15,6 +15,7 @@ SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))
 if SRC_DIR not in sys.path:
     sys.path.append(SRC_DIR)
 
+from tipping.models import TeamBase
 from tipping import settings
 
 registry.register("fauna", "tipping.db.sqlalchemy_fauna.dialect", "FaunaDialect")
@@ -32,7 +33,7 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = TeamBase.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

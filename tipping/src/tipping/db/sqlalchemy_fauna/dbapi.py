@@ -5,8 +5,8 @@ from datetime import date, datetime, time
 
 from faunadb.client import FaunaClient
 
-from tipping.db.sqlalchemy_fauna import exceptions
-from tipping.db.faunadb import FaunadbClient
+from . import exceptions
+from .faunadb import FaunadbClient
 
 
 PopulatedResultDescription = Tuple[Optional[str], Any, None, None, None, None, bool]

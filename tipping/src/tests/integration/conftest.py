@@ -7,8 +7,6 @@ from contextlib import contextmanager
 import pytest
 from sqlalchemy import create_engine
 
-from tipping.db.faunadb import FaunadbClient
-
 
 CAPTURED_MATCH = 1
 
@@ -35,18 +33,6 @@ def _setup_teardown_test_db():
         yield secret_key
     finally:
         os.system("npx fauna delete-database test --endpoint localhost")
-
-
-@pytest.fixture(scope="function")
-def faunadb_client():
-    """Set up and tear down test DB in local FaunaDB instance.
-
-    Passes the created Faunadb client to the test function.
-    """
-    with _setup_teardown_test_db() as secret_key:
-        client = FaunadbClient(secret=secret_key)
-
-        yield client
 
 
 @pytest.fixture(scope="function")

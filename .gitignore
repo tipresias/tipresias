@@ -49,6 +49,7 @@ coverage.xml
 .nyc_output
 coverage
 cc-test-reporter
+.eslintcache
 
 # Translations
 *.mo

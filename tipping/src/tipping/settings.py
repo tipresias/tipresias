@@ -14,6 +14,7 @@ DATA_SCIENCE_SERVICE_TOKEN = os.getenv("DATA_SCIENCE_SERVICE_TOKEN", "")
 
 FAUNA_SECRET = os.getenv("FAUNA_SECRET", "")
 DATABASE_HOST = os.getenv("DATABASE_HOST", "faunadb:8443")
+DATABASE_URL = f"fauna://{DATABASE_HOST}/?secret={FAUNA_SECRET}"
 
 TEAM_TRANSLATIONS = {
     "Tigers": "Richmond",

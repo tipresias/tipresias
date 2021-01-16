@@ -1,15 +1,28 @@
 """Alembic config."""
 
+# pylint: disable=import-error,wrong-import-position
+import os
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
+from sqlalchemy.dialects import registry
 from alembic import context
+
+SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))
+
+if SRC_DIR not in sys.path:
+    sys.path.append(SRC_DIR)
+
+from tipping import settings
+
+registry.register("fauna", "tipping.db.sqlalchemy_fauna.dialect", "FaunaDialect")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

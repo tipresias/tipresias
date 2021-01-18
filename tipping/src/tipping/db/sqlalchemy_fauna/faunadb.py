@@ -1,17 +1,15 @@
 """Module for all FaunaDB functionality."""
 
-from typing import Literal, Union, Any, Dict, List, Iterable, Optional
+from typing import Union, Any, Dict, List, Optional, Tuple, cast, Sequence
 from time import sleep
 
 from faunadb.client import FaunaClient
 from faunadb import query as q, errors as fauna_errors
 from faunadb.objects import Ref
 import sqlparse
-from sqlparse.sql import Statement, Token, Identifier, Where, Comparison
-from sqlparse.tokens import Keyword, Name, DDL, DML, Punctuation
 from sqlparse import tokens as token_types
+from sqlparse import sql as token_groups
 
-ImportMode = Union[Literal["merge"], Literal["override"]]
 SQLResult = List[Dict[str, Any]]
 
 
@@ -47,162 +45,177 @@ class FaunadbClient:
         sql_statement = sql_statements[0]
         return self._execute_sql_statement(sql_statement)
 
-    def _execute_sql_statement(self, statement: Statement) -> List[Ref]:
-        tokens = [
-            sql_token for sql_token in statement.tokens if not sql_token.is_whitespace
-        ]
+    def _execute_sql_statement(self, statement: token_groups.Statement) -> SQLResult:
+        if statement.token_first().match(token_types.DML, "SELECT"):
+            return self._execute_select(statement)
 
-        if tokens[0].match(DML, "SELECT"):
-            if tokens[1].match(Keyword, "TABLE_NAME"):
-                results = self._client.query(
-                    q.map_expr(
-                        q.lambda_expr("x", q.get(q.var("x"))),
-                        q.paginate(q.collections()),
-                    )
-                )
-                return [self._fauna_data_to_dict(result) for result in results["data"]]
+        if statement.token_first().match(token_types.DDL, "CREATE"):
+            return self._execute_create(statement)
 
-            if isinstance(tokens[1], Identifier) and tokens[2].match(Keyword, "FROM"):
-                table_name = tokens[3].value
-                result = self._client.query(
-                    q.map_expr(
-                        q.lambda_expr("x", q.get(q.var("x"))),
-                        q.paginate(q.match(q.index(f"all_{table_name}"))),
-                    ),
-                )
-                return [data["data"] for data in result["data"]]
+        if statement.token_first().match(token_types.DDL, "DROP"):
+            return self._execute_drop(statement)
 
-        if tokens[0].match(DDL, "CREATE") and tokens[1].match(Keyword, "TABLE"):
-            table_name = tokens[2].value
+        if statement.token_first().match(token_types.DML, "INSERT"):
+            return self._execute_insert(statement)
 
-            result = self._create_collection(table_name, 0)
-            collection = result["ref"]
-
-            self._client.query(
-                q.create_index({"name": f"all_{table_name}", "source": collection})
-            )
-
-            # Fauna is document-based, so doesn't define fields on table creation.
-            # So, we just need the primary key to create an index for finding documents
-            # by pk.
-            primary_key = self._extract_primary_key(tokens)
-            if primary_key is not None:
-                self._client.query(
-                    q.create_index(
-                        {
-                            "name": f"{table_name}_by_{primary_key}",
-                            "source": collection,
-                            "terms": [{"field": ["data", primary_key]}],
-                            "unique": True,
-                        }
-                    )
-                )
-
-            return [self._fauna_ref_to_dict(result["ref"])]
-
-        if tokens[0].match(DDL, "DROP") and tokens[1].match(Keyword, "TABLE"):
-            table_name = tokens[2].get_name()
-
-            result = self._client.query(q.delete(q.collection(table_name)))
-            return [self._fauna_ref_to_dict(result["ref"])]
-
-        if tokens[0].match(DML, "INSERT") and tokens[1].match(Keyword, "INTO"):
-            if tokens[2].is_group:
-                insert_args = [
-                    sql_token
-                    for sql_token in tokens[2].tokens
-                    if not sql_token.is_whitespace
-                ]
-
-                table_name = insert_args[0].value
-                columns = [
-                    sql_token.value
-                    for sql_token in insert_args[1].flatten()
-                    if not sql_token.is_whitespace
-                    and not sql_token.ttype == Punctuation
-                ]
-
-            if tokens[3].is_group:
-                values_args = tokens[3].tokens
-                values = [
-                    sql_token.value.replace("'", "")
-                    for sql_token in values_args[-1].flatten()
-                    if not sql_token.is_whitespace
-                    and not sql_token.ttype == Punctuation
-                ]
-
-            assert len(columns) == len(
-                values
-            ), f"Lengths didn't match:\ncolumns: {columns}\nvalues: {values}"
-
-            record = {col: val for col, val in zip(columns, values)}
-            result = self._client.query(
-                q.create(q.collection(table_name), {"data": record})
-            )
-            return [self._fauna_ref_to_dict(result["ref"])]
-
-        if statement.token_first().match(DML, "DELETE"):
-            idx, table = statement.token_next_by(i=Identifier)
-            _, where = statement.token_next_by(idx=idx, i=Where)
-            # Only works for one condition for now.
-            _, condition = where.token_next_by(i=Comparison)
-            assert condition is not None, str(statement)
-
-            # Only works for column-based conditions for now.
-            cond_idx, column = condition.token_next_by(i=Identifier)
-            assert column is not None, str(statement)
-
-            # Assumes column has form <table_name>.<column_name>
-            condition_column = column.tokens[-1]
-
-            # Only works for column value equality for now
-            cond_idx, equals = condition.token_next_by(
-                cond_idx, m=(token_types.Comparison, "=")
-            )
-            assert equals is not None, str(statement)
-
-            cond_idx, condition_value = condition.token_next(
-                cond_idx, skip_ws=True, skip_cm=True
-            )
-            # We check the idx to make sure a condition_value was found
-            assert cond_idx is not None, str(statement)
-
-            results = self._client.query(
-                q.delete(
-                    q.select(
-                        "ref",
-                        q.get(
-                            q.match(
-                                q.index(f"{table.value}_by_{condition_column.value}"),
-                                condition_value.value.replace("'", ""),
-                            )
-                        ),
-                    )
-                )
-            )
-
-            return [results["data"]]
+        if statement.token_first().match(token_types.DML, "DELETE"):
+            return self._execute_delete(statement)
 
         raise FaunaClientError(f"Unsupported SQL statement received:\n{statement}")
 
-    def _extract_primary_key(
-        self, tokens: Iterable[Token], found_primary=False
-    ) -> Optional[str]:
-        for token in tokens:
-            if token.match(Keyword, "PRIMARY"):
-                found_primary = True
-
-            if token.match(Name, [".*"], regex=True) and found_primary:
-                return token.value
-
-            if token.is_group:
-                maybe_primary_key = self._extract_primary_key(
-                    token.tokens, found_primary
+    def _execute_select(self, statement: token_groups.Statement) -> SQLResult:
+        _, table_name_token = statement.token_next_by(
+            m=(token_types.Keyword, "TABLE_NAME")
+        )
+        if table_name_token is not None:
+            results = self._client.query(
+                q.map_(
+                    q.lambda_("collection", q.get(q.var("collection"))),
+                    q.paginate(q.collections()),
                 )
-                if maybe_primary_key is not None:
-                    return maybe_primary_key
+            )
+            return [self._fauna_data_to_dict(result) for result in results["data"]]
 
-        return None
+        _, identifiers = statement.token_next_by(
+            i=(token_groups.Identifier, token_groups.IdentifierList)
+        )
+        table_names, column_names, alias_names = self._parse_identifiers(identifiers)
+
+        # We can only handle one table at a time for now
+        assert len(set(table_names)) == 1
+        table_name = table_names[0]
+
+        result = self._client.query(
+            q.map_(
+                q.lambda_("document", q.get(q.var("document"))),
+                q.paginate(q.match(q.index(f"all_{table_name}"))),
+            ),
+        )
+
+        column_alias_map = {
+            column: alias
+            for column, alias in zip(column_names, alias_names)
+            if alias is not None
+        }
+        return [
+            self._fauna_data_to_dict(data, alias_map=column_alias_map)
+            for data in result["data"]
+        ]
+
+    def _execute_create(self, statement: token_groups.Statement) -> SQLResult:
+        idx, table_keyword = statement.token_next_by(m=(token_types.Keyword, "TABLE"))
+        assert table_keyword is not None
+
+        idx, table_identifier = statement.token_next_by(
+            i=token_groups.Identifier, idx=idx
+        )
+        table_name = table_identifier.value
+        assert table_name is not None
+
+        result = self._create_collection(table_name, 0)
+        collection = result["ref"]
+
+        self._client.query(
+            q.create_index({"name": f"all_{table_name}", "source": collection})
+        )
+
+        return [self._fauna_ref_to_dict(result["ref"])]
+
+    def _execute_drop(self, statement: token_groups.Statement) -> SQLResult:
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "TABLE"))
+        _, table_identifier = statement.token_next_by(
+            i=token_groups.Identifier, idx=idx
+        )
+
+        table_name = table_identifier.value
+        assert table_name is not None
+
+        result = self._client.query(q.delete(q.collection(table_name)))
+        return [self._fauna_ref_to_dict(result["ref"])]
+
+    def _execute_insert(self, statement: token_groups.Statement) -> SQLResult:
+        idx, function_group = statement.token_next_by(i=token_groups.Function)
+        func_idx, table_identifier = function_group.token_next_by(
+            i=token_groups.Identifier
+        )
+        table_name = table_identifier.value
+
+        _, column_group = function_group.token_next_by(
+            i=token_groups.Parenthesis, idx=func_idx
+        )
+        _, column_identifiers = column_group.token_next_by(
+            i=token_groups.IdentifierList
+        )
+        _, column_names, _ = self._parse_identifiers(column_identifiers)
+
+        idx, value_group = statement.token_next_by(i=token_groups.Values, idx=idx)
+        _, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
+        _, value_identifiers = parenthesis_group.token_next_by(
+            i=token_groups.IdentifierList
+        )
+
+        values = [
+            value
+            for value in value_identifiers
+            if not value.ttype == token_types.Punctuation and not value.is_whitespace
+        ]
+
+        assert len(column_names) == len(
+            values
+        ), f"Lengths didn't match:\ncolumns: {column_names}\nvalues: {values}"
+
+        record = {
+            col: self._extract_value(val) for col, val in zip(column_names, values)
+        }
+        result = self._client.query(
+            q.create(q.collection(table_name), {"data": record})
+        )
+        return [self._fauna_ref_to_dict(result["ref"])]
+
+    def _execute_delete(self, statement: token_groups.Statement) -> SQLResult:
+        idx, table = statement.token_next_by(i=token_groups.Identifier)
+        _, where = statement.token_next_by(idx=idx, i=token_groups.Where)
+        # Only works for one condition for now.
+        _, condition = where.token_next_by(i=token_groups.Comparison)
+        assert condition is not None, str(statement)
+
+        # Only works for column-based conditions for now.
+        cond_idx, column = condition.token_next_by(i=token_groups.Identifier)
+        assert column is not None, str(statement)
+
+        # Assumes column has form <table_name>.<column_name>
+        condition_column = column.tokens[-1]
+
+        # Only works for column value equality for now
+        cond_idx, equals = condition.token_next_by(
+            cond_idx, m=(token_types.Comparison, "=")
+        )
+        assert equals is not None, str(statement)
+
+        cond_idx, condition_check = condition.token_next(
+            cond_idx, skip_ws=True, skip_cm=True
+        )
+        # We check the idx to make sure a condition_check was found
+        assert cond_idx is not None, str(statement)
+
+        condition_value = self._extract_value(condition_check)
+
+        records_to_delete = (
+            q.ref(q.collection(table.value), condition_value)
+            if condition_column.value == "id"
+            else q.select(
+                "ref",
+                q.get(
+                    q.match(
+                        q.index(f"{table.value}_by_{condition_column.value}"),
+                        condition_value,
+                    )
+                ),
+            )
+        )
+        results = self._client.query(q.delete(records_to_delete))
+
+        return [results["data"]]
 
     def _create_collection(self, collection_name: str, retries: int):
         # Sometimes Fauna needs time to do something when trying to create collections,
@@ -218,6 +231,66 @@ class FaunadbClient:
             sleep(retries)
             return self._create_collection(collection_name, retries + 1)
 
+    def _parse_identifiers(
+        self, identifiers: Union[token_groups.Identifier, token_groups.IdentifierList]
+    ) -> Tuple[Sequence[Optional[str]], Sequence[str], Sequence[Optional[str]]]:
+        if isinstance(identifiers, token_groups.Identifier):
+            table_name, column_name, alias_name = self._parse_identifier(identifiers)
+            return ((table_name,), (column_name,), (alias_name,))
+
+        return cast(
+            Tuple[Sequence[Optional[str]], Sequence[str], Sequence[Optional[str]]],
+            tuple(
+                zip(
+                    *[
+                        self._parse_identifier(identifier)
+                        for identifier in identifiers
+                        if isinstance(identifier, token_groups.Identifier)
+                    ]
+                )
+            ),
+        )
+
+    @staticmethod
+    def _parse_identifier(
+        identifier: token_groups.Identifier,
+    ) -> Tuple[Optional[str], str, Optional[str]]:
+        idx, identifier_name = identifier.token_next_by(t=token_types.Name)
+
+        tok_idx, next_token = identifier.token_next(idx, skip_ws=True, skip_cm=True)
+        if next_token and next_token.match(token_types.Punctuation, "."):
+            idx = tok_idx
+            table_name = identifier_name.value
+            idx, column_identifier = identifier.token_next_by(
+                t=token_types.Name, idx=idx
+            )
+            column_name = column_identifier.value
+        else:
+            table_name = None
+            column_name = identifier_name.value
+
+        idx, as_keyword = identifier.token_next_by(
+            m=(token_types.Keyword, "AS"), idx=idx
+        )
+
+        if as_keyword is not None:
+            _, alias_identifier = identifier.token_next_by(
+                i=token_groups.Identifier, idx=idx
+            )
+            alias_name = alias_identifier.value
+        else:
+            alias_name = None
+
+        return (table_name, column_name, alias_name)
+
+    @staticmethod
+    def _extract_value(token: token_groups.Token) -> Union[str, int, float]:
+        value = token.value
+        if isinstance(value, str):
+            return value.replace("'", "")
+
+        return value
+
     @staticmethod
     def _fauna_ref_to_dict(ref: Ref) -> Dict[str, Any]:
         ref_dict = {}
@@ -231,9 +304,21 @@ class FaunadbClient:
         return ref_dict
 
     @staticmethod
-    def _fauna_data_to_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+    def _fauna_data_to_dict(
+        data: Dict[str, Any], alias_map: Dict[str, str] = None
+    ) -> Dict[str, Any]:
+        alias_map = alias_map or {}
         ref_id = data["ref"].id()
+        # SELECT queries usually include a nested 'data' object for the selected values,
+        # but selecting TABLE_NAMES does not, and there might be other cases
+        # that I haven't encountered yet.
+        sub_data = data.get("data", {})
         return {
-            **{key: value for key, value in data.items() if key != "ref"},
+            **{
+                alias_map.get(key) or key: value
+                for key, value in data.items()
+                if key not in ("ref", "data")
+            },
             **{"id": ref_id},
+            **sub_data,
         }

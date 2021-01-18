@@ -94,10 +94,7 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
         self, connection: FaunaConnection, schema=None, **_kwargs
     ) -> List[str]:
         """Get the names of all Fauna collections"""
-        query = """
-            SELECT TABLE_NAME
-            FROM INFORMATION_SCHEMA.TABLES;
-        """
+        query = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES;"
         result = connection.execute(query)
 
         if result.rowcount == 0:

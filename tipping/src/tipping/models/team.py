@@ -1,10 +1,13 @@
 """Data model for AFL teams."""
 
-from typing import Any
+from typing import Any, List
 import enum
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Enum, Integer
+from sqlalchemy.orm import validates
+
+from tipping.models.base import ValidationError
 
 
 # mypy doesn't play nice with dynamic base classes, so we just call it Any
@@ -35,6 +38,16 @@ class TeamName(enum.Enum):
     WESTERN_BULLDOGS = "Western Bulldogs"
     WEST_COAST = "West Coast"
 
+    @classmethod
+    def has_value(cls, name: str) -> bool:
+        """Determines whether the given name is a TeamName value."""
+        return name in cls.values()
+
+    @classmethod
+    def values(cls) -> List:
+        """Returns all name values in TeamName."""
+        return [member.value for member in cls]
+
 
 class Team(Base):
     """Data model for AFL teams."""
@@ -43,3 +56,11 @@ class Team(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(Enum(TeamName))
+
+    @validates("name")
+    def validate_team_name(self, _key, name):
+        """Validates that the name is in the TeamName enum."""
+        if not TeamName.has_value(name):
+            raise ValidationError(f"name {name} is not in {TeamName.values()}")
+
+        return name

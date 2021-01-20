@@ -3,6 +3,7 @@
 import os
 import re
 from contextlib import contextmanager
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import create_engine
@@ -32,10 +33,13 @@ def _setup_teardown_test_db():
         re.search("secret: (.+)", create_key_output).group(CAPTURED_MATCH).strip()
     )
 
-    try:
-        yield secret_key
-    finally:
-        os.system("npx fauna delete-database test --endpoint localhost")
+    with patch.dict(os.environ, {**os.environ, "FAUNA_SECRET": secret_key}):
+        os.system("alembic upgrade head")
+
+        try:
+            yield secret_key
+        finally:
+            os.system("npx fauna delete-database test --endpoint localhost")
 
 
 @pytest.fixture(scope="function")

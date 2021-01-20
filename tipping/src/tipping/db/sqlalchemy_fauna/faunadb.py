@@ -67,6 +67,7 @@ class FaunadbClient:
         _, table_name_token = statement.token_next_by(
             m=(token_types.Keyword, "TABLE_NAME")
         )
+
         if table_name_token is not None:
             results = self._client.query(
                 q.map_(
@@ -74,11 +75,17 @@ class FaunadbClient:
                     q.paginate(q.collections()),
                 )
             )
+
             return [self._fauna_data_to_dict(result) for result in results["data"]]
 
         _, identifiers = statement.token_next_by(
             i=(token_groups.Identifier, token_groups.IdentifierList)
         )
+
+        assert (
+            "INFORMATION_SCHEMA" not in identifiers.value
+        ), f"{statement}\n is not yet supported."
+
         table_names, column_names, alias_names = self._parse_identifiers(identifiers)
 
         # We can only handle one table at a time for now
@@ -144,15 +151,13 @@ class FaunadbClient:
             i=token_groups.Parenthesis, idx=func_idx
         )
         _, column_identifiers = column_group.token_next_by(
-            i=token_groups.IdentifierList
+            i=(token_groups.IdentifierList, token_groups.Identifier)
         )
         _, column_names, _ = self._parse_identifiers(column_identifiers)
 
         idx, value_group = statement.token_next_by(i=token_groups.Values, idx=idx)
         _, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
-        _, value_identifiers = parenthesis_group.token_next_by(
-            i=token_groups.IdentifierList
-        )
+        value_identifiers = parenthesis_group.flatten()
 
         values = [
             value
@@ -167,10 +172,11 @@ class FaunadbClient:
         record = {
             col: self._extract_value(val) for col, val in zip(column_names, values)
         }
+
         result = self._client.query(
             q.create(q.collection(table_name), {"data": record})
         )
-        return [self._fauna_ref_to_dict(result["ref"])]
+        return [self._fauna_data_to_dict(result)]
 
     def _execute_delete(self, statement: token_groups.Statement) -> SQLResult:
         idx, table = statement.token_next_by(i=token_groups.Identifier)
@@ -308,17 +314,17 @@ class FaunadbClient:
         data: Dict[str, Any], alias_map: Dict[str, str] = None
     ) -> Dict[str, Any]:
         alias_map = alias_map or {}
-        ref_id = data["ref"].id()
+
         # SELECT queries usually include a nested 'data' object for the selected values,
         # but selecting TABLE_NAMES does not, and there might be other cases
         # that I haven't encountered yet.
         sub_data = data.get("data", {})
         return {
+            **{"id": data["ref"].id()},
             **{
                 alias_map.get(key) or key: value
                 for key, value in data.items()
                 if key not in ("ref", "data")
             },
-            **{"id": ref_id},
             **sub_data,
         }

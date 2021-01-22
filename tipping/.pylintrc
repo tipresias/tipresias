@@ -7,7 +7,7 @@ disable=
     invalid-name, # Too rigid about constant case/name conventions to be useful
 
 [MASTER]
-ignore=migrations
+ignore=migrations,versions
 
 # TODO: Figure out why using pylint_django plugin keeps raising:
 # AttributeError: 'AssignAttr' object has no attribute 'qname'

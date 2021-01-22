@@ -11,7 +11,6 @@ services:
     depends_on:
       - db
       - splash
-      - faunadb
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-project.settings.development}
@@ -38,10 +37,12 @@ services:
     command: npm start
     depends_on:
       - backend
+      - faunadb
     env_file: .env
     environment:
       PYTHONPATH: "./src"
       PORT: 3333
+      DATABASE_HOST: faunadb:8443
       DATA_SCIENCE_SERVICE: http://host.docker.internal:8008
       TIPRESIAS_APP: http://backend:8000
       AWS_SHARED_CREDENTIALS_FILE: .aws/credentials

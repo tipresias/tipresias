@@ -1,9 +1,11 @@
 """Module for defining the Fauna Dialect for use in SQLAlchemy."""
 
 from typing import List, Dict, Any
+from packaging.version import Version
 
 from sqlalchemy.engine import default
 from sqlalchemy import types
+from sqlalchemy.ext.compiler import compiles
 from mypy_extensions import TypedDict
 
 from tipping.settings import IS_PRODUCTION
@@ -29,6 +31,30 @@ type_map = {
     "datetime": types.DATETIME,
     "timeofday": types.TIME,
 }
+
+# The below is copy/pasted from https://github.com/sqlalchemy-redshift/sqlalchemy-redshift
+# (file sqlalchemy_redshift/dialect.py) to enable use of alembic
+# with a 3rd-party SQLAlchemy Dialect
+try:
+    import alembic
+except ImportError:
+    pass
+else:
+    from alembic.ddl import postgresql
+
+    from alembic.ddl.base import RenameTable
+
+    compiles(RenameTable, "fauna")(postgresql.visit_rename_table)
+
+    if Version(alembic.__version__) >= Version("1.0.6"):
+        from alembic.ddl.base import ColumnComment
+
+        compiles(ColumnComment, "fauna")(postgresql.visit_column_comment)
+
+    class FaunaImpl(postgresql.PostgresqlImpl):
+        """Fauna implementation for use by Alembic."""
+
+        __dialect__ = "fauna"
 
 
 class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
@@ -68,12 +94,14 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
         self, connection: FaunaConnection, schema=None, **_kwargs
     ) -> List[str]:
         """Get the names of all Fauna collections"""
-        query = """
-            SELECT TABLE_NAME
-            FROM INFORMATION_SCHEMA.TABLES;
-        """
+        query = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES;"
         result = connection.execute(query)
-        return [row.name for row in result]
+
+        if result.rowcount == 0:
+            return []
+
+        id_col = result.keys().index("id")
+        return [row[id_col] for row in result.fetchall()]
 
     def get_view_names(self, connection, schema=None, **_kwargs) -> List[str]:
         """Get the names of views."""

@@ -4,7 +4,7 @@ from typing import Any, List
 import enum
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Enum, Integer
+from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import validates
 
 from tipping.models.base import ValidationError
@@ -55,7 +55,7 @@ class Team(Base):
     __tablename__ = "teams"
 
     id = Column(Integer, primary_key=True)
-    name = Column(Enum(TeamName))
+    name = Column(String, unique=True)
 
     @validates("name")
     def validate_team_name(self, _key, name):

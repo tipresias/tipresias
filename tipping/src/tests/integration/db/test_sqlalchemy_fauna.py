@@ -6,12 +6,12 @@ import itertools
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime, inspect
 from sqlalchemy.orm import sessionmaker
-from pytest import fixture
+import pytest
 
 from tipping.db.sqlalchemy_fauna import dialect
 
 
-@fixture()
+@pytest.fixture()
 def user_model():
     table_name = "users"
     Base = declarative_base()
@@ -20,9 +20,10 @@ def user_model():
         __tablename__ = table_name
 
         id = Column(Integer, primary_key=True)
-        name = Column(String(250), nullable=False)
-        date_joined = Column(DateTime(), nullable=False)
-        age = Column(Integer())
+        name = Column(String, unique=True)
+        date_joined = Column(DateTime, nullable=False)
+        age = Column(Integer)
+        finger_count = Column(Integer, default=10)
 
     return User, Base
 

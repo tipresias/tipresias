@@ -2,6 +2,7 @@
 
 from typing import Union, Any, Dict, List, Optional, Tuple, cast, Sequence
 from time import sleep
+import logging
 
 from faunadb.client import FaunaClient
 from faunadb import query as q, errors as fauna_errors
@@ -9,6 +10,8 @@ from faunadb.objects import Ref
 import sqlparse
 from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
+
+from . import exceptions
 
 SQLResult = List[Dict[str, Any]]
 
@@ -38,13 +41,19 @@ class FaunadbClient:
         formatted_query = self._format_sql(query)
         sql_statements = sqlparse.parse(formatted_query)
 
-        assert len(sql_statements) <= 1, (
-            "Only one SQL statement at a time is currently supported. "
-            f"The following query has more than one:\n{formatted_query}"
-        )
+        if len(sql_statements) > 1:
+            raise exceptions.NotSupportedError(
+                "Only one SQL statement at a time is currently supported. "
+                f"The following query has more than one:\n{formatted_query}"
+            )
 
         sql_statement = sql_statements[0]
-        return self._execute_sql_statement(sql_statement)
+
+        try:
+            return self._execute_sql_statement(sql_statement)
+        except Exception as err:
+            logging.error(formatted_query)
+            raise err
 
     @staticmethod
     def _format_sql(sql: str) -> str:
@@ -68,7 +77,7 @@ class FaunadbClient:
         if statement.token_first().match(token_types.DML, "DELETE"):
             return self._execute_delete(statement)
 
-        raise FaunaClientError(f"Unsupported SQL statement received:\n{statement}")
+        raise exceptions.NotSupportedError(self._format_sql(str(statement)))
 
     def _execute_select(self, statement: token_groups.Statement) -> SQLResult:
         table_name = self._extract_table_name(statement)
@@ -82,10 +91,11 @@ class FaunadbClient:
         table_names, column_names, alias_names = self._parse_identifiers(identifiers)
 
         # We can only handle one table at a time for now
-        assert len(set(table_names)) <= 1, (
-            "Only one table per query is currently supported, but received:\n",
-            f"{self._format_sql(str(statement))}",
-        )
+        if len(set(table_names)) > 1:
+            raise exceptions.NotSupportedError(
+                "Only one table per query is currently supported, but received:\n",
+                f"{self._format_sql(str(statement))}",
+            )
 
         idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
         _, table_identifier = statement.token_next_by(
@@ -114,20 +124,12 @@ class FaunadbClient:
         ]
 
     def _execute_create(self, statement: token_groups.Statement) -> SQLResult:
-        idx, table_keyword = statement.token_next_by(m=(token_types.Keyword, "TABLE"))
-        assert table_keyword is not None, (
-            "Expected a TABLE keyword, but received:\n"
-            f"{self._format_sql(str(statement))}"
-        )
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "TABLE"))
 
         idx, table_identifier = statement.token_next_by(
             i=token_groups.Identifier, idx=idx
         )
         table_name = table_identifier.value
-        assert table_name is not None, (
-            "Expected an Identifier for the table name, but received:\n"
-            f"{self._format_sql(str(statement))}"
-        )
 
         result = self._create_collection(table_name, 0)
         collection = result["ref"]
@@ -142,11 +144,6 @@ class FaunadbClient:
         idx, _ = statement.token_next_by(m=(token_types.Keyword, "TABLE"))
         _, table_identifier = statement.token_next_by(
             i=token_groups.Identifier, idx=idx
-        )
-
-        assert table_identifier is not None, (
-            "Expected an Identifier for the table name, but received:\n"
-            f"{self._format_sql(str(statement))}"
         )
 
         result = self._client.query(q.delete(q.collection(table_identifier.value)))
@@ -195,17 +192,19 @@ class FaunadbClient:
         _, where = statement.token_next_by(idx=idx, i=token_groups.Where)
 
         _, condition = where.token_next_by(i=token_groups.Comparison)
-        assert condition is not None, (
-            "Only one WHERE condition at a time is currently supported, "
-            f"but received:\n{self._format_sql(str(statement))}"
-        )
+        if condition is None:
+            raise exceptions.NotSupportedError(
+                "Only one WHERE condition at a time is currently supported, "
+                f"but received:\n{self._format_sql(str(statement))}"
+            )
 
         cond_idx, column = condition.token_next_by(i=token_groups.Identifier)
-        assert column is not None, (
-            "Only column-value-based conditions (e.g. WHERE <column> = <value>) "
-            "are currently supported, but received:\n"
-            f"{self._format_sql(str(statement))}"
-        )
+        if column is None:
+            raise exceptions.NotSupportedError(
+                "Only column-value-based conditions (e.g. WHERE <column> = <value>) "
+                "are currently supported, but received:\n"
+                f"{self._format_sql(str(statement))}"
+            )
 
         # Assumes column has form <table_name>.<column_name>
         condition_column = column.tokens[-1]
@@ -213,17 +212,13 @@ class FaunadbClient:
         cond_idx, equals = condition.token_next_by(
             cond_idx, m=(token_types.Comparison, "=")
         )
-        assert equals is not None, (
-            "Only column-value equality conditions are currently supported, "
-            f"but received:\n{self._format_sql(str(statement))}"
-        )
+        if equals is None:
+            raise exceptions.NotSupportedError(
+                "Only column-value equality conditions are currently supported, "
+                f"but received:\n{self._format_sql(str(statement))}"
+            )
 
-        cond_idx, condition_check = condition.token_next(cond_idx, skip_ws=True)
-        assert cond_idx is not None, (
-            "Expected a value to check for equality in the WHERE clause, "
-            f"but received:\n{self._format_sql(str(statement))}"
-        )
-
+        _, condition_check = condition.token_next(cond_idx, skip_ws=True)
         condition_value = self._extract_value(condition_check)
 
         records_to_delete = (
@@ -263,7 +258,7 @@ class FaunadbClient:
 
             return [self._fauna_data_to_dict(result) for result in results["data"]]
 
-        raise FaunaClientError(f"Unsupported SQL statement received:\n{statement}")
+        raise exceptions.NotSupportedError(self._format_sql(str(statement)))
 
     @staticmethod
     def _extract_table_name(statement: token_groups.Statement) -> str:

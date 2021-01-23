@@ -64,33 +64,24 @@ class FaunadbClient:
         raise FaunaClientError(f"Unsupported SQL statement received:\n{statement}")
 
     def _execute_select(self, statement: token_groups.Statement) -> SQLResult:
-        _, table_name_token = statement.token_next_by(
-            m=(token_types.Keyword, "TABLE_NAME")
-        )
+        table_name = self._extract_table_name(statement)
 
-        if table_name_token is not None:
-            results = self._client.query(
-                q.map_(
-                    q.lambda_("collection", q.get(q.var("collection"))),
-                    q.paginate(q.collections()),
-                )
-            )
+        if "INFORMATION_SCHEMA" in table_name:
+            return self._execute_select_from_information_schema(statement)
 
-            return [self._fauna_data_to_dict(result) for result in results["data"]]
-
-        _, identifiers = statement.token_next_by(
+        idx, identifiers = statement.token_next_by(
             i=(token_groups.Identifier, token_groups.IdentifierList)
         )
-
-        assert (
-            "INFORMATION_SCHEMA" not in identifiers.value
-        ), f"{statement}\n is not yet supported."
-
         table_names, column_names, alias_names = self._parse_identifiers(identifiers)
 
         # We can only handle one table at a time for now
-        assert len(set(table_names)) == 1
-        table_name = table_names[0]
+        assert len(set(table_names)) <= 1
+
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
+        _, table_identifier = statement.token_next_by(
+            i=(token_groups.Identifier), idx=idx
+        )
+        table_name = table_identifier.value
 
         result = self._client.query(
             q.map_(
@@ -104,8 +95,11 @@ class FaunadbClient:
             for column, alias in zip(column_names, alias_names)
             if alias is not None
         }
+
         return [
-            self._fauna_data_to_dict(data, alias_map=column_alias_map)
+            self._select_columns(
+                column_names, self._fauna_data_to_dict(data, alias_map=column_alias_map)
+            )
             for data in result["data"]
         ]
 
@@ -223,6 +217,36 @@ class FaunadbClient:
 
         return [results["data"]]
 
+    def _execute_select_from_information_schema(
+        self, statement: token_groups.Statement
+    ) -> SQLResult:
+        _, select_keyword = statement.token_next_by(
+            m=[
+                (token_types.Keyword, "TABLE_NAME"),
+                (token_types.Keyword, "COLUMN_NAME"),
+            ]
+        )
+
+        if "TABLE_NAME" in select_keyword.value:
+            results = self._client.query(
+                q.map_(
+                    q.lambda_("collection", q.get(q.var("collection"))),
+                    q.paginate(q.collections()),
+                )
+            )
+
+            return [self._fauna_data_to_dict(result) for result in results["data"]]
+
+        raise FaunaClientError(f"Unsupported SQL statement received:\n{statement}")
+
+    @staticmethod
+    def _extract_table_name(statement: token_groups.Statement) -> str:
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
+        _, table_identifier = statement.token_next_by(
+            i=(token_groups.Identifier), idx=idx
+        )
+        return table_identifier.value
+
     def _create_collection(self, collection_name: str, retries: int):
         # Sometimes Fauna needs time to do something when trying to create collections,
         # so we retry with gradual backoff. This seems to only be an issue when
@@ -328,3 +352,11 @@ class FaunadbClient:
             },
             **sub_data,
         }
+
+    def _select_columns(
+        self, column_names: Sequence[str], document: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        if column_names[0] == "*":
+            return document
+
+        return {key: value for key, value in document.items() if key in column_names}

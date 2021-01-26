@@ -107,6 +107,27 @@ def test_select_all_records(fauna_engine, user_model):
     assert len(users) == len(user_records)
 
 
+def test_select_by_unique_field(fauna_engine, user_model):
+    User, Base = user_model
+    Base.metadata.create_all(fauna_engine)
+
+    DBSession = sessionmaker(bind=fauna_engine)
+    session = DBSession()
+
+    filter_name = "Bob"
+    names = [filter_name, "Linda", "Tina"]
+    users = [User(name=name, date_joined=datetime.now(), age=30) for name in names]
+    for user in users:
+        session.add(user)
+    session.commit()
+
+    user_records = session.query(User).filter_by(name=filter_name).all()
+
+    # It fetches the records
+    assert len(user_records) == 1
+    assert user_records[0].name == filter_name
+
+
 def test_delete_record_conditionally(fauna_engine, user_model):
     User, Base = user_model
     Base.metadata.create_all(fauna_engine)

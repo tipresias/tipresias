@@ -158,12 +158,32 @@ class FaunadbClient:
         )
         table_name = table_identifier.value
 
+        condition_column, condition_value = self._extract_where_conditions(statement)
+
+        if condition_column == "id":
+            records_to_select = q.ref(q.collection(table_name), condition_value)
+        elif condition_column is None:
+            records_to_select = q.match(q.index(f"all_{table_name}"))
+        else:
+            records_to_select = q.match(
+                q.index(f"{table_name}_by_{condition_column}"), condition_value
+            )
+
         result = self._client.query(
             q.map_(
                 q.lambda_("document", q.get(q.var("document"))),
-                q.paginate(q.match(q.index(f"all_{table_name}"))),
-            ),
+                q.paginate(records_to_select),
+            )
         )
+
+        # If an index match only returns one document, the result is a dictionary,
+        # otherwise, it's a dictionary wrapped in a list. Not sure why
+        # (fetching by ID returns a list when paginated & mapped) and too lazy
+        # to figure it out.
+        try:
+            result = result[0]
+        except KeyError:
+            pass
 
         column_alias_map = {
             column: alias
@@ -291,10 +311,36 @@ class FaunadbClient:
         return [self._fauna_data_to_dict(result)]
 
     def _execute_delete(self, statement: token_groups.Statement) -> SQLResult:
-        idx, table = statement.token_next_by(i=token_groups.Identifier)
-        _, where = statement.token_next_by(idx=idx, i=token_groups.Where)
+        _, table = statement.token_next_by(i=token_groups.Identifier)
+        condition_column, condition_value = self._extract_where_conditions(statement)
 
-        _, condition = where.token_next_by(i=token_groups.Comparison)
+        if condition_column == "id":
+            records_to_delete = q.ref(q.collection(table.value), condition_value)
+        elif condition_column is None:
+            records_to_delete = q.match(
+                q.index(f"all_{table.value}"),
+            )
+        else:
+            records_to_delete = q.match(
+                q.index(f"{table.value}_by_{condition_column}"),
+                condition_value,
+            )
+
+        results = self._client.query(
+            q.delete(q.select("ref", q.get(records_to_delete)))
+        )
+
+        return [results["data"]]
+
+    def _extract_where_conditions(
+        self, statement
+    ) -> Tuple[Optional[str], Union[int, float, str, None]]:
+        _, where_group = statement.token_next_by(i=token_groups.Where)
+
+        if where_group is None:
+            return None, None
+
+        _, condition = where_group.token_next_by(i=token_groups.Comparison)
         if condition is None:
             raise exceptions.NotSupportedError(
                 "Only one WHERE condition at a time is currently supported, "
@@ -324,22 +370,7 @@ class FaunadbClient:
         _, condition_check = condition.token_next(cond_idx, skip_ws=True)
         condition_value = self._extract_value(condition_check)
 
-        records_to_delete = (
-            q.ref(q.collection(table.value), condition_value)
-            if condition_column.value == "id"
-            else q.select(
-                "ref",
-                q.get(
-                    q.match(
-                        q.index(f"{table.value}_by_{condition_column.value}"),
-                        condition_value,
-                    )
-                ),
-            )
-        )
-        results = self._client.query(q.delete(records_to_delete))
-
-        return [results["data"]]
+        return str(condition_column.value), condition_value
 
     def _execute_select_from_information_schema(
         self, statement: token_groups.Statement

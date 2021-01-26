@@ -190,9 +190,9 @@ class FaunadbClient:
             i=token_groups.Parenthesis, idx=idx
         )
 
-        fields_metadata = self._extract_column_definitions(column_identifiers)
+        field_metadata = self._extract_column_definitions(column_identifiers)
         result = self._create_collection(
-            table_name, metadata={"metadata": {"fields": fields_metadata}}
+            table_name, metadata={"metadata": {"fields": field_metadata}}
         )
         collection = result["ref"]
 
@@ -200,16 +200,20 @@ class FaunadbClient:
             q.create_index({"name": f"all_{table_name}", "source": collection})
         )
 
-        for field_name, field_data in fields_metadata.items():
-            if field_data["unique"]:
-                self._client.query(
-                    q.create_index(
-                        {
-                            "name": f"find_{table_name}_by_{field_name}",
-                            "source": collection,
-                        }
-                    )
+        for field_name, field_data in field_metadata.items():
+            if field_name == "id" or not field_data["unique"]:
+                continue
+
+            self._client.query(
+                q.create_index(
+                    {
+                        "name": f"{table_name}_by_{field_name}",
+                        "source": collection,
+                        "terms": [{"field": ["data", field_name]}],
+                        "unique": True,
+                    }
                 )
+            )
 
         return [self._fauna_collection_to_dict(result["ref"])]
 
@@ -255,9 +259,35 @@ class FaunadbClient:
             col: self._extract_value(val) for col, val in zip(column_names, values)
         }
 
-        result = self._client.query(
-            q.create(q.collection(table_name), {"data": record})
-        )
+        collection = self._client.query(q.get(q.collection(table_name)))
+        field_metadata = collection["data"].get("metadata", {}).get("fields")
+        cleaned_record = {}
+
+        if field_metadata is not None:
+            for field_name, field_constraints in field_metadata.items():
+                field_value = record.get(field_name) or field_constraints.get("default")
+
+                cleaned_record[field_name] = field_value
+
+        try:
+            result = self._client.query(
+                q.create(q.collection(table_name), {"data": cleaned_record})
+            )
+        except fauna_errors.BadRequest as err:
+            if "document is not unique" not in str(err):
+                raise err
+
+            unique_field_names = [
+                field_name
+                for field_name, field_constraints in field_metadata.items()
+                if field_constraints.get("unique")
+            ]
+            raise exceptions.ProgrammingError(
+                "Tried to create a document with duplicate value for a unique field.\n"
+                f"Document:\n\t{record}"
+                f"Unique fields:\n\t{unique_field_names}"
+            )
+
         return [self._fauna_data_to_dict(result)]
 
     def _execute_delete(self, statement: token_groups.Statement) -> SQLResult:
@@ -434,7 +464,9 @@ class FaunadbClient:
                 t=token_types.Name, idx=idx
             )
 
-            if primary_key_column is None:
+            # 'id' is defined and managed by Fauna, so we ignore any attempts
+            # to manage it from SQLAlchemy
+            if primary_key_column is None or primary_key_column.value == "id":
                 break
 
             primary_key_column_name = primary_key_column.value
@@ -471,7 +503,9 @@ class FaunadbClient:
                 t=token_types.Name, idx=idx
             )
 
-            if unique_key_column is None:
+            # 'id' is defined and managed by Fauna, so we ignore any attempts
+            # to manage it from SQLAlchemy
+            if unique_key_column is None or unique_key_column.value == "id":
                 break
 
             unique_key_column_name = unique_key_column.value
@@ -489,6 +523,11 @@ class FaunadbClient:
         column_definition_group: token_groups.TokenList,
     ) -> FieldsMetadata:
         idx, column = column_definition_group.token_next_by(t=token_types.Name)
+        column_name = column.value
+
+        if column_name == "id":
+            return metadata
+
         idx, data_type = column_definition_group.token_next_by(
             t=token_types.Name, idx=idx
         )
@@ -514,7 +553,6 @@ class FaunadbClient:
                 f"{self._format_sql(column_definition_group)}"
             )
 
-        column_name = column.value
         column_metadata = metadata.get(column_name, {})
         is_primary_key = primary_key_keyword is not None
         is_not_null = (
@@ -635,8 +673,12 @@ class FaunadbClient:
         return (table_name, column_name, alias_name)
 
     @staticmethod
-    def _extract_value(token: token_groups.Token) -> Union[str, int, float]:
+    def _extract_value(token: token_groups.Token) -> Union[str, int, float, None]:
         value = token.value
+
+        if value == "NONE":
+            return None
+
         if isinstance(value, str):
             return value.replace("'", "")
 

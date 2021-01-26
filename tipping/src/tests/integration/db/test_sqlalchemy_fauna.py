@@ -4,7 +4,14 @@ from datetime import datetime
 import itertools
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, inspect
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    inspect,
+    exc as sqlalchemy_exceptions,
+)
 from sqlalchemy.orm import sessionmaker
 import pytest
 
@@ -125,3 +132,20 @@ def test_delete_record_conditionally(fauna_engine, user_model):
     # It deletes the record
     assert "Linda" in user_names
     assert user_to_delete.name not in user_names
+
+
+def test_unique_constraint(fauna_engine, user_model):
+    User, Base = user_model
+    Base.metadata.create_all(fauna_engine)
+
+    DBSession = sessionmaker(bind=fauna_engine)
+    session = DBSession()
+
+    session.add(User(name="Bob", date_joined=datetime.now(), age=30))
+    session.add(User(name="Bob", date_joined=datetime.now(), age=60))
+
+    with pytest.raises(
+        sqlalchemy_exceptions.ProgrammingError,
+        match="Tried to create a document with duplicate value for a unique field",
+    ):
+        session.commit()

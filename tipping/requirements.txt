@@ -6,7 +6,7 @@ pydocstyle==5.1.1
 black
 pytest
 pytest-env
-faker==5.6.3
+faker==5.8.0
 pytest-watch
 mypy>=0.70
 freezegun==1.1.0

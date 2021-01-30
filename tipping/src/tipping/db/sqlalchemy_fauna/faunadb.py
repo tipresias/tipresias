@@ -18,6 +18,20 @@ from mypy_extensions import TypedDict
 from . import exceptions
 
 
+SQLResult = List[Dict[str, Any]]
+FieldMetadata = TypedDict(
+    "FieldMetadata",
+    {
+        "unique": bool,
+        "not_null": bool,
+        "default": Union[str, int, float, bool, datetime, None],
+        "type": str,
+    },
+)
+FieldsMetadata = Dict[str, FieldMetadata]
+CollectionMetadata = TypedDict("CollectionMetadata", {"fields": FieldsMetadata})
+
+
 DATA_TYPE_MAP = {
     "CHAR": "String",
     "VARCHAR": "String",
@@ -55,20 +69,12 @@ DATA_TYPE_MAP = {
     "TIME": "String",
 }
 
-
-SQLResult = List[Dict[str, Any]]
-FieldMetadata = TypedDict(
-    "FieldMetadata",
-    {
-        "unique": bool,
-        "not_null": bool,
-        "default": Union[str, int, float, bool, datetime, None],
-        "type": str,
-    },
-    total=False,
-)
-FieldsMetadata = Dict[str, FieldMetadata]
-CollectionMetadata = TypedDict("CollectionMetadata", {"fields": FieldsMetadata})
+DEFAULT_FIELD_METADATA: FieldMetadata = {
+    "unique": False,
+    "not_null": False,
+    "default": None,
+    "type": "",
+}
 
 
 class FaunaClientError(Exception):
@@ -132,7 +138,10 @@ class FaunadbClient:
         if statement.token_first().match(token_types.DML, "DELETE"):
             return self._execute_delete(statement)
 
-        raise exceptions.NotSupportedError(self._format_sql(str(statement)))
+        if statement.token_first().match(token_types.DML, "UPDATE"):
+            return self._execute_update(statement)
+
+        raise exceptions.NotSupportedError()
 
     def _execute_select(self, statement: token_groups.Statement) -> SQLResult:
         table_name = self._extract_table_name(statement)
@@ -341,33 +350,18 @@ class FaunadbClient:
             return None, None
 
         _, condition = where_group.token_next_by(i=token_groups.Comparison)
-        if condition is None:
-            raise exceptions.NotSupportedError(
-                "Only one WHERE condition at a time is currently supported, "
-                f"but received:\n{self._format_sql(str(statement))}"
-            )
 
-        cond_idx, column = condition.token_next_by(i=token_groups.Identifier)
-        if column is None:
-            raise exceptions.NotSupportedError(
-                "Only column-value-based conditions (e.g. WHERE <column> = <value>) "
-                "are currently supported, but received:\n"
-                f"{self._format_sql(str(statement))}"
-            )
-
+        idx, column = condition.token_next_by(i=token_groups.Identifier)
         # Assumes column has form <table_name>.<column_name>
         condition_column = column.tokens[-1]
 
-        cond_idx, equals = condition.token_next_by(
-            cond_idx, m=(token_types.Comparison, "=")
-        )
+        idx, equals = condition.token_next_by(idx, m=(token_types.Comparison, "="))
         if equals is None:
             raise exceptions.NotSupportedError(
-                "Only column-value equality conditions are currently supported, "
-                f"but received:\n{self._format_sql(str(statement))}"
+                "Only column-value equality conditions are currently supported"
             )
 
-        _, condition_check = condition.token_next(cond_idx, skip_ws=True)
+        _, condition_check = condition.token_next(idx, skip_ws=True)
         condition_value = self._extract_value(condition_check)
 
         return str(condition_column.value), condition_value
@@ -383,7 +377,7 @@ class FaunadbClient:
         )
 
         if "TABLE_NAME" in select_keyword.value:
-            results = self._client.query(
+            result = self._client.query(
                 q.map_(
                     q.lambda_("collection", q.get(q.var("collection"))),
                     q.paginate(q.collections()),
@@ -392,10 +386,47 @@ class FaunadbClient:
 
             return [
                 {"id": self._fauna_data_to_dict(result).get("id")}
-                for result in results["data"]
+                for result in result["data"]
             ]
 
-        raise exceptions.NotSupportedError(self._format_sql(str(statement)))
+        if "COLUMN_NAME" in select_keyword.value:
+            # We don't use the standard logic for parsing this WHERE clause,
+            # because sqlparse treats WHERE clauses in INFORMATION_SCHEMA queries
+            # differently, returning flat tokens in the WHERE group
+            # instead of nested token groups.
+            _, where_group = statement.token_next_by(i=token_groups.Where)
+            idx, condition_column = where_group.token_next_by(
+                m=(token_types.Keyword, "TABLE_NAME")
+            )
+
+            if condition_column is None:
+                raise exceptions.NotSupportedError(
+                    "Only TABLE_NAME condition is supported for SELECT COLUMN_NAME"
+                )
+
+            idx, condition = where_group.token_next_by(
+                m=(token_types.Comparison, "="), idx=idx
+            )
+
+            if condition is None:
+                raise exceptions.NotSupportedError(
+                    "Only column-value-based conditions (e.g. WHERE <column> = <value>) "
+                    "are currently supported."
+                )
+
+            _, condition_check = where_group.token_next(idx, skip_ws=True)
+            condition_value = self._extract_value(condition_check)
+
+            result = self._client.query(q.get(q.collection(condition_value)))
+
+            return [
+                {**field_data, "name": field_name}
+                for field_name, field_data in result["data"]["metadata"][
+                    "fields"
+                ].items()
+            ]
+
+        raise exceptions.NotSupportedError()
 
     @staticmethod
     def _extract_table_name(statement: token_groups.Statement) -> str:
@@ -503,6 +534,7 @@ class FaunadbClient:
             primary_key_column_name = primary_key_column.value
 
             new_metadata[primary_key_column_name] = {
+                **DEFAULT_FIELD_METADATA,  # type: ignore
                 **new_metadata.get(primary_key_column_name, {}),  # type: ignore
                 "unique": True,
                 "not_null": True,
@@ -542,6 +574,7 @@ class FaunadbClient:
             unique_key_column_name = unique_key_column.value
 
             new_metadata[unique_key_column_name] = {
+                **DEFAULT_FIELD_METADATA,  # type: ignore
                 **new_metadata.get(unique_key_column_name, {}),  # type: ignore
                 "unique": True,
             }
@@ -584,7 +617,9 @@ class FaunadbClient:
                 f"{self._format_sql(column_definition_group)}"
             )
 
-        column_metadata = metadata.get(column_name, {})
+        column_metadata: Union[FieldMetadata, Dict[str, str]] = metadata.get(
+            column_name, {}
+        )
         is_primary_key = primary_key_keyword is not None
         is_not_null = (
             not_null_keyword is not None
@@ -607,6 +642,7 @@ class FaunadbClient:
         return {
             **metadata,
             column_name: {
+                **DEFAULT_FIELD_METADATA,  # type: ignore
                 **metadata.get(column_name, {}),  # type: ignore
                 "unique": is_unique,
                 "not_null": is_not_null,

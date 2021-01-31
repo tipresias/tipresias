@@ -1,6 +1,6 @@
 # Data packages
 numpy==1.19.5
-pandas==1.2.0
+pandas==1.2.1
 
 # App packages
 requests

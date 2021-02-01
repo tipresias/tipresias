@@ -21,7 +21,7 @@
     "d3": "^6.5.0",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.6",
-    "graphql": "^15.0.0",
+    "graphql": "^15.5.0",
     "graphql-tag": "^2.11.0",
     "lodash": "^4.17.20",
     "lodash.template": "^4.5.0",

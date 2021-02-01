@@ -341,6 +341,53 @@ class FaunadbClient:
 
         return [results["data"]]
 
+    def _execute_update(self, statement: token_groups.Statement) -> SQLResult:
+        idx, table_identifier = statement.token_next_by(i=token_groups.Identifier)
+        table_name = table_identifier.value
+
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "SET"), idx=idx)
+        idx, comparison_group = statement.token_next_by(
+            i=token_groups.Comparison, idx=idx
+        )
+        _, update_column = comparison_group.token_next_by(i=token_groups.Identifier)
+        idx, comparison = comparison_group.token_next_by(
+            m=(token_types.Comparison, "=")
+        )
+        update_column_value = update_column.value
+
+        if comparison is None:
+            raise exceptions.NotSupportedError()
+
+        _, update_value = comparison_group.token_next(idx, skip_ws=True)
+        update_value_value = self._extract_value(update_value)
+
+        condition_column, condition_value = self._extract_where_conditions(statement)
+
+        self._client.query(
+            q.update(
+                q.select(
+                    "ref",
+                    q.get(
+                        q.match(
+                            q.index(f"{table_name}_by_{condition_column}"),
+                            condition_value,
+                        )
+                    ),
+                ),
+                {"data": {update_column_value: update_value_value}},
+            )
+        )
+
+        update_count = self._client.query(
+            q.count(
+                q.match(
+                    q.index(f"{table_name}_by_{condition_column}"), update_value_value
+                )
+            ),
+        )
+
+        return [{"count": update_count}]
+
     def _extract_where_conditions(
         self, statement
     ) -> Tuple[Optional[str], Union[int, float, str, None]]:
@@ -488,6 +535,7 @@ class FaunadbClient:
         return (
             self._define_primary_key(metadata, column_definition_group)
             or self._define_unique_constraint(metadata, column_definition_group)
+            or self._define_foreign_key_constraint(metadata, column_definition_group)
             or self._define_column(metadata, column_definition_group)
         )
 
@@ -580,6 +628,45 @@ class FaunadbClient:
             }
 
         return new_metadata
+
+    @staticmethod
+    def _define_foreign_key_constraint(
+        metadata: FieldsMetadata, column_definition_group: token_groups.TokenList
+    ) -> Optional[FieldsMetadata]:
+        idx, foreign_keyword = column_definition_group.token_next_by(
+            m=(token_types.Keyword, "FOREIGN")
+        )
+        if foreign_keyword is None:
+            return None
+
+        idx, _ = column_definition_group.token_next_by(
+            m=(token_types.Name, "KEY"), idx=idx
+        )
+        idx, foreign_key_column = column_definition_group.token_next_by(
+            t=token_types.Name, idx=idx
+        )
+        column_name = foreign_key_column.value
+
+        idx, _ = column_definition_group.token_next_by(
+            m=(token_types.Keyword, "REFERENCES"), idx=idx
+        )
+        idx, reference_table = column_definition_group.token_next_by(
+            t=token_types.Name, idx=idx
+        )
+        reference_table_name = reference_table.value
+        idx, reference_column = column_definition_group.token_next_by(
+            t=token_types.Name, idx=idx
+        )
+        reference_column_name = reference_column.value
+
+        return {
+            **metadata,
+            column_name: {
+                **DEFAULT_FIELD_METADATA,  # type: ignore
+                **metadata.get(column_name, {}),
+                "references": {reference_table_name: reference_column_name},
+            },
+        }
 
     def _define_column(
         self,

@@ -8,7 +8,7 @@ whitenoise
 graphene==3.0.0b6
 graphene-django==3.0.0b7
 gql==3.0.0a3
-graphql-core>=3.0,<4.0
+graphql-core==3.1.2
 psycopg2-binary
 dj-database-url
 sendgrid>=6.0,<6.99

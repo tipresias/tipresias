@@ -1,3 +1,4 @@
 """All data models for the server app."""
 
-from tipping.models.team import Team, Base as TeamBase
+from tipping.models.team import Team
+from tipping.models.match import Match

@@ -1,17 +1,12 @@
 """Data model for AFL teams."""
 
-from typing import Any, List
+from typing import List
 import enum
 
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Enum, Integer
+from sqlalchemy import Column, String, Integer
 from sqlalchemy.orm import validates
 
-from tipping.models.base import ValidationError
-
-
-# mypy doesn't play nice with dynamic base classes, so we just call it Any
-Base: Any = declarative_base()
+from tipping.models.base import ValidationError, Base
 
 
 class TeamName(enum.Enum):
@@ -55,7 +50,7 @@ class Team(Base):
     __tablename__ = "teams"
 
     id = Column(Integer, primary_key=True)
-    name = Column(Enum(TeamName))
+    name = Column(String, unique=True)
 
     @validates("name")
     def validate_team_name(self, _key, name):

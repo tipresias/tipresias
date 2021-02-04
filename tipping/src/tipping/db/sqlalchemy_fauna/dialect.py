@@ -22,14 +22,13 @@ ColumnName = TypedDict(
     },
 )
 
-
 type_map = {
-    "string": types.String,
-    "number": types.Numeric,
-    "boolean": types.Boolean,
-    "date": types.DATE,
-    "datetime": types.DATETIME,
-    "timeofday": types.TIME,
+    "String": types.String,
+    "Float": types.Float,
+    "Integer": types.Integer,
+    "Boolean": types.Boolean,
+    "Date": types.DATE,
+    "TimeStamp": types.DATETIME,
 }
 
 # The below is copy/pasted from https://github.com/sqlalchemy-redshift/sqlalchemy-redshift
@@ -100,8 +99,10 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
         if result.rowcount == 0:
             return []
 
-        id_col = result.keys().index("id")
-        return [row[id_col] for row in result.fetchall()]
+        result_keys = list(result.keys())
+        id_col_idx = result_keys.index("id")
+
+        return [row[id_col_idx] for row in result.fetchall()]
 
     def get_view_names(self, connection, schema=None, **_kwargs) -> List[str]:
         """Get the names of views."""
@@ -126,14 +127,27 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
             WHERE TABLE_NAME = '{table_name}';
         """
         result = connection.execute(query)
+
+        result_keys = list(result.keys())
+
+        name_col_idx = result_keys.index("name")
+        type_col_idx = result_keys.index("type")
+        not_null_col_idx = result_keys.index("not_null")
+        # Fauna strips out data with 'null' values, so we can't guarantee
+        # that 'default', which has a default value of 'None', will be
+        # in the result keys.
+        default_col_idx = (
+            result_keys.index("default") if "default" in result_keys else None
+        )
+
         return [
             {
-                "name": col[0],
-                "type": type_map[col],
-                "nullable": True,
-                "default": None,
+                "name": row[name_col_idx],
+                "type": type_map[row[type_col_idx]],
+                "nullable": not row[not_null_col_idx],
+                "default": None if default_col_idx is None else row[default_col_idx],
             }
-            for col in result[0]
+            for row in result.fetchall()
         ]
 
     def get_pk_constraint(self, _connection, table_name, schema=None, **_kwargs):

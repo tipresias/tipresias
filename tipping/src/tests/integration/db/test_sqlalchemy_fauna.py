@@ -4,14 +4,21 @@ from datetime import datetime
 import itertools
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, inspect
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    inspect,
+    exc as sqlalchemy_exceptions,
+)
 from sqlalchemy.orm import sessionmaker
-from pytest import fixture
+import pytest
 
 from tipping.db.sqlalchemy_fauna import dialect
 
 
-@fixture()
+@pytest.fixture()
 def user_model():
     table_name = "users"
     Base = declarative_base()
@@ -20,9 +27,10 @@ def user_model():
         __tablename__ = table_name
 
         id = Column(Integer, primary_key=True)
-        name = Column(String(250), nullable=False)
-        date_joined = Column(DateTime(), nullable=False)
-        age = Column(Integer())
+        name = Column(String, unique=True)
+        date_joined = Column(DateTime, nullable=False)
+        age = Column(Integer)
+        finger_count = Column(Integer, default=10)
 
     return User, Base
 
@@ -99,6 +107,27 @@ def test_select_all_records(fauna_engine, user_model):
     assert len(users) == len(user_records)
 
 
+def test_select_by_unique_field(fauna_engine, user_model):
+    User, Base = user_model
+    Base.metadata.create_all(fauna_engine)
+
+    DBSession = sessionmaker(bind=fauna_engine)
+    session = DBSession()
+
+    filter_name = "Bob"
+    names = [filter_name, "Linda", "Tina"]
+    users = [User(name=name, date_joined=datetime.now(), age=30) for name in names]
+    for user in users:
+        session.add(user)
+    session.commit()
+
+    user_records = session.query(User).filter_by(name=filter_name).all()
+
+    # It fetches the records
+    assert len(user_records) == 1
+    assert user_records[0].name == filter_name
+
+
 def test_delete_record_conditionally(fauna_engine, user_model):
     User, Base = user_model
     Base.metadata.create_all(fauna_engine)
@@ -124,3 +153,20 @@ def test_delete_record_conditionally(fauna_engine, user_model):
     # It deletes the record
     assert "Linda" in user_names
     assert user_to_delete.name not in user_names
+
+
+def test_unique_constraint(fauna_engine, user_model):
+    User, Base = user_model
+    Base.metadata.create_all(fauna_engine)
+
+    DBSession = sessionmaker(bind=fauna_engine)
+    session = DBSession()
+
+    session.add(User(name="Bob", date_joined=datetime.now(), age=30))
+    session.add(User(name="Bob", date_joined=datetime.now(), age=60))
+
+    with pytest.raises(
+        sqlalchemy_exceptions.ProgrammingError,
+        match="Tried to create a document with duplicate value for a unique field",
+    ):
+        session.commit()

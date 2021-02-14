@@ -5,6 +5,7 @@ from datetime import datetime
 
 from mypy_extensions import TypedDict
 from pandas import Timestamp
+import numpy as np
 
 
 FixtureData = TypedDict(
@@ -57,10 +58,10 @@ CleanPredictionData = TypedDict(
         "round_number": int,
         "away_team": str,
         "ml_model": str,
-        "home_predicted_margin": float,
-        "away_predicted_margin": float,
-        "home_predicted_win_probability": float,
-        "away_predicted_win_probability": float,
+        "home_predicted_margin": np.number,
+        "away_predicted_margin": np.number,
+        "home_predicted_win_probability": np.number,
+        "away_predicted_win_probability": np.number,
     },
 )
 

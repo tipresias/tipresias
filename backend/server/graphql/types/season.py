@@ -69,7 +69,7 @@ class MatchPredictionType(graphene.ObjectType):
 
 def _invert_contradicting_predictions(
     non_principal_prediction_label: str,
-) -> Callable[[pd.DataFrame], np.array]:
+) -> Callable[[pd.DataFrame], np.ndarray]:
     if non_principal_prediction_label == "predicted_margin":
         invert_values = lambda arr: arr * -1
     else:

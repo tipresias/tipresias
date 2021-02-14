@@ -101,7 +101,7 @@ class Prediction(models.Model):
         cls,
         prediction_data: CleanPredictionData,
         prediction_type: Union[Literal["margin"], Literal["win_probability"]],
-    ) -> Tuple[Optional[float], Optional[Team]]:
+    ) -> Tuple[Optional[np.number], Optional[Team]]:
         home_prediction_key = cast(
             Union[
                 Literal["home_predicted_margin"],
@@ -144,7 +144,9 @@ class Prediction(models.Model):
         )
 
     @classmethod
-    def _calculate_predicted_margin(cls, home_margin, away_margin) -> float:
+    def _calculate_predicted_margin(
+        cls, home_margin: np.number, away_margin: np.number
+    ) -> np.number:
         both_predicted_to_win = home_margin > 0 and away_margin > 0
         both_predicted_to_lose = home_margin < 0 and away_margin < 0
 
@@ -157,8 +159,8 @@ class Prediction(models.Model):
 
     @classmethod
     def _calculate_predicted_win_probability(
-        cls, home_win_probability, away_win_probability
-    ) -> float:
+        cls, home_win_probability: np.number, away_win_probability: np.number
+    ) -> np.number:
         predicted_loser_oppo_win_proba = 1 - min(
             [home_win_probability, away_win_probability]
         )

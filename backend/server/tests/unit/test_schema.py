@@ -32,6 +32,7 @@ class TestSchema(TestCase):
                 name=model_name,
                 is_principal=(idx == 0),
                 used_in_competitions=True,
+                # pylint: disable=unsubscriptable-object
                 prediction_type=PredictionType.values[idx],
             )
             for idx, model_name in enumerate(MODEL_NAMES)

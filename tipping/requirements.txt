@@ -1,7 +1,7 @@
 -r requirements.prod.txt
 
 # Testing/Linting
-pylint==2.6.0
+pylint==2.6.2
 pydocstyle==5.1.1
 black
 pytest

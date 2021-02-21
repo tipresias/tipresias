@@ -12723,10 +12723,10 @@ roarr@^2.15.3:
     semver-compare "^1.0.0"
     sprintf-js "^1.1.2"
 
-rollbar@^2.20.0:
-  version "2.20.0"
-  resolved "https://registry.yarnpkg.com/rollbar/-/rollbar-2.20.0.tgz#84bcbdc56549c64f35cec1300a86a079ba7e2fbf"
-  integrity sha512-xPSJIfkP4scBCpt1gEiFAcaeAHutvGbz0xF7Kr7JS2bloBC3G8ufua9iKXu8cpATPD4rFDqCWD7cngPaICCTwA==
+rollbar@^2.21.0:
+  version "2.21.0"
+  resolved "https://registry.yarnpkg.com/rollbar/-/rollbar-2.21.0.tgz#1debfdca46b6d6df651e77a3bfd7cf63cafb7512"
+  integrity sha512-xFCZYL2YeLoWvsSD0GUJMn9R/ZX/BMCEy5Kv8WXOXj27mZOfY7r9tPRjxXezmKOQly/NIttY/sGxTvd0b99I+A==
   dependencies:
     async "~1.2.1"
     console-polyfill "0.3.0"

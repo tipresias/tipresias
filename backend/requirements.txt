@@ -3,7 +3,7 @@ numpy==1.20.1
 pandas==1.2.2
 
 # App packages
-django==3.1.6
+django==3.1.7
 whitenoise
 graphene==3.0.0b6
 graphene-django==3.0.0b7

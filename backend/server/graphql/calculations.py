@@ -128,6 +128,7 @@ def calculate_cumulative_metrics(
     """Calculate cumulative methods that can't be calculated via the ORM."""
     return (
         pd.DataFrame(metric_values)
+        .astype({"predicted_margin": float, "predicted_win_probability": float})
         .sort_values("match__start_date_time")
         .assign(
             tip_point=lambda df: df["is_correct"].astype(int),

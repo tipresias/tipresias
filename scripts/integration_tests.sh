@@ -4,7 +4,6 @@ set -euo pipefail
 
 DOCKER_COMPOSE_FILE="${1:-docker-compose.yml}"
 
-docker-compose -f ${DOCKER_COMPOSE_FILE} stop
 docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
 ./scripts/wait-for-it.sh localhost:3000 -t 30 -- echo "Server ready"
 
@@ -17,5 +16,3 @@ docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm backend coverage xml
 docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm tipping \
   coverage run -m pytest src/tests
 docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm tipping coverage xml
-
-docker-compose -f ${DOCKER_COMPOSE_FILE} stop

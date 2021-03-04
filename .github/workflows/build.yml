@@ -103,9 +103,14 @@ jobs:
           DATA_SCIENCE_SERVICE_TOKEN: ${{ secrets.DATA_SCIENCE_SERVICE_TOKEN }}
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
         run: |
+          docker-compose -f docker-compose.ci.yml pull
+          docker-compose -f docker-compose.ci.yml up --no-start
           ./scripts/update_frontend_gql_types.sh docker-compose.ci.yml
+          docker-compose -f docker-compose.ci.yml stop
           ./scripts/integration_tests.sh docker-compose.ci.yml
+          docker-compose -f docker-compose.ci.yml stop
           ./scripts/browser_tests.sh docker-compose.ci.yml
+          docker-compose -f docker-compose.ci.yml stop
       - name: Upload test coverage report
         # Only way I could get it to work was running format-coverage from each app's root.
         # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,

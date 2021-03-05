@@ -5,6 +5,8 @@ set -euo pipefail
 CI=${CI:-"false"}
 DOCKER_COMPOSE_FILE="${1:-docker-compose.yml}"
 
+echo "Checking GraphQL type compatibility..."
+
 docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
 
 ./scripts/wait-for-it.sh localhost:3000 -t 30 -- \

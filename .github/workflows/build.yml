@@ -78,24 +78,24 @@ jobs:
       - name: Lint
         if: ${{ always() }}
         run: |
-          docker run cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
-          docker run cfranklin11/tipresias_tipping:latest pylint --disable=R src handler.py
-          docker run cfranklin11/tipresias_frontend:latest yarn run eslint src
+          docker run --rm cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
+          docker run --rm cfranklin11/tipresias_tipping:latest pylint --disable=R src handler.py
+          docker run --rm cfranklin11/tipresias_frontend:latest yarn run eslint src
       - name: Check types
         if: ${{ always() }}
         run: |
-          docker run cfranklin11/tipresias_backend:latest mypy server project scripts
-          docker run cfranklin11/tipresias_tipping:latest mypy src handler.py
-          docker run cfranklin11/tipresias_frontend:latest yarn run flow
+          docker run --rm cfranklin11/tipresias_backend:latest mypy server project scripts
+          docker run --rm cfranklin11/tipresias_tipping:latest mypy src handler.py
+          docker run --rm cfranklin11/tipresias_frontend:latest yarn run flow
       - name: Check documentation
         if: ${{ always() }}
         run: |
-          docker run cfranklin11/tipresias_backend:latest pydocstyle server project scripts
-          docker run cfranklin11/tipresias_tipping:latest pydocstyle src handler.py
+          docker run --rm cfranklin11/tipresias_backend:latest pydocstyle server project scripts
+          docker run --rm cfranklin11/tipresias_tipping:latest pydocstyle src handler.py
       - name: Run unit tests
         if: ${{ always() }}
         run: |
-          docker run -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
+          docker run --rm -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
       - name: Run integration/system tests
         if: ${{ always() }}
         env:

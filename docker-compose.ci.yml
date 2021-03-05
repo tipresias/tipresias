@@ -26,7 +26,7 @@ services:
     depends_on:
       - backend
     environment:
-      PYTHONPATH: './src'
+      PYTHONPATH: "./src"
       PORT: 3333
       TIPRESIAS_APP: http://backend:8000
       DATA_SCIENCE_SERVICE: $DATA_SCIENCE_SERVICE
@@ -60,7 +60,8 @@ services:
     image: fauna/faunadb:latest
     ports:
       - "8443:8443"
-      - "8084:8084"
+      # NOTE: GitHub Actions use port 8084
+      # - "8084:8084"
   browser_test:
     image: cfranklin11/tipresias_browser_test:latest
     depends_on:

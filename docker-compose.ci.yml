@@ -39,10 +39,6 @@ services:
     image: cfranklin11/tipresias_frontend:latest
     ports:
       - "3000:3000"
-    volumes:
-      # For being able to access schema.json to check for
-      # GQL compatibility
-      - ./schema.json:/app/schema.json
     environment:
       - NODE_ENV=test
       - CI=true

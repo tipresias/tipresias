@@ -77,9 +77,6 @@ jobs:
         run: |
           docker-compose -f docker-compose.ci.yml up --no-start
 
-          ./scripts/update_frontend_gql_types.sh docker-compose.ci.yml
-          docker-compose -f docker-compose.ci.yml stop
-
           ./scripts/integration_tests.sh docker-compose.ci.yml
           docker-compose -f docker-compose.ci.yml stop
 

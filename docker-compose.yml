@@ -19,16 +19,11 @@ services:
       - GRAPHIQL=True
     command: python3 manage.py runserver 0.0.0.0:8000
   frontend:
-    build: ./frontend
-    volumes:
-      - ./frontend:/app
-      - tipresias_node_modules:/app/node_modules
+    image: cfranklin11/tipresias_frontend:latest
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=${NODE_ENV:-development}
-    stdin_open: true
-    tty: true
     depends_on:
       - backend
     command: yarn start
@@ -55,16 +50,6 @@ services:
       - ./tipping:/app
       - /app/node_modules
       - ${HOME}/.aws:/app/.aws
-  browser_test:
-    build: ./browser_test
-    depends_on:
-      - frontend
-    volumes:
-      - ./browser_test:/app
-      - /app/node_modules
-      # Need to use 'host' network mode to avoid cross-host errors
-      # from Webpack server
-    network_mode: "host"
   db:
     image: postgres:11.6
     environment:
@@ -80,6 +65,3 @@ services:
     image: scrapinghub/splash
     ports:
       - "8050:8050"
-volumes:
-  tipresias_node_modules:
-    external: true

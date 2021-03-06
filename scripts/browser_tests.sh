@@ -66,22 +66,4 @@ export DATABASE_NAME=${DEFAULT_DATABASE_NAME}
 
 docker-compose up -d
 
-if [ ${EXIT_CODE} -eq 0 ]
-then
-  exit ${EXIT_CODE}
-fi
-
-#### UPLOAD SCREENSHOTS ####
-LOCAL_DIR=${PWD}/browser_test/cypress/screenshots
-BUCKET_DIR=`date +%Y-%m-%d"_"%H_%M_%S`
-
-# Only upload screenshots to a bucket if in CI, because we'll have access
-# to the image files on local
-if [ -d "${LOCAL_DIR}" ] && [ "${CI}" = "true" ]
-then
-  echo "Uploading screenshots to Google Cloud Storage."
-
-  gsutil cp -r ${LOCAL_DIR} gs://${PROJECT_ID}_travis_artifacts/${BUCKET_DIR}
-fi
-
 exit ${EXIT_CODE}

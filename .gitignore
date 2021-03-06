@@ -148,9 +148,11 @@ data_science
 dask-worker-space
 .Rproj.user
 
-# Cypress artifacts
+# Testing artifacts
+screenshots
 browser_test/cypress/screenshots/
 browser_test/cypress/videos/
+schema.json
 
 # DB dumps
 *.sql

@@ -19,16 +19,11 @@ services:
       - GRAPHIQL=True
     command: python3 manage.py runserver 0.0.0.0:8000
   frontend:
-    build: ./frontend
-    volumes:
-      - ./frontend:/app
-      - tipresias_node_modules:/app/node_modules
+    image: cfranklin11/tipresias_frontend:latest
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=${NODE_ENV:-development}
-    stdin_open: true
-    tty: true
     depends_on:
       - backend
     command: yarn start
@@ -80,6 +75,3 @@ services:
     image: scrapinghub/splash
     ports:
       - "8050:8050"
-volumes:
-  tipresias_node_modules:
-    external: true

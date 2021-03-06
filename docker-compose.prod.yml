@@ -3,7 +3,7 @@ services:
   app:
     image: cfranklin11/tipresias_app:latest
     ports:
-      - "80:80"
+      - "80:8000"
     stdin_open: true
     tty: true
     env_file: .env

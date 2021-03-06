@@ -45,20 +45,6 @@ jobs:
           load: true
           cache-from: type=local,src=/tmp/.buildx-cache-tipping
           cache-to: type=local,dest=/tmp/.buildx-cache-tipping
-      - name: Build frontend Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./frontend
-          builder: ${{ steps.buildx.outputs.name }}
-          tags: cfranklin11/tipresias_frontend:latest
-          load: true
-      - name: Build browser_test Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./browser_test
-          builder: ${{ steps.buildx.outputs.name }}
-          tags: cfranklin11/tipresias_browser_test:latest
-          load: true
       - name: Set up cloud credentials
         env:
           ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD }}
@@ -80,22 +66,16 @@ jobs:
         run: |
           docker run --rm cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
           docker run --rm cfranklin11/tipresias_tipping:latest pylint --disable=R src handler.py
-          docker run --rm cfranklin11/tipresias_frontend:latest yarn run eslint src
       - name: Check types
         if: ${{ always() }}
         run: |
           docker run --rm cfranklin11/tipresias_backend:latest mypy server project scripts
           docker run --rm cfranklin11/tipresias_tipping:latest mypy src handler.py
-          docker run --rm cfranklin11/tipresias_frontend:latest yarn run flow
       - name: Check documentation
         if: ${{ always() }}
         run: |
           docker run --rm cfranklin11/tipresias_backend:latest pydocstyle server project scripts
           docker run --rm cfranklin11/tipresias_tipping:latest pydocstyle src handler.py
-      - name: Run unit tests
-        if: ${{ always() }}
-        run: |
-          docker run --rm -e CI=true cfranklin11/tipresias_frontend:latest yarn run test:unit
       - name: Run integration/system tests
         if: ${{ always() }}
         env:
@@ -125,9 +105,7 @@ jobs:
         run: |
           cd ./backend && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.backend.json && cd ..
           cd ./tipping && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.tipping.json && cd ..
-          sudo chmod 755 ./browser_test && sudo mv ./browser_test/coverage ./frontend
-          cd ./frontend && ../cc-test-reporter format-coverage -t lcov -o ../coverage/codeclimate.frontend.json && cd ..
-          ./cc-test-reporter sum-coverage ./coverage/codeclimate.*.json -p 3
+          ./cc-test-reporter sum-coverage ./coverage/codeclimate.*.json -p 2
           ./cc-test-reporter upload-coverage
       - name: Login to Docker Hub
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -140,8 +118,6 @@ jobs:
         run: |
           docker push cfranklin11/tipresias_backend:latest
           docker push cfranklin11/tipresias_tipping:latest
-          docker push cfranklin11/tipresias_frontend:latest
-          docker push cfranklin11/tipresias_browser_test:latest
       - name: Deploy
         if: ${{ github.ref == 'refs/heads/main' }}
         env:

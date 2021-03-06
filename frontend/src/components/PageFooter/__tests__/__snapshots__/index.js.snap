@@ -1,3 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`PageFooter renders PageFooter 1`] = `"<footer class=\\"PageFooter__Footer-pxy4s0-0 gAUXdP\\"><ul class=\\"PageFooter__FooterList-pxy4s0-2 kKGyEV\\"><li><a href=\\"https://github.com/tipresias\\"><img src=\\"isotype.svg\\" alt=\\"Tipresias\\" class=\\"PageFooter__Isotype-pxy4s0-1 jwRLQi\\"><span>Tipresias</span></a></li><li><a href=\\"https://gist.github.com/meligatt/72b359279b5da1eb6d75be9a2ae403b0\\">credits</a></li><li><a href=\\"/about\\">About</a></li><li><a href=\\"/glossary\\">Glossary</a></li></ul></footer>"`;

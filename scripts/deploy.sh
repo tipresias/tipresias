@@ -21,20 +21,6 @@ docker pull ${APP_DOCKER_IMAGE}
 docker build --cache-from ${APP_DOCKER_IMAGE} -t ${APP_DOCKER_IMAGE} .
 docker push ${APP_DOCKER_IMAGE}
 
-echo "Uploading source maps to Rollbar"
-
-# Save a short git hash, must be run from a git
-# repository (or a child directory)
-COMMIT_HASH=$(git rev-parse --short HEAD)
-
-docker run \
-  --rm \
-  -e ROLLBAR_TOKEN=${ROLLBAR_TOKEN} \
-  -e COMMIT_HASH=${COMMIT_HASH} \
-  -v ${PWD}:/app \
-  -w /app \
-  ${APP_DOCKER_IMAGE} bash ./scripts/upload_source_maps.sh
-
 echo "Deploying main app to DigitalOcean..."
 
 scp -i ~/.ssh/deploy_rsa -oStrictHostKeyChecking=no \

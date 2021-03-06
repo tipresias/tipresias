@@ -53,14 +53,6 @@ jobs:
           tar xvf secrets.tar
           mkdir ${HOME}/.ssh && mv deploy_rsa ${HOME}/.ssh/
           mkdir ${HOME}/.aws && mv credentials ${HOME}/.aws/
-      - name: Set up Google Cloud SDK
-        # We use gcloud/gsutil to upload screenshot artifacts on browser test failures,
-        # so we have to add credentials before running system tests
-        uses: google-github-actions/setup-gcloud@master
-        with:
-          project_id: ${{ secrets.PROJECT_ID }}
-          service_account_key: ${{ secrets.GC_SA_KEY }}
-          export_default_credentials: true
       - name: Lint
         if: ${{ always() }}
         run: |
@@ -93,6 +85,11 @@ jobs:
 
           ./scripts/browser_tests.sh docker-compose.ci.yml
           docker-compose -f docker-compose.ci.yml stop
+      - uses: actions/upload-artifact@v2
+        if: ${{ always() }}
+        with:
+          name: cypress-screenshots
+          path: ./screenshots/
       - name: Upload test coverage report
         # Only way I could get it to work was running format-coverage from each app's root.
         # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,

@@ -50,16 +50,6 @@ services:
       - ./tipping:/app
       - /app/node_modules
       - ${HOME}/.aws:/app/.aws
-  browser_test:
-    build: ./browser_test
-    depends_on:
-      - frontend
-    volumes:
-      - ./browser_test:/app
-      - /app/node_modules
-      # Need to use 'host' network mode to avoid cross-host errors
-      # from Webpack server
-    network_mode: "host"
   db:
     image: postgres:11.6
     environment:

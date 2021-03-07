@@ -16,3 +16,6 @@ sqlparse==0.4.1
 
 # Browser automation
 MechanicalSoup
+
+# Testing/Linting
+mypy>=0.70 # Need mypy due to references to mypy_extensions in production code

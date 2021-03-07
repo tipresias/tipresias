@@ -3,6 +3,7 @@
 from typing import Optional, List, Dict, Any, cast, Union
 from urllib.parse import urljoin
 from datetime import datetime
+import re
 from dateutil import parser
 import pytz
 
@@ -19,6 +20,15 @@ PredictionData = TypedDict(
     "PredictionData",
     {"ml_models": List[str], "round_number": int, "year_range": List[int]},
 )
+
+
+DATE_STRING_REGEX = re.compile(r"^\d{4}\-\d{2}\-\d{2}$")
+
+
+def _validate_date_string(date_string: str):
+    assert (
+        DATE_STRING_REGEX.match(date_string) is not None
+    ), f"Date strings must have format yyyy-mm-dd. Received {date_string}"
 
 
 def _parse_dates(data_frame: pd.DataFrame) -> pd.Series:
@@ -156,6 +166,8 @@ def fetch_match_data(
     --------
     pandas.DataFrame with match data.
     """
+    _validate_date_string(start_date)
+    _validate_date_string(end_date)
     matches = pd.DataFrame(
         _fetch_data(
             "matches",
@@ -182,7 +194,7 @@ def fetch_match_results_data(round_number: int) -> pd.DataFrame:
     pandas.DataFrame with match data.
     """
     match_results = pd.DataFrame(
-        _fetch_data("match_results", {"round_number": round_number},)
+        _fetch_data("match_results", {"round_number": round_number})
     )
 
     if any(match_results):

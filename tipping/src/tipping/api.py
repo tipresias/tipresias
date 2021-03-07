@@ -162,14 +162,14 @@ def update_matches(verbose=1) -> None:
     verbose: How much information to print. 1 prints all messages; 0 prints none.
     """
     right_now = datetime.now()
-    start_of_year = datetime(right_now.year, JAN, FIRST)
-    end_of_year = datetime(right_now.year, DEC, THIRTY_FIRST)
+    start_of_year = datetime(right_now.year, JAN, FIRST).strftime("%Y-%m-%d")
+    end_of_year = datetime(right_now.year, DEC, THIRTY_FIRST).strftime("%Y-%m-%d")
 
     if verbose == 1:
         print(f"Fetching match data for season {right_now.year}")
 
     match_data = data_import.fetch_match_data(
-        str(start_of_year), str(end_of_year), fetch_data=True
+        start_of_year, end_of_year, fetch_data=True
     )
 
     if verbose == 1:

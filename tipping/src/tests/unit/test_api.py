@@ -87,11 +87,12 @@ class TestApi(TestCase):
             self.assertEqual(call_args[1], upcoming_round)
 
     @patch("tipping.api.data_export")
-    @patch("tipping.api.data_import")
-    def test_update_matches(self, mock_data_import, mock_data_export):
+    @patch("tipping.api.data_import._fetch_data")
+    def test_update_matches(self, mock_fetch_data, mock_data_export):
         matches = data_factories.fake_match_data()
+        matches_response = matches.astype({"date": str}).to_dict(orient="records")
 
-        mock_data_import.fetch_match_data = MagicMock(return_value=matches)
+        mock_fetch_data.return_value = matches_response
         mock_data_export.update_matches = MagicMock()
 
         self.api.update_matches(verbose=0)

@@ -102,6 +102,14 @@ def update_fixture_data(verbose: int = 1) -> None:
     return None
 
 
+def _fetch_model_predictions(
+    ml_model: pd.Series, season: int, round_number: int = None
+):
+    return data_import.fetch_prediction_data(
+        f"{season}-{season + 1}", round_number=round_number, ml_models=ml_model["name"]
+    )
+
+
 def update_match_predictions(tips_submitters=None, verbose=1) -> None:
     """Fetch predictions from ML models and send them to the main app.
 
@@ -118,17 +126,20 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
     current_round = matches_from_current_round["round_number"].min()
     current_season = matches_from_current_round["date"].min().year
 
+    ml_models = data_import.fetch_ml_model_info()
+
     if verbose == 1:
         print("Fetching predictions for round " f"{current_round}, {current_season}...")
 
-    prediction_data = data_import.fetch_prediction_data(
-        f"{current_season}-{current_season + 1}",
-        round_number=current_round,
-    )
+    model_predictions = [
+        _fetch_model_predictions(ml_model, current_season, round_number=current_round)
+        for _, ml_model in ml_models.iterrows()
+    ]
 
     if verbose == 1:
         print("Predictions received!")
 
+    prediction_data = pd.concat(model_predictions)
     match_predictions = pivot_team_matches_to_matches(prediction_data)
     updated_prediction_records = data_export.update_match_predictions(match_predictions)
 

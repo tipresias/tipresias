@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 from datetime import datetime, date
 import pytz
 
+import pandas as pd
 import numpy as np
 from freezegun import freeze_time
 from candystore import CandyStore
@@ -143,6 +144,18 @@ class TestApi(TestCase):
     @patch("tipping.api.data_import")
     def test_update_match_predictions(self, mock_data_import, mock_data_export):
         mock_data_export.update_match_predictions = MagicMock()
+
+        prediction_model_names = (
+            pd.concat(self.prediction_return_values)["ml_model"]
+            .drop_duplicates()
+            .to_numpy()
+        )
+        prediction_ml_models = data_factories.fake_ml_model_data(
+            len(prediction_model_names)
+        ).assign(name=prediction_model_names)
+        mock_data_import.fetch_ml_model_info = MagicMock(
+            return_value=prediction_ml_models
+        )
         mock_data_import.fetch_prediction_data = MagicMock(
             side_effect=self.prediction_return_values
         )

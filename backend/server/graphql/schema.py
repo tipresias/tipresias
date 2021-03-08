@@ -1,6 +1,6 @@
 """GraphQL schema for all queries."""
 
-from typing import List
+from typing import List, Optional
 
 import graphene
 from django.utils import timezone
@@ -79,7 +79,9 @@ class RoundMetricsType(graphene.ObjectType):
         return round_metrics["match__start_date_time"].year
 
 
-def _consolidate_competition_model_metrics(model_metrics: pd.DataFrame) -> RoundMetrics:
+def _consolidate_competition_model_metrics(
+    model_metrics: pd.DataFrame,
+) -> Optional[RoundMetrics]:
     assert model_metrics["ml_model__used_in_competitions"].all()
 
     principal_data = (
@@ -123,6 +125,9 @@ def _consolidate_competition_model_metrics(model_metrics: pd.DataFrame) -> Round
     )
 
     consolidated_metrics = principal_data.fillna(non_principal_data).to_dict("records")
+
+    if len(consolidated_metrics) == 0:
+        return None
 
     assert len(consolidated_metrics) == 1, (
         "Latest round predictions should be in the form of a single data set "
@@ -179,7 +184,6 @@ class Query(graphene.ObjectType):
             "Performance metrics for Tipresias models for the current season "
             "through the last-played round."
         ),
-        required=True,
     )
 
     fetch_ml_models = graphene.List(
@@ -258,7 +262,7 @@ class Query(graphene.ObjectType):
         }
 
     @staticmethod
-    def resolve_fetch_latest_round_metrics(_root, _info) -> RoundMetrics:
+    def resolve_fetch_latest_round_metrics(_root, _info) -> Optional[RoundMetrics]:
         """
         Return performance metrics for competition models through the last-played round.
         """

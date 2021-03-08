@@ -41,7 +41,7 @@ class DataImporter:
         self,
         year_range: str,
         round_number: Optional[int] = None,
-        ml_models: Optional[List[str]] = None,
+        ml_model_names: Optional[str] = None,
         train_models: Optional[bool] = False,
     ) -> pd.DataFrame:
         """
@@ -52,22 +52,21 @@ class DataImporter:
         year_range: Min (inclusive) and max (exclusive) years for which to fetch data.
             Format is 'yyyy-yyyy'.
         round_number: Specify a particular round for which to fetch data.
-        ml_models: List of ML model names to use for making predictions.
+        ml_model_names: Comma-separated string of ML model names to use
+            for making predictions.
         train_models: Whether to train models in between predictions (only applies
             when predicting across multiple seasons).
 
         Returns:
         --------
-        List of prediction data dictionaries.
+        Predictions data frame.
         """
-        ml_model_param = None if ml_models is None else ",".join(ml_models)
-
         prediction_data = self._fetch_data(
             "predictions",
             {
                 "year_range": year_range,
                 "round_number": round_number,
-                "ml_models": ml_model_param,
+                "ml_models": ml_model_names or None,
                 "train_models": train_models,
             },
         )

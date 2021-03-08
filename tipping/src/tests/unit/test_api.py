@@ -209,7 +209,7 @@ class TestApi(TestCase):
         MockDataImporter.return_value = mock_data_import
 
         round_number = np.random.choice(fixtures["round_number"])
-        ml_models = list(set(np.random.choice(predictions["ml_model"], 2)))
+        ml_models = ",".join(set(np.random.choice(predictions["ml_model"], 2)))
         train_models = bool(np.random.randint(0, 2))
 
         prediction_response = self.api.fetch_match_predictions(
@@ -223,7 +223,7 @@ class TestApi(TestCase):
         mock_data_import.fetch_prediction_data.assert_called_with(
             CURRENT_YEAR_RANGE,
             round_number=round_number,
-            ml_models=ml_models,
+            ml_model_names=ml_models,
             train_models=train_models,
         )
         # It returns predictions organised by match

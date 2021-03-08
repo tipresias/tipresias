@@ -1,6 +1,6 @@
 """External-facing API for fetching and updating application data."""
 
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime, timezone
 from warnings import warn
 
@@ -102,21 +102,17 @@ def update_fixture_data(verbose: int = 1) -> None:
     return None
 
 
-def _fetch_model_predictions(
-    ml_model: pd.Series, season: int, round_number: int = None
-):
-    return data_import.fetch_prediction_data(
-        f"{season}-{season + 1}", round_number=round_number, ml_models=ml_model["name"]
-    )
-
-
-def update_match_predictions(tips_submitters=None, verbose=1) -> None:
+def update_match_predictions(
+    tips_submitters=None, verbose=1, ml_model_names: Optional[str] = None
+) -> None:
     """Fetch predictions from ML models and send them to the main app.
 
     Params:
     -------
     tips_submitters: Objects that handle submission of tips to competitions sites.
     verbose: How much information to print. 1 prints all messages; 0 prints none.
+    ml_model_names: Comma-separated string of ML model names to use
+        for making predictions.
     """
     matches_from_current_round = _fetch_current_round_fixture(verbose)
 
@@ -126,20 +122,18 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
     current_round = matches_from_current_round["round_number"].min()
     current_season = matches_from_current_round["date"].min().year
 
-    ml_models = data_import.DataImporter().fetch_ml_model_info()
-
     if verbose == 1:
         print("Fetching predictions for round " f"{current_round}, {current_season}...")
 
-    model_predictions = [
-        _fetch_model_predictions(ml_model, current_season, round_number=current_round)
-        for _, ml_model in ml_models.iterrows()
-    ]
+    prediction_data = data_import.DataImporter().fetch_prediction_data(
+        f"{current_season}-{current_season + 1}",
+        round_number=current_round,
+        ml_model_names=ml_model_names,
+    )
 
     if verbose == 1:
         print("Predictions received!")
 
-    prediction_data = pd.concat(model_predictions)
     match_predictions = pivot_team_matches_to_matches(prediction_data)
     updated_prediction_records = data_export.update_match_predictions(match_predictions)
 
@@ -226,7 +220,7 @@ def update_match_results(verbose=1) -> None:
 def fetch_match_predictions(
     year_range: str,
     round_number: Optional[int] = None,
-    ml_models: Optional[List[str]] = None,
+    ml_models: Optional[str] = None,
     train_models: Optional[bool] = False,
 ) -> pd.DataFrame:
     """
@@ -237,7 +231,8 @@ def fetch_match_predictions(
     year_range: Min (inclusive) and max (exclusive) years for which to fetch data.
         Format is 'yyyy-yyyy'.
     round_number: Specify a particular round for which to fetch data.
-    ml_models: List of ML model names to use for making predictions.
+    ml_models: Comma-separated string of ML model names to use
+        for making predictions.
     train_models: Whether to train models in between predictions (only applies
         when predicting across multiple seasons).
 
@@ -248,7 +243,7 @@ def fetch_match_predictions(
     prediction_data = data_import.DataImporter().fetch_prediction_data(
         year_range,
         round_number=round_number,
-        ml_models=ml_models,
+        ml_model_names=ml_models,
         train_models=train_models,
     )
 

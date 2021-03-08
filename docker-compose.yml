@@ -18,15 +18,6 @@ services:
       - DATABASE_NAME=${DATABASE_NAME:-tipresias}
       - GRAPHIQL=True
     command: python3 manage.py runserver 0.0.0.0:8000
-  frontend:
-    image: cfranklin11/tipresias_frontend:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=${NODE_ENV:-development}
-    depends_on:
-      - backend
-    command: yarn start
   tipping:
     build: ./tipping
     command: npm start

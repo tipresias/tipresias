@@ -53,8 +53,8 @@ class TestApi(TestCase):
         self.api = api
 
     @patch("tipping.api.data_export")
-    @patch("tipping.api.data_import")
-    def test_update_fixture_data(self, mock_data_import, mock_data_export):
+    @patch("tipping.api.data_import.DataImporter")
+    def test_update_fixture_data(self, MockDataImporter, mock_data_export):
         with freeze_time(datetime(2020, 5, 1, tzinfo=pytz.UTC)):
             right_now = datetime.now(tz=pytz.UTC)
             this_year = right_now.year
@@ -65,8 +65,10 @@ class TestApi(TestCase):
                 fixture.query("date > @right_now")["round_number"].min()
             )
 
+            mock_data_import = MagicMock()
             mock_data_import.fetch_fixture_data = MagicMock(return_value=fixture)
             mock_data_export.update_fixture_data = MagicMock()
+            MockDataImporter.return_value = mock_data_import
 
             self.api.update_fixture_data()
 
@@ -88,7 +90,7 @@ class TestApi(TestCase):
             self.assertEqual(call_args[1], upcoming_round)
 
     @patch("tipping.api.data_export")
-    @patch("tipping.api.data_import._fetch_data")
+    @patch("tipping.api.data_import.DataImporter._fetch_data")
     def test_update_matches(self, mock_fetch_data, mock_data_export):
         matches = data_factories.fake_match_data()
         matches_response = matches.astype({"date": str}).to_dict(orient="records")
@@ -105,8 +107,8 @@ class TestApi(TestCase):
         self.assertTrue(data_are_equal)
 
     @patch("tipping.api.data_export")
-    @patch("tipping.api.data_import")
-    def test_update_match_results(self, mock_data_import, mock_data_export):
+    @patch("tipping.api.data_import.DataImporter")
+    def test_update_match_results(self, MockDataImporter, mock_data_export):
         season = MATCH_SEASON_RANGE[0]
         seasons = (season, season + 1)
         # We want a date roughly in the middle of the season to make sure
@@ -122,10 +124,13 @@ class TestApi(TestCase):
                 matches, round_number=last_match_round_number
             )
 
+            mock_data_import = MagicMock()
             mock_data_import.fetch_fixture_data = MagicMock(return_value=matches)
             mock_data_import.fetch_match_results_data = MagicMock(
                 return_value=match_results
             )
+            MockDataImporter.return_value = mock_data_import
+
             mock_data_export.update_match_results = MagicMock()
 
             self.api.update_match_results(verbose=0)
@@ -141,8 +146,8 @@ class TestApi(TestCase):
             self.assertTrue(data_are_equal)
 
     @patch("tipping.api.data_export")
-    @patch("tipping.api.data_import")
-    def test_update_match_predictions(self, mock_data_import, mock_data_export):
+    @patch("tipping.api.data_import.DataImporter")
+    def test_update_match_predictions(self, MockDataImporter, mock_data_export):
         mock_data_export.update_match_predictions = MagicMock()
 
         prediction_model_names = (
@@ -153,6 +158,8 @@ class TestApi(TestCase):
         prediction_ml_models = data_factories.fake_ml_model_data(
             len(prediction_model_names)
         ).assign(name=prediction_model_names)
+
+        mock_data_import = MagicMock()
         mock_data_import.fetch_ml_model_info = MagicMock(
             return_value=prediction_ml_models
         )
@@ -162,6 +169,7 @@ class TestApi(TestCase):
         mock_data_import.fetch_fixture_data = MagicMock(
             side_effect=self.fixture_return_values
         )
+        MockDataImporter.return_value = mock_data_import
 
         mock_submitter = FootyTipsSubmitter(verbose=0)
         mock_submitter.submit_tips = MagicMock()
@@ -191,11 +199,14 @@ class TestApi(TestCase):
                 # It submits tips to all competitions
                 self.assertEqual(mock_submitter.submit_tips.call_count, 2)
 
-    @patch("tipping.api.data_import")
-    def test_fetch_match_predictions(self, mock_data_import):
+    @patch("tipping.api.data_import.DataImporter")
+    def test_fetch_match_predictions(self, MockDataImporter):
         fixtures = data_factories.fake_fixture_data(seasons=CURRENT_YEAR_RANGE)
         predictions = data_factories.fake_prediction_data(fixtures=fixtures)
+
+        mock_data_import = MagicMock()
         mock_data_import.fetch_prediction_data = MagicMock(return_value=predictions)
+        MockDataImporter.return_value = mock_data_import
 
         round_number = np.random.choice(fixtures["round_number"])
         ml_models = list(set(np.random.choice(predictions["ml_model"], 2)))
@@ -232,10 +243,13 @@ class TestApi(TestCase):
         )
         self.assertEqual(len(fixtures), len(prediction_response))
 
-    @patch("tipping.api.data_import")
-    def test_fetch_matches(self, mock_data_import):
+    @patch("tipping.api.data_import.DataImporter")
+    def test_fetch_matches(self, MockDataImporter):
         matches = data_factories.fake_match_data()
+
+        mock_data_import = MagicMock()
         mock_data_import.fetch_match_data = MagicMock(return_value=matches)
+        MockDataImporter.return_value = mock_data_import
 
         match_dates = np.random.choice(matches["date"], size=2)
         fetch_data = bool(np.random.randint(0, 2))
@@ -272,11 +286,14 @@ class TestApi(TestCase):
         )
         self.assertEqual(len(matches), len(match_response))
 
-    @patch("tipping.api.data_import")
-    def test_fetch_ml_models(self, mock_data_import):
+    @patch("tipping.api.data_import.DataImporter")
+    def test_fetch_ml_models(self, MockDataImporter):
         N_ML_MODELS = 2
         ml_models = data_factories.fake_ml_model_data(N_ML_MODELS)
+
+        mock_data_import = MagicMock()
         mock_data_import.fetch_ml_model_info = MagicMock(return_value=ml_models)
+        MockDataImporter.return_value = mock_data_import
 
         ml_model_response = self.api.fetch_ml_models()
 

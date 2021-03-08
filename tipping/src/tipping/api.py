@@ -67,7 +67,7 @@ def _fetch_current_round_fixture(verbose, after=True) -> Optional[pd.DataFrame]:
         preposition = "after" if after else "up to"
         print(f"Fetching fixture for matches {preposition} {beginning_of_today}...\n")
 
-    fixture_data_frame = data_import.fetch_fixture_data(
+    fixture_data_frame = data_import.DataImporter().fetch_fixture_data(
         start_date=beginning_of_this_year,
         end_date=end_of_this_year,
     )
@@ -126,7 +126,7 @@ def update_match_predictions(tips_submitters=None, verbose=1) -> None:
     current_round = matches_from_current_round["round_number"].min()
     current_season = matches_from_current_round["date"].min().year
 
-    ml_models = data_import.fetch_ml_model_info()
+    ml_models = data_import.DataImporter().fetch_ml_model_info()
 
     if verbose == 1:
         print("Fetching predictions for round " f"{current_round}, {current_season}...")
@@ -179,7 +179,7 @@ def update_matches(verbose=1) -> None:
     if verbose == 1:
         print(f"Fetching match data for season {right_now.year}")
 
-    match_data = data_import.fetch_match_data(
+    match_data = data_import.DataImporter().fetch_match_data(
         start_of_year, end_of_year, fetch_data=True
     )
 
@@ -208,7 +208,9 @@ def update_match_results(verbose=1) -> None:
     if verbose == 1:
         print(f"Fetching match results for round {current_round}")
 
-    match_results_data = data_import.fetch_match_results_data(current_round)
+    match_results_data = data_import.DataImporter().fetch_match_results_data(
+        current_round
+    )
 
     if verbose == 1:
         print("Match results data received!")
@@ -243,7 +245,7 @@ def fetch_match_predictions(
     --------
         List of prediction data dictionaries.
     """
-    prediction_data = data_import.fetch_prediction_data(
+    prediction_data = data_import.DataImporter().fetch_prediction_data(
         year_range,
         round_number=round_number,
         ml_models=ml_models,
@@ -272,7 +274,9 @@ def fetch_matches(
     --------
         List of match results data dicts.
     """
-    return data_import.fetch_match_data(start_date, end_date, fetch_data=fetch_data)
+    return data_import.DataImporter().fetch_match_data(
+        start_date, end_date, fetch_data=fetch_data
+    )
 
 
 def fetch_ml_models() -> pd.DataFrame:
@@ -283,4 +287,4 @@ def fetch_ml_models() -> pd.DataFrame:
     --------
     A list of objects with basic info about each ML model.
     """
-    return data_import.fetch_ml_model_info()
+    return data_import.DataImporter().fetch_ml_model_info()

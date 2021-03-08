@@ -61,13 +61,14 @@ def update_fixture_data(_event, _context, verbose=1):
 
 
 @rollbar.lambda_function
-def update_match_predictions(_event, _context, verbose=1):
+def update_match_predictions(event, _context, verbose=1):
     """
     Fetch predictions from ML models and send them to the main app.
 
     verbose: How much information to print. 1 prints all messages; 0 prints none.
     """
-    api.update_match_predictions(verbose=verbose)
+    ml_model_names = event.get("ml_model_names")
+    api.update_match_predictions(ml_model_names=ml_model_names, verbose=verbose)
 
     return _response("Success")
 

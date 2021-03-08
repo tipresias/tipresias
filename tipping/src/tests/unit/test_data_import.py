@@ -7,6 +7,11 @@ import pytest
 from tipping import data_import
 
 
+@pytest.fixture()
+def data_importer():
+    return data_import.DataImporter()
+
+
 @pytest.mark.parametrize(
     "start_date,end_date",
     [
@@ -15,6 +20,6 @@ from tipping import data_import
         ("2020-05-24", str(datetime.now())),
     ],
 )
-def test_invalid_fetch_match_data_params(start_date, end_date):
+def test_invalid_fetch_match_data_params(start_date, end_date, data_importer):
     with pytest.raises(AssertionError, match="yyyy-mm-dd"):
-        data_import.fetch_match_data(start_date, end_date)
+        data_importer.fetch_match_data(start_date, end_date)

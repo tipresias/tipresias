@@ -77,6 +77,14 @@ functions:
           # Everyday, 12am UTC
           rate: cron(0 0 ? * 1-7 *)
           enabled: false
+          input:
+            ml_model_names: tipresias_margin_2021,tipresias_proba_2021
+      - schedule:
+          # Everyday, 1am UTC
+          rate: cron(0 1 ? * 1-7 *)
+          enabled: false
+          input:
+            ml_model_names: tipresias_margin_2021,tipresias_proba_2021
   update_matches:
     handler: handler.update_matches
     events:

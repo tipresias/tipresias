@@ -37,7 +37,7 @@ class MonashSubmitter:
     """Submits tips to one or more of the Monash footy tipping competitions."""
 
     def __init__(
-        self, competitions: Optional[List[str]] = None, browser=None, verbose: int = 1,
+        self, competitions: Optional[List[str]] = None, browser=None, verbose: int = 1
     ):
         """
         Instantiate a MonashSubmitter object.
@@ -76,7 +76,7 @@ class MonashSubmitter:
     ) -> Dict[str, str]:
         PREDICTION_TYPE = {"normal": "margin", "info": "win_probability"}
         competition_prediction_type = cast(
-            PredictionType, f"predicted_{PREDICTION_TYPE[competition]}",
+            PredictionType, f"predicted_{PREDICTION_TYPE[competition]}"
         )
         predicted_winners = cast(List[MatchPrediction], convert_to_dict(predictions))
 
@@ -322,7 +322,7 @@ class Tipper:
         verbose: How much information to print. 1 prints all messages; 0 prints none.
         """
         self.fetch_data = fetch_data
-        self.data_importer: Any = data_importer or data_import
+        self.data_importer: Any = data_importer or data_import.DataImporter()
         self.ml_models = ml_models
         self.verbose = verbose
         self.tip_submitters = tip_submitters or [
@@ -353,7 +353,7 @@ class Tipper:
         """Request prediction data from Augury service for upcoming matches."""
         right_now = datetime.now(tz=pytz.UTC)
         end_of_year = datetime(right_now.year, DEC, THIRTY_FIRST, tzinfo=pytz.UTC)
-        upcoming_matches = data_import.fetch_fixture_data(right_now, end_of_year)
+        upcoming_matches = self.data_importer.fetch_fixture_data(right_now, end_of_year)
 
         if not upcoming_matches.any().any():
             if self.verbose == 1:

@@ -84,7 +84,7 @@ functions:
           rate: cron(0 1 ? * 1-7 *)
           enabled: false
           input:
-            ml_model_names: tipresias_margin_2021,tipresias_proba_2021
+            ml_model_names: tipresias_margin_2020,tipresias_proba_2020
   update_matches:
     handler: handler.update_matches
     events:

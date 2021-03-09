@@ -21,6 +21,9 @@ ALLOWED_HOSTS = [
     os.environ.get("DATA_SCIENCE_SERVICE"),
 ]
 
+if os.environ["FRONTEND_SERVICE"]:
+    CORS_ORIGIN_WHITELIST = (os.environ["FRONTEND_SERVICE"],)
+
 INSTALLED_APPS.append("whitenoise.runserver_nostatic")
 
 # Must insert after SecurityMiddleware, which is first in settings/common.py

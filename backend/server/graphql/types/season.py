@@ -91,7 +91,9 @@ class RoundPredictionType(graphene.ObjectType):
     )
 
     @staticmethod
-    def resolve_match_predictions(root: RoundPredictions, _info) -> MatchPredictions:
+    def resolve_match_predictions(
+        root: RoundPredictions, _info
+    ) -> List[MatchPredictions]:
         """Return prediction data for matches in the given round."""
 
         predictions = pd.DataFrame(
@@ -111,6 +113,10 @@ class RoundPredictionType(graphene.ObjectType):
         principal_predictions = predictions.query(
             "ml_model__is_principal == True"
         ).set_index("match__id")
+
+        if not principal_predictions.any().any():
+            return []
+
         non_principal_predictions = (
             predictions.query("ml_model__is_principal == False")
             .fillna(0)

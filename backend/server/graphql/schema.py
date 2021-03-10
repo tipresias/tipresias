@@ -298,6 +298,9 @@ class Query(graphene.ObjectType):
             )
         )
 
+        if not any(metric_values):
+            return None
+
         metrics_df = calculate_cumulative_metrics(
             metric_values, max_match_with_results.round_number
         )

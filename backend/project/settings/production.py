@@ -21,8 +21,8 @@ ALLOWED_HOSTS = [
     os.environ.get("DATA_SCIENCE_SERVICE"),
 ]
 
-if os.environ["FRONTEND_SERVICE"]:
-    CORS_ORIGIN_WHITELIST = (os.environ["FRONTEND_SERVICE"],)
+if os.getenv("FRONTEND_SERVICE"):
+    CORS_ORIGIN_WHITELIST = (os.getenv("FRONTEND_SERVICE", ""),)
 
 INSTALLED_APPS.append("whitenoise.runserver_nostatic")
 

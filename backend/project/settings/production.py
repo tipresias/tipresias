@@ -21,7 +21,7 @@ ALLOWED_HOSTS = [
     os.environ.get("DATA_SCIENCE_SERVICE"),
 ]
 
-CORS_ORIGIN_WHITELIST = [os.environ["PRODUCTION_HOST"]]
+CORS_ORIGIN_WHITELIST = [os.getenv("PRODUCTION_HOST", "")]
 
 if os.getenv("FRONTEND_SERVICE") is not None:
     CORS_ORIGIN_WHITELIST.append(os.environ["FRONTEND_SERVICE"])

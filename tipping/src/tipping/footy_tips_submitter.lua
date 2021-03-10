@@ -67,16 +67,20 @@ function main(splash)
   end
 
   local function log_in(url)
-    -- Have to use second login form, because the first is some
-    -- invisible Angular something something
-    local form = splash:select_all('[name=\"frmLogin\"]')[2]
-    local form_inputs = {
-      userLogin = splash.args.username,
-      userPassword = splash.args.password,
-    }
+    local login_button = splash:select('.login-form .signin')
+    assert(login_button:mouse_click())
+    splash:wait(0.5)
 
-    assert(form:fill(form_inputs))
-    assert(form:submit())
+    local email_input = splash:select('input[type=\"email\"]')
+    email_input:send_text(splash.args.username)
+    local continue_button_1 = splash:select('button[type=\"submit\"]')
+    assert(continue_button_1:mouse_click())
+    splash:wait(0.5)
+
+    local password_input = splash:select('input[type=\"password\"]')
+    email_input:send_text(splash.args.password)
+    local continue_button_2 = splash:select('button[type=\"submit\"]')
+    assert(continue_button_2:mouse_click())
     splash:wait(2.0)
 
     assert(string.find(splash:html(), 'Welcome to ESPNfootytips') == nil,

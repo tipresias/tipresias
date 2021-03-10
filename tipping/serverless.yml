@@ -96,10 +96,8 @@ functions:
     handler: handler.update_match_results
     events:
       - schedule:
-          # TODO: This is running every day during Footy Mania, but should run
-          # Thurs-Sun during normal AFL rounds
-          # Everyday, 2am-2pm UTC (next day, 12pm/1pm-12am/1am Melbourne time, depending on DST)
-          rate: cron(0 2-14/3 ? * * *)
+          # Thurs-Sun, 2am-2pm UTC (next day, 12pm/1pm-12am/1am Melbourne time, depending on DST)
+          rate: cron(0 2-14/3 ? * 1,5-7 *)
           enabled: true
   fetch_match_predictions:
     handler: handler.fetch_match_predictions

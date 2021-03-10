@@ -4,7 +4,7 @@ set -euo pipefail
 
 # Deploy main app
 APP_DIR=/var/www/${PROJECT_ID}
-APP_DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_backend:latest
+APP_DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_app:latest
 PORT=80
 CI=${CI:-""}
 

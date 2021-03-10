@@ -42,6 +42,10 @@ def _select_matches_from_current_round(
     latest_round_numbers = fixture_data_frame.query(
         f"date {date_comparison} @beginning_of_today"
     ).loc[:, "round_number"]
+
+    if not any(latest_round_numbers):
+        return None
+
     current_round = int(  # pylint: disable=unused-variable
         latest_round_numbers.min() if after else latest_round_numbers.max()
     )
@@ -72,11 +76,9 @@ def _fetch_current_round_fixture(verbose, after=True) -> Optional[pd.DataFrame]:
         end_date=end_of_this_year,
     )
 
-    matches_from_current_round = _select_matches_from_current_round(
+    return _select_matches_from_current_round(
         fixture_data_frame, beginning_of_today, after=after
     )
-
-    return matches_from_current_round
 
 
 def update_fixture_data(verbose: int = 1) -> None:

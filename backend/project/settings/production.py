@@ -21,13 +21,16 @@ ALLOWED_HOSTS = [
     os.environ.get("DATA_SCIENCE_SERVICE"),
 ]
 
-if os.getenv("FRONTEND_SERVICE"):
-    CORS_ORIGIN_WHITELIST = (os.getenv("FRONTEND_SERVICE", ""),)
+CORS_ORIGIN_WHITELIST = [os.environ["PRODUCTION_HOST"]]
+
+if os.getenv("FRONTEND_SERVICE") is not None:
+    CORS_ORIGIN_WHITELIST.append(os.environ["FRONTEND_SERVICE"])
 
 INSTALLED_APPS.append("whitenoise.runserver_nostatic")
 
-# Must insert after SecurityMiddleware, which is first in settings/common.py
-MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+# Must insert after SecurityMiddleware
+security_index = MIDDLEWARE.index("django.middleware.security.SecurityMiddleware")
+MIDDLEWARE.insert(security_index + 1, "whitenoise.middleware.WhiteNoiseMiddleware")
 MIDDLEWARE.append("rollbar.contrib.django.middleware.RollbarNotifierMiddleware")
 
 # Add build directory created by Create React App to serve webpage

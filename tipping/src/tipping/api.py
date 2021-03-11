@@ -8,7 +8,7 @@ import pandas as pd
 
 from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
-from tipping.tipping import MonashSubmitter, FootyTipsSubmitter
+from tipping.tipping import MonashSubmitter
 
 DEC = 12
 THIRTY_FIRST = 31
@@ -153,7 +153,6 @@ def update_match_predictions(
 
     tips_submitters = tips_submitters or [
         MonashSubmitter(verbose=verbose),
-        FootyTipsSubmitter(verbose=verbose),
     ]
 
     for submitter in tips_submitters:

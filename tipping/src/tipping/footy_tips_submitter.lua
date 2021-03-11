@@ -78,7 +78,7 @@ function main(splash)
     splash:wait(0.5)
 
     local password_input = splash:select('input[type=\"password\"]')
-    email_input:send_text(splash.args.password)
+    password_input:send_text(splash.args.password)
     local continue_button_2 = splash:select('button[type=\"submit\"]')
     assert(continue_button_2:mouse_click())
     splash:wait(2.0)

@@ -3,11 +3,12 @@
 # pylint: disable=W0401,W0614
 from project.settings.common import *
 
-ALLOWED_HOSTS = ["backend", "localhost", "app", "host.docker.internal"]
+ALLOWED_HOSTS = ["backend", "localhost", "app", "host.docker.internal", "172.17.0.1"]
 CORS_ALLOWED_ORIGINS = [
     "http://frontend:3000",
     "http://localhost:3000",
     "http://host.docker.internal:3000",
+    "http://172.17.0.1:8000",
 ]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

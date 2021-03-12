@@ -17,14 +17,14 @@ TIPPING_SERVICE = "TBD"
 ALLOWED_HOSTS = [
     "tipresias.herokuapp.com",
     ".tipresias.net",
-    os.environ.get("PRODUCTION_HOST"),
-    os.environ.get("DATA_SCIENCE_SERVICE"),
+    os.environ.get("PRODUCTION_HOST", ""),
+    os.environ.get("DATA_SCIENCE_SERVICE", ""),
 ]
 
-CORS_ORIGIN_WHITELIST = [os.getenv("PRODUCTION_HOST", "")]
-
-if os.getenv("FRONTEND_SERVICE") is not None:
-    CORS_ORIGIN_WHITELIST.append(os.environ["FRONTEND_SERVICE"])
+CORS_ALLOWED_ORIGINS = [
+    os.getenv("PRODUCTION_HOST", ""),
+    os.getenv("FRONTEND_SERVICE", ""),
+]
 
 INSTALLED_APPS.append("whitenoise.runserver_nostatic")
 

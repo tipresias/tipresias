@@ -17,8 +17,8 @@ TIPPING_SERVICE = "TBD"
 ALLOWED_HOSTS = [
     "tipresias.herokuapp.com",
     ".tipresias.net",
-    os.environ.get("PRODUCTION_HOST"),
-    os.environ.get("DATA_SCIENCE_SERVICE"),
+    os.environ.get("PRODUCTION_HOST", ""),
+    os.environ.get("DATA_SCIENCE_SERVICE", ""),
 ]
 
 CORS_ALLOWED_ORIGINS = [

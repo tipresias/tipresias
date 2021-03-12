@@ -28,9 +28,9 @@ TIPPING_SERVICE = "http://tipping:3333"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
-ALLOWED_HOSTS: List = []
+ALLOWED_HOSTS: List[str] = []
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ALLOWED_ORIGINS = []
+CORS_ALLOWED_ORIGINS: List[str] = []
 
 # Application definition
 

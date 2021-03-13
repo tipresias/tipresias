@@ -24,6 +24,26 @@ rollbar_token = os.getenv("ROLLBAR_TOKEN", "missing_api_key")
 rollbar.init(rollbar_token, settings.ENVIRONMENT)
 
 
+def rollbar_ignore_handler(payload):
+    """Filter out certain errors rom Rollbar logs."""
+    error_class_name = (
+        payload.get("data", {})
+        .get("body", {})
+        .get("exception", {})
+        .get("class", {}, "")
+    )
+
+    # We ignore ServerErrorResponse, because that error will be recorded in Rollbar
+    # by the called service
+    if error_class_name == "ServerErrorResponse":
+        return False
+
+    return payload
+
+
+rollbar.events.add_payload_handler(rollbar_ignore_handler)
+
+
 class Response(TypedDict):
     """Response dict for AWS Lambda functions."""
 

@@ -25,6 +25,14 @@ PredictionData = TypedDict(
 DATE_STRING_REGEX = re.compile(r"^\d{4}\-\d{2}\-\d{2}$")
 
 
+class DataImportError(Exception):
+    """Base error class for data_import."""
+
+
+class ServerErrorResponse(DataImportError):
+    """Error class for when a server error response is received."""
+
+
 class DataImporter:
     """Imports data from the data science service."""
 
@@ -224,8 +232,15 @@ class DataImporter:
         if 200 <= response.status_code < 300:
             return response.json().get("data")
 
-        raise Exception(
-            f"Bad response from application when requesting {service_url}:\n"
+        if 500 <= response.status_code < 600:
+            raise ServerErrorResponse(self._error_message(service_url, response))
+
+        raise DataImportError(service_url, self._error_message(service_url, response))
+
+    @staticmethod
+    def _error_message(url: str, response: requests.Response) -> str:
+        return (
+            f"Bad response from application when requesting {url}:\n"
             f"Status: {response.status_code}\n"
             f"Headers: {response.headers}\n"
             f"Body: {response.text}"

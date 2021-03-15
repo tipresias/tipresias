@@ -21,8 +21,8 @@ ALLOWED_HOSTS = [
     os.environ.get("DATA_SCIENCE_SERVICE", ""),
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    os.getenv("PRODUCTION_HOST", ""),
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https?:\/\/(?:w{3}\.)?tipresias.net$",
     os.getenv("FRONTEND_SERVICE", ""),
 ]
 

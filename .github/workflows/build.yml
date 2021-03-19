@@ -10,83 +10,84 @@ jobs:
       PROJECT_ID: ${{ secrets.PROJECT_ID }}
     steps:
       - uses: actions/checkout@v2
-      - name: Set up code coverage monitoring
-        run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
-          ./cc-test-reporter before-build
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Cache Backend Docker layers
-        uses: actions/cache@v2
-        with:
-          path: |
-            /tmp/.buildx-cache-backend
-            /tmp/.buildx-cache-tipping
-          key: ${{ runner.os }}-buildx-${{ github.ref }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-      - name: Build backend Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./backend
-          builder: ${{ steps.buildx.outputs.name }}
-          tags: cfranklin11/tipresias_backend:latest
-          load: true
-          cache-from: type=local,src=/tmp/.buildx-cache-backend
-          cache-to: type=local,dest=/tmp/.buildx-cache-backend
-      - name: Build tipping Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./tipping
-          builder: ${{ steps.buildx.outputs.name }}
-          tags: cfranklin11/tipresias_tipping:latest
-          load: true
-          cache-from: type=local,src=/tmp/.buildx-cache-tipping
-          cache-to: type=local,dest=/tmp/.buildx-cache-tipping
+      # - name: Set up code coverage monitoring
+      #   run: |
+      #     curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > ./cc-test-reporter
+      #     chmod +x ./cc-test-reporter
+      #     ./cc-test-reporter before-build
+      # - name: Set up Docker Buildx
+      #   id: buildx
+      #   uses: docker/setup-buildx-action@v1
+      # - name: Cache Backend Docker layers
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: |
+      #       /tmp/.buildx-cache-backend
+      #       /tmp/.buildx-cache-tipping
+      #     key: ${{ runner.os }}-buildx-${{ github.ref }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-buildx-
+      # - name: Build backend Docker image
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: ./backend
+      #     builder: ${{ steps.buildx.outputs.name }}
+      #     tags: cfranklin11/tipresias_backend:latest
+      #     load: true
+      #     cache-from: type=local,src=/tmp/.buildx-cache-backend
+      #     cache-to: type=local,dest=/tmp/.buildx-cache-backend
+      # - name: Build tipping Docker image
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: ./tipping
+      #     builder: ${{ steps.buildx.outputs.name }}
+      #     tags: cfranklin11/tipresias_tipping:latest
+      #     load: true
+      #     cache-from: type=local,src=/tmp/.buildx-cache-tipping
+      #     cache-to: type=local,dest=/tmp/.buildx-cache-tipping
       - name: Set up cloud credentials
         env:
           ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD }}
         run: |
+          gpg --version
           gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPTION_PASSWORD" --output secrets.tar secrets.tar.gpg
           tar xvf secrets.tar
           mkdir ${HOME}/.ssh && mv deploy_rsa ${HOME}/.ssh/
           mkdir ${HOME}/.aws && mv credentials ${HOME}/.aws/
-      - name: Lint
-        if: ${{ always() }}
-        run: |
-          docker run --rm cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
-          docker run --rm cfranklin11/tipresias_tipping:latest pylint --disable=R src handler.py
-      - name: Check types
-        if: ${{ always() }}
-        run: |
-          docker run --rm cfranklin11/tipresias_backend:latest mypy server project scripts
-          docker run --rm cfranklin11/tipresias_tipping:latest mypy src handler.py
-      - name: Check documentation
-        if: ${{ always() }}
-        run: |
-          docker run --rm cfranklin11/tipresias_backend:latest pydocstyle server project scripts
-          docker run --rm cfranklin11/tipresias_tipping:latest pydocstyle src handler.py
-      - name: Run integration/system tests
-        if: ${{ always() }}
-        env:
-          DATA_SCIENCE_SERVICE: ${{ secrets.DATA_SCIENCE_SERVICE }}
-          DATA_SCIENCE_SERVICE_TOKEN: ${{ secrets.DATA_SCIENCE_SERVICE_TOKEN }}
-          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-        run: |
-          docker-compose -f docker-compose.ci.yml up --no-start
+      # - name: Lint
+      #   if: ${{ always() }}
+      #   run: |
+      #     docker run --rm cfranklin11/tipresias_backend:latest pylint --disable=R server project scripts
+      #     docker run --rm cfranklin11/tipresias_tipping:latest pylint --disable=R src handler.py
+      # - name: Check types
+      #   if: ${{ always() }}
+      #   run: |
+      #     docker run --rm cfranklin11/tipresias_backend:latest mypy server project scripts
+      #     docker run --rm cfranklin11/tipresias_tipping:latest mypy src handler.py
+      # - name: Check documentation
+      #   if: ${{ always() }}
+      #   run: |
+      #     docker run --rm cfranklin11/tipresias_backend:latest pydocstyle server project scripts
+      #     docker run --rm cfranklin11/tipresias_tipping:latest pydocstyle src handler.py
+      # - name: Run integration/system tests
+      #   if: ${{ always() }}
+      #   env:
+      #     DATA_SCIENCE_SERVICE: ${{ secrets.DATA_SCIENCE_SERVICE }}
+      #     DATA_SCIENCE_SERVICE_TOKEN: ${{ secrets.DATA_SCIENCE_SERVICE_TOKEN }}
+      #     DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+      #   run: |
+      #     docker-compose -f docker-compose.ci.yml up --no-start
 
-          ./scripts/integration_tests.sh docker-compose.ci.yml
-          docker-compose -f docker-compose.ci.yml stop
+      #     ./scripts/integration_tests.sh docker-compose.ci.yml
+      #     docker-compose -f docker-compose.ci.yml stop
 
-          ./scripts/browser_tests.sh docker-compose.ci.yml
-          docker-compose -f docker-compose.ci.yml stop
-      - uses: actions/upload-artifact@v2
-        if: ${{ always() }}
-        with:
-          name: cypress-screenshots
-          path: ./screenshots/
+      #     ./scripts/browser_tests.sh docker-compose.ci.yml
+      #     docker-compose -f docker-compose.ci.yml stop
+      # - uses: actions/upload-artifact@v2
+      #   if: ${{ always() }}
+      #   with:
+      #     name: cypress-screenshots
+      #     path: ./screenshots/
       - name: Upload test coverage report
         # Only way I could get it to work was running format-coverage from each app's root.
         # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,

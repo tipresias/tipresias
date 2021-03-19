@@ -46,6 +46,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache-tipping
           cache-to: type=local,dest=/tmp/.buildx-cache-tipping
       - name: Set up cloud credentials
+        id: credentials
         env:
           ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD }}
         run: |
@@ -69,7 +70,8 @@ jobs:
           docker run --rm cfranklin11/tipresias_backend:latest pydocstyle server project scripts
           docker run --rm cfranklin11/tipresias_tipping:latest pydocstyle src handler.py
       - name: Run integration/system tests
-        if: ${{ always() }}
+        id: integration_tests
+        if: ${{ steps.credentials.conclusion == 'success' }}
         env:
           DATA_SCIENCE_SERVICE: ${{ secrets.DATA_SCIENCE_SERVICE }}
           DATA_SCIENCE_SERVICE_TOKEN: ${{ secrets.DATA_SCIENCE_SERVICE_TOKEN }}
@@ -83,7 +85,7 @@ jobs:
           ./scripts/browser_tests.sh docker-compose.ci.yml
           docker-compose -f docker-compose.ci.yml stop
       - uses: actions/upload-artifact@v2
-        if: ${{ always() }}
+        if: ${{ steps.integration_tests.conclusion == 'failure' }}
         with:
           name: cypress-screenshots
           path: ./screenshots/

@@ -84,7 +84,7 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
         return [""]
 
     def has_table(
-        self, connection: FaunaConnection, table_name: str, schema=None
+        self, connection: FaunaConnection, table_name: str, schema=None, **_kwargs
     ) -> bool:
         """Check whether the database has the given table."""
         return table_name in self.get_table_names(connection, schema)

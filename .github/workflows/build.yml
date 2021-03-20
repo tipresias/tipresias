@@ -82,7 +82,7 @@ jobs:
           ./scripts/integration_tests.sh docker-compose.ci.yml
           docker-compose -f docker-compose.ci.yml stop
 
-          ./scripts/browser_tests.sh docker-compose.ci.yml
+          ./scripts/update_gql_schema.sh docker-compose.ci.yml
           docker-compose -f docker-compose.ci.yml stop
       - uses: actions/upload-artifact@v2
         if: ${{ steps.integration_tests.conclusion == 'failure' }}

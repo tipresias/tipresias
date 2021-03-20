@@ -1,0 +1,216 @@
+"""Base GraphQL Query type that contains all queries and their resolvers."""
+type Query {
+  fetchPredictions(year: Int = null): [PredictionType!]!
+
+  """
+  Parameters for displaying info and populating inputs for the season performance chart.
+  """
+  fetchSeasonPerformanceChartParameters: SeasonPerformanceChartParametersType!
+
+  """All years for which model predictions exist in the database"""
+  fetchSeasonYears: [Int!]!
+  fetchSeasonModelMetrics(
+    """Filter metrics by season."""
+    season: Int = 2021
+  ): SeasonType!
+
+  """
+  Official Tipresias predictions for the latest round for which data is available
+  """
+  fetchLatestRoundPredictions: RoundPredictionType!
+
+  """
+  Performance metrics for Tipresias models for the current season through the last-played round.
+  """
+  fetchLatestRoundMetrics: RoundMetricsType
+  fetchMlModels(
+    """
+    competition_only: Whether to filter ML models such that only the models whose predictions are submitted to competitions are returned. There are no more than one model per type of prediction (e.g. margin, win probability).
+    """
+    forCompetitionOnly: Boolean = false
+  ): [MLModelType!]!
+}
+
+"""Basic prediction type based on the Prediction data model."""
+type PredictionType {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  match: MatchType!
+  mlModel: MLModelType!
+  predictedWinner: TeamType!
+  predictedMargin: Float
+  predictedWinProbability: Float
+  isCorrect: Boolean
+}
+
+"""
+The `DateTime` scalar type represents a DateTime
+value as specified by
+[iso8601](https://en.wikipedia.org/wiki/ISO_8601).
+"""
+scalar DateTime
+
+"""GraphQL type based on the Match data model."""
+type MatchType {
+  id: ID!
+  startDateTime: DateTime!
+  roundNumber: Int!
+  venue: String
+  winner: TeamType
+  margin: Int
+  predictionSet: [PredictionType!]!
+  teammatchSet: [TeamMatchType!]!
+  year: Int!
+  homeTeam: TeamType
+  awayTeam: TeamType
+  predictions(mlModelName: String = null): [PredictionType!]!
+}
+
+"""GraphQL type based on the Team data model."""
+type TeamType {
+  id: ID!
+  name: String!
+  matchSet: [MatchType!]!
+  predictedWins: [PredictionType!]!
+  teammatchSet: [TeamMatchType!]!
+}
+
+"""GraphQL type based on the TeamMatch data model."""
+type TeamMatchType {
+  id: ID!
+  team: TeamType!
+  match: MatchType!
+  atHome: Boolean!
+  score: Int!
+}
+
+"""GraphQL type based on the MLModel data model."""
+type MLModelType {
+  id: ID!
+  name: String!
+  description: String
+
+  """
+  Whether the model is the principal model for predicting match winners among all the models used in competitions (i.e. all competition models predict winners, but only one's predictions are official predicted winners of Tipresias).
+  """
+  isPrincipal: Boolean!
+
+  """Whether the model's predictions are used in any competitions."""
+  usedInCompetitions: Boolean!
+  predictionType: ServerMLModelPredictionTypeChoices!
+  predictionSet: [PredictionType!]!
+}
+
+"""An enumeration."""
+enum ServerMLModelPredictionTypeChoices {
+  """Margin"""
+  MARGIN
+
+  """Win Probability"""
+  WIN_PROBABILITY
+}
+
+"""
+Parameters for displaying info and populating inputs for the performance chart.
+"""
+type SeasonPerformanceChartParametersType {
+  """All season years for which model predictions exist in the database"""
+  availableSeasons: [Int!]!
+
+  """All ML models that have predictions in the database."""
+  availableMlModels: [MLModelType!]!
+}
+
+"""Model performance metrics grouped by season."""
+type SeasonType {
+  season: Int!
+
+  """Model performance metrics grouped by round"""
+  roundModelMetrics(
+    """
+    Optional filter when only one round of data is required. -1 will return the last available round.
+    """
+    roundNumber: Int = null
+  ): [RoundType!]!
+}
+
+"""Match and prediction data for a given season grouped by round."""
+type RoundType {
+  roundNumber: Int!
+
+  """
+  Performance metrics for predictions made by the given model through the given round
+  """
+  modelMetrics(
+    """Get predictions and metrics for a specific ML model"""
+    mlModelName: String = null
+
+    """Only get prediction metrics for ML models used in competitions"""
+    forCompetitionOnly: Boolean = false
+  ): [ModelMetricsByRoundType!]!
+}
+
+"""Performance metrics for the given model through the given round."""
+type ModelMetricsByRoundType {
+  mlModel: MLModelType!
+
+  """
+  Cumulative sum of correct tips made by the given model for the given season
+  """
+  cumulativeCorrectCount: Int!
+
+  """
+  Cumulative mean of correct tips (i.e. accuracy) made by the given model for the given season.
+  """
+  cumulativeAccuracy: Float!
+
+  """Cumulative mean absolute error for the given season"""
+  cumulativeMeanAbsoluteError: Float!
+
+  """
+  Cumulative difference between predicted margin and actual margin for the given season.
+  """
+  cumulativeMarginDifference: Float!
+
+  """Cumulative bits metric for the given season."""
+  cumulativeBits: Float!
+}
+
+"""Official Tipresias predictions for a given round."""
+type RoundPredictionType {
+  roundNumber: Int!
+  matchPredictions: [MatchPredictionType!]!
+}
+
+"""Official Tipresias predictions for a given match."""
+type MatchPredictionType {
+  startDateTime: DateTime!
+  predictedWinner: String!
+  predictedMargin: Float!
+  predictedWinProbability: Float!
+  isCorrect: Boolean
+}
+
+"""Cumulative performance Metrics for Tipresias competition models."""
+type RoundMetricsType {
+  season: Int!
+  roundNumber: Int!
+
+  """Cumulative sum of correct tips for the given season"""
+  cumulativeCorrectCount: Int!
+
+  """Cumulative mean of correct tips (i.e. accuracy) for the given season."""
+  cumulativeAccuracy: Float!
+
+  """Cumulative mean absolute error for the given season"""
+  cumulativeMeanAbsoluteError: Float!
+
+  """
+  Cumulative difference between predicted margin and actual margin for the given season.
+  """
+  cumulativeMarginDifference: Float!
+
+  """Cumulative bits metric for the given season."""
+  cumulativeBits: Float!
+}

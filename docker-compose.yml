@@ -56,3 +56,8 @@ services:
     image: scrapinghub/splash
     ports:
       - "8050:8050"
+  graphql_inspector:
+    image: kamilkisiela/graphql-inspector
+    volumes:
+      - ./backend/server:/app
+    command: graphql-inspector diff schema.graphql new.graphql

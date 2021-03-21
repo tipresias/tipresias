@@ -279,7 +279,7 @@ class Query(graphene.ObjectType):
                 ml_model__used_in_competitions=True,
                 # We don't want to include matches without results, which would impact
                 # mean-based metrics like accuracy and MAE
-                match__teammatch__score__gt=0,
+                match__margin__isnull=False,
             )
             .select_related("ml_model", "match")
             .values(

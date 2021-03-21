@@ -608,9 +608,14 @@ class TestSchema(TestCase):
         self.assertEqual(data["season"], YEAR)
         self.assertEqual(data["roundNumber"], ROUND_COUNT)
 
-        self.assertGreater(data["cumulativeCorrectCount"], 0)
+        # We force all predictions to be correct, so the correct count should just be
+        # the number of matches
+        self.assertEqual(data["cumulativeCorrectCount"], ROUND_COUNT * MATCH_COUNT)
         self.assertGreater(data["cumulativeMeanAbsoluteError"], 0)
-        self.assertGreater(data["cumulativeMarginDifference"], 0)
+        self.assertEqual(
+            round(data["cumulativeMarginDifference"]),
+            round(data["cumulativeMeanAbsoluteError"] * ROUND_COUNT * MATCH_COUNT),
+        )
         self.assertGreater(data["cumulativeAccuracy"], 0)
         # Bits can be positive or negative, so we just want to make sure it's not 0,
         # which would suggest a problem

@@ -115,6 +115,7 @@ class TestSchema(TestCase):
                     availableSeasons
                     availableMlModels {
                         name
+                        predictionSeasons
                     }
                 }
             }
@@ -128,6 +129,15 @@ class TestSchema(TestCase):
         db_ml_model_names = [model.name for model in self.ml_models]
         query_ml_model_names = [model["name"] for model in data["availableMlModels"]]
         self.assertEqual(sorted(db_ml_model_names), sorted(query_ml_model_names))
+
+        for model in data["availableMlModels"]:
+            prediction_seasons = (
+                MLModel.objects.prefetch_related("prediction_set")
+                .get(name=model["name"])
+                .prediction_set.distinct("match__start_date_time__year")
+                .values_list("match__start_date_time__year", flat=True)
+            )
+            self.assertEqual(set(model["predictionSeasons"]), set(prediction_seasons))
 
         with self.subTest("with an MLModel without any predictions"):
             predictionless_ml_model = MLModel(name="no_predictions")

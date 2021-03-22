@@ -91,3 +91,16 @@ class MLModelType(DjangoObjectType):
         ),
         required=True,
     )
+
+    prediction_seasons = graphene.List(
+        graphene.NonNull(graphene.Int),
+        description="Seasons for which the model has predicted match results.",
+        required=True,
+    )
+
+    @staticmethod
+    def resolve_prediction_seasons(root, _info):
+        """Fetch all seasons for which this model has predictions."""
+        return root.prediction_set.distinct("match__start_date_time__year").values_list(
+            "match__start_date_time__year", flat=True
+        )

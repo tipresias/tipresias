@@ -105,6 +105,9 @@ type MLModelType {
   usedInCompetitions: Boolean!
   predictionType: ServerMLModelPredictionTypeChoices!
   predictionSet: [PredictionType!]!
+
+  """Seasons for which the model has predicted match results."""
+  predictionSeasons: [Int!]!
 }
 
 """An enumeration."""

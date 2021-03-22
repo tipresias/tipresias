@@ -115,6 +115,7 @@ class TestSchema(TestCase):
                     availableSeasons
                     availableMlModels {
                         name
+                        predictionSeasons
                     }
                 }
             }
@@ -128,6 +129,15 @@ class TestSchema(TestCase):
         db_ml_model_names = [model.name for model in self.ml_models]
         query_ml_model_names = [model["name"] for model in data["availableMlModels"]]
         self.assertEqual(sorted(db_ml_model_names), sorted(query_ml_model_names))
+
+        for model in data["availableMlModels"]:
+            prediction_seasons = (
+                MLModel.objects.prefetch_related("prediction_set")
+                .get(name=model["name"])
+                .prediction_set.distinct("match__start_date_time__year")
+                .values_list("match__start_date_time__year", flat=True)
+            )
+            self.assertEqual(set(model["predictionSeasons"]), set(prediction_seasons))
 
         with self.subTest("with an MLModel without any predictions"):
             predictionless_ml_model = MLModel(name="no_predictions")
@@ -567,6 +577,30 @@ class TestSchema(TestCase):
 
             for model in data:
                 self.assertTrue(model["usedInCompetitions"])
+
+        with self.subTest("when predictionYear is provided"):
+            year = np.random.choice(range(*YEAR_RANGE))
+            query = f"""
+                query QueryType {{
+                    fetchMlModels(predictionYear: {year}) {{
+                        name
+                    }}
+                }}
+            """
+
+            ml_models_for_year = (
+                MLModel.objects.prefetch_related("prediction_set")
+                .filter(prediction__match__start_date_time__year=year)
+                .distinct("name")
+                .values_list("name", flat=True)
+            )
+
+            response = self.client.execute(query)
+            data = response["data"]["fetchMlModels"]
+            fetched_ml_models = [datum["name"] for datum in data]
+
+            self.assertEqual(len(ml_models_for_year), len(fetched_ml_models))
+            self.assertEqual(set(ml_models_for_year), set(fetched_ml_models))
 
     def test_fetch_latest_round_metrics(self):
         ml_models = list(MLModel.objects.filter(name__in=MODEL_NAMES))

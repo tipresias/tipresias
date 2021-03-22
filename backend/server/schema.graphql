@@ -28,6 +28,11 @@ type Query {
     competition_only: Whether to filter ML models such that only the models whose predictions are submitted to competitions are returned. There are no more than one model per type of prediction (e.g. margin, win probability).
     """
     forCompetitionOnly: Boolean = false
+
+    """
+    Filter ML models such that only ones with predictions for the given season are returned.
+    """
+    predictionYear: Int = null
   ): [MLModelType!]!
 }
 
@@ -100,6 +105,9 @@ type MLModelType {
   usedInCompetitions: Boolean!
   predictionType: ServerMLModelPredictionTypeChoices!
   predictionSet: [PredictionType!]!
+
+  """Seasons for which the model has predicted match results."""
+  predictionSeasons: [Int!]!
 }
 
 """An enumeration."""

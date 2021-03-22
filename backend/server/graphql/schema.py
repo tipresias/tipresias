@@ -1,6 +1,6 @@
 """GraphQL schema for all queries."""
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 
 import graphene
 from django.utils import timezone
@@ -197,6 +197,13 @@ class Query(graphene.ObjectType):
                 "(e.g. margin, win probability)."
             ),
         ),
+        prediction_year=graphene.Int(
+            default_value=None,
+            description=(
+                "Filter ML models such that only ones with predictions for the given "
+                "season are returned."
+            ),
+        ),
         required=True,
     )
 
@@ -309,7 +316,7 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     def resolve_fetch_ml_models(
-        _root, _info, for_competition_only: bool
+        _root, _info, for_competition_only: bool, prediction_year: Optional[int]
     ) -> List[MLModel]:
         """
         Return machine-learning models.
@@ -319,10 +326,14 @@ class Query(graphene.ObjectType):
         for_competition_only: Whether to filter ML models such that only the models
             whose predictions are submitted to competitions are returned.
         """
+        ml_model_query = MLModel.objects
 
-        ml_models = MLModel.objects
-
+        filters: Dict[str, Union[bool, int]] = {}
         if for_competition_only:
-            return ml_models.filter(used_in_competitions=True)
+            filters["used_in_competitions"] = True
 
-        return ml_models.all()
+        if prediction_year is not None:
+            filters["prediction__match__start_date_time__year"] = prediction_year
+            ml_model_query = ml_model_query.prefetch_related("prediction_set")
+
+        return ml_model_query.filter(**filters).distinct("name")

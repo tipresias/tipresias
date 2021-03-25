@@ -2,7 +2,7 @@
 
 # Testing/Linting
 pylint==2.7.2
-pydocstyle==5.1.1
+pydocstyle==6.0.0
 black
 pytest
 pytest-env

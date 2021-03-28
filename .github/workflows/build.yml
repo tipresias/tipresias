@@ -84,11 +84,6 @@ jobs:
 
           ./scripts/update_gql_schema.sh docker-compose.ci.yml
           docker-compose -f docker-compose.ci.yml stop
-      - uses: actions/upload-artifact@v2
-        if: ${{ steps.integration_tests.conclusion == 'failure' }}
-        with:
-          name: cypress-screenshots
-          path: ./screenshots/
       - name: Upload test coverage report
         # Only way I could get it to work was running format-coverage from each app's root.
         # Otherwise, it can't find files listed in coverage reports, because it uses $PWD,
@@ -96,8 +91,6 @@ jobs:
         # not to find files in subdirectories.
         #
         # Also, trying to run the code coverage tool inside docker was more trouble than it's worth.
-        #
-        # Need to move coverage files to frontend, because filenames are relative to frontend root
         run: |
           cd ./backend && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.backend.json && cd ..
           cd ./tipping && ../cc-test-reporter format-coverage -t coverage.py -o ../coverage/codeclimate.tipping.json && cd ..

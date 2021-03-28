@@ -4,7 +4,7 @@ set -euo pipefail
 
 # Deploy main app
 APP_DIR=/var/www/${PROJECT_ID}
-APP_DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_app:latest
+APP_DOCKER_IMAGE=cfranklin11/tipresias_backend:latest
 PORT=80
 CI=${CI:-""}
 
@@ -14,12 +14,6 @@ then
   sudo chmod 600 ~/.ssh/deploy_rsa
   sudo chmod 755 ~/.ssh
 fi
-
-echo "Building production image"
-
-docker pull ${APP_DOCKER_IMAGE}
-docker build --cache-from ${APP_DOCKER_IMAGE} -t ${APP_DOCKER_IMAGE} .
-docker push ${APP_DOCKER_IMAGE}
 
 echo "Deploying main app to DigitalOcean..."
 

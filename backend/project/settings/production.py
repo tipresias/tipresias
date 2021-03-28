@@ -26,40 +26,10 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     os.getenv("FRONTEND_SERVICE", ""),
 ]
 
-INSTALLED_APPS.append("whitenoise.runserver_nostatic")
-
-# Must insert after SecurityMiddleware
-security_index = MIDDLEWARE.index("django.middleware.security.SecurityMiddleware")
-MIDDLEWARE.insert(security_index + 1, "whitenoise.middleware.WhiteNoiseMiddleware")
 MIDDLEWARE.append("rollbar.contrib.django.middleware.RollbarNotifierMiddleware")
-
-# Add build directory created by Create React App to serve webpage
-TEMPLATES = [
-    {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "../", "frontend", "build")],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-            ]
-        },
-    }
-]
 
 if os.environ.get("DATABASE_URL"):
     DATABASES["default"] = dj_database_url.config(conn_max_age=600, ssl_require=True)
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.1/howto/static-files/
-
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "../", "frontend", "build", "static")]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-WHITENOISE_ROOT = os.path.join(BASE_DIR, "../", "frontend", "build", "root")
 
 ROLLBAR = {
     "access_token": ROLLBAR_TOKEN,

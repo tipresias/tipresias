@@ -5,7 +5,6 @@ pandas==1.2.3
 # App packages
 django==3.1.7
 django-cors-headers
-whitenoise
 graphene==3.0.0b6
 graphene-django==3.0.0b7
 gql==3.0.0a3

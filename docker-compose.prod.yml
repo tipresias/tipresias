@@ -1,7 +1,7 @@
 version: "3.2"
 services:
   app:
-    image: cfranklin11/tipresias_app:latest
+    image: cfranklin11/tipresias_backend:latest
     ports:
       - "80:80"
     stdin_open: true
@@ -9,5 +9,5 @@ services:
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.production
-      - DATABASE_NAME=${DATABASE_NAME:-tipresias}
-      - Node_ENV=production
+      - DATABASE_NAME=${DATABASE_NAME}
+    command: gunicorn -b 0.0.0.0:80 -w 3 -t 1200 --access-logfile=- project.wsgi

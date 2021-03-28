@@ -1,50 +1,29 @@
 version: 2
 updates:
-- package-ecosystem: docker
-  directory: "/tipping"
-  schedule:
-    interval: monthly
-  open-pull-requests-limit: 25
-- package-ecosystem: npm
-  directory: "/tipping"
-  schedule:
-    interval: monthly
-  open-pull-requests-limit: 25
-- package-ecosystem: pip
-  directory: "/tipping"
-  schedule:
-    interval: weekly
-    day: wednesday
-  open-pull-requests-limit: 25
-- package-ecosystem: npm
-  directory: "/browser_test"
-  schedule:
-    interval: weekly
-    day: sunday
-  open-pull-requests-limit: 25
-- package-ecosystem: docker
-  directory: "/backend"
-  schedule:
-    interval: monthly
-  open-pull-requests-limit: 25
-- package-ecosystem: docker
-  directory: "/frontend"
-  schedule:
-    interval: monthly
-  open-pull-requests-limit: 25
-- package-ecosystem: pip
-  directory: "/backend"
-  schedule:
-    interval: weekly
-    day: monday
-  open-pull-requests-limit: 25
-- package-ecosystem: npm
-  directory: "/frontend"
-  schedule:
-    interval: weekly
-    day: friday
-  open-pull-requests-limit: 25
-  ignore:
-    # Because it's breaking builds now, and it's annoying to fix,
-    # and I want to move to typescript eventually
-    - dependency-name: "flow-bin"
+  - package-ecosystem: docker
+    directory: "/tipping"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 25
+  - package-ecosystem: npm
+    directory: "/tipping"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 25
+  - package-ecosystem: pip
+    directory: "/tipping"
+    schedule:
+      interval: weekly
+      day: wednesday
+    open-pull-requests-limit: 25
+  - package-ecosystem: docker
+    directory: "/backend"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 25
+  - package-ecosystem: pip
+    directory: "/backend"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 25

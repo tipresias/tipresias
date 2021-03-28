@@ -16,8 +16,6 @@ Including another URLconf
 import os
 from django.contrib import admin
 from django.urls import path, re_path
-from django.conf import settings
-from django.views.generic import TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from graphene_django.views import GraphQLView
 
@@ -33,6 +31,3 @@ urlpatterns = [  # pylint: disable=C0103
     path("fixtures", csrf_exempt(views.fixtures), name="fixtures"),
     path("matches", csrf_exempt(views.matches), name="matches"),
 ]
-
-if settings.ENVIRONMENT == "production":
-    urlpatterns.append(re_path("", TemplateView.as_view(template_name="index.html")))

@@ -23,6 +23,6 @@
     "fauna-shell": "^0.12.3",
     "serverless": "^2.31.0",
     "serverless-offline": "^6.9.0",
-    "serverless-prune-plugin": "^1.4.3"
+    "serverless-prune-plugin": "^1.4.4"
   }
 }

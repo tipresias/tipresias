@@ -32,9 +32,7 @@ Check out the site, with a dashboard for model performance, at [tipresias.net](h
 - To set up FaunaDB:
   - Pull the FaunaDB Docker image: `docker pull fauna/faunadb`
   - Run `./scripts/set_up_faunadb.sh`
-- To set up the app:
-  - Create the `node_modules` volume: `docker volume create tipresias_node_modules`
-  - To build and run the app: `docker-compose up --build`
+- To build and run the app: `docker-compose up --build`
 
 #### Seed the database
 
@@ -49,6 +47,7 @@ Seed the DB with raw data:
 ### Run the app
 
 - `docker-compose up`
+- To run the frontend, follow the instructions for setting up and running [`cowl`](https://github.com/tipresias/cowl).
 - Navigate to `localhost:3000`.
 
 #### Useful commands
@@ -58,33 +57,17 @@ Seed the DB with raw data:
 
 ### A note on architecture
 
-- `tipresias` depends on two micro-services: [`bird-signs`](https://github.com/tipresias/bird-signs) for raw data and [`augury`](https://github.com/tipresias/augury) for machine-learning functionality (i.e. generating model predictions).
+- `tipresias` is composed of multiple micro-services: [`bird-signs`](https://github.com/tipresias/bird-signs) for raw data, [`augury`](https://github.com/tipresias/augury) for machine-learning functionality (i.e. generating model predictions), and ['cowl'](https://github.com/tipresias/cowl) for the client-side assets.
 
 ### Testing
-
-#### Run Python tests
 
 - `docker-compose run --rm backend python3 -Wi manage.py test`
   - Note: Pass CI=true as an env var to skip some of the longer end-to-end tests.
   - The `tipping` service uses `pytest` rather than Django's test runner.
     - For watch mode, run `docker-compose run --rm tipping ptw -c -n -- <pytest args>` (`-c` clears output between runs, `-n` means "no beep" on test failures).
-- Linting: `docker-compose run --rm backend pylint --disable=R <python modules you want to lint>`
+- Linting: `docker-compose run --rm <backend or tipping> pylint --disable=R <python modules you want to lint>`
   - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
-- Type checking: `docker-compose run mypy <python modules you want to check>`
-
-#### Run Javascript tests
-
-- `docker-compose run --rm frontend yarn run test:unit`
-- Linting: `docker-compose run --rm frontend yarn run eslint src`
-  - Note: The ESLint rule `"import/no-unresolved"` is disabled, because code editors can't find the `node_modules` inside the docker container, and it made everything red. Also, basic testing should catch erroneous imports anyway.
-- Flow: `docker-compose run --rm frontend yarn run flow`
-
-#### Run end-to-end browser tests
-
-- **Recommended:** `./scripts/browser_tests.sh`
-  - Slower, but seeds test DB with random data, and is how tests are run in CI
-- `docker-compose run --rm browser_test npx cypress run`
-  - Faster, but risks passing due to specific characteristics of local data, then failing in CI.
+- Type checking: `docker-compose run --rm <backend or tipping> mypy <python modules you want to check>`
 
 ### Deploy
 
@@ -95,14 +78,4 @@ The app is deployed to DigitalOcean/AWS with every merge/push to `main`. You can
 
 ## Pro-Tips
 
-- Both `backend` and `frontend` are encapsulated, with their dependencies, in their respective containers, so if you want to take advantage of in-editor linting, autofixing, etc., open your editor from the service directory, not the project directory. Be sure to run terminal commands from the project root, though.
-
-## Troubleshooting
-
-- If you get errors in `frontend` related to missing packages, even after building a new image, try the following to clear its `node_modules` directory:
-  - `docker-compose stop`
-  - `docker container rm tipresias_frontend_1 tipresias_storybook_1`
-  - `docker volume rm tipresias_node_modules`
-  - `rm -rf frontend/node_modules`
-  - `docker volume create tipresias_node_modules`
-  - `docker-compose build --no-cache frontend`
+- Both `backend` and `tipping` are encapsulated, with their dependencies, in their respective containers, so if you want to take advantage of in-editor linting, autofixing, etc., open your editor from the service directory, not the project directory. Be sure to run terminal commands from the project root, though.

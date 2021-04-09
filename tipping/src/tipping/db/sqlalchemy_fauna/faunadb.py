@@ -465,9 +465,14 @@ class FaunadbClient:
             condition_value = self._extract_value(condition_check)
 
             result = self._client.query(q.get(q.collection(condition_value)))
+            # Selecting column info from INFORMATION_SCHEMA returns foreign keys
+            # as regular columns, so we don't need the extra table-reference info
+            remove_references = lambda field_data: {
+                key: value for key, value in field_data.items() if key != "references"
+            }
 
             return [
-                {**field_data, "name": field_name}
+                {**remove_references(field_data), "name": field_name}
                 for field_name, field_data in result["data"]["metadata"][
                     "fields"
                 ].items()

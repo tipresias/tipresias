@@ -1,7 +1,6 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 from datetime import datetime
-import itertools
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
@@ -11,6 +10,8 @@ from sqlalchemy import (
     DateTime,
     inspect,
     exc as sqlalchemy_exceptions,
+    select,
+    delete,
 )
 from sqlalchemy.orm import sessionmaker
 import pytest
@@ -81,7 +82,7 @@ def test_insert_record(fauna_engine, user_model):
     session.add(user)
     session.commit()
 
-    users = session.query(User).all()
+    users = session.execute(select(User)).scalars().all()
 
     # It creates the record
     assert len(users) == 1
@@ -101,7 +102,7 @@ def test_select_all_records(fauna_engine, user_model):
         session.add(user)
     session.commit()
 
-    user_records = session.query(User).all()
+    user_records = session.execute(select(User)).scalars().all()
 
     # It fetches the records
     assert len(users) == len(user_records)
@@ -121,7 +122,9 @@ def test_select_by_unique_field(fauna_engine, user_model):
         session.add(user)
     session.commit()
 
-    user_records = session.query(User).filter_by(name=filter_name).all()
+    user_records = (
+        session.execute(select(User).where(User.name == filter_name)).scalars().all()
+    )
 
     # It fetches the records
     assert len(user_records) == 1
@@ -142,13 +145,9 @@ def test_delete_record_conditionally(fauna_engine, user_model):
     session.commit()
 
     user_to_delete = users[0]
-    session.query(User).filter(User.id == user_to_delete.id).delete()
+    session.execute(delete(User).where(User.id == user_to_delete.id))
     session.commit()
-    user_names = list(
-        itertools.chain.from_iterable(
-            session.query(User).with_entities(User.name).all()
-        )
-    )
+    user_names = session.execute(select(User.name)).scalars().all()
 
     # It deletes the record
     assert "Linda" in user_names

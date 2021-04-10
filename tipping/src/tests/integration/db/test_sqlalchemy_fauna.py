@@ -1,7 +1,6 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 from datetime import datetime
-import itertools
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
@@ -9,10 +8,13 @@ from sqlalchemy import (
     Integer,
     String,
     DateTime,
+    ForeignKey,
     inspect,
     exc as sqlalchemy_exceptions,
+    select,
+    delete,
 )
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 import pytest
 
 from tipping.db.sqlalchemy_fauna import dialect
@@ -33,6 +35,28 @@ def user_model():
         finger_count = Column(Integer, default=10)
 
     return User, Base
+
+
+@pytest.fixture()
+def parent_child():
+    Base = declarative_base()
+
+    class Parent(Base):  # pylint: disable=unused-variable
+        __tablename__ = "parents"
+
+        id = Column(Integer, primary_key=True)
+        name = Column(String, unique=True)
+        children = relationship("Child", back_populates="parent")
+
+    class Child(Base):  # pylint: disable=unused-variable
+        __tablename__ = "children"
+
+        id = Column(Integer, primary_key=True)
+        name = Column(String, unique=True)
+        parent_id = Column(Integer, ForeignKey("parents.id"))
+        parent = relationship("Parent", back_populates="children")
+
+    return {"parent": Parent, "child": Child, "base": Base}
 
 
 def test_create_table(fauna_engine):
@@ -81,7 +105,7 @@ def test_insert_record(fauna_engine, user_model):
     session.add(user)
     session.commit()
 
-    users = session.query(User).all()
+    users = session.execute(select(User)).scalars().all()
 
     # It creates the record
     assert len(users) == 1
@@ -101,7 +125,7 @@ def test_select_all_records(fauna_engine, user_model):
         session.add(user)
     session.commit()
 
-    user_records = session.query(User).all()
+    user_records = session.execute(select(User)).scalars().all()
 
     # It fetches the records
     assert len(users) == len(user_records)
@@ -121,7 +145,9 @@ def test_select_by_unique_field(fauna_engine, user_model):
         session.add(user)
     session.commit()
 
-    user_records = session.query(User).filter_by(name=filter_name).all()
+    user_records = (
+        session.execute(select(User).where(User.name == filter_name)).scalars().all()
+    )
 
     # It fetches the records
     assert len(user_records) == 1
@@ -142,13 +168,9 @@ def test_delete_record_conditionally(fauna_engine, user_model):
     session.commit()
 
     user_to_delete = users[0]
-    session.query(User).filter(User.id == user_to_delete.id).delete()
+    session.execute(delete(User).where(User.id == user_to_delete.id))
     session.commit()
-    user_names = list(
-        itertools.chain.from_iterable(
-            session.query(User).with_entities(User.name).all()
-        )
-    )
+    user_names = session.execute(select(User.name)).scalars().all()
 
     # It deletes the record
     assert "Linda" in user_names
@@ -170,3 +192,28 @@ def test_unique_constraint(fauna_engine, user_model):
         match="Tried to create a document with duplicate value for a unique field",
     ):
         session.commit()
+
+
+def test_relationships(fauna_engine, parent_child):
+    Base = parent_child["base"]
+    Parent = parent_child["parent"]
+    Child = parent_child["child"]
+
+    Base.metadata.create_all(fauna_engine)
+
+    DBSession = sessionmaker(bind=fauna_engine)
+    session = DBSession()
+
+    session.add(Parent(name="Bob"))
+    session.commit()
+
+    parent = (
+        session.execute(select(Parent).where(Parent.name == "Bob")).scalars().first()
+    )
+
+    session.add(Child(name="Tina", parent_id=parent.id))
+    session.add(Child(name="Gene", parent_id=parent.id))
+    session.add(Child(name="Louise", parent_id=parent.id))
+    session.commit()
+
+    assert len(parent.children) == 3

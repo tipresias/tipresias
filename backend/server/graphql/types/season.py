@@ -110,9 +110,11 @@ class RoundPredictionType(graphene.ObjectType):
             )
         ).sort_values("match__start_date_time")
 
-        principal_predictions = predictions.query(
-            "ml_model__is_principal == True"
-        ).set_index("match__id")
+        principal_predictions = (
+            predictions.query("ml_model__is_principal == True")
+            .set_index("match__id")
+            .sort_index()
+        )
 
         if not principal_predictions.any().any():
             return []
@@ -121,6 +123,7 @@ class RoundPredictionType(graphene.ObjectType):
             predictions.query("ml_model__is_principal == False")
             .fillna(0)
             .set_index("match__id")
+            .sort_index()
             .loc[
                 :,
                 [

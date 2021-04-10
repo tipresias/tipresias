@@ -108,6 +108,7 @@ def _consolidate_competition_model_metrics(
                 "predicted_win_probability": np.nan,
             },
         )
+        .sort_index()
     )
 
     non_principal_data = (
@@ -122,6 +123,7 @@ def _consolidate_competition_model_metrics(
         # We can sum because each prediction type will only have one model with values,
         # and the rest of the rows will be zeros.
         .sum()
+        .sort_index()
     )
 
     consolidated_metrics = principal_data.fillna(non_principal_data).to_dict("records")

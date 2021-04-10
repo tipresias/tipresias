@@ -113,7 +113,7 @@ class FaunadbClient:
         try:
             return self._execute_sql_statement(sql_statement)
         except Exception as err:
-            logging.error(formatted_query)
+            logging.error("\n%s", formatted_query)
             raise err
 
     @staticmethod

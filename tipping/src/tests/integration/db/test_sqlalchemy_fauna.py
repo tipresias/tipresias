@@ -8,12 +8,13 @@ from sqlalchemy import (
     Integer,
     String,
     DateTime,
+    ForeignKey,
     inspect,
     exc as sqlalchemy_exceptions,
     select,
     delete,
 )
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 import pytest
 
 from tipping.db.sqlalchemy_fauna import dialect
@@ -34,6 +35,28 @@ def user_model():
         finger_count = Column(Integer, default=10)
 
     return User, Base
+
+
+@pytest.fixture()
+def parent_child():
+    Base = declarative_base()
+
+    class Parent(Base):  # pylint: disable=unused-variable
+        __tablename__ = "parents"
+
+        id = Column(Integer, primary_key=True)
+        name = Column(String, unique=True)
+        children = relationship("Child", back_populates="parent")
+
+    class Child(Base):  # pylint: disable=unused-variable
+        __tablename__ = "children"
+
+        id = Column(Integer, primary_key=True)
+        name = Column(String, unique=True)
+        parent_id = Column(Integer, ForeignKey("parents.id"))
+        parent = relationship("Parent", back_populates="children")
+
+    return {"parent": Parent, "child": Child, "base": Base}
 
 
 def test_create_table(fauna_engine):
@@ -169,3 +192,28 @@ def test_unique_constraint(fauna_engine, user_model):
         match="Tried to create a document with duplicate value for a unique field",
     ):
         session.commit()
+
+
+def test_relationships(fauna_engine, parent_child):
+    Base = parent_child["base"]
+    Parent = parent_child["parent"]
+    Child = parent_child["child"]
+
+    Base.metadata.create_all(fauna_engine)
+
+    DBSession = sessionmaker(bind=fauna_engine)
+    session = DBSession()
+
+    session.add(Parent(name="Bob"))
+    session.commit()
+
+    parent = (
+        session.execute(select(Parent).where(Parent.name == "Bob")).scalars().first()
+    )
+
+    session.add(Child(name="Tina", parent_id=parent.id))
+    session.add(Child(name="Gene", parent_id=parent.id))
+    session.add(Child(name="Louise", parent_id=parent.id))
+    session.commit()
+
+    assert len(parent.children) == 3

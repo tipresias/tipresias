@@ -230,7 +230,18 @@ class FaunadbClient:
         )
 
         for field_name, field_data in field_metadata.items():
-            if field_name == "id" or not field_data["unique"]:
+            is_foreign_key = "references" in field_data.keys()
+            is_unique = field_data["unique"]
+            # Unique columns and foreign keys are such common filter values
+            # that it makes sense to automatically create indices for them
+            # on table creation.
+            is_useful_index = is_unique or is_foreign_key
+            if (
+                # Fauna can query documents by ID by default, so we don't need
+                # an index for it
+                field_name == "id"
+                or not is_useful_index
+            ):
                 continue
 
             self._client.query(
@@ -239,7 +250,7 @@ class FaunadbClient:
                         "name": f"{table_name}_by_{field_name}",
                         "source": collection,
                         "terms": [{"field": ["data", field_name]}],
-                        "unique": True,
+                        "unique": is_unique,
                     }
                 )
             )
@@ -398,17 +409,17 @@ class FaunadbClient:
 
         _, condition = where_group.token_next_by(i=token_groups.Comparison)
 
-        idx, column = condition.token_next_by(i=token_groups.Identifier)
+        _, column = condition.token_next_by(i=token_groups.Identifier)
         # Assumes column has form <table_name>.<column_name>
         condition_column = column.tokens[-1]
 
-        idx, equals = condition.token_next_by(idx, m=(token_types.Comparison, "="))
+        _, equals = condition.token_next_by(m=(token_types.Comparison, "="))
         if equals is None:
             raise exceptions.NotSupportedError(
                 "Only column-value equality conditions are currently supported"
             )
 
-        _, condition_check = condition.token_next(idx, skip_ws=True)
+        _, condition_check = condition.token_next_by(t=token_types.Literal)
         condition_value = self._extract_value(condition_check)
 
         return str(condition_column.value), condition_value

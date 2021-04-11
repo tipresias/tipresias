@@ -25,6 +25,7 @@ class Match(Base):
     margin = Column(Integer)
     winner_id = Column(Integer, ForeignKey("teams.id"))
     winner = relationship(Team)
+    team_matches = relationship("TeamMatch", back_populates="match")
 
     @validates("round_number")
     def validate_at_least_min_round(self, _key, round_number):

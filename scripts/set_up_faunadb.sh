@@ -27,5 +27,3 @@ then
 
   direnv reload
 fi
-
-docker-compose run --rm backend python3 scripts/reset_faunadb.py

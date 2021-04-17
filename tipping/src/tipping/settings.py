@@ -2,6 +2,10 @@
 
 import os
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects import registry
+
 SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
 ENVIRONMENT = os.getenv("PYTHON_ENV", "development")
 IS_PRODUCTION = ENVIRONMENT == "production"
@@ -15,6 +19,10 @@ DATA_SCIENCE_SERVICE_TOKEN = os.getenv("DATA_SCIENCE_SERVICE_TOKEN", "")
 FAUNA_SECRET = os.getenv("FAUNA_SECRET", "")
 DATABASE_HOST = os.getenv("DATABASE_HOST", "faunadb:8443")
 DATABASE_URL = f"fauna://{DATABASE_HOST}/?secret={FAUNA_SECRET}"
+
+registry.register("fauna", "tipping.db.sqlalchemy_fauna.dialect", "FaunaDialect")
+_engine = create_engine(DATABASE_URL)
+Session = sessionmaker(bind=_engine)
 
 TEAM_TRANSLATIONS = {
     "Tigers": "Richmond",

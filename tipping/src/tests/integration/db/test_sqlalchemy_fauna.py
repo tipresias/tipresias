@@ -137,6 +137,15 @@ def test_insert_record(fauna_session, user_model):
     assert user.name == "Bob"
 
 
+def test_select_empty_table(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    user_records = fauna_session.execute(select(User.id, User.name)).scalars().all()
+    assert len(user_records) == 0
+
+
 def test_select_all_records(fauna_session, user_model):
     User, Base = user_model
     fauna_engine = fauna_session.get_bind()

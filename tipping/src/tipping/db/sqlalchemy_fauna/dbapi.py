@@ -1,9 +1,12 @@
 """DBAPI for use in the FaunaDialect."""
 
-from typing import Dict, Any, List, Tuple, Union, Optional, Sequence
+from typing import Dict, Any, List, Tuple, Union, Optional, Sequence, cast
 from datetime import date, datetime, time
 
 from faunadb.client import FaunaClient
+import sqlparse
+from sqlparse import tokens as token_types
+from sqlparse import sql as token_groups
 
 from . import exceptions
 from .faunadb import FaunadbClient
@@ -58,14 +61,17 @@ class FaunaQuery:
     def execute(self, query: str) -> Tuple[ResultData, ResultDescription]:
         """Execute an SQL query as a Fauna query."""
         result = self.client.sql(query)
+
         data: ResultData = [tuple(document.values()) for document in result]
-        description: ResultDescription = self._get_description_from_data(result)
+        description: ResultDescription = self._get_description_from_data(
+            result
+        ) or self._get_description_from_query(query)
 
         return data, description
 
     def _get_description_from_data(
         self, result: List[Dict[str, Any]]
-    ) -> ResultDescription:
+    ) -> Optional[ResultDescription]:
         """
         Return description from the result of the SQL query.
 
@@ -73,17 +79,7 @@ class FaunaQuery:
         can be NULL.
         """
         if not any(result):
-            return [
-                (
-                    None,  # name
-                    None,  # type_code
-                    None,  # [display_size]
-                    None,  # [internal_size]
-                    None,  # [precision]
-                    None,  # [scale]
-                    None,  # [null_ok]
-                )
-            ]
+            return None
 
         return [
             (
@@ -97,6 +93,102 @@ class FaunaQuery:
             )
             for key, value in result[0].items()
         ]
+
+    def _get_description_from_query(self, query: str):
+        sql_statements = sqlparse.parse(query)
+
+        if len(sql_statements) > 1:
+            raise exceptions.NotSupportedError(
+                "Only one SQL statement at a time is currently supported. "
+                f"The following query has more than one:\n{query}"
+            )
+
+        sql_statement = sql_statements[0]
+
+        _, wildcard = sql_statement.token_next_by(t=token_types.Wildcard)
+
+        if wildcard:
+            return [
+                (
+                    None,  # name
+                    None,  # type_code
+                    None,  # [display_size]
+                    None,  # [internal_size]
+                    None,  # [precision]
+                    None,  # [scale]
+                    True,  # [null_ok]
+                )
+            ]
+
+        _, identifiers = sql_statement.token_next_by(
+            i=(token_groups.Identifier, token_groups.IdentifierList)
+        )
+        _, column_names, alias_names = self._parse_identifiers(identifiers)
+
+        return [
+            (
+                alias_name or column_name,  # name
+                None,  # type_code
+                None,  # [display_size]
+                None,  # [internal_size]
+                None,  # [precision]
+                None,  # [scale]
+                True,  # [null_ok]
+            )
+            for column_name, alias_name in zip(*(column_names, alias_names))
+        ]
+
+    def _parse_identifiers(
+        self, identifiers: Union[token_groups.Identifier, token_groups.IdentifierList]
+    ) -> Tuple[Sequence[Optional[str]], Sequence[str], Sequence[Optional[str]]]:
+        if isinstance(identifiers, token_groups.Identifier):
+            table_name, column_name, alias_name = self._parse_identifier(identifiers)
+            return ((table_name,), (column_name,), (alias_name,))
+
+        return cast(
+            Tuple[Sequence[Optional[str]], Sequence[str], Sequence[Optional[str]]],
+            tuple(
+                zip(
+                    *[
+                        self._parse_identifier(identifier)
+                        for identifier in identifiers
+                        if isinstance(identifier, token_groups.Identifier)
+                    ]
+                )
+            ),
+        )
+
+    @staticmethod
+    def _parse_identifier(
+        identifier: token_groups.Identifier,
+    ) -> Tuple[Optional[str], str, Optional[str]]:
+        idx, identifier_name = identifier.token_next_by(t=token_types.Name)
+
+        tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
+        if next_token and next_token.match(token_types.Punctuation, "."):
+            idx = tok_idx
+            table_name = identifier_name.value
+            idx, column_identifier = identifier.token_next_by(
+                t=token_types.Name, idx=idx
+            )
+            column_name = column_identifier.value
+        else:
+            table_name = None
+            column_name = identifier_name.value
+
+        idx, as_keyword = identifier.token_next_by(
+            m=(token_types.Keyword, "AS"), idx=idx
+        )
+
+        if as_keyword is not None:
+            _, alias_identifier = identifier.token_next_by(
+                i=token_groups.Identifier, idx=idx
+            )
+            alias_name = alias_identifier.value
+        else:
+            alias_name = None
+
+        return (table_name, column_name, alias_name)
 
     @staticmethod
     def _infer_field_type(value: Any) -> str:

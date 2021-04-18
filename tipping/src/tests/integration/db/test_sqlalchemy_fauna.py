@@ -78,6 +78,33 @@ def test_create_table(fauna_engine):
         assert dialect.FaunaDialect().has_table(connection, table_name)
 
 
+def test_create_index(fauna_engine):
+    table_name = "users"
+    Base = declarative_base()
+
+    class User(Base):  # pylint: disable=unused-variable
+        __tablename__ = table_name
+
+        id = Column(Integer, primary_key=True)
+        name = Column(String(250), nullable=False, index=True)
+        date_joined = Column(DateTime(), nullable=False)
+        age = Column(Integer())
+
+    Base.metadata.create_all(fauna_engine)
+
+    inspector = inspect(fauna_engine)
+    indexes = inspector.get_indexes(table_name)
+    name_index = None
+
+    for index in indexes:
+        if index["name"] == "users_by_name":
+            name_index = index
+            break
+
+    assert name_index is not None
+    assert name_index["column_names"] == ["name"]
+
+
 def test_drop_table(fauna_engine, user_model):
     User, Base = user_model
     table_name = User.__tablename__

@@ -93,7 +93,7 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
         self, connection: FaunaConnection, schema=None, **_kwargs
     ) -> List[str]:
         """Get the names of all Fauna collections"""
-        query = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES;"
+        query = "SELECT * FROM INFORMATION_SCHEMA.TABLES;"
         result = connection.execute(query)
 
         if result.rowcount == 0:
@@ -121,9 +121,9 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
     def get_columns(
         self, connection: FaunaConnection, table_name: str, schema=None, **_kwargs
     ) -> List[ColumnName]:
-        """Get all column names in the given collection."""
+        """Get all columns in the given table."""
         query = f"""
-            SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS
+            SELECT * FROM INFORMATION_SCHEMA.COLUMNS
             WHERE TABLE_NAME = '{table_name}';
         """
         result = connection.execute(query)
@@ -168,7 +168,30 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
 
     def get_indexes(self, connection, table_name, schema=None, **_kwargs):
         """Get all indexes from the given table."""
-        return []
+        query = f"""
+            SELECT * FROM INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE
+            WHERE TABLE_NAME = '{table_name}';
+        """
+
+        result = connection.execute(query)
+
+        result_keys = list(result.keys())
+
+        if len(result_keys) == 0:
+            return []
+
+        name_col_idx = result_keys.index("name")
+        column_names_col_idx = result_keys.index("column_names")
+        unique_col_idx = result_keys.index("unique")
+
+        return [
+            {
+                "name": row[name_col_idx],
+                "column_names": row[column_names_col_idx].split(","),
+                "unique": row[unique_col_idx],
+            }
+            for row in result.fetchall()
+        ]
 
     def get_unique_constraints(self, connection, table_name, schema=None, **_kwargs):
         """Get the unique constraints for the given table."""

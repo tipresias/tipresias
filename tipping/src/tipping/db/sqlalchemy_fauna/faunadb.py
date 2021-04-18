@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 """Module for all FaunaDB functionality."""
 
 from typing import Union, Any, Dict, List, Optional, Tuple, cast, Sequence
@@ -6,6 +8,7 @@ import logging
 from functools import reduce
 from datetime import datetime
 from copy import deepcopy
+import re
 
 from faunadb.client import FaunaClient
 from faunadb import query as q, errors as fauna_errors
@@ -75,6 +78,8 @@ DEFAULT_FIELD_METADATA: FieldMetadata = {
     "default": None,
     "type": "",
 }
+
+ALEMBIC_INDEX_PREFIX_REGEX = re.compile(r"^ix_")
 
 
 class FaunaClientError(Exception):
@@ -147,7 +152,7 @@ class FaunadbClient:
         table_name = self._extract_table_name(statement)
 
         if "INFORMATION_SCHEMA" in table_name:
-            return self._execute_select_from_information_schema(statement)
+            return self._execute_select_from_information_schema(table_name, statement)
 
         idx, identifiers = statement.token_next_by(
             i=(token_groups.Identifier, token_groups.IdentifierList)
@@ -207,11 +212,63 @@ class FaunadbClient:
             for data in result["data"]
         ]
 
-    def _execute_create(self, statement: token_groups.Statement) -> SQLResult:
-        idx, _ = statement.token_next_by(m=(token_types.Keyword, "TABLE"))
+    def _execute_create(self, statement: token_groups.Statement, idx=0) -> SQLResult:
+        idx, keyword = statement.token_next_by(
+            m=[(token_types.Keyword, "TABLE"), (token_types.Keyword, "INDEX")], idx=idx
+        )
 
+        if keyword.value == "TABLE":
+            return self._execute_create_table(idx, statement)
+
+        if keyword.value == "INDEX":
+            _, unique = statement.token_next_by(
+                m=(token_types.Keyword, "UNIQUE"), idx=idx
+            )
+            idx, _ = statement.token_next_by(m=(token_types.Keyword, "ON"), idx=idx)
+            _, index_params = statement.token_next_by(i=token_groups.Function, idx=idx)
+
+            params_idx, table_identifier = index_params.token_next_by(
+                i=token_groups.Identifier
+            )
+            table_name = table_identifier.value
+
+            params_idx, column_identifiers = index_params.token_next_by(
+                i=token_groups.Parenthesis, idx=params_idx
+            )
+
+            index_fields = [
+                token.value
+                for token in column_identifiers.flatten()
+                if token.ttype == token_types.Name
+            ]
+            index_terms = [
+                {"field": ["data", index_field]} for index_field in index_fields
+            ]
+            index_name = f"{table_name}_by_{'_and_'.join(sorted(index_fields))}"
+
+            query_result = self._client.query(q.get(q.collection(table_name)))
+            collection = query_result["ref"]
+
+            result = self._client.query(
+                q.create_index(
+                    {
+                        "name": index_name,
+                        "source": collection,
+                        "terms": index_terms,
+                        "unique": unique,
+                    }
+                )
+            )
+
+            return [self._fauna_reference_to_dict(result["ref"])]
+
+        raise exceptions.NotSupportedError()
+
+    def _execute_create_table(
+        self, table_token_idx, statement: token_groups.Statement
+    ) -> SQLResult:
         idx, table_identifier = statement.token_next_by(
-            i=token_groups.Identifier, idx=idx
+            i=token_groups.Identifier, idx=table_token_idx
         )
         table_name = table_identifier.value
 
@@ -220,6 +277,7 @@ class FaunadbClient:
         )
 
         field_metadata = self._extract_column_definitions(column_identifiers)
+
         result = self._create_collection(
             table_name, metadata={"metadata": {"fields": field_metadata}}
         )
@@ -255,7 +313,7 @@ class FaunadbClient:
                 )
             )
 
-        return [self._fauna_collection_to_dict(result["ref"])]
+        return [self._fauna_reference_to_dict(collection)]
 
     def _execute_drop(self, statement: token_groups.Statement) -> SQLResult:
         idx, _ = statement.token_next_by(m=(token_types.Keyword, "TABLE"))
@@ -264,7 +322,7 @@ class FaunadbClient:
         )
 
         result = self._client.query(q.delete(q.collection(table_identifier.value)))
-        return [self._fauna_collection_to_dict(result["ref"])]
+        return [self._fauna_reference_to_dict(result["ref"])]
 
     def _execute_insert(self, statement: token_groups.Statement) -> SQLResult:
         idx, function_group = statement.token_next_by(i=token_groups.Function)
@@ -425,29 +483,28 @@ class FaunadbClient:
         return str(condition_column.value), condition_value
 
     def _execute_select_from_information_schema(
-        self, statement: token_groups.Statement
+        self, table_name: str, statement: token_groups.Statement
     ) -> SQLResult:
-        _, select_keyword = statement.token_next_by(
-            m=[
-                (token_types.Keyword, "TABLE_NAME"),
-                (token_types.Keyword, "COLUMN_NAME"),
-            ]
-        )
-
-        if "TABLE_NAME" in select_keyword.value:
+        # TODO: As I've looked into INFORMATION_SCHEMA queries more, I realise
+        # that these aren't returning valid responses for the given SQL queries,
+        # but just the data that SQLAlchemy needs for some of the Dialect methods.
+        # It's okay for now, but should probably fix these query responses eventually
+        # and put the SQLAlchemy-specific logic/transformation in FaunaDialect
+        if table_name == "INFORMATION_SCHEMA.TABLES":
             result = self._client.query(
                 q.map_(
                     q.lambda_("collection", q.get(q.var("collection"))),
                     q.paginate(q.collections()),
                 )
             )
+            collections = result["data"]
 
             return [
-                {"id": self._fauna_data_to_dict(result).get("id")}
-                for result in result["data"]
+                self._fauna_reference_to_dict(collection["ref"])
+                for collection in collections
             ]
 
-        if "COLUMN_NAME" in select_keyword.value:
+        if table_name == "INFORMATION_SCHEMA.COLUMNS":
             # We don't use the standard logic for parsing this WHERE clause,
             # because sqlparse treats WHERE clauses in INFORMATION_SCHEMA queries
             # differently, returning flat tokens in the WHERE group
@@ -475,7 +532,11 @@ class FaunadbClient:
             _, condition_check = where_group.token_next(idx, skip_ws=True)
             condition_value = self._extract_value(condition_check)
 
-            result = self._client.query(q.get(q.collection(condition_value)))
+            result = self._client.query(
+                q.select(
+                    ["data", "metadata", "fields"], q.get(q.collection(condition_value))
+                )
+            )
             # Selecting column info from INFORMATION_SCHEMA returns foreign keys
             # as regular columns, so we don't need the extra table-reference info
             remove_references = lambda field_data: {
@@ -484,12 +545,87 @@ class FaunadbClient:
 
             return [
                 {**remove_references(field_data), "name": field_name}
-                for field_name, field_data in result["data"]["metadata"][
-                    "fields"
-                ].items()
+                for field_name, field_data in result.items()
+            ]
+
+        if table_name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
+            # We don't use the standard logic for parsing this WHERE clause,
+            # because sqlparse treats WHERE clauses in INFORMATION_SCHEMA queries
+            # differently, returning flat tokens in the WHERE group
+            # instead of nested token groups.
+            _, where_group = statement.token_next_by(i=token_groups.Where)
+            idx, condition_column = where_group.token_next_by(
+                m=(token_types.Keyword, "TABLE_NAME")
+            )
+
+            if condition_column is None:
+                raise exceptions.NotSupportedError(
+                    "Only TABLE_NAME condition is supported for "
+                    "SELECT FROM INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE"
+                )
+
+            idx, condition = where_group.token_next_by(
+                m=(token_types.Comparison, "="), idx=idx
+            )
+
+            if condition is None:
+                raise exceptions.NotSupportedError(
+                    "Only column-value-based conditions (e.g. WHERE <column> = <value>) "
+                    "are currently supported."
+                )
+
+            _, condition_check = where_group.token_next(idx, skip_ws=True)
+            condition_value = self._extract_value(condition_check)
+
+            is_based_on_collection = q.lambda_(
+                "index",
+                q.equals(
+                    q.select(["source", "id"], q.get(q.var("index"))),
+                    condition_value,
+                ),
+            )
+            indexes_based_on_collection = q.filter_(
+                is_based_on_collection,
+                q.paginate(q.indexes()),
+            )
+
+            result = self._client.query(
+                q.map_(
+                    q.lambda_("index", q.get(q.var("index"))),
+                    indexes_based_on_collection,
+                )
+            )
+
+            return [
+                {
+                    "name": index["name"],
+                    "column_names": ",".join(
+                        self._convert_terms_to_column_names(index)
+                    ),
+                    # Fauna doesn't seem to return a 'unique' field with index queries,
+                    # and we don't really need it, so leaving it blank for now.
+                    "unique": False,
+                }
+                for index in result["data"]
             ]
 
         raise exceptions.NotSupportedError()
+
+    def _convert_terms_to_column_names(self, index: Dict[str, Any]) -> List[str]:
+        terms = index.get("terms")
+
+        if terms is not None:
+            return [term["field"][-1] for term in terms]
+
+        source_collection = index["source"].id()
+        collection_fields = self._client.query(
+            q.select(
+                ["data", "metadata", "fields"],
+                q.get(q.collection(source_collection)),
+            )
+        )
+
+        return [field_name for field_name in collection_fields.keys()]
 
     @staticmethod
     def _extract_table_name(statement: token_groups.Statement) -> str:
@@ -692,6 +828,7 @@ class FaunadbClient:
         idx, column = column_definition_group.token_next_by(t=token_types.Name)
         column_name = column.value
 
+        # "id" is auto-generated by Fauna, so we ignore it in SQL column definitions
         if column_name == "id":
             return metadata
 
@@ -855,7 +992,7 @@ class FaunadbClient:
         return value
 
     @staticmethod
-    def _fauna_collection_to_dict(ref: Ref) -> Dict[str, Any]:
+    def _fauna_reference_to_dict(ref: Ref) -> Dict[str, Any]:
         ref_dict = {}
 
         for key, value in ref.value.items():

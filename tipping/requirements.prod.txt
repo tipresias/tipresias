@@ -11,7 +11,7 @@ gql==3.0.0a3
 cerberus
 sqlalchemy==1.4.6
 alembic==1.5.8
-faunadb==4.0.1
+faunadb==4.1.0
 sqlparse==0.4.1
 
 # Browser automation

@@ -9,7 +9,7 @@ rollbar
 chardet<4.0 # required version for gql 3.0.0a3
 gql==3.0.0a3
 cerberus
-sqlalchemy==1.4.6
+sqlalchemy==1.4.9
 alembic==1.5.8
 faunadb==4.1.0
 sqlparse==0.4.1

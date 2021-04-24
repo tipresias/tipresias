@@ -33,7 +33,11 @@ FieldMetadata = TypedDict(
 )
 FieldsMetadata = Dict[str, FieldMetadata]
 CollectionMetadata = TypedDict("CollectionMetadata", {"fields": FieldsMetadata})
-
+IndexComparison = Tuple[str, Union[int, float, str, None]]
+Comparisons = TypedDict(
+    "Comparisons",
+    {"by_id": Optional[Union[int, str]], "by_index": List[IndexComparison]},
+)
 
 DATA_TYPE_MAP = {
     "CHAR": "String",
@@ -172,16 +176,8 @@ class FaunadbClient:
         )
         table_name = table_identifier.value
 
-        condition_column, condition_value = self._extract_where_conditions(statement)
-
-        if condition_column == "id":
-            records_to_select = q.ref(q.collection(table_name), condition_value)
-        elif condition_column is None:
-            records_to_select = q.match(q.index(f"all_{table_name}"))
-        else:
-            records_to_select = q.match(
-                q.index(f"{table_name}_by_{condition_column}"), condition_value
-            )
+        comparisons = self._extract_where_conditions(statement)
+        records_to_select = self._matched_records(table_name, comparisons)
 
         result = self._client.query(
             q.map_(
@@ -207,7 +203,8 @@ class FaunadbClient:
 
         return [
             self._select_columns(
-                column_names, self._fauna_data_to_dict(data, alias_map=column_alias_map)
+                column_names,
+                self._fauna_data_to_dict(data, alias_map=column_alias_map),
             )
             for data in result["data"]
         ]
@@ -390,19 +387,9 @@ class FaunadbClient:
 
     def _execute_delete(self, statement: token_groups.Statement) -> SQLResult:
         _, table = statement.token_next_by(i=token_groups.Identifier)
-        condition_column, condition_value = self._extract_where_conditions(statement)
 
-        if condition_column == "id":
-            records_to_delete = q.ref(q.collection(table.value), condition_value)
-        elif condition_column is None:
-            records_to_delete = q.match(
-                q.index(f"all_{table.value}"),
-            )
-        else:
-            records_to_delete = q.match(
-                q.index(f"{table.value}_by_{condition_column}"),
-                condition_value,
-            )
+        comparisons = self._extract_where_conditions(statement)
+        records_to_delete = self._matched_records(table.value, comparisons)
 
         results = self._client.query(
             q.delete(q.select("ref", q.get(records_to_delete)))
@@ -430,57 +417,103 @@ class FaunadbClient:
         _, update_value = comparison_group.token_next(idx, skip_ws=True)
         update_value_value = self._extract_value(update_value)
 
-        condition_column, condition_value = self._extract_where_conditions(statement)
+        comparisons = self._extract_where_conditions(statement)
+        records_to_update = self._matched_records(table_name, comparisons)
+
+        # Can't figure out how to return updated record count as part of an update call
+        update_count = self._client.query(
+            q.count(records_to_update),
+        )
 
         self._client.query(
             q.update(
                 q.select(
                     "ref",
-                    q.get(
-                        q.match(
-                            q.index(f"{table_name}_by_{condition_column}"),
-                            condition_value,
-                        )
-                    ),
+                    q.get(records_to_update),
                 ),
                 {"data": {update_column_value: update_value_value}},
             )
         )
 
-        update_count = self._client.query(
-            q.count(
-                q.match(
-                    q.index(f"{table_name}_by_{condition_column}"), update_value_value
-                )
-            ),
-        )
-
         return [{"count": update_count}]
 
-    def _extract_where_conditions(
-        self, statement
-    ) -> Tuple[Optional[str], Union[int, float, str, None]]:
+    def _extract_where_conditions(self, statement) -> Optional[Comparisons]:
         _, where_group = statement.token_next_by(i=token_groups.Where)
 
         if where_group is None:
-            return None, None
+            return None
 
-        _, condition = where_group.token_next_by(i=token_groups.Comparison)
+        _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
 
-        _, column = condition.token_next_by(i=token_groups.Identifier)
-        # Assumes column has form <table_name>.<column_name>
-        condition_column = column.tokens[-1]
+        if or_keyword is not None:
+            raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
 
-        _, equals = condition.token_next_by(m=(token_types.Comparison, "="))
-        if equals is None:
-            raise exceptions.NotSupportedError(
-                "Only column-value equality conditions are currently supported"
+        comparisons: Comparisons = {"by_id": None, "by_index": []}
+        condition_idx = 0
+
+        while True:
+            _, and_keyword = where_group.token_next_by(m=(token_types.Keyword, "AND"))
+            should_have_and_keyword = condition_idx > 0
+            condition_idx, condition = where_group.token_next_by(
+                i=token_groups.Comparison, idx=condition_idx
             )
 
-        _, condition_check = condition.token_next_by(t=token_types.Literal)
-        condition_value = self._extract_value(condition_check)
+            if condition is None:
+                break
 
-        return str(condition_column.value), condition_value
+            assert not should_have_and_keyword or (
+                should_have_and_keyword and and_keyword is not None
+            )
+
+            _, column = condition.token_next_by(i=token_groups.Identifier)
+            # Assumes column has form <table_name>.<column_name>
+            condition_column = column.tokens[-1]
+
+            _, equals = condition.token_next_by(m=(token_types.Comparison, "="))
+            if equals is None:
+                raise exceptions.NotSupportedError(
+                    "Only column-value equality conditions are currently supported"
+                )
+
+            _, condition_check = condition.token_next_by(t=token_types.Literal)
+            condition_value = self._extract_value(condition_check)
+
+            column_name = str(condition_column.value)
+
+            if column_name == "id":
+                assert not isinstance(condition_value, float)
+                comparisons["by_id"] = condition_value
+            else:
+                comparisons["by_index"].append((column_name, condition_value))
+
+        return comparisons
+
+    def _matched_records(
+        self, collection_name: str, comparisons: Optional[Comparisons]
+    ):
+        if comparisons is None:
+            return q.intersection(q.match(q.index(f"all_{collection_name}")))
+
+        matched_records = []
+
+        if comparisons["by_id"] is not None:
+            if any(comparisons["by_index"]):
+                raise exceptions.NotSupportedError(
+                    "When querying by ID, including other conditions in the WHERE "
+                    "clause is not supported."
+                )
+
+            return q.ref(q.collection(collection_name), comparisons["by_id"])
+
+        for comparison_field, comparison_value in comparisons["by_index"]:
+            matched_records.append(
+                q.match(
+                    q.index(f"{collection_name}_by_{comparison_field}"),
+                    comparison_value,
+                )
+            )
+
+        return q.intersection(*matched_records)
 
     def _execute_select_from_information_schema(
         self, table_name: str, statement: token_groups.Statement

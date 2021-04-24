@@ -14,7 +14,7 @@ from sqlalchemy import (
     select,
     delete,
 )
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import relationship
 import pytest
 
 from tipping.db.sqlalchemy_fauna import dialect
@@ -78,6 +78,33 @@ def test_create_table(fauna_engine):
         assert dialect.FaunaDialect().has_table(connection, table_name)
 
 
+def test_create_index(fauna_engine):
+    table_name = "users"
+    Base = declarative_base()
+
+    class User(Base):  # pylint: disable=unused-variable
+        __tablename__ = table_name
+
+        id = Column(Integer, primary_key=True)
+        name = Column(String(250), nullable=False, index=True)
+        date_joined = Column(DateTime(), nullable=False)
+        age = Column(Integer())
+
+    Base.metadata.create_all(fauna_engine)
+
+    inspector = inspect(fauna_engine)
+    indexes = inspector.get_indexes(table_name)
+    name_index = None
+
+    for index in indexes:
+        if index["name"] == "users_by_name":
+            name_index = index
+            break
+
+    assert name_index is not None
+    assert name_index["column_names"] == ["name"]
+
+
 def test_drop_table(fauna_engine, user_model):
     User, Base = user_model
     table_name = User.__tablename__
@@ -94,59 +121,64 @@ def test_drop_table(fauna_engine, user_model):
     assert not any(inspector.get_indexes(table_name))
 
 
-def test_insert_record(fauna_engine, user_model):
+def test_insert_record(fauna_session, user_model):
     User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
 
-    DBSession = sessionmaker(bind=fauna_engine)
-    session = DBSession()
-
     user = User(name="Bob", date_joined=datetime.now(), age=30)
-    session.add(user)
-    session.commit()
+    fauna_session.add(user)
+    fauna_session.commit()
 
-    users = session.execute(select(User)).scalars().all()
+    users = fauna_session.execute(select(User)).scalars().all()
 
     # It creates the record
     assert len(users) == 1
     assert user.name == "Bob"
 
 
-def test_select_all_records(fauna_engine, user_model):
+def test_select_empty_table(fauna_session, user_model):
     User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
 
-    DBSession = sessionmaker(bind=fauna_engine)
-    session = DBSession()
+    user_records = fauna_session.execute(select(User.id, User.name)).scalars().all()
+    assert len(user_records) == 0
+
+
+def test_select_all_records(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
 
     names = ["Bob", "Linda", "Tina"]
     users = [User(name=name, date_joined=datetime.now(), age=30) for name in names]
     for user in users:
-        session.add(user)
-    session.commit()
+        fauna_session.add(user)
+    fauna_session.commit()
 
-    user_records = session.execute(select(User)).scalars().all()
+    user_records = fauna_session.execute(select(User)).scalars().all()
 
     # It fetches the records
     assert len(users) == len(user_records)
 
 
-def test_select_by_unique_field(fauna_engine, user_model):
+def test_select_by_unique_field(fauna_session, user_model):
     User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
-
-    DBSession = sessionmaker(bind=fauna_engine)
-    session = DBSession()
 
     filter_name = "Bob"
     names = [filter_name, "Linda", "Tina"]
     users = [User(name=name, date_joined=datetime.now(), age=30) for name in names]
     for user in users:
-        session.add(user)
-    session.commit()
+        fauna_session.add(user)
+    fauna_session.commit()
 
     user_records = (
-        session.execute(select(User).where(User.name == filter_name)).scalars().all()
+        fauna_session.execute(select(User).where(User.name == filter_name))
+        .scalars()
+        .all()
     )
 
     # It fetches the records
@@ -154,66 +186,62 @@ def test_select_by_unique_field(fauna_engine, user_model):
     assert user_records[0].name == filter_name
 
 
-def test_delete_record_conditionally(fauna_engine, user_model):
+def test_delete_record_conditionally(fauna_session, user_model):
     User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
-
-    DBSession = sessionmaker(bind=fauna_engine)
-    session = DBSession()
 
     names = ["Bob", "Linda"]
     users = [User(name=name, date_joined=datetime.now(), age=30) for name in names]
     for user in users:
-        session.add(user)
-    session.commit()
+        fauna_session.add(user)
+    fauna_session.commit()
 
     user_to_delete = users[0]
-    session.execute(delete(User).where(User.id == user_to_delete.id))
-    session.commit()
-    user_names = session.execute(select(User.name)).scalars().all()
+    fauna_session.execute(delete(User).where(User.id == user_to_delete.id))
+    fauna_session.commit()
+    user_names = fauna_session.execute(select(User.name)).scalars().all()
 
     # It deletes the record
     assert "Linda" in user_names
     assert user_to_delete.name not in user_names
 
 
-def test_unique_constraint(fauna_engine, user_model):
+def test_unique_constraint(fauna_session, user_model):
     User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
 
-    DBSession = sessionmaker(bind=fauna_engine)
-    session = DBSession()
-
-    session.add(User(name="Bob", date_joined=datetime.now(), age=30))
-    session.add(User(name="Bob", date_joined=datetime.now(), age=60))
+    fauna_session.add(User(name="Bob", date_joined=datetime.now(), age=30))
+    fauna_session.add(User(name="Bob", date_joined=datetime.now(), age=60))
 
     with pytest.raises(
         sqlalchemy_exceptions.ProgrammingError,
         match="Tried to create a document with duplicate value for a unique field",
     ):
-        session.commit()
+        fauna_session.commit()
 
 
-def test_relationships(fauna_engine, parent_child):
+def test_relationships(fauna_session, parent_child):
     Base = parent_child["base"]
     Parent = parent_child["parent"]
     Child = parent_child["child"]
 
+    fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
 
-    DBSession = sessionmaker(bind=fauna_engine)
-    session = DBSession()
-
-    session.add(Parent(name="Bob"))
-    session.commit()
+    fauna_session.add(Parent(name="Bob"))
+    fauna_session.commit()
 
     parent = (
-        session.execute(select(Parent).where(Parent.name == "Bob")).scalars().first()
+        fauna_session.execute(select(Parent).where(Parent.name == "Bob"))
+        .scalars()
+        .first()
     )
 
-    session.add(Child(name="Tina", parent_id=parent.id))
-    session.add(Child(name="Gene", parent_id=parent.id))
-    session.add(Child(name="Louise", parent_id=parent.id))
-    session.commit()
+    fauna_session.add(Child(name="Tina", parent_id=parent.id))
+    fauna_session.add(Child(name="Gene", parent_id=parent.id))
+    fauna_session.add(Child(name="Louise", parent_id=parent.id))
+    fauna_session.commit()
 
     assert len(parent.children) == 3

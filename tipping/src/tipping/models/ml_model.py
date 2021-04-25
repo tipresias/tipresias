@@ -7,7 +7,7 @@ from typing import List
 import enum
 
 from sqlalchemy import inspect, select, Column, String, Text, Integer, Boolean
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, relationship
 
 from tipping.models.base import Base, ValidationError
 from tipping.settings import Session
@@ -50,6 +50,8 @@ class MLModel(Base):
     __tablename__ = "ml_models"
 
     id = Column(Integer, primary_key=True)
+    predictions = relationship("Prediction", back_populates="ml_model")
+
     name = Column(String, nullable=False, unique=True)
     description = Column(Text)
     is_principal = Column(Boolean, nullable=False, default=False, index=True)

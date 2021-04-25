@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 
 CAPTURED_MATCH = 1
 
-registry.register("fauna", "tipping.db.sqlalchemy_fauna.dialect", "FaunaDialect")
+registry.register("fauna", "tipping.sqlalchemy_fauna.dialect", "FaunaDialect")
 
 
 @pytest.fixture(scope="session", autouse=True)

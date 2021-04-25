@@ -9,8 +9,8 @@ from sqlalchemy.ext.compiler import compiles
 from mypy_extensions import TypedDict
 
 from tipping.settings import IS_PRODUCTION
-from tipping.db import sqlalchemy_fauna
-from tipping.db.sqlalchemy_fauna.dbapi import FaunaConnection
+from tipping import sqlalchemy_fauna
+from tipping.sqlalchemy_fauna.dbapi import FaunaConnection
 
 ColumnName = TypedDict(
     "ColumnName",

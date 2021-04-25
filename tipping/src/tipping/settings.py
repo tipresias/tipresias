@@ -20,7 +20,7 @@ FAUNA_SECRET = os.getenv("FAUNA_SECRET", "")
 DATABASE_HOST = os.getenv("DATABASE_HOST", "faunadb:8443")
 DATABASE_URL = f"fauna://{DATABASE_HOST}/?secret={FAUNA_SECRET}"
 
-registry.register("fauna", "tipping.db.sqlalchemy_fauna.dialect", "FaunaDialect")
+registry.register("fauna", "tipping.sqlalchemy_fauna.dialect", "FaunaDialect")
 _engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=_engine)
 

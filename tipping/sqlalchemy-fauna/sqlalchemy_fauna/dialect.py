@@ -1,5 +1,6 @@
 """Module for defining the Fauna Dialect for use in SQLAlchemy."""
 
+import os
 from typing import List, Dict, Any
 from packaging.version import Version
 
@@ -8,9 +9,8 @@ from sqlalchemy import types
 from sqlalchemy.ext.compiler import compiles
 from mypy_extensions import TypedDict
 
-from tipping.settings import IS_PRODUCTION
-from tipping import sqlalchemy_fauna
-from tipping.sqlalchemy_fauna.dbapi import FaunaConnection
+import sqlalchemy_fauna
+from sqlalchemy_fauna.dbapi import FaunaConnection
 
 ColumnName = TypedDict(
     "ColumnName",
@@ -60,7 +60,7 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
     """SQLAlchemy Dialect for Fauna."""
 
     name = "fauna"
-    scheme = "https" if IS_PRODUCTION else "http"
+    scheme = os.getenv("FAUNA_SCHEME", "https")
     driver = "rest"
 
     # Pylint says this method is hidden by sqlalchemy.engine.default,

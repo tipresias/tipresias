@@ -18,7 +18,7 @@ if SRC_DIR not in sys.path:
 from tipping.models.base import Base
 from tipping import settings
 
-registry.register("fauna", "tipping.db.sqlalchemy_fauna.dialect", "FaunaDialect")
+registry.register("fauna", "sqlalchemy_fauna.dialect", "FaunaDialect")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

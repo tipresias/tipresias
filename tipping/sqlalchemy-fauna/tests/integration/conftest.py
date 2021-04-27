@@ -72,7 +72,6 @@ def fauna_session():
         engine = create_engine(f"fauna://faunadb:8443/?secret={secret_key}")
         Session = sessionmaker(bind=engine)
 
-        with patch("tipping.settings.Session", Session):
-            session = Session()
+        session = Session()
 
-            yield session
+        yield session

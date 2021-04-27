@@ -1,0 +1,17 @@
+# dependencies from setup.py
+-e .
+
+# Package building dependencies
+setuptools
+wheel
+twine
+sphinx
+
+# Testing/Linting
+pylint>=2.0,<3.0
+black==20.8b1
+pydocstyle>=5.0,<7.0
+pytest>=5.0,<7.0
+coverage
+numpy==1.20.2 # just used for random numbers in tests
+faker==8.1.0

@@ -17,7 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 import pytest
 
-from tipping.db.sqlalchemy_fauna import dialect
+from sqlalchemy_fauna import dialect
 
 
 @pytest.fixture()

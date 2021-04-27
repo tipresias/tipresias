@@ -20,6 +20,7 @@ RUN npm install
 
 # Install Python dependencies
 COPY requirements.txt requirements.prod.txt ./
+COPY ./sqlalchemy-fauna/ ./sqlalchemy-fauna/
 RUN pip3 install --upgrade pip -r requirements.txt
 
 # Add the rest of the code

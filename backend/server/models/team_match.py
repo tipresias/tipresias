@@ -49,7 +49,7 @@ class TeamMatch(models.Model):
 
             assert team_match_names & data_names == team_match_names, (
                 f"Team names in the teammatch_set ({team_match_names}) associated with "
-                "{match} need to be the same as the given match data ({data_names})."
+                f"{match} need to be the same as the given match data ({data_names})."
             )
 
             return teammatch_set.first(), teammatch_set.last()

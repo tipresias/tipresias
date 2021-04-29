@@ -2,7 +2,6 @@
 
 import os
 from typing import List, Dict, Any
-from packaging.version import Version
 
 from sqlalchemy.engine import default
 from sqlalchemy import types
@@ -39,8 +38,8 @@ try:
 except ImportError:
     pass
 else:
+    from packaging.version import Version
     from alembic.ddl import postgresql
-
     from alembic.ddl.base import RenameTable
 
     compiles(RenameTable, "fauna")(postgresql.visit_rename_table)

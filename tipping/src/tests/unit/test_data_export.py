@@ -41,9 +41,11 @@ class TestDataExport(TestCase):
         )
 
         with self.subTest("when the status code isn't 2xx"):
-            mock_response.status_code = 400
+            mock_response.status_code = 500
 
-            with self.assertRaisesRegex(Exception, "Bad response"):
+            with self.assertRaisesRegex(
+                data_export.ServerErrorResponse, "Bad response"
+            ):
                 self.data_export.update_fixture_data(fake_fixture, upcoming_round)
 
     @patch("tipping.data_export.requests")
@@ -80,9 +82,11 @@ class TestDataExport(TestCase):
         self.assertTrue((prediction_records == pd.DataFrame(response_data)).all().all())
 
         with self.subTest("when the status code isn't 2xx"):
-            mock_response.status_code = 400
+            mock_response.status_code = 500
 
-            with self.assertRaisesRegex(Exception, "Bad response"):
+            with self.assertRaisesRegex(
+                data_export.ServerErrorResponse, "Bad response"
+            ):
                 self.data_export.update_match_predictions(fake_predictions)
 
     @patch("tipping.data_export.requests")
@@ -105,9 +109,11 @@ class TestDataExport(TestCase):
         )
 
         with self.subTest("when the status code isn't 2xx"):
-            mock_response.status_code = 400
+            mock_response.status_code = 500
 
-            with self.assertRaisesRegex(Exception, "Bad response"):
+            with self.assertRaisesRegex(
+                data_export.ServerErrorResponse, "Bad response"
+            ):
                 self.data_export.update_matches(fake_matches)
 
     @patch("tipping.data_export.requests")
@@ -132,7 +138,9 @@ class TestDataExport(TestCase):
         )
 
         with self.subTest("when the status code isn't 2xx"):
-            mock_response.status_code = 400
+            mock_response.status_code = 500
 
-            with self.assertRaisesRegex(Exception, "Bad response"):
+            with self.assertRaisesRegex(
+                data_export.ServerErrorResponse, "Bad response"
+            ):
                 self.data_export.update_match_results(fake_match_results)

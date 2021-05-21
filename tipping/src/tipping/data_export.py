@@ -13,6 +13,23 @@ from tipping import settings
 from tipping.types import MatchPrediction
 
 
+class DataExportError(Exception):
+    """Base error class for data_export."""
+
+
+class ServerErrorResponse(DataExportError):
+    """Error class for when a server error response is received."""
+
+
+def _error_message(url: str, response: requests.Response) -> str:
+    return (
+        f"Bad response from application when requesting {url}:\n"
+        f"Status: {response.status_code}\n"
+        f"Headers: {response.headers}\n"
+        f"Body: {response.text}"
+    )
+
+
 def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> requests.Response:
     body = body or {}
 
@@ -36,12 +53,10 @@ def _send_data(path: str, body: Optional[Dict[str, Any]] = None) -> requests.Res
     if 200 <= response.status_code < 300:
         return response
 
-    raise Exception(
-        f"Bad response from application when requesting {service_url}:\n"
-        f"Status: {response.status_code}\n"
-        f"Headers: {response.headers}\n"
-        f"Body: {response.text}"
-    )
+    if 500 <= response.status_code < 600:
+        raise ServerErrorResponse(service_url, _error_message(service_url, response))
+
+    raise DataExportError(service_url, _error_message(service_url, response))
 
 
 def update_fixture_data(fixture_data: pd.DataFrame, upcoming_round: int):

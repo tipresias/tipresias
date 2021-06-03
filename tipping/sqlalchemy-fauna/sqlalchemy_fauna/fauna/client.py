@@ -10,7 +10,7 @@ from datetime import datetime
 from copy import deepcopy
 import re
 
-from faunadb.client import FaunaClient
+from faunadb import client
 from faunadb import query as q, errors as fauna_errors
 from faunadb.objects import Ref
 import sqlparse
@@ -18,7 +18,7 @@ from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
 from mypy_extensions import TypedDict
 
-from . import exceptions
+from sqlalchemy_fauna import exceptions
 
 
 SQLResult = List[Dict[str, Any]]
@@ -90,7 +90,7 @@ class FaunaClientError(Exception):
     """Errors raised by the FaunaClient while executing queries."""
 
 
-class FaunadbClient:
+class FaunaClient:
     """API client for calling FaunaDB endpoints."""
 
     def __init__(self, secret=None, scheme="http", domain="faunadb", port=8443):
@@ -102,7 +102,7 @@ class FaunadbClient:
         domain: Domain of the database server.
         port: Port used by the database server.
         """
-        self._client = FaunaClient(
+        self._client = client.FaunaClient(
             scheme=scheme, domain=domain, port=port, secret=secret
         )
 

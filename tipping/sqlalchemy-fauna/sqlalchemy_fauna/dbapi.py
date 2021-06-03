@@ -9,7 +9,7 @@ from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
 
 from . import exceptions
-from .faunadb import FaunadbClient
+from .fauna import FaunaClient
 
 
 PopulatedResultDescription = Tuple[Optional[str], Any, None, None, None, None, bool]
@@ -212,7 +212,7 @@ class FaunaConnection:
     """Connection to a Fauna DB instance."""
 
     def __init__(self, host="", port=None, secret="", scheme=""):
-        client = FaunadbClient(scheme=scheme, domain=host, port=port, secret=secret)
+        client = FaunaClient(scheme=scheme, domain=host, port=port, secret=secret)
         self._fauna_query = FaunaQuery(client=client)
         self.closed = False
         self.cursors = []

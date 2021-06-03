@@ -19,6 +19,7 @@ from sqlparse import sql as token_groups
 from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
+from . import translation
 
 
 SQLResult = List[Dict[str, Any]]
@@ -108,7 +109,7 @@ class FaunaClient:
 
     def sql(self, query: str) -> SQLResult:
         """Convert SQL to FQL and execute the query."""
-        formatted_query = self._format_sql(query)
+        formatted_query = translation.format_sql_query(query)
         sql_statements = sqlparse.parse(formatted_query)
 
         if len(sql_statements) > 1:
@@ -124,12 +125,6 @@ class FaunaClient:
         except Exception as err:
             logging.error("\n%s", formatted_query)
             raise err
-
-    @staticmethod
-    def _format_sql(sql: str) -> str:
-        return sqlparse.format(
-            sql, keyword_case="upper", strip_comments=True, reindent=True
-        )
 
     def _execute_sql_statement(self, statement: token_groups.Statement) -> SQLResult:
         if statement.token_first().match(token_types.DML, "SELECT"):
@@ -167,7 +162,7 @@ class FaunaClient:
         if len(set(table_names)) > 1:
             raise exceptions.NotSupportedError(
                 "Only one table per query is currently supported, but received:\n",
-                f"{self._format_sql(str(statement))}",
+                f"{translation.format_sql_query(str(statement))}",
             )
 
         idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
@@ -741,7 +736,7 @@ class FaunaClient:
             raise exceptions.NotSupportedError(
                 "When a column definition clause begins with CONSTRAINT, "
                 "only a PRIMARY KEY constraint is supported, but the following was "
-                f"recieved:\n{self._format_sql(column_definition_group)}"
+                f"recieved:\n{translation.format_sql_query(column_definition_group)}"
             )
 
         if primary_keyword is None:
@@ -887,7 +882,7 @@ class FaunaClient:
         if check_keyword is not None:
             raise exceptions.NotSupportedError(
                 "CHECK keyword is not supported, but received:\n"
-                f"{self._format_sql(column_definition_group)}"
+                f"{translation.format_sql_query(column_definition_group)}"
             )
 
         column_metadata: Union[FieldMetadata, Dict[str, str]] = metadata.get(

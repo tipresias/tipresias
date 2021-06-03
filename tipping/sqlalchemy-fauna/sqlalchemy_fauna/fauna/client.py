@@ -127,8 +127,11 @@ class FaunaClient:
             raise err
 
     def _execute_sql_statement(self, statement: token_groups.Statement) -> SQLResult:
+        sql_query = str(statement)
+
         if statement.token_first().match(token_types.DML, "SELECT"):
-            return self._execute_select(statement)
+            table_name = self._extract_table_name(statement)
+            return self._execute_select(sql_query, table_name)
 
         if statement.token_first().match(token_types.DDL, "CREATE"):
             return self._execute_create(statement)
@@ -147,39 +150,47 @@ class FaunaClient:
 
         raise exceptions.NotSupportedError()
 
-    def _execute_select(self, statement: token_groups.Statement) -> SQLResult:
-        table_name = self._extract_table_name(statement)
+    def _execute_select(self, sql_query: str, table_name: str) -> SQLResult:
+        (
+            fql_query,
+            column_names,
+            alias_names,
+        ) = translation.translate_sql_to_fql(sql_query)
+        result = self._client.query(fql_query)
 
-        if "INFORMATION_SCHEMA" in table_name:
-            return self._execute_select_from_information_schema(table_name, statement)
+        if table_name == "INFORMATION_SCHEMA.TABLES":
+            collections = result["data"]
 
-        idx, identifiers = statement.token_next_by(
-            i=(token_groups.Identifier, token_groups.IdentifierList)
-        )
-        table_names, column_names, alias_names = self._parse_identifiers(identifiers)
+            return [
+                self._fauna_reference_to_dict(collection["ref"])
+                for collection in collections
+            ]
 
-        # We can only handle one table at a time for now
-        if len(set(table_names)) > 1:
-            raise exceptions.NotSupportedError(
-                "Only one table per query is currently supported, but received:\n",
-                f"{translation.format_sql_query(str(statement))}",
-            )
+        if table_name == "INFORMATION_SCHEMA.COLUMNS":
+            # Selecting column info from INFORMATION_SCHEMA returns foreign keys
+            # as regular columns, so we don't need the extra table-reference info
+            remove_references = lambda field_data: {
+                key: value for key, value in field_data.items() if key != "references"
+            }
 
-        idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
-        _, table_identifier = statement.token_next_by(
-            i=(token_groups.Identifier), idx=idx
-        )
-        table_name = table_identifier.value
+            return [
+                {**remove_references(field_data), "name": field_name}
+                for field_name, field_data in result.items()
+            ]
 
-        comparisons = self._extract_where_conditions(statement)
-        records_to_select = self._matched_records(table_name, comparisons)
-
-        result = self._client.query(
-            q.map_(
-                q.lambda_("document", q.get(q.var("document"))),
-                q.paginate(records_to_select),
-            )
-        )
+        if table_name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
+            return [
+                {
+                    "name": index["name"],
+                    "column_names": ",".join(
+                        self._convert_terms_to_column_names(index)
+                    ),
+                    # Fauna doesn't seem to return a 'unique' field with index queries,
+                    # and we don't really need it, so leaving it blank for now.
+                    "unique": False,
+                }
+                for index in result["data"]
+            ]
 
         # If an index match only returns one document, the result is a dictionary,
         # otherwise, it's a dictionary wrapped in a list. Not sure why
@@ -509,135 +520,6 @@ class FaunaClient:
             )
 
         return q.intersection(*matched_records)
-
-    def _execute_select_from_information_schema(
-        self, table_name: str, statement: token_groups.Statement
-    ) -> SQLResult:
-        # TODO: As I've looked into INFORMATION_SCHEMA queries more, I realise
-        # that these aren't returning valid responses for the given SQL queries,
-        # but just the data that SQLAlchemy needs for some of the Dialect methods.
-        # It's okay for now, but should probably fix these query responses eventually
-        # and put the SQLAlchemy-specific logic/transformation in FaunaDialect
-        if table_name == "INFORMATION_SCHEMA.TABLES":
-            result = self._client.query(
-                q.map_(
-                    q.lambda_("collection", q.get(q.var("collection"))),
-                    q.paginate(q.collections()),
-                )
-            )
-            collections = result["data"]
-
-            return [
-                self._fauna_reference_to_dict(collection["ref"])
-                for collection in collections
-            ]
-
-        if table_name == "INFORMATION_SCHEMA.COLUMNS":
-            # We don't use the standard logic for parsing this WHERE clause,
-            # because sqlparse treats WHERE clauses in INFORMATION_SCHEMA queries
-            # differently, returning flat tokens in the WHERE group
-            # instead of nested token groups.
-            _, where_group = statement.token_next_by(i=token_groups.Where)
-            idx, condition_column = where_group.token_next_by(
-                m=(token_types.Keyword, "TABLE_NAME")
-            )
-
-            if condition_column is None:
-                raise exceptions.NotSupportedError(
-                    "Only TABLE_NAME condition is supported for SELECT COLUMN_NAME"
-                )
-
-            idx, condition = where_group.token_next_by(
-                m=(token_types.Comparison, "="), idx=idx
-            )
-
-            if condition is None:
-                raise exceptions.NotSupportedError(
-                    "Only column-value-based conditions (e.g. WHERE <column> = <value>) "
-                    "are currently supported."
-                )
-
-            _, condition_check = where_group.token_next(idx, skip_ws=True)
-            condition_value = self._extract_value(condition_check)
-
-            result = self._client.query(
-                q.select(
-                    ["data", "metadata", "fields"], q.get(q.collection(condition_value))
-                )
-            )
-            # Selecting column info from INFORMATION_SCHEMA returns foreign keys
-            # as regular columns, so we don't need the extra table-reference info
-            remove_references = lambda field_data: {
-                key: value for key, value in field_data.items() if key != "references"
-            }
-
-            return [
-                {**remove_references(field_data), "name": field_name}
-                for field_name, field_data in result.items()
-            ]
-
-        if table_name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
-            # We don't use the standard logic for parsing this WHERE clause,
-            # because sqlparse treats WHERE clauses in INFORMATION_SCHEMA queries
-            # differently, returning flat tokens in the WHERE group
-            # instead of nested token groups.
-            _, where_group = statement.token_next_by(i=token_groups.Where)
-            idx, condition_column = where_group.token_next_by(
-                m=(token_types.Keyword, "TABLE_NAME")
-            )
-
-            if condition_column is None:
-                raise exceptions.NotSupportedError(
-                    "Only TABLE_NAME condition is supported for "
-                    "SELECT FROM INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE"
-                )
-
-            idx, condition = where_group.token_next_by(
-                m=(token_types.Comparison, "="), idx=idx
-            )
-
-            if condition is None:
-                raise exceptions.NotSupportedError(
-                    "Only column-value-based conditions (e.g. WHERE <column> = <value>) "
-                    "are currently supported."
-                )
-
-            _, condition_check = where_group.token_next(idx, skip_ws=True)
-            condition_value = self._extract_value(condition_check)
-
-            is_based_on_collection = q.lambda_(
-                "index",
-                q.equals(
-                    q.select(["source", "id"], q.get(q.var("index"))),
-                    condition_value,
-                ),
-            )
-            indexes_based_on_collection = q.filter_(
-                is_based_on_collection,
-                q.paginate(q.indexes()),
-            )
-
-            result = self._client.query(
-                q.map_(
-                    q.lambda_("index", q.get(q.var("index"))),
-                    indexes_based_on_collection,
-                )
-            )
-
-            return [
-                {
-                    "name": index["name"],
-                    "column_names": ",".join(
-                        self._convert_terms_to_column_names(index)
-                    ),
-                    # Fauna doesn't seem to return a 'unique' field with index queries,
-                    # and we don't really need it, so leaving it blank for now.
-                    "unique": False,
-                }
-                for index in result["data"]
-            ]
-
-        raise exceptions.NotSupportedError()
 
     def _convert_terms_to_column_names(self, index: Dict[str, Any]) -> List[str]:
         terms = index.get("terms")

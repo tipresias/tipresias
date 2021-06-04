@@ -20,6 +20,7 @@ from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
 from . import translation
+from .translation.common import extract_value
 
 
 SQLResult = List[Dict[str, Any]]
@@ -356,9 +357,7 @@ class FaunaClient:
             values
         ), f"Lengths didn't match:\ncolumns: {column_names}\nvalues: {values}"
 
-        record = {
-            col: self._extract_value(val) for col, val in zip(column_names, values)
-        }
+        record = {col: extract_value(val) for col, val in zip(column_names, values)}
 
         collection = self._client.query(q.get(q.collection(table_name)))
         field_metadata = collection["data"].get("metadata", {}).get("fields")
@@ -421,7 +420,7 @@ class FaunaClient:
             raise exceptions.NotSupportedError()
 
         _, update_value = comparison_group.token_next(idx, skip_ws=True)
-        update_value_value = self._extract_value(update_value)
+        update_value_value = extract_value(update_value)
 
         comparisons = self._extract_where_conditions(statement)
         records_to_update = self._matched_records(table_name, comparisons)
@@ -482,7 +481,7 @@ class FaunaClient:
                 )
 
             _, condition_check = condition.token_next_by(t=token_types.Literal)
-            condition_value = self._extract_value(condition_check)
+            condition_value = extract_value(condition_check)
 
             column_name = str(condition_column.value)
 

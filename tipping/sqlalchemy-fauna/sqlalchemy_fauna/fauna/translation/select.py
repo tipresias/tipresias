@@ -9,7 +9,7 @@ from faunadb.objects import _Expr as QueryExpression
 from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
-
+from .common import extract_value
 
 IndexComparison = Tuple[str, Union[int, float, str, None]]
 Comparisons = TypedDict(
@@ -71,18 +71,6 @@ def _parse_identifiers(
             )
         ),
     )
-
-
-def _extract_value(token: token_groups.Token) -> Union[str, int, float, None]:
-    value = token.value
-
-    if value == "NONE":
-        return None
-
-    if isinstance(value, str):
-        return value.replace("'", "")
-
-    return value
 
 
 def _matched_records(
@@ -159,7 +147,7 @@ def _extract_where_conditions(statement) -> Optional[Comparisons]:
             )
 
         _, condition_check = condition.token_next_by(t=token_types.Literal)
-        condition_value = _extract_value(condition_check)
+        condition_value = extract_value(condition_check)
 
         column_name = str(condition_column.value)
 
@@ -238,7 +226,7 @@ def _translate_select_from_info_schema_constraints(
         )
 
     _, condition_check = where_group.token_next(idx, skip_ws=True)
-    condition_value = _extract_value(condition_check)
+    condition_value = extract_value(condition_check)
 
     is_based_on_collection = q.lambda_(
         "index",
@@ -293,7 +281,7 @@ def _translate_select_from_info_schema_columns(
         )
 
     _, condition_check = where_group.token_next(idx, skip_ws=True)
-    condition_value = _extract_value(condition_check)
+    condition_value = extract_value(condition_check)
 
     query = q.select(
         ["data", "metadata", "fields"], q.get(q.collection(condition_value))

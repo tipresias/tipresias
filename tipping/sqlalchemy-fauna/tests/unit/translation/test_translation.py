@@ -47,3 +47,15 @@ def test_translate_sql_to_fql_multiple():
         match="Only one SQL statement at a time is currently supported",
     ):
         translation.translate_sql_to_fql(sql_query)
+
+
+def test_translate_sql_to_fql_create():
+    sql_query = (
+        "CREATE TABLE users (id INTEGER NOT NULL, "
+        "name VARCHAR, date_joined DATETIME NOT NULL, "
+        "age INTEGER, finger_count INTEGER, PRIMARY KEY (id), UNIQUE (name))"
+    )
+    fql_queries = translation.translate_sql_to_fql(sql_query)
+
+    for fql_query in fql_queries:
+        assert isinstance(fql_query, QueryExpression)

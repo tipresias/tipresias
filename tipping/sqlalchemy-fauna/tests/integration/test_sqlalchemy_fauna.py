@@ -41,6 +41,7 @@ def user_model():
         finger_count = Column(Integer, default=10)
         is_premium_member = Column(Boolean, default=False)
         account_credit = Column(Float, default=0.0)
+        job = Column(String)
 
     return User, Base
 
@@ -155,6 +156,8 @@ def test_insert_record(fauna_session, user_model):
     assert created_user.account_credit == account_credit
     assert created_user.age == age
     assert created_user.date_joined == date_joined
+    assert created_user.job is None
+    assert isinstance(created_user.id, str)
 
 
 def test_select_empty_table(fauna_session, user_model):

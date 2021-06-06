@@ -191,7 +191,7 @@ class FaunaQuery:
         return (table_name, column_name, alias_name)
 
     @staticmethod
-    def _infer_field_type(value: Any) -> str:
+    def _infer_field_type(value: Any) -> Optional[str]:
         if isinstance(value, str):
             return "string"
         if isinstance(value, (int, float)):
@@ -204,6 +204,10 @@ class FaunaQuery:
             return "datetime"
         if isinstance(value, time):
             return "timeofday"
+        # We currently have no way of inferring field type from None values,
+        # so we return None per _get_description_from_query
+        if value is None:
+            return None
 
         raise Exception(f"{value} has unknown data type {type(value)}")
 

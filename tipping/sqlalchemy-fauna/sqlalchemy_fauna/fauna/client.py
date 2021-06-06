@@ -202,18 +202,26 @@ class FaunaClient:
             pass
 
         column_alias_map = {
-            column: alias
-            for column, alias in zip(column_names, alias_names)
-            if alias is not None
+            column: alias or column for column, alias in zip(column_names, alias_names)
         }
 
-        return [
+        columns = [
             self._select_columns(
-                column_names,
+                list(column_alias_map.values()),
                 self._fauna_data_to_dict(data, alias_map=column_alias_map),
             )
             for data in result["data"]
         ]
+
+        if len(columns):
+            assert len(columns[0]) == len(column_names) == len(alias_names), (
+                "Something went wrong with translating between SQL columns and FQL fields:\n"
+                f"FQL field names: {column_names}\n"
+                f"SQL column aliases: {alias_names}\n"
+                f"First row of results: {columns[0]}"
+            )
+
+        return columns
 
     def _execute_create(self, sql_query: str) -> SQLResult:
         fql_queries = translation.translate_sql_to_fql(sql_query)
@@ -593,7 +601,18 @@ class FaunaClient:
     def _select_columns(
         column_names: Sequence[str], document: Dict[str, Any]
     ) -> Dict[str, Any]:
+        # TODO: We'll need a way to fill in blank fields when the query has 'SELECT *'
         if column_names[0] == "*":
             return document
 
-        return {key: value for key, value in document.items() if key in column_names}
+        # We need to fill in blank columns, because Fauna doesn't return fields
+        # with null values in query responses
+        blank_columns = {column_name: None for column_name in column_names}
+        returned_columns = {
+            key: value for key, value in document.items() if key in column_names
+        }
+
+        return {
+            **blank_columns,
+            **returned_columns,
+        }

@@ -272,7 +272,11 @@ class FaunaClient:
 
         if field_metadata is not None:
             for field_name, field_constraints in field_metadata.items():
-                field_value = record.get(field_name) or field_constraints.get("default")
+                field_value = (
+                    field_constraints.get("default")
+                    if record.get(field_name) is None
+                    else record.get(field_name)
+                )
 
                 cleaned_record[field_name] = field_value
 

@@ -24,9 +24,9 @@ float_number = FAKE.pyfloat()
         (word, word),
         (f"'{word}'", word),
         (f"'{word} ' {word}'", f"{word} ' {word}"),
-        (integer, integer),
+        (str(integer), integer),
         (f"'{integer}'", str(integer)),
-        (float_number, float_number),
+        (str(float_number), float_number),
         (f"'{float_number}'", str(float_number)),
     ],
 )

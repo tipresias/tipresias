@@ -9,6 +9,7 @@ from sqlalchemy import (
     String,
     DateTime,
     Boolean,
+    Float,
     ForeignKey,
     inspect,
     exc as sqlalchemy_exceptions,
@@ -39,6 +40,7 @@ def user_model():
         age = Column(Integer)
         finger_count = Column(Integer, default=10)
         is_premium_member = Column(Boolean, default=False)
+        account_credit = Column(Float, default=0.0)
 
     return User, Base
 
@@ -132,9 +134,12 @@ def test_insert_record(fauna_session, user_model):
     fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
 
+    account_credit = FAKE.pyfloat()
     age = 30
 
-    user = User(name="Bob", date_joined=datetime.now(), age=age)
+    user = User(
+        name="Bob", date_joined=datetime.now(), age=age, account_credit=account_credit
+    )
     fauna_session.add(user)
     fauna_session.commit()
 
@@ -146,6 +151,7 @@ def test_insert_record(fauna_session, user_model):
     created_user = users[0]
     assert created_user.name == "Bob"
     assert created_user.is_premium_member is False
+    assert created_user.account_credit == account_credit
     assert created_user.age == age
 
 

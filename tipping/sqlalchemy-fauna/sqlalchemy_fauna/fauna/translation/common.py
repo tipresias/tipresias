@@ -28,13 +28,14 @@ def extract_value(token: token_groups.Token) -> Union[str, int, float, None, boo
     if value.upper() == "FALSE":
         return False
 
-    try:
-        return int(value)
-    except ValueError:
-        pass
+    if "." in value:
+        try:
+            return float(value)
+        except ValueError:
+            pass
 
     try:
-        return float(value)
+        return int(value)
     except ValueError:
         pass
 

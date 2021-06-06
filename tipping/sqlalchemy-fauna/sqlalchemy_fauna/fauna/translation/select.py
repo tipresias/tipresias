@@ -152,7 +152,7 @@ def _extract_where_conditions(statement) -> Optional[Comparisons]:
         column_name = str(condition_column.value)
 
         if column_name == "id":
-            assert not isinstance(condition_value, float)
+            assert isinstance(condition_value, str)
             comparisons["by_id"] = condition_value
         else:
             comparisons["by_index"].append((column_name, condition_value))

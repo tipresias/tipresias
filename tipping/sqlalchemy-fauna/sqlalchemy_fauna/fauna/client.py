@@ -10,7 +10,7 @@ import re
 
 from faunadb import client
 from faunadb import query as q, errors as fauna_errors
-from faunadb.objects import Ref
+from faunadb.objects import FaunaTime, Ref
 from faunadb.objects import _Expr as QueryExpression
 import sqlparse
 from sqlparse import tokens as token_types
@@ -34,7 +34,7 @@ FieldMetadata = TypedDict(
 )
 FieldsMetadata = Dict[str, FieldMetadata]
 CollectionMetadata = TypedDict("CollectionMetadata", {"fields": FieldsMetadata})
-IndexComparison = Tuple[str, Union[int, float, str, None]]
+IndexComparison = Tuple[str, Union[int, float, str, None, datetime]]
 Comparisons = TypedDict(
     "Comparisons",
     {"by_id": Optional[Union[int, str]], "by_index": List[IndexComparison]},
@@ -193,8 +193,8 @@ class FaunaClient:
             ]
 
         # If an index match only returns one document, the result is a dictionary,
-        # otherwise, it's a dictionary wrapped in a list. Not sure why
-        # (fetching by ID returns a list when paginated & mapped) and too lazy
+        # otherwise, it's a dictionary wrapped in a list. Not sure why,
+        # as fetching by ID returns a list when paginated & mapped, and too lazy
         # to figure it out.
         try:
             result = result[0]
@@ -311,7 +311,7 @@ class FaunaClient:
             q.delete(q.select("ref", q.get(records_to_delete)))
         )
 
-        return [results["data"]]
+        return [self._clean_fauna_key_values(results["data"])]
 
     def _execute_update(self, statement: token_groups.Statement) -> SQLResult:
         idx, table_identifier = statement.token_next_by(i=token_groups.Identifier)
@@ -397,7 +397,7 @@ class FaunaClient:
             column_name = str(condition_column.value)
 
             if column_name == "id":
-                assert not isinstance(condition_value, float)
+                assert not isinstance(condition_value, (float, datetime))
                 comparisons["by_id"] = condition_value
             else:
                 comparisons["by_index"].append((column_name, condition_value))
@@ -553,28 +553,45 @@ class FaunaClient:
 
         return ref_dict
 
-    @staticmethod
     def _fauna_data_to_dict(
-        data: Dict[str, Any], alias_map: Dict[str, str] = None
+        self, data: Dict[str, Any], alias_map: Dict[str, str] = None
     ) -> Dict[str, Any]:
-        alias_map = alias_map or {}
-
+        sql_dict = self._clean_fauna_key_values(
+            {"id": data["ref"].id(), **data}, alias_map=alias_map
+        )
         # SELECT queries usually include a nested 'data' object for the selected values,
         # but selecting TABLE_NAMES does not, and there might be other cases
         # that I haven't encountered yet.
-        sub_data = data.get("data", {})
+        sub_data = self._clean_fauna_key_values(
+            data.get("data", {}), alias_map=alias_map
+        )
+
         return {
-            **{"id": data["ref"].id()},
-            **{
-                alias_map.get(key) or key: value
-                for key, value in data.items()
-                if key not in ("ref", "data")
-            },
+            **sql_dict,
             **sub_data,
         }
 
+    @staticmethod
+    def _clean_fauna_key_values(
+        fauna_data: Dict[str, Any], alias_map: Dict[str, str] = None
+    ) -> Dict[str, Any]:
+        alias_map = alias_map or {}
+        clean_fauna_data = {}
+
+        for key, value in fauna_data.items():
+            if key in ("ref", "data"):
+                continue
+
+            queried_key = alias_map.get(key) or key
+            clean_fauna_data[queried_key] = (
+                value.to_datetime() if isinstance(value, FaunaTime) else value
+            )
+
+        return clean_fauna_data
+
+    @staticmethod
     def _select_columns(
-        self, column_names: Sequence[str], document: Dict[str, Any]
+        column_names: Sequence[str], document: Dict[str, Any]
     ) -> Dict[str, Any]:
         if column_names[0] == "*":
             return document

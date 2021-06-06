@@ -2,11 +2,43 @@
 
 from typing import Union
 import re
+from datetime import datetime, timezone
+from warnings import warn
+from dateutil import parser
 
 from sqlparse import sql as token_groups
 
 
-def extract_value(token: token_groups.Token) -> Union[str, int, float, None, bool]:
+class _NumericString(Exception):
+    pass
+
+
+def _parse_date_value(value):
+    try:
+        int(value)
+        float(value)
+        raise _NumericString()
+    except ValueError:
+        pass
+
+    # We use isoparse instaed of parse, because the latter is too flexible
+    # and will parse strings that aren't intended as datetime. Datetime strings
+    # should always be in ISO format, because that's how we clean them in the dbapi.
+    date_value = parser.isoparse(value)
+
+    if date_value.tzinfo is None:
+        warn(
+            "Received a timezone-naive datetime value. Fauna only supports "
+            "UTC timestamps, so converting to UTC."
+        )
+        return date_value.replace(tzinfo=timezone.utc)
+
+    return date_value.astimezone(timezone.utc)
+
+
+def extract_value(
+    token: token_groups.Token,
+) -> Union[str, int, float, None, bool, datetime]:
     """ "Get the raw value from an SQL token.
 
     Params:
@@ -40,4 +72,12 @@ def extract_value(token: token_groups.Token) -> Union[str, int, float, None, boo
         pass
 
     # sqlparse leaves ' characters around string values in the SQL, so we strip them out.
-    return re.sub("^'|'$", "", value)
+    string_value = re.sub("^'|'$", "", value)
+
+    try:
+        return _parse_date_value(string_value)
+    # Seems that mypy can't find the very real ParserError
+    except (parser.ParserError, ValueError, _NumericString):  # type: ignore
+        pass
+
+    return string_value

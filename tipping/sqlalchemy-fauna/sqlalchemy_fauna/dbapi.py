@@ -272,6 +272,10 @@ def escape(value):
         return "TRUE" if value else "FALSE"
     if isinstance(value, (int, float)):
         return str(value)
+    if isinstance(value, (datetime, date)):
+        # We have to treat datetimes as strings in the SQL query, because otherwise sqlparser
+        # doesn't know what to do with them
+        return f"'{value.isoformat()}'"
     if isinstance(value, (list, tuple)):
         return "({0})".format(", ".join(escape(element) for element in value))
 

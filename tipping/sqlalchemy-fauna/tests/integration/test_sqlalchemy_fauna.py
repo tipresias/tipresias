@@ -1,6 +1,6 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
@@ -136,9 +136,10 @@ def test_insert_record(fauna_session, user_model):
 
     account_credit = FAKE.pyfloat()
     age = 30
+    date_joined = FAKE.date_time_this_year(tzinfo=timezone.utc)
 
     user = User(
-        name="Bob", date_joined=datetime.now(), age=age, account_credit=account_credit
+        name="Bob", date_joined=date_joined, age=age, account_credit=account_credit
     )
     fauna_session.add(user)
     fauna_session.commit()
@@ -153,6 +154,7 @@ def test_insert_record(fauna_session, user_model):
     assert created_user.is_premium_member is False
     assert created_user.account_credit == account_credit
     assert created_user.age == age
+    assert created_user.date_joined == date_joined
 
 
 def test_select_empty_table(fauna_session, user_model):

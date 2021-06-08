@@ -268,38 +268,58 @@ class FaunaClient:
             values
         ), f"Lengths didn't match:\ncolumns: {column_names}\nvalues: {values}"
 
-        record = {col: extract_value(val) for col, val in zip(column_names, values)}
+        record_to_insert = {
+            col: extract_value(val) for col, val in zip(column_names, values)
+        }
 
-        collection = self._client.query(q.get(q.collection(table_name)))
-        field_metadata = collection["data"].get("metadata", {}).get("fields")
-        cleaned_record = {}
+        collection = q.get(q.collection(table_name))
+        field_metadata = q.to_array(
+            q.select(["data", "metadata", "fields"], collection, default=[])
+        )
 
-        if field_metadata is not None:
-            for field_name, field_constraints in field_metadata.items():
-                field_value = (
-                    field_constraints.get("default")
-                    if record.get(field_name) is None
-                    else record.get(field_name)
-                )
+        get_field_value = lambda doc: q.select(
+            q.var("field_name"),
+            doc,
+            q.select("default", q.var("field_constraints")),
+        )
+        fill_blank_values_with_defaults = lambda doc: q.lambda_(
+            ["field_name", "field_constraints"],
+            [q.var("field_name"), get_field_value(doc)],
+        )
 
-                cleaned_record[field_name] = field_value
+        document_to_create = q.to_object(
+            q.map_(
+                fill_blank_values_with_defaults(record_to_insert),
+                field_metadata,
+            )
+        )
 
         try:
             result = self._client.query(
-                q.create(q.collection(table_name), {"data": cleaned_record})
+                q.create(q.collection(table_name), {"data": document_to_create})
             )
         except fauna_errors.BadRequest as err:
             if "document is not unique" not in str(err):
                 raise err
 
-            unique_field_names = [
-                field_name
-                for field_name, field_constraints in field_metadata.items()
-                if field_constraints.get("unique")
-            ]
+            check_is_unique_field = q.lambda_(
+                ["field_name", "field_constraints"],
+                q.select("unique", q.var("field_constraints")),
+            )
+            get_field_name = q.lambda_(
+                ["field_name", "field_constraints"], q.var("field_name")
+            )
+            unique_field_names = q.map_(
+                get_field_name,
+                q.filter_(
+                    check_is_unique_field,
+                    field_metadata,
+                ),
+            )
+
             raise exceptions.ProgrammingError(
                 "Tried to create a document with duplicate value for a unique field.\n"
-                f"Document:\n\t{record}"
+                f"Document:\n\t{record_to_insert}"
                 f"Unique fields:\n\t{unique_field_names}"
             )
 

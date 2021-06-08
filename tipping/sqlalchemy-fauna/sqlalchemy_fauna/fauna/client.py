@@ -137,7 +137,7 @@ class FaunaClient:
             return self._execute_create(sql_query)
 
         if statement.token_first().match(token_types.DDL, "DROP"):
-            return self._execute_drop(statement)
+            return self._execute_drop(sql_query)
 
         if statement.token_first().match(token_types.DML, "INSERT"):
             return self._execute_insert(statement)
@@ -234,13 +234,9 @@ class FaunaClient:
         collection = result if isinstance(result, Ref) else result[-1]
         return [self._fauna_reference_to_dict(collection)]
 
-    def _execute_drop(self, statement: token_groups.Statement) -> SQLResult:
-        idx, _ = statement.token_next_by(m=(token_types.Keyword, "TABLE"))
-        _, table_identifier = statement.token_next_by(
-            i=token_groups.Identifier, idx=idx
-        )
-
-        result = self._client.query(q.delete(q.collection(table_identifier.value)))
+    def _execute_drop(self, sql_query: str) -> SQLResult:
+        fql_query = translation.translate_sql_to_fql(sql_query)
+        result = self._client.query(fql_query)
         return [self._fauna_reference_to_dict(result["ref"])]
 
     def _execute_insert(self, statement: token_groups.Statement) -> SQLResult:

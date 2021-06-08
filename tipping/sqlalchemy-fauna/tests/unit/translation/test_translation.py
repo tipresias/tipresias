@@ -24,17 +24,7 @@ def test_format_sql_query():
     assert translation.format_sql_query(sql_query) == expected_sql_string
 
 
-def test_translate_sql_to_fql_select():
-    sql_query = (
-        "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
-        "FROM users"
-    )
-    fql_query, column_names, aliases = translation.translate_sql_to_fql(sql_query)
-
-    assert isinstance(fql_query, QueryExpression)
-    assert len(column_names) == len(aliases)
-
-
+# TODO: this is valid SQL that we might eventually want to support
 def test_translate_sql_to_fql_multiple():
     sql_query = (
         "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
@@ -49,6 +39,17 @@ def test_translate_sql_to_fql_multiple():
         translation.translate_sql_to_fql(sql_query)
 
 
+def test_translate_sql_to_fql_select():
+    sql_query = (
+        "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
+        "FROM users"
+    )
+    fql_query, column_names, aliases = translation.translate_sql_to_fql(sql_query)
+
+    assert isinstance(fql_query, QueryExpression)
+    assert len(column_names) == len(aliases)
+
+
 def test_translate_sql_to_fql_create():
     sql_query = (
         "CREATE TABLE users (id INTEGER NOT NULL, "
@@ -59,3 +60,10 @@ def test_translate_sql_to_fql_create():
 
     for fql_query in fql_queries:
         assert isinstance(fql_query, QueryExpression)
+
+
+def test_translate_sql_to_fql_drop():
+    sql_query = "DROP TABLE users"
+    fql_query = translation.translate_sql_to_fql(sql_query)
+
+    assert isinstance(fql_query, QueryExpression)

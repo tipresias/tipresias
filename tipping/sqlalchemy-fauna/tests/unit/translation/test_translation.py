@@ -67,3 +67,10 @@ def test_translate_sql_to_fql_drop():
     fql_query = translation.translate_sql_to_fql(sql_query)
 
     assert isinstance(fql_query, QueryExpression)
+
+
+def test_translate_sql_to_fql_insert():
+    sql_query = "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)"
+    fql_query = translation.translate_sql_to_fql(sql_query)
+
+    assert isinstance(fql_query, QueryExpression)

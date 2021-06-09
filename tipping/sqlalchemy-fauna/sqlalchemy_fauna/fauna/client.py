@@ -140,7 +140,7 @@ class FaunaClient:
             return self._execute_drop(sql_query)
 
         if statement.token_first().match(token_types.DML, "INSERT"):
-            return self._execute_insert(statement)
+            return self._execute_insert(sql_query)
 
         if statement.token_first().match(token_types.DML, "DELETE"):
             return self._execute_delete(statement)
@@ -239,88 +239,19 @@ class FaunaClient:
         result = self._client.query(fql_query)
         return [self._fauna_reference_to_dict(result["ref"])]
 
-    def _execute_insert(self, statement: token_groups.Statement) -> SQLResult:
-        idx, function_group = statement.token_next_by(i=token_groups.Function)
-        func_idx, table_identifier = function_group.token_next_by(
-            i=token_groups.Identifier
-        )
-        table_name = table_identifier.value
-
-        _, column_group = function_group.token_next_by(
-            i=token_groups.Parenthesis, idx=func_idx
-        )
-        _, column_identifiers = column_group.token_next_by(
-            i=(token_groups.IdentifierList, token_groups.Identifier)
-        )
-        _, column_names, _ = self._parse_identifiers(column_identifiers)
-
-        idx, value_group = statement.token_next_by(i=token_groups.Values, idx=idx)
-        _, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
-        value_identifiers = parenthesis_group.flatten()
-
-        values = [
-            value
-            for value in value_identifiers
-            if not value.ttype == token_types.Punctuation and not value.is_whitespace
-        ]
-
-        assert len(column_names) == len(
-            values
-        ), f"Lengths didn't match:\ncolumns: {column_names}\nvalues: {values}"
-
-        record_to_insert = {
-            col: extract_value(val) for col, val in zip(column_names, values)
-        }
-
-        collection = q.get(q.collection(table_name))
-        field_metadata = q.to_array(
-            q.select(["data", "metadata", "fields"], collection, default=[])
-        )
-
-        get_field_value = lambda doc: q.select(
-            q.var("field_name"),
-            doc,
-            q.select("default", q.var("field_constraints")),
-        )
-        fill_blank_values_with_defaults = lambda doc: q.lambda_(
-            ["field_name", "field_constraints"],
-            [q.var("field_name"), get_field_value(doc)],
-        )
-
-        document_to_create = q.to_object(
-            q.map_(
-                fill_blank_values_with_defaults(record_to_insert),
-                field_metadata,
-            )
-        )
+    def _execute_insert(self, sql_query: str) -> SQLResult:
+        fql_query = translation.translate_sql_to_fql(sql_query)
 
         try:
-            result = self._client.query(
-                q.create(q.collection(table_name), {"data": document_to_create})
-            )
+            result = self._client.query(fql_query)
         except fauna_errors.BadRequest as err:
             if "document is not unique" not in str(err):
                 raise err
 
-            check_is_unique_field = q.lambda_(
-                ["field_name", "field_constraints"],
-                q.select("unique", q.var("field_constraints")),
-            )
-            get_field_name = q.lambda_(
-                ["field_name", "field_constraints"], q.var("field_name")
-            )
-            unique_field_names = q.map_(
-                get_field_name,
-                q.filter_(
-                    check_is_unique_field,
-                    field_metadata,
-                ),
-            )
-
+            # TODO: this isn't a terribly helpful error message, but executing the queries
+            # to make a better one is a little tricky, so leaving it as-is for now.
             raise exceptions.ProgrammingError(
-                "Tried to create a document with duplicate value for a unique field.\n"
-                f"Document:\n\t{record_to_insert}"
-                f"Unique fields:\n\t{unique_field_names}"
+                "Tried to create a document with duplicate value for a unique field."
             )
 
         return [self._fauna_data_to_dict(result)]

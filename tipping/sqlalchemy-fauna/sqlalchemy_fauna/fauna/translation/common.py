@@ -1,12 +1,19 @@
 """Shared SQL translations and utilities for various statement types."""
 
-from typing import Union
+from typing import Union, Tuple, Sequence, Optional, cast
 import re
 from datetime import datetime, timezone
 from warnings import warn
 from dateutil import parser
 
 from sqlparse import sql as token_groups
+from sqlparse import tokens as token_types
+
+
+TableNames = Sequence[Optional[str]]
+ColumnNames = Sequence[str]
+Aliases = Sequence[Optional[str]]
+IdentifierValues = Tuple[TableNames, ColumnNames, Aliases]
 
 
 class _NumericString(Exception):
@@ -81,3 +88,62 @@ def extract_value(
         pass
 
     return string_value
+
+
+def _parse_identifier(
+    identifier: token_groups.Identifier,
+) -> Tuple[Optional[str], str, Optional[str]]:
+    idx, identifier_name = identifier.token_next_by(t=token_types.Name)
+
+    tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
+    if next_token and next_token.match(token_types.Punctuation, "."):
+        idx = tok_idx
+        table_name = identifier_name.value
+        idx, column_identifier = identifier.token_next_by(t=token_types.Name, idx=idx)
+        column_name = column_identifier.value
+    else:
+        table_name = None
+        column_name = identifier_name.value
+
+    idx, as_keyword = identifier.token_next_by(m=(token_types.Keyword, "AS"), idx=idx)
+
+    if as_keyword is not None:
+        _, alias_identifier = identifier.token_next_by(
+            i=token_groups.Identifier, idx=idx
+        )
+        alias_name = alias_identifier.value
+    else:
+        alias_name = None
+
+    return (table_name, column_name, alias_name)
+
+
+def parse_identifiers(
+    identifiers: Union[token_groups.Identifier, token_groups.IdentifierList]
+) -> IdentifierValues:
+    """Extract raw table name, column name, and alias from SQL identifiers.
+
+    Params:
+    -------
+    identifiers: Either a single identifier or identifier list.
+
+    Returns:
+    --------
+    Tuple of table_names, column names, and column aliases.
+    """
+    if isinstance(identifiers, token_groups.Identifier):
+        table_name, column_name, alias_name = _parse_identifier(identifiers)
+        return ((table_name,), (column_name,), (alias_name,))
+
+    return cast(
+        IdentifierValues,
+        tuple(
+            zip(
+                *[
+                    _parse_identifier(identifier)
+                    for identifier in identifiers
+                    if isinstance(identifier, token_groups.Identifier)
+                ]
+            )
+        ),
+    )

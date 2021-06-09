@@ -1,6 +1,7 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
-from typing import Union, Tuple, Sequence, Optional, cast, List
+from typing import Union, Tuple, Optional, List
+from datetime import datetime
 
 from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
@@ -9,68 +10,15 @@ from faunadb.objects import _Expr as QueryExpression
 from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value
+from .common import extract_value, parse_identifiers, ColumnNames, Aliases
 
-IndexComparison = Tuple[str, Union[int, float, str, None]]
+IndexComparison = Tuple[str, Union[int, float, str, None, bool, datetime]]
 Comparisons = TypedDict(
     "Comparisons",
     {"by_id": Optional[Union[int, str]], "by_index": List[IndexComparison]},
 )
 
-TableNames = Sequence[Optional[str]]
-ColumnNames = Sequence[str]
-Aliases = Sequence[Optional[str]]
-IdentifierValues = Tuple[TableNames, ColumnNames, Aliases]
 SelectReturn = Tuple[QueryExpression, ColumnNames, Aliases]
-
-
-def _parse_identifier(
-    identifier: token_groups.Identifier,
-) -> Tuple[Optional[str], str, Optional[str]]:
-    idx, identifier_name = identifier.token_next_by(t=token_types.Name)
-
-    tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
-    if next_token and next_token.match(token_types.Punctuation, "."):
-        idx = tok_idx
-        table_name = identifier_name.value
-        idx, column_identifier = identifier.token_next_by(t=token_types.Name, idx=idx)
-        column_name = column_identifier.value
-    else:
-        table_name = None
-        column_name = identifier_name.value
-
-    idx, as_keyword = identifier.token_next_by(m=(token_types.Keyword, "AS"), idx=idx)
-
-    if as_keyword is not None:
-        _, alias_identifier = identifier.token_next_by(
-            i=token_groups.Identifier, idx=idx
-        )
-        alias_name = alias_identifier.value
-    else:
-        alias_name = None
-
-    return (table_name, column_name, alias_name)
-
-
-def _parse_identifiers(
-    identifiers: Union[token_groups.Identifier, token_groups.IdentifierList]
-) -> IdentifierValues:
-    if isinstance(identifiers, token_groups.Identifier):
-        table_name, column_name, alias_name = _parse_identifier(identifiers)
-        return ((table_name,), (column_name,), (alias_name,))
-
-    return cast(
-        IdentifierValues,
-        tuple(
-            zip(
-                *[
-                    _parse_identifier(identifier)
-                    for identifier in identifiers
-                    if isinstance(identifier, token_groups.Identifier)
-                ]
-            )
-        ),
-    )
 
 
 def _matched_records(
@@ -169,7 +117,7 @@ def _translate_select_from_table(statement: token_groups.Statement) -> SelectRet
     idx, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList)
     )
-    table_names, column_names, alias_names = _parse_identifiers(identifiers)
+    table_names, column_names, alias_names = parse_identifiers(identifiers)
 
     # We can only handle one table at a time for now
     if len(set(table_names)) > 1:

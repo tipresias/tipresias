@@ -1,111 +1,17 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
-from typing import Union, Tuple, Optional, List
-from datetime import datetime
+from typing import Tuple
 
 from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
-from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value, parse_identifiers, ColumnNames, Aliases
+from .common import extract_value, parse_identifiers, ColumnNames, Aliases, parse_where
 
-IndexComparison = Tuple[str, Union[int, float, str, None, bool, datetime]]
-Comparisons = TypedDict(
-    "Comparisons",
-    {"by_id": Optional[Union[int, str]], "by_index": List[IndexComparison]},
-)
 
 SelectReturn = Tuple[QueryExpression, ColumnNames, Aliases]
-
-
-def _matched_records(
-    collection_name: str, comparisons: Optional[Comparisons]
-) -> QueryExpression:
-    if comparisons is None:
-        return q.intersection(q.match(q.index(f"all_{collection_name}")))
-
-    matched_records = []
-
-    if comparisons["by_id"] is not None:
-        if any(comparisons["by_index"]):
-            raise exceptions.NotSupportedError(
-                "When querying by ID, including other conditions in the WHERE "
-                "clause is not supported."
-            )
-
-        return q.ref(q.collection(collection_name), comparisons["by_id"])
-
-    for comparison_field, comparison_value in comparisons["by_index"]:
-        matched_records.append(
-            q.match(
-                q.index(f"{collection_name}_by_{comparison_field}"),
-                comparison_value,
-            )
-        )
-
-    return q.intersection(*matched_records)
-
-
-def _extract_where_conditions(statement) -> Optional[Comparisons]:
-    _, where_group = statement.token_next_by(i=token_groups.Where)
-
-    if where_group is None:
-        return None
-
-    _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
-
-    if or_keyword is not None:
-        raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
-
-    _, between_keyword = where_group.token_next_by(m=(token_types.Keyword, "BETWEEN"))
-
-    if between_keyword is not None:
-        raise exceptions.NotSupportedError(
-            "BETWEEN not yet supported in WHERE clauses."
-        )
-
-    comparisons: Comparisons = {"by_id": None, "by_index": []}
-    condition_idx = 0
-
-    while True:
-        _, and_keyword = where_group.token_next_by(m=(token_types.Keyword, "AND"))
-        should_have_and_keyword = condition_idx > 0
-        condition_idx, condition = where_group.token_next_by(
-            i=token_groups.Comparison, idx=condition_idx
-        )
-
-        if condition is None:
-            break
-
-        assert not should_have_and_keyword or (
-            should_have_and_keyword and and_keyword is not None
-        )
-
-        _, column = condition.token_next_by(i=token_groups.Identifier)
-        # Assumes column has form <table_name>.<column_name>
-        condition_column = column.tokens[-1]
-
-        _, equals = condition.token_next_by(m=(token_types.Comparison, "="))
-        if equals is None:
-            raise exceptions.NotSupportedError(
-                "Only column-value equality conditions are currently supported"
-            )
-
-        _, condition_check = condition.token_next_by(t=token_types.Literal)
-        condition_value = extract_value(condition_check)
-
-        column_name = str(condition_column.value)
-
-        if column_name == "id":
-            assert isinstance(condition_value, str)
-            comparisons["by_id"] = condition_value
-        else:
-            comparisons["by_index"].append((column_name, condition_value))
-
-    return comparisons
 
 
 def _translate_select_from_table(statement: token_groups.Statement) -> SelectReturn:
@@ -126,11 +32,13 @@ def _translate_select_from_table(statement: token_groups.Statement) -> SelectRet
         )
 
     idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
-    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
+    idx, table_identifier = statement.token_next_by(
+        i=(token_groups.Identifier), idx=idx
+    )
     table_name = table_identifier.value
 
-    comparisons = _extract_where_conditions(statement)
-    records_to_select = _matched_records(table_name, comparisons)
+    _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
+    records_to_select = parse_where(where_group, table_name)
 
     query = q.map_(
         q.lambda_("document", q.get(q.var("document"))),

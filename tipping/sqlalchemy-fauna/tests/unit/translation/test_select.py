@@ -17,16 +17,6 @@ partial_select_info_schema_constraints = (
     "SELECT * FROM INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE"
 )
 select_multiple_tables = "SELECT * FROM users, accounts"
-select_where_greater = select_values + " WHERE users.age > 30"
-select_where_greater_equal = select_values + " WHERE users.age >= 30"
-select_where_less = select_values + " WHERE users.age < 30"
-select_where_less_equal = select_values + " WHERE users.age <= 30"
-select_where_not_equal_1 = select_values + " WHERE users.age <> 30"
-select_where_not_equal_2 = select_values + " WHERE users.age != 30"
-select_where_between = select_values + " WHERE users.age BETWEEN 30 AND 40"
-select_where_like = select_values + " WHERE users.name LIKE '%Bob%'"
-select_where_in = select_values + " WHERE users.name IN ('Bob', 'Linda')"
-select_or = select_values + " WHERE users.name = 'Bob' OR users.age = 30"
 select_all = "SELECT * FROM users"
 
 # These are meant to be examples of SQL queries that are not currently supported,
@@ -35,7 +25,7 @@ select_all = "SELECT * FROM users"
 # that they're valid, but can't be bothered to investigate further until it's actually
 # relevant
 @pytest.mark.parametrize(
-    "sql_query,error_message",
+    ["sql_query", "error_message"],
     [
         (
             partial_select_info_schema_columns,
@@ -62,43 +52,6 @@ select_all = "SELECT * FROM users"
             "Only column-value-based conditions",
         ),
         (select_multiple_tables, "Only one table per query is currently supported"),
-        (
-            select_where_greater,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            select_where_greater_equal,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            select_where_less,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            select_where_less_equal,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            select_where_not_equal_1,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            select_where_not_equal_2,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            select_where_between,
-            "BETWEEN not yet supported in WHERE clauses",
-        ),
-        (
-            select_where_like,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            select_where_in,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (select_or, "OR not yet supported in WHERE clauses."),
         (select_all, "Wildcards"),
     ],
 )
@@ -120,8 +73,7 @@ select_aliases = (
     "users.finger_count AS users_finger_count "
     "FROM users"
 )
-select_where = select_values + " WHERE users.name = 'Bob'"
-select_and = select_where + " AND users.age = 45 AND users.finger_count = 10"
+select_where_equals = select_values + " WHERE users.name = 'Bob'"
 
 
 @pytest.mark.parametrize(
@@ -132,8 +84,7 @@ select_and = select_where + " AND users.age = 45 AND users.finger_count = 10"
         select_info_schema_constraints,
         select_values,
         select_aliases,
-        select_where,
-        select_and,
+        select_where_equals,
     ],
 )
 def test_translate_select(sql_query):

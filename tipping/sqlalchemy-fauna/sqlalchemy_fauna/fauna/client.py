@@ -143,7 +143,7 @@ class FaunaClient:
             return self._execute_insert(sql_query)
 
         if statement.token_first().match(token_types.DML, "DELETE"):
-            return self._execute_delete(statement)
+            return self._execute_delete(sql_query)
 
         if statement.token_first().match(token_types.DML, "UPDATE"):
             return self._execute_update(statement)
@@ -256,15 +256,9 @@ class FaunaClient:
 
         return [self._fauna_data_to_dict(result)]
 
-    def _execute_delete(self, statement: token_groups.Statement) -> SQLResult:
-        _, table = statement.token_next_by(i=token_groups.Identifier)
-
-        comparisons = self._extract_where_conditions(statement)
-        records_to_delete = self._matched_records(table.value, comparisons)
-
-        results = self._client.query(
-            q.delete(q.select("ref", q.get(records_to_delete)))
-        )
+    def _execute_delete(self, sql_query: str) -> SQLResult:
+        fql_query = translation.translate_sql_to_fql(sql_query)
+        results = self._client.query(fql_query)
 
         return [self._clean_fauna_key_values(results["data"])]
 

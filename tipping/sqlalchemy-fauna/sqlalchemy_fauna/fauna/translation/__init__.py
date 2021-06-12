@@ -11,6 +11,7 @@ from .select import translate_select, SelectReturn
 from .create import translate_create
 from .drop import translate_drop
 from .insert import translate_insert
+from .delete import translate_delete
 
 
 def format_sql_query(sql_query: str) -> str:
@@ -48,5 +49,8 @@ def translate_sql_to_fql(sql_query: str) -> Union[SelectReturn, List[QueryExpres
 
     if sql_statement.token_first().match(token_types.DML, "INSERT"):
         return translate_insert(sql_statement)
+
+    if sql_statement.token_first().match(token_types.DML, "DELETE"):
+        return translate_delete(sql_statement)
 
     raise exceptions.NotSupportedError()

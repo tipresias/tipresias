@@ -2,11 +2,9 @@
 
 """Module for all FaunaDB functionality."""
 
-from typing import Union, Any, Dict, List, Optional, Tuple, cast, Sequence
+from typing import Any, Dict, List, Sequence
 from time import sleep
 import logging
-from datetime import datetime
-import re
 
 from faunadb import client
 from faunadb import query as q, errors as fauna_errors
@@ -15,76 +13,12 @@ from faunadb.objects import _Expr as QueryExpression
 import sqlparse
 from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
-from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
 from . import translation
-from .translation.common import extract_value
 
 
 SQLResult = List[Dict[str, Any]]
-FieldMetadata = TypedDict(
-    "FieldMetadata",
-    {
-        "unique": bool,
-        "not_null": bool,
-        "default": Union[str, int, float, bool, datetime, None],
-        "type": str,
-    },
-)
-FieldsMetadata = Dict[str, FieldMetadata]
-CollectionMetadata = TypedDict("CollectionMetadata", {"fields": FieldsMetadata})
-IndexComparison = Tuple[str, Union[int, float, str, None, datetime]]
-Comparisons = TypedDict(
-    "Comparisons",
-    {"by_id": Optional[Union[int, str]], "by_index": List[IndexComparison]},
-)
-
-DATA_TYPE_MAP = {
-    "CHAR": "String",
-    "VARCHAR": "String",
-    "BINARY": "String",
-    "VARBINARY": "String",
-    "TINYBLOB": "String",
-    "TINYTEXT": "String",
-    "TEXT": "String",
-    "BLOB": "String",
-    "MEDIUMTEXT": "String",
-    "MEDIUMBLOB": "String",
-    "LONGTEXT": "String",
-    "LONGBLOB": "String",
-    "ENUM": "String",
-    "SET": "String",
-    "BIT": "Integer",
-    "TINYINT": "Integer",
-    "SMALLINT": "Integer",
-    "MEDIUMINT": "Integer",
-    "INT": "Integer",
-    "INTEGER": "Integer",
-    "BIGINT": "Integer",
-    "FLOAT": "Float",
-    "DOUBLE": "Float",
-    "DOUBLE PRECISION": "Float",
-    "DECIMAL": "Float",
-    "DEC": "Float",
-    "BOOL": "Boolean",
-    "BOOLEAN": "Boolean",
-    "YEAR": "Integer",
-    "DATE": "Date",
-    "DATETIME": "TimeStamp",
-    "TIMESTAMP": "TimeStamp",
-    # Fauna has no concept of time independent of the date
-    "TIME": "String",
-}
-
-DEFAULT_FIELD_METADATA: FieldMetadata = {
-    "unique": False,
-    "not_null": False,
-    "default": None,
-    "type": "",
-}
-
-ALEMBIC_INDEX_PREFIX_REGEX = re.compile(r"^ix_")
 
 
 class FaunaClientError(Exception):
@@ -309,70 +243,6 @@ class FaunaClient:
 
             sleep(retries)
             return self._execute_create_with_retries(query, retries=(retries + 1))
-
-    def _parse_identifiers(
-        self, identifiers: Union[token_groups.Identifier, token_groups.IdentifierList]
-    ) -> Tuple[Sequence[Optional[str]], Sequence[str], Sequence[Optional[str]]]:
-        if isinstance(identifiers, token_groups.Identifier):
-            table_name, column_name, alias_name = self._parse_identifier(identifiers)
-            return ((table_name,), (column_name,), (alias_name,))
-
-        return cast(
-            Tuple[Sequence[Optional[str]], Sequence[str], Sequence[Optional[str]]],
-            tuple(
-                zip(
-                    *[
-                        self._parse_identifier(identifier)
-                        for identifier in identifiers
-                        if isinstance(identifier, token_groups.Identifier)
-                    ]
-                )
-            ),
-        )
-
-    @staticmethod
-    def _parse_identifier(
-        identifier: token_groups.Identifier,
-    ) -> Tuple[Optional[str], str, Optional[str]]:
-        idx, identifier_name = identifier.token_next_by(t=token_types.Name)
-
-        tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
-        if next_token and next_token.match(token_types.Punctuation, "."):
-            idx = tok_idx
-            table_name = identifier_name.value
-            idx, column_identifier = identifier.token_next_by(
-                t=token_types.Name, idx=idx
-            )
-            column_name = column_identifier.value
-        else:
-            table_name = None
-            column_name = identifier_name.value
-
-        idx, as_keyword = identifier.token_next_by(
-            m=(token_types.Keyword, "AS"), idx=idx
-        )
-
-        if as_keyword is not None:
-            _, alias_identifier = identifier.token_next_by(
-                i=token_groups.Identifier, idx=idx
-            )
-            alias_name = alias_identifier.value
-        else:
-            alias_name = None
-
-        return (table_name, column_name, alias_name)
-
-    @staticmethod
-    def _extract_value(token: token_groups.Token) -> Union[str, int, float, None]:
-        value = token.value
-
-        if value == "NONE":
-            return None
-
-        if isinstance(value, str):
-            return value.replace("'", "")
-
-        return value
 
     @staticmethod
     def _fauna_reference_to_dict(ref: Ref) -> Dict[str, Any]:

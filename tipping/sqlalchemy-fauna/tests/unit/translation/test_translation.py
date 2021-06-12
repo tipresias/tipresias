@@ -81,3 +81,10 @@ def test_translate_sql_to_fql_delete():
     fql_query = translation.translate_sql_to_fql(sql_query)
 
     assert isinstance(fql_query, QueryExpression)
+
+
+def test_translate_sql_to_fql_update():
+    sql_query = "UPDATE users SET users.name = 'Bob'"
+    fql_query = translation.translate_sql_to_fql(sql_query)
+
+    assert isinstance(fql_query, QueryExpression)

@@ -146,7 +146,7 @@ class FaunaClient:
             return self._execute_delete(sql_query)
 
         if statement.token_first().match(token_types.DML, "UPDATE"):
-            return self._execute_update(statement)
+            return self._execute_update(sql_query)
 
         raise exceptions.NotSupportedError()
 
@@ -262,123 +262,11 @@ class FaunaClient:
 
         return [self._clean_fauna_key_values(results["data"])]
 
-    def _execute_update(self, statement: token_groups.Statement) -> SQLResult:
-        idx, table_identifier = statement.token_next_by(i=token_groups.Identifier)
-        table_name = table_identifier.value
+    def _execute_update(self, sql_query: str) -> SQLResult:
+        fql_query = translation.translate_sql_to_fql(sql_query)
+        result = self._client.query(fql_query)
 
-        idx, _ = statement.token_next_by(m=(token_types.Keyword, "SET"), idx=idx)
-        idx, comparison_group = statement.token_next_by(
-            i=token_groups.Comparison, idx=idx
-        )
-        _, update_column = comparison_group.token_next_by(i=token_groups.Identifier)
-        idx, comparison = comparison_group.token_next_by(
-            m=(token_types.Comparison, "=")
-        )
-        update_column_value = update_column.value
-
-        if comparison is None:
-            raise exceptions.NotSupportedError()
-
-        _, update_value = comparison_group.token_next(idx, skip_ws=True)
-        update_value_value = extract_value(update_value)
-
-        comparisons = self._extract_where_conditions(statement)
-        records_to_update = self._matched_records(table_name, comparisons)
-
-        # Can't figure out how to return updated record count as part of an update call
-        update_count = self._client.query(
-            q.count(records_to_update),
-        )
-
-        self._client.query(
-            q.update(
-                q.select(
-                    "ref",
-                    q.get(records_to_update),
-                ),
-                {"data": {update_column_value: update_value_value}},
-            )
-        )
-
-        return [{"count": update_count}]
-
-    def _extract_where_conditions(self, statement) -> Optional[Comparisons]:
-        _, where_group = statement.token_next_by(i=token_groups.Where)
-
-        if where_group is None:
-            return None
-
-        _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
-
-        if or_keyword is not None:
-            raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
-
-        comparisons: Comparisons = {"by_id": None, "by_index": []}
-        condition_idx = 0
-
-        while True:
-            _, and_keyword = where_group.token_next_by(m=(token_types.Keyword, "AND"))
-            should_have_and_keyword = condition_idx > 0
-            condition_idx, condition = where_group.token_next_by(
-                i=token_groups.Comparison, idx=condition_idx
-            )
-
-            if condition is None:
-                break
-
-            assert not should_have_and_keyword or (
-                should_have_and_keyword and and_keyword is not None
-            )
-
-            _, column = condition.token_next_by(i=token_groups.Identifier)
-            # Assumes column has form <table_name>.<column_name>
-            condition_column = column.tokens[-1]
-
-            _, equals = condition.token_next_by(m=(token_types.Comparison, "="))
-            if equals is None:
-                raise exceptions.NotSupportedError(
-                    "Only column-value equality conditions are currently supported"
-                )
-
-            _, condition_check = condition.token_next_by(t=token_types.Literal)
-            condition_value = extract_value(condition_check)
-
-            column_name = str(condition_column.value)
-
-            if column_name == "id":
-                assert not isinstance(condition_value, (float, datetime))
-                comparisons["by_id"] = condition_value
-            else:
-                comparisons["by_index"].append((column_name, condition_value))
-
-        return comparisons
-
-    def _matched_records(
-        self, collection_name: str, comparisons: Optional[Comparisons]
-    ):
-        if comparisons is None:
-            return q.intersection(q.match(q.index(f"all_{collection_name}")))
-
-        matched_records = []
-
-        if comparisons["by_id"] is not None:
-            if any(comparisons["by_index"]):
-                raise exceptions.NotSupportedError(
-                    "When querying by ID, including other conditions in the WHERE "
-                    "clause is not supported."
-                )
-
-            return q.ref(q.collection(collection_name), comparisons["by_id"])
-
-        for comparison_field, comparison_value in comparisons["by_index"]:
-            matched_records.append(
-                q.match(
-                    q.index(f"{collection_name}_by_{comparison_field}"),
-                    comparison_value,
-                )
-            )
-
-        return q.intersection(*matched_records)
+        return [{"count": result}]
 
     def _convert_terms_to_column_names(self, index: Dict[str, Any]) -> List[str]:
         terms = index.get("terms")

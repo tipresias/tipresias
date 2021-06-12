@@ -1,6 +1,6 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
@@ -8,6 +8,8 @@ from sqlalchemy import (
     Integer,
     String,
     DateTime,
+    Boolean,
+    Float,
     ForeignKey,
     inspect,
     exc as sqlalchemy_exceptions,
@@ -16,8 +18,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 import pytest
+from faker import Faker
 
 from sqlalchemy_fauna import dialect
+
+
+FAKE = Faker()
 
 
 @pytest.fixture()
@@ -33,6 +39,9 @@ def user_model():
         date_joined = Column(DateTime, nullable=False)
         age = Column(Integer)
         finger_count = Column(Integer, default=10)
+        is_premium_member = Column(Boolean, default=False)
+        account_credit = Column(Float, default=0.0)
+        job = Column(String)
 
     return User, Base
 
@@ -126,7 +135,13 @@ def test_insert_record(fauna_session, user_model):
     fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
 
-    user = User(name="Bob", date_joined=datetime.now(), age=30)
+    account_credit = FAKE.pyfloat()
+    age = 30
+    date_joined = FAKE.date_time_this_year(tzinfo=timezone.utc)
+
+    user = User(
+        name="Bob", date_joined=date_joined, age=age, account_credit=account_credit
+    )
     fauna_session.add(user)
     fauna_session.commit()
 
@@ -134,7 +149,15 @@ def test_insert_record(fauna_session, user_model):
 
     # It creates the record
     assert len(users) == 1
-    assert user.name == "Bob"
+
+    created_user = users[0]
+    assert created_user.name == "Bob"
+    assert created_user.is_premium_member is False
+    assert created_user.account_credit == account_credit
+    assert created_user.age == age
+    assert created_user.date_joined == date_joined
+    assert created_user.job is None
+    assert isinstance(created_user.id, str)
 
 
 def test_select_empty_table(fauna_session, user_model):

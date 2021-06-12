@@ -9,7 +9,7 @@ from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
 
 from . import exceptions
-from .faunadb import FaunadbClient
+from .fauna import FaunaClient
 
 
 PopulatedResultDescription = Tuple[Optional[str], Any, None, None, None, None, bool]
@@ -191,7 +191,7 @@ class FaunaQuery:
         return (table_name, column_name, alias_name)
 
     @staticmethod
-    def _infer_field_type(value: Any) -> str:
+    def _infer_field_type(value: Any) -> Optional[str]:
         if isinstance(value, str):
             return "string"
         if isinstance(value, (int, float)):
@@ -204,6 +204,10 @@ class FaunaQuery:
             return "datetime"
         if isinstance(value, time):
             return "timeofday"
+        # We currently have no way of inferring field type from None values,
+        # so we return None per _get_description_from_query
+        if value is None:
+            return None
 
         raise Exception(f"{value} has unknown data type {type(value)}")
 
@@ -212,7 +216,7 @@ class FaunaConnection:
     """Connection to a Fauna DB instance."""
 
     def __init__(self, host="", port=None, secret="", scheme=""):
-        client = FaunadbClient(scheme=scheme, domain=host, port=port, secret=secret)
+        client = FaunaClient(scheme=scheme, domain=host, port=port, secret=secret)
         self._fauna_query = FaunaQuery(client=client)
         self.closed = False
         self.cursors = []
@@ -272,6 +276,10 @@ def escape(value):
         return "TRUE" if value else "FALSE"
     if isinstance(value, (int, float)):
         return str(value)
+    if isinstance(value, (datetime, date)):
+        # We have to treat datetimes as strings in the SQL query, because otherwise sqlparser
+        # doesn't know what to do with them
+        return f"'{value.isoformat()}'"
     if isinstance(value, (list, tuple)):
         return "({0})".format(", ".join(escape(element) for element in value))
 

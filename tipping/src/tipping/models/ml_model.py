@@ -109,8 +109,6 @@ class MLModel(Base):
             self.__class__.prediction_type == prediction_type,
         )
 
-        # breakpoint()
-
         matching_competition_prediction_type = self._fetch_one(statement)
 
         if (

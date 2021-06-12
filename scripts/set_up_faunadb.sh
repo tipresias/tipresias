@@ -19,11 +19,13 @@ sleep 2
 
 touch .env
 
-if [ -z "$(cat .env | grep FAUNADB_KEY)" ]
+if [ -z "$(cat .env | grep FAUNA_SECRET)" ]
 then
   # create-key command includes the line "  secret: <API token string>"
-  FAUNADB_KEY="$(fauna create-key tipresias --endpoint=localhost | grep secret: | cut -d " " -f 4)"
-  echo "FAUNADB_KEY=${FAUNADB_KEY}" >> .env
+  FAUNA_SECRET="$(fauna create-key tipresias --endpoint=localhost | grep secret: | cut -d " " -f 4)"
+  echo "FAUNA_SECRET=${FAUNA_SECRET}" >> .env
+
+  echo "Wrote the Fauna secret ${FAUNA_SECRET} to .env"
 
   direnv reload
 fi

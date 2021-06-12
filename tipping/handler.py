@@ -27,7 +27,11 @@ rollbar.init(rollbar_token, settings.ENVIRONMENT)
 def rollbar_ignore_handler(payload):
     """Filter out certain errors rom Rollbar logs."""
     error_class_name = (
-        payload.get("data").get("body", {}).get("exception", {}).get("class", "")
+        payload["data"]
+        .get("body", {})
+        .get("trace", {})
+        .get("exception", {})
+        .get("class", "")
     )
 
     # We ignore ServerErrorResponse, because that error will be recorded in Rollbar

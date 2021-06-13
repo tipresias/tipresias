@@ -14,6 +14,9 @@ from .common import extract_value, parse_identifiers, ColumnNames, Aliases, pars
 SelectReturn = Tuple[QueryExpression, ColumnNames, Aliases]
 
 
+DATA_KEY = "data"
+
+
 def _translate_select_from_table(statement: token_groups.Statement) -> SelectReturn:
     _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
 
@@ -23,29 +26,61 @@ def _translate_select_from_table(statement: token_groups.Statement) -> SelectRet
     idx, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList)
     )
-    table_names, column_names, alias_names = parse_identifiers(identifiers)
-
-    # We can only handle one table at a time for now
-    if len(set(table_names)) > 1:
-        raise exceptions.NotSupportedError(
-            "Only one table per query is currently supported"
-        )
-
     idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
     idx, table_identifier = statement.token_next_by(
         i=(token_groups.Identifier), idx=idx
     )
     table_name = table_identifier.value
+    table_field_map = parse_identifiers(identifiers, table_name)
+
+    # We can only handle one table at a time for now
+    if len(table_field_map.keys()) > 1:
+        raise exceptions.NotSupportedError(
+            "Only one table per query is currently supported"
+        )
 
     _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
     records_to_select = parse_where(where_group, table_name)
 
-    query = q.map_(
-        q.lambda_("document", q.get(q.var("document"))),
-        q.paginate(records_to_select),
+    document_items = q.to_array(q.get(q.var("document")))
+    flattened_items = q.union(
+        q.map_(
+            q.lambda_(
+                ["key", "value"],
+                q.if_(
+                    q.equals(q.var("key"), DATA_KEY),
+                    q.to_array(q.var("value")),
+                    # We put single key/value pairs in nested arrays to match
+                    # the structure of the nested 'data' key/values
+                    [[q.var("key"), q.var("value")]],
+                ),
+            ),
+            document_items,
+        )
     )
 
-    return (query, column_names, alias_names)
+    field_map = table_field_map[table_name]
+    selected_fields = list(field_map.keys())
+    field_alias = q.select_with_default(
+        q.var("field"),
+        field_map,
+        default=q.var("field"),
+    )
+    field_value = q.select_with_default(
+        q.var("field"),
+        q.to_object(flattened_items),
+        default=None,
+    )
+    translate_to_alias = q.lambda_("field", [field_alias, field_value])
+    # We map over selected_fields to build document object to maintain the order
+    # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
+    # to the incorrect keys.
+    aliased_document = q.to_object(q.map_(translate_to_alias, selected_fields))
+
+    return q.map_(
+        q.lambda_("document", aliased_document),
+        q.paginate(records_to_select),
+    )
 
 
 def _translate_select_from_info_schema_constraints(
@@ -101,7 +136,7 @@ def _translate_select_from_info_schema_constraints(
         indexes_based_on_collection,
     )
 
-    return (query, [], [])
+    return query
 
 
 def _translate_select_from_info_schema_columns(
@@ -140,10 +175,11 @@ def _translate_select_from_info_schema_columns(
     condition_value = extract_value(condition_check)
 
     query = q.select(
-        ["data", "metadata", "fields"], q.get(q.collection(condition_value))
+        ["data", "metadata", "fields"],
+        q.get(q.collection(condition_value)),
     )
 
-    return (query, [], [])
+    return query
 
 
 def _extract_table_name(statement: token_groups.Statement) -> str:
@@ -162,7 +198,7 @@ def _extract_table_name(statement: token_groups.Statement) -> str:
     return table_identifier.value
 
 
-def translate_select(statement: token_groups.Statement) -> SelectReturn:
+def translate_select(statement: token_groups.Statement) -> QueryExpression:
     """Translate a SELECT SQL query into an equivalent FQL query.
 
     Params:
@@ -185,7 +221,7 @@ def translate_select(statement: token_groups.Statement) -> SelectReturn:
             q.lambda_("collection", q.get(q.var("collection"))),
             q.paginate(q.collections()),
         )
-        return (query, [], [])
+        return query
 
     if table_name == "INFORMATION_SCHEMA.COLUMNS":
         return _translate_select_from_info_schema_columns(statement)

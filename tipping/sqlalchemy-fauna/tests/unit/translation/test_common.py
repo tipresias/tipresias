@@ -61,9 +61,9 @@ select_aliases = (
 @pytest.mark.parametrize(
     ["sql_query", "expected_columns", "expected_aliases"],
     [
-        (select_singl_column, ["id"], [None]),
-        (select_columns, ["id", "name"], [None, None]),
-        (select_aliases, ["id", "name"], ["user_id", "user_name"]),
+        (select_singl_column, ["ref"], ["id"]),
+        (select_columns, ["ref", "name"], ["id", "name"]),
+        (select_aliases, ["ref", "name"], ["user_id", "user_name"]),
     ],
 )
 def test_parse_identifiers(sql_query, expected_columns, expected_aliases):
@@ -72,18 +72,16 @@ def test_parse_identifiers(sql_query, expected_columns, expected_aliases):
         i=(token_groups.Identifier, token_groups.IdentifierList)
     )
 
-    table_names, column_names, alias_names = common.parse_identifiers(identifiers)
+    table_field_map = common.parse_identifiers(identifiers, table_name)
 
-    assert len(table_names) == len(column_names) == len(alias_names)
-
-    for table in table_names:
+    for table in table_field_map.keys():
         assert table == table_name
 
-    for column, expected_column in zip(column_names, expected_columns):
-        assert column == expected_column
+    for column in table_field_map[table_name]:
+        assert column in expected_columns
 
-    for alias, expected_alias in zip(alias_names, expected_aliases):
-        assert alias == expected_alias
+    for alias in table_field_map[table_name].values():
+        assert alias in expected_aliases
 
 
 select_values = "SELECT * FROM users"

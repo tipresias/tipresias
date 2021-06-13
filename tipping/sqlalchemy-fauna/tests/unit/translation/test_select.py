@@ -88,5 +88,5 @@ select_where_equals = select_values + " WHERE users.name = 'Bob'"
     ],
 )
 def test_translate_select(sql_query):
-    fql_query, _, _ = select.translate_select(sqlparse.parse(sql_query)[0])
+    fql_query = select.translate_select(sqlparse.parse(sql_query)[0])
     assert isinstance(fql_query, QueryExpression)

@@ -2,14 +2,14 @@
 
 """Module for all FaunaDB functionality."""
 
-from typing import Any, Dict, List, Sequence
+import typing
 from time import sleep
 import logging
+from datetime import datetime
 
 from faunadb import client
 from faunadb import query as q, errors as fauna_errors
-from faunadb.objects import FaunaTime, Ref
-from faunadb.objects import _Expr as QueryExpression
+from faunadb.objects import FaunaTime, Ref, _Expr as QueryExpression
 import sqlparse
 from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
@@ -18,7 +18,7 @@ from sqlalchemy_fauna import exceptions
 from . import translation
 
 
-SQLResult = List[Dict[str, Any]]
+SQLResult = typing.List[typing.Dict[str, typing.Any]]
 
 
 class FaunaClientError(Exception):
@@ -85,11 +85,7 @@ class FaunaClient:
         raise exceptions.NotSupportedError()
 
     def _execute_select(self, sql_query: str, table_name: str) -> SQLResult:
-        (
-            fql_query,
-            column_names,
-            alias_names,
-        ) = translation.translate_sql_to_fql(sql_query)
+        fql_query = translation.translate_sql_to_fql(sql_query)
         result = self._client.query(fql_query)
 
         if table_name == "INFORMATION_SCHEMA.TABLES":
@@ -135,27 +131,7 @@ class FaunaClient:
         except KeyError:
             pass
 
-        column_alias_map = {
-            column: alias or column for column, alias in zip(column_names, alias_names)
-        }
-
-        columns = [
-            self._select_columns(
-                list(column_alias_map.values()),
-                self._fauna_data_to_dict(data, alias_map=column_alias_map),
-            )
-            for data in result["data"]
-        ]
-
-        if len(columns):
-            assert len(columns[0]) == len(column_names) == len(alias_names), (
-                "Something went wrong with translating between SQL columns and FQL fields:\n"
-                f"FQL field names: {column_names}\n"
-                f"SQL column aliases: {alias_names}\n"
-                f"First row of results: {columns[0]}"
-            )
-
-        return columns
+        return [self._fauna_data_to_sqlalchemy_result(data) for data in result["data"]]
 
     def _execute_create(self, sql_query: str) -> SQLResult:
         fql_queries = translation.translate_sql_to_fql(sql_query)
@@ -188,13 +164,13 @@ class FaunaClient:
                 "Tried to create a document with duplicate value for a unique field."
             )
 
-        return [self._fauna_data_to_dict(result)]
+        return [self._fauna_data_to_sqlalchemy_result(result)]
 
     def _execute_delete(self, sql_query: str) -> SQLResult:
         fql_query = translation.translate_sql_to_fql(sql_query)
         results = self._client.query(fql_query)
 
-        return [self._clean_fauna_key_values(results["data"])]
+        return [self._fauna_data_to_sqlalchemy_result(results["data"])]
 
     def _execute_update(self, sql_query: str) -> SQLResult:
         fql_query = translation.translate_sql_to_fql(sql_query)
@@ -202,7 +178,9 @@ class FaunaClient:
 
         return [{"count": result}]
 
-    def _convert_terms_to_column_names(self, index: Dict[str, Any]) -> List[str]:
+    def _convert_terms_to_column_names(
+        self, index: typing.Dict[str, typing.Any]
+    ) -> typing.List[str]:
         terms = index.get("terms")
 
         if terms is not None:
@@ -245,7 +223,7 @@ class FaunaClient:
             return self._execute_create_with_retries(query, retries=(retries + 1))
 
     @staticmethod
-    def _fauna_reference_to_dict(ref: Ref) -> Dict[str, Any]:
+    def _fauna_reference_to_dict(ref: Ref) -> typing.Dict[str, typing.Any]:
         ref_dict = {}
 
         for key, value in ref.value.items():
@@ -260,58 +238,21 @@ class FaunaClient:
 
         return ref_dict
 
-    def _fauna_data_to_dict(
-        self, data: Dict[str, Any], alias_map: Dict[str, str] = None
-    ) -> Dict[str, Any]:
-        sql_dict = self._clean_fauna_key_values(
-            {"id": data["ref"].id(), **data}, alias_map=alias_map
-        )
-        # SELECT queries usually include a nested 'data' object for the selected values,
-        # but selecting TABLE_NAMES does not, and there might be other cases
-        # that I haven't encountered yet.
-        sub_data = self._clean_fauna_key_values(
-            data.get("data", {}), alias_map=alias_map
-        )
-
+    def _fauna_data_to_sqlalchemy_result(
+        self, data: typing.Dict[str, typing.Union[str, bool, int, float, datetime]]
+    ) -> typing.Dict[str, typing.Any]:
         return {
-            **sql_dict,
-            **sub_data,
+            key: self._convert_fauna_to_python(value) for key, value in data.items()
         }
 
     @staticmethod
-    def _clean_fauna_key_values(
-        fauna_data: Dict[str, Any], alias_map: Dict[str, str] = None
-    ) -> Dict[str, Any]:
-        alias_map = alias_map or {}
-        clean_fauna_data = {}
+    def _convert_fauna_to_python(
+        value: typing.Any,
+    ) -> typing.Union[str, bool, int, float, datetime]:
+        if isinstance(value, Ref):
+            return value.id()
 
-        for key, value in fauna_data.items():
-            if key in ("ref", "data"):
-                continue
+        if isinstance(value, FaunaTime):
+            return value.to_datetime()
 
-            queried_key = alias_map.get(key) or key
-            clean_fauna_data[queried_key] = (
-                value.to_datetime() if isinstance(value, FaunaTime) else value
-            )
-
-        return clean_fauna_data
-
-    @staticmethod
-    def _select_columns(
-        column_names: Sequence[str], document: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        # TODO: We'll need a way to fill in blank fields when the query has 'SELECT *'
-        if column_names[0] == "*":
-            return document
-
-        # We need to fill in blank columns, because Fauna doesn't return fields
-        # with null values in query responses
-        blank_columns = {column_name: None for column_name in column_names}
-        returned_columns = {
-            key: value for key, value in document.items() if key in column_names
-        }
-
-        return {
-            **blank_columns,
-            **returned_columns,
-        }
+        return value

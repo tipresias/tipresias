@@ -44,10 +44,9 @@ def test_translate_sql_to_fql_select():
         "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
         "FROM users"
     )
-    fql_query, column_names, aliases = translation.translate_sql_to_fql(sql_query)
+    fql_query = translation.translate_sql_to_fql(sql_query)
 
     assert isinstance(fql_query, QueryExpression)
-    assert len(column_names) == len(aliases)
 
 
 def test_translate_sql_to_fql_create():

@@ -27,7 +27,9 @@ def format_sql_query(sql_query: str) -> str:
     )
 
 
-def translate_sql_to_fql(sql_query: str) -> Union[SelectReturn, List[QueryExpression]]:
+def translate_sql_to_fql(
+    sql_query: str,
+) -> Union[QueryExpression, List[QueryExpression]]:
     """Translate from an SQL string to an FQL query"""
     sql_statements = sqlparse.parse(sql_query)
 

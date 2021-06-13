@@ -1,29 +1,35 @@
 """Shared SQL translations and utilities for various statement types."""
 
-from typing import Union, Tuple, Sequence, Optional, cast, List
+import typing
 import re
 from datetime import datetime, timezone
 from warnings import warn
+from functools import reduce
 from dateutil import parser
 
 from sqlparse import sql as token_groups
 from sqlparse import tokens as token_types
-from sqlalchemy_fauna import exceptions
 from mypy_extensions import TypedDict
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
 
+from sqlalchemy_fauna import exceptions
 
-TableNames = Sequence[Optional[str]]
-ColumnNames = Sequence[str]
-Aliases = Sequence[Optional[str]]
-IdentifierValues = Tuple[TableNames, ColumnNames, Aliases]
+TableNames = typing.Sequence[typing.Optional[str]]
+ColumnNames = typing.Sequence[str]
+Aliases = typing.Sequence[typing.Optional[str]]
+IdentifierValues = typing.Tuple[TableNames, ColumnNames, Aliases]
 
-IndexComparison = Tuple[str, Union[int, float, str, None, bool, datetime]]
+IndexComparison = typing.Tuple[str, typing.Union[int, float, str, None, bool, datetime]]
 Comparisons = TypedDict(
     "Comparisons",
-    {"by_id": Optional[Union[int, str]], "by_index": List[IndexComparison]},
+    {
+        "by_id": typing.Optional[typing.Union[int, str]],
+        "by_index": typing.List[IndexComparison],
+    },
 )
+
+TableFieldMap = typing.Dict[typing.Optional[str], typing.Dict[str, str]]
 
 
 class _NumericString(Exception):
@@ -54,8 +60,15 @@ def _parse_date_value(value):
 
 
 def _parse_identifier(
-    identifier: token_groups.Identifier,
-) -> Tuple[Optional[str], str, Optional[str]]:
+    table_field_map: TableFieldMap,
+    maybe_identifier: typing.Any,
+) -> TableFieldMap:
+    if not isinstance(
+        maybe_identifier, (token_groups.Identifier, token_groups.IdentifierList)
+    ):
+        return table_field_map
+
+    identifier = maybe_identifier
     idx, identifier_name = identifier.token_next_by(t=token_types.Name)
 
     tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
@@ -76,12 +89,26 @@ def _parse_identifier(
         )
         alias_name = alias_identifier.value
     else:
-        alias_name = None
+        alias_name = column_name
 
-    return (table_name, column_name, alias_name)
+    if table_name is None:
+        assert len(table_field_map.keys()) == 1
+        return {
+            key: {**value, column_name: alias_name}
+            for key, value in table_field_map.items()
+        }
+
+    # Fauna doesn't have an 'id' field, so we extract the ID value from the 'ref' included
+    # in query responses, but we still want to map the field name to aliases as with other
+    # fields for consistency when passing results to SQLAlchemy
+    field_map_key = "ref" if column_name == "id" else column_name
+    return {
+        **table_field_map,
+        table_name: {**table_field_map.get(table_name, {}), field_map_key: alias_name},
+    }
 
 
-def _parse_comparisons(where_group: token_groups.Where) -> Optional[Comparisons]:
+def _parse_comparisons(where_group: token_groups.Where) -> typing.Optional[Comparisons]:
     if where_group is None:
         return None
 
@@ -140,7 +167,7 @@ def _parse_comparisons(where_group: token_groups.Where) -> Optional[Comparisons]
 
 def extract_value(
     token: token_groups.Token,
-) -> Union[str, int, float, None, bool, datetime]:
+) -> typing.Union[str, int, float, None, bool, datetime]:
     """ "Get the raw value from an SQL token.
 
     Params:
@@ -186,8 +213,9 @@ def extract_value(
 
 
 def parse_identifiers(
-    identifiers: Union[token_groups.Identifier, token_groups.IdentifierList]
-) -> IdentifierValues:
+    identifiers: typing.Union[token_groups.Identifier, token_groups.IdentifierList],
+    table_name: str,
+) -> TableFieldMap:
     """Extract raw table name, column name, and alias from SQL identifiers.
 
     Params:
@@ -196,24 +224,12 @@ def parse_identifiers(
 
     Returns:
     --------
-    Tuple of table_names, column names, and column aliases.
+    typing.Tuple of table_names, column names, and column aliases.
     """
     if isinstance(identifiers, token_groups.Identifier):
-        table_name, column_name, alias_name = _parse_identifier(identifiers)
-        return ((table_name,), (column_name,), (alias_name,))
+        return _parse_identifier({table_name: {}}, identifiers)
 
-    return cast(
-        IdentifierValues,
-        tuple(
-            zip(
-                *[
-                    _parse_identifier(identifier)
-                    for identifier in identifiers
-                    if isinstance(identifier, token_groups.Identifier)
-                ]
-            )
-        ),
-    )
+    return reduce(_parse_identifier, identifiers, {table_name: {}})
 
 
 def parse_where(

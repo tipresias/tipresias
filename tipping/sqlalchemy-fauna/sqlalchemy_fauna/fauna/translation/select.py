@@ -17,7 +17,7 @@ SelectReturn = Tuple[QueryExpression, ColumnNames, Aliases]
 DATA_KEY = "data"
 
 
-def _translate_select_from_table(statement: token_groups.Statement) -> SelectReturn:
+def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpression:
     _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
 
     if wildcard is not None:
@@ -182,6 +182,27 @@ def _translate_select_from_info_schema_columns(
     return query
 
 
+def _translate_select_from_info_schema_tables() -> QueryExpression:
+    collection = q.get(q.var("collection"))
+    select_ref = q.filter_(
+        q.lambda_(["key", "_"], q.equals(q.var("key"), "ref")),
+        q.to_array(collection),
+    )
+    table_items = q.map_(
+        q.lambda_(
+            ["_", "value"],
+            ["id", q.var("value")],
+        ),
+        select_ref,
+    )
+    get_collection_ref = q.lambda_("collection", q.to_object(table_items))
+
+    return q.map_(
+        get_collection_ref,
+        q.paginate(q.collections()),
+    )
+
+
 def _extract_table_name(statement: token_groups.Statement) -> str:
     idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
     _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
@@ -217,11 +238,7 @@ def translate_select(statement: token_groups.Statement) -> QueryExpression:
     # It's okay for now, but should probably fix these query responses eventually
     # and put the SQLAlchemy-specific logic/transformation in FaunaDialect
     if table_name == "INFORMATION_SCHEMA.TABLES":
-        query = q.map_(
-            q.lambda_("collection", q.get(q.var("collection"))),
-            q.paginate(q.collections()),
-        )
-        return query
+        return _translate_select_from_info_schema_tables()
 
     if table_name == "INFORMATION_SCHEMA.COLUMNS":
         return _translate_select_from_info_schema_columns(statement)

@@ -88,14 +88,6 @@ class FaunaClient:
         fql_query = translation.translate_sql_to_fql(sql_query)
         result = self._client.query(fql_query)
 
-        if table_name == "INFORMATION_SCHEMA.TABLES":
-            collections = result["data"]
-
-            return [
-                self._fauna_reference_to_dict(collection["ref"])
-                for collection in collections
-            ]
-
         if table_name == "INFORMATION_SCHEMA.COLUMNS":
             # Selecting column info from INFORMATION_SCHEMA returns foreign keys
             # as regular columns, so we don't need the extra table-reference info
@@ -249,6 +241,8 @@ class FaunaClient:
     def _convert_fauna_to_python(
         value: typing.Any,
     ) -> typing.Union[str, bool, int, float, datetime]:
+        assert not isinstance(value, (list, dict, tuple))
+
         if isinstance(value, Ref):
             return value.id()
 

@@ -1,17 +1,12 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
-from typing import Tuple
-
 from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value, parse_identifiers, ColumnNames, Aliases, parse_where
-
-
-SelectReturn = Tuple[QueryExpression, ColumnNames, Aliases]
+from .common import extract_value, parse_identifiers, parse_where
 
 
 DATA_KEY = "data"
@@ -85,7 +80,7 @@ def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpr
 
 def _translate_select_from_info_schema_constraints(
     statement: token_groups.Statement,
-) -> SelectReturn:
+) -> QueryExpression:
     # We don't use the standard logic for parsing this WHERE clause,
     # because sqlparse treats WHERE clauses in INFORMATION_SCHEMA queries
     # differently, returning flat tokens in the WHERE group
@@ -141,7 +136,7 @@ def _translate_select_from_info_schema_constraints(
 
 def _translate_select_from_info_schema_columns(
     statement: token_groups.Statement,
-) -> SelectReturn:
+) -> QueryExpression:
     # We don't use the standard logic for parsing this WHERE clause,
     # because sqlparse treats WHERE clauses in INFORMATION_SCHEMA queries
     # differently, returning flat tokens in the WHERE group
@@ -174,12 +169,48 @@ def _translate_select_from_info_schema_columns(
     _, condition_check = where_group.token_next(idx, skip_ws=True)
     condition_value = extract_value(condition_check)
 
-    query = q.select(
-        ["data", "metadata", "fields"],
-        q.get(q.collection(condition_value)),
+    collection = q.collection(condition_value)
+    field_metadata = q.select(
+        [DATA_KEY, "metadata", "fields"],
+        q.get(collection),
     )
+    # Selecting column info from INFORMATION_SCHEMA returns foreign keys
+    # as regular columns, so we don't need the extra table-reference info
+    metadata_without_references = q.filter_(
+        q.lambda_(
+            ["metadata_type", "metadata"],
+            q.not_(q.equals(q.var("metadata_type"), "references")),
+        ),
+        q.to_array(q.var("field_data")),
+    )
+    flattened_metadata = q.union(
+        [["name", q.var("field_name")]], metadata_without_references
+    )
+    metadata_response = q.map_(
+        q.lambda_(
+            ["field_name", "field_data"],
+            q.to_object(flattened_metadata),
+        ),
+        q.to_array(field_metadata),
+    )
+    id_column = {
+        "name": "id",
+        "unique": True,
+        "not_null": True,
+        "type": "String",
+    }
 
-    return query
+    return q.let(
+        {
+            "response": {
+                DATA_KEY: q.union(
+                    [id_column],
+                    metadata_response,
+                )
+            }
+        },
+        q.var("response"),
+    )
 
 
 def _translate_select_from_info_schema_tables() -> QueryExpression:

@@ -88,18 +88,6 @@ class FaunaClient:
         fql_query = translation.translate_sql_to_fql(sql_query)
         result = self._client.query(fql_query)
 
-        if table_name == "INFORMATION_SCHEMA.COLUMNS":
-            # Selecting column info from INFORMATION_SCHEMA returns foreign keys
-            # as regular columns, so we don't need the extra table-reference info
-            remove_references = lambda field_data: {
-                key: value for key, value in field_data.items() if key != "references"
-            }
-
-            return [
-                {**remove_references(field_data), "name": field_name}
-                for field_name, field_data in result.items()
-            ]
-
         if table_name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
             return [
                 {
@@ -160,9 +148,9 @@ class FaunaClient:
 
     def _execute_delete(self, sql_query: str) -> SQLResult:
         fql_query = translation.translate_sql_to_fql(sql_query)
-        results = self._client.query(fql_query)
+        result = self._client.query(fql_query)
 
-        return [self._fauna_data_to_sqlalchemy_result(results["data"])]
+        return [self._fauna_data_to_sqlalchemy_result(result["data"])]
 
     def _execute_update(self, sql_query: str) -> SQLResult:
         fql_query = translation.translate_sql_to_fql(sql_query)

@@ -7,7 +7,7 @@ from sqlparse import tokens as token_types
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .select import translate_select, SelectReturn
+from .select import translate_select
 from .create import translate_create
 from .drop import translate_drop
 from .insert import translate_insert

@@ -121,4 +121,4 @@ def translate_insert(statement: token_groups.Statement) -> QueryExpression:
             document_fields,
         )
     )
-    return q.let({"document": create_document}, document_response)
+    return q.let({"document": create_document}, {"data": [document_response]})

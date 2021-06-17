@@ -38,7 +38,7 @@ def translate_update(statement: token_groups.Statement) -> QueryExpression:
     _, where_group = statement.token_next_by(i=token_groups.Where)
     records_to_update = parse_where(where_group, table_name)
 
-    return q.do(
+    updated_count = q.do(
         q.update(
             q.select(
                 "ref",
@@ -49,3 +49,5 @@ def translate_update(statement: token_groups.Statement) -> QueryExpression:
         # Can't figure out how to return updated record count as part of an update call
         q.count(records_to_update),
     )
+
+    return q.let({"count": updated_count}, {"data": [{"count": q.var("count")}]})

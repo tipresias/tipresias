@@ -5,7 +5,7 @@ pandas==1.2.4
 # App packages
 requests
 simplejson
-rollbar
+rollbar==0.15.2
 chardet<4.0 # required version for gql 3.0.0a3
 gql==3.0.0a3
 cerberus

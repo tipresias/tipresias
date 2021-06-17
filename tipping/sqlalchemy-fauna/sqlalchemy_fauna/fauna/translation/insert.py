@@ -1,5 +1,7 @@
 """Translate a INSERT SQL query into an equivalent FQL query."""
 
+import typing
+
 from sqlparse import sql as token_groups
 from sqlparse import tokens as token_types
 from faunadb import query as q
@@ -12,7 +14,7 @@ from .common import parse_identifiers, extract_value
 DATA_KEY = "data"
 
 
-def translate_insert(statement: token_groups.Statement) -> QueryExpression:
+def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpression]:
     """Translate a INSERT SQL query into an equivalent FQL query.
 
     Params:
@@ -121,4 +123,4 @@ def translate_insert(statement: token_groups.Statement) -> QueryExpression:
             document_fields,
         )
     )
-    return q.let({"document": create_document}, {"data": [document_response]})
+    return [q.let({"document": create_document}, {"data": [document_response]})]

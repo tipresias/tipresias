@@ -382,12 +382,17 @@ def _translate_create_table(
             )
         )
 
-    index_queries.append(q.collection(table_name))
+    index_queries.append(
+        q.let(
+            {"collection": q.collection(table_name)},
+            {"data": [{"id": q.var("collection")}]},
+        )
+    )
     # Unfortunately, expressions in a 'Do' FQL function can not refer to each other
     # (maybe there's some sort of hoisting or pre-run validation check under the hood?),
     # so we have to run the expressions that create the collection
     # and its associated indices separately
-    return [create_collection, q.do(index_queries)]
+    return [create_collection, q.do(*index_queries)]
 
 
 def _translate_create_index(
@@ -422,7 +427,10 @@ def _translate_create_index(
                     "unique": unique,
                 }
             ),
-            q.collection(table_name),
+            q.let(
+                {"collection": q.collection(table_name)},
+                {"data": [{"id": q.var("collection")}]},
+            ),
         )
     ]
 

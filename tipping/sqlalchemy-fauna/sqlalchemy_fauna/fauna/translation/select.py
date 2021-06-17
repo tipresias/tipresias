@@ -1,5 +1,7 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
+import typing
+
 from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
 from faunadb import query as q
@@ -285,7 +287,7 @@ def _extract_table_name(statement: token_groups.Statement) -> str:
     return table_identifier.value
 
 
-def translate_select(statement: token_groups.Statement) -> QueryExpression:
+def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpression]:
     """Translate a SELECT SQL query into an equivalent FQL query.
 
     Params:
@@ -304,12 +306,12 @@ def translate_select(statement: token_groups.Statement) -> QueryExpression:
     # It's okay for now, but should probably fix these query responses eventually
     # and put the SQLAlchemy-specific logic/transformation in FaunaDialect
     if table_name == "INFORMATION_SCHEMA.TABLES":
-        return _translate_select_from_info_schema_tables()
+        return [_translate_select_from_info_schema_tables()]
 
     if table_name == "INFORMATION_SCHEMA.COLUMNS":
-        return _translate_select_from_info_schema_columns(statement)
+        return [_translate_select_from_info_schema_columns(statement)]
 
     if table_name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
-        return _translate_select_from_info_schema_constraints(statement)
+        return [_translate_select_from_info_schema_constraints(statement)]
 
-    return _translate_select_from_table(statement)
+    return [_translate_select_from_table(statement)]

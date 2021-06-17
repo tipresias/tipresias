@@ -1,5 +1,7 @@
 """Translate a UPDATE SQL query into an equivalent FQL query."""
 
+import typing
+
 from sqlparse import sql as token_groups
 from sqlparse import tokens as token_types
 from faunadb import query as q
@@ -9,7 +11,7 @@ from sqlalchemy_fauna import exceptions
 from .common import extract_value, parse_where
 
 
-def translate_update(statement: token_groups.Statement) -> QueryExpression:
+def translate_update(statement: token_groups.Statement) -> typing.List[QueryExpression]:
     """Translate a UPDATE SQL query into an equivalent FQL query.
 
     Params:
@@ -50,4 +52,4 @@ def translate_update(statement: token_groups.Statement) -> QueryExpression:
         q.count(records_to_update),
     )
 
-    return q.let({"count": updated_count}, {"data": [{"count": q.var("count")}]})
+    return [q.let({"count": updated_count}, {"data": [{"count": q.var("count")}]})]

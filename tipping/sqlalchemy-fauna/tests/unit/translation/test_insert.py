@@ -13,9 +13,10 @@ insert_user = "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10
 
 @pytest.mark.parametrize("sql_query", [insert_user])
 def test_translate_create(sql_query):
-    fql_query = insert.translate_insert(sqlparse.parse(sql_query)[0])
+    fql_queries = insert.translate_insert(sqlparse.parse(sql_query)[0])
 
-    assert isinstance(fql_query, QueryExpression)
+    for fql_query in fql_queries:
+        assert isinstance(fql_query, QueryExpression)
 
 
 insert_all_cols = "INSERT INTO users VALUES ('Bob', 30, 10)"

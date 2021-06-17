@@ -1,6 +1,6 @@
 """Translate an SQL query into an equivalent FQL query"""
 
-from typing import Union, List
+import typing
 
 import sqlparse
 from sqlparse import tokens as token_types
@@ -29,7 +29,7 @@ def format_sql_query(sql_query: str) -> str:
 
 def translate_sql_to_fql(
     sql_query: str,
-) -> Union[QueryExpression, List[QueryExpression]]:
+) -> typing.List[QueryExpression]:
     """Translate from an SQL string to an FQL query"""
     sql_statements = sqlparse.parse(sql_query)
 

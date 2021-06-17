@@ -126,12 +126,47 @@ def _translate_select_from_info_schema_constraints(
         q.paginate(q.indexes()),
     )
 
-    query = q.map_(
-        q.lambda_("index", q.get(q.var("index"))),
-        indexes_based_on_collection,
+    collection_fields = q.select(
+        ["data", "metadata", "fields"],
+        q.get(q.collection(condition_value)),
+    )
+    collection_field_names = q.map_(
+        q.lambda_(["field_name", "field_metadata"], q.var("field_name")),
+        q.to_array(collection_fields),
     )
 
-    return query
+    index = q.get(q.var("index"))
+    # We select the last one, because the first field listed is 'data'
+    last_field_name = q.select(q.subtract(q.count(q.var("field")), 1), q.var("field"))
+    term_field = (
+        q.let(
+            {"field": q.select("field", q.var("term"))},
+            last_field_name,
+        ),
+    )
+    index_term_fields = q.union(
+        q.map_(
+            q.lambda_("term", term_field),
+            q.select("terms", index),
+        )
+    )
+    column_names = q.if_(
+        q.contains_field("terms", index),
+        index_term_fields,
+        collection_field_names,
+    )
+    index_response = {
+        "name": q.select("name", index),
+        "column_names": q.concat(column_names, separator=","),
+        # Fauna doesn't seem to return a 'unique' field with index queries,
+        # and we don't really need it, so leaving it blank for now.
+        "unique": False,
+    }
+
+    return q.map_(
+        q.lambda_("index", index_response),
+        indexes_based_on_collection,
+    )
 
 
 def _translate_select_from_info_schema_columns(

@@ -8,7 +8,7 @@ import logging
 from datetime import datetime
 
 from faunadb import client
-from faunadb import query as q, errors as fauna_errors
+from faunadb import errors as fauna_errors
 from faunadb.objects import FaunaTime, Ref, _Expr as QueryExpression
 import sqlparse
 from sqlparse import tokens as token_types
@@ -64,8 +64,7 @@ class FaunaClient:
         sql_query = str(statement)
 
         if statement.token_first().match(token_types.DML, "SELECT"):
-            table_name = self._extract_table_name(statement)
-            return self._execute_select(sql_query, table_name)
+            return self._execute_select(sql_query)
 
         if statement.token_first().match(token_types.DDL, "CREATE"):
             return self._execute_create(sql_query)
@@ -84,32 +83,9 @@ class FaunaClient:
 
         raise exceptions.NotSupportedError()
 
-    def _execute_select(self, sql_query: str, table_name: str) -> SQLResult:
+    def _execute_select(self, sql_query: str) -> SQLResult:
         fql_query = translation.translate_sql_to_fql(sql_query)
         result = self._client.query(fql_query)
-
-        if table_name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
-            return [
-                {
-                    "name": index["name"],
-                    "column_names": ",".join(
-                        self._convert_terms_to_column_names(index)
-                    ),
-                    # Fauna doesn't seem to return a 'unique' field with index queries,
-                    # and we don't really need it, so leaving it blank for now.
-                    "unique": False,
-                }
-                for index in result["data"]
-            ]
-
-        # If an index match only returns one document, the result is a dictionary,
-        # otherwise, it's a dictionary wrapped in a list. Not sure why,
-        # as fetching by ID returns a list when paginated & mapped, and too lazy
-        # to figure it out.
-        try:
-            result = result[0]
-        except KeyError:
-            pass
 
         return [self._fauna_data_to_sqlalchemy_result(data) for data in result["data"]]
 
@@ -157,24 +133,6 @@ class FaunaClient:
         result = self._client.query(fql_query)
 
         return [{"count": result}]
-
-    def _convert_terms_to_column_names(
-        self, index: typing.Dict[str, typing.Any]
-    ) -> typing.List[str]:
-        terms = index.get("terms")
-
-        if terms is not None:
-            return [term["field"][-1] for term in terms]
-
-        source_collection = index["source"].id()
-        collection_fields = self._client.query(
-            q.select(
-                ["data", "metadata", "fields"],
-                q.get(q.collection(source_collection)),
-            )
-        )
-
-        return [field_name for field_name in collection_fields.keys()]
 
     @staticmethod
     def _extract_table_name(statement: token_groups.Statement) -> str:

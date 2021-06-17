@@ -64,3 +64,15 @@ def test_get_columns(user_model, fauna_engine):
         ]
         queried_columns = fauna_dialect.get_columns(connection, "users")
         assert {column["name"] for column in queried_columns} == set(users_columns)
+
+
+def test_get_indexes(user_model, fauna_engine):
+    _, Base = user_model
+    Base.metadata.create_all(fauna_engine)
+    fauna_dialect = dialect.FaunaDialect()
+
+    with fauna_engine.connect() as connection:
+        queried_indexes = fauna_dialect.get_indexes(connection, "users")
+        index_names = {index["name"] for index in queried_indexes}
+
+        assert index_names == set(["all_users", "users_by_name"])

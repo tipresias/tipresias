@@ -13,6 +13,7 @@ delete_where = base_delete + " WHERE users.name = 'Bob'"
 
 @pytest.mark.parametrize("sql_query", [base_delete, delete_where])
 def test_translate_delete(sql_query):
-    fql_query = delete.translate_delete(sqlparse.parse(sql_query)[0])
+    fql_queries = delete.translate_delete(sqlparse.parse(sql_query)[0])
 
-    assert isinstance(fql_query, QueryExpression)
+    for fql_query in fql_queries:
+        assert isinstance(fql_query, QueryExpression)

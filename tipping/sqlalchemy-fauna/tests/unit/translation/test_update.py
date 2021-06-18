@@ -13,6 +13,7 @@ update_where = base_update + " WHERE users.name = 'Teddy'"
 
 @pytest.mark.parametrize("sql_query", [base_update, update_where])
 def test_translate_update(sql_query):
-    fql_query = update.translate_update(sqlparse.parse(sql_query)[0])
+    fql_queries = update.translate_update(sqlparse.parse(sql_query)[0])
 
-    assert isinstance(fql_query, QueryExpression)
+    for fql_query in fql_queries:
+        assert isinstance(fql_query, QueryExpression)

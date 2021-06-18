@@ -158,6 +158,7 @@ def test_insert_record(fauna_session, user_model):
     assert created_user.date_joined == date_joined
     assert created_user.job is None
     assert isinstance(created_user.id, str)
+    assert isinstance(int(created_user.id), int)
 
 
 def test_select_empty_table(fauna_session, user_model):

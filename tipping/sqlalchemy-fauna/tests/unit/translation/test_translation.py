@@ -44,10 +44,10 @@ def test_translate_sql_to_fql_select():
         "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
         "FROM users"
     )
-    fql_query, column_names, aliases = translation.translate_sql_to_fql(sql_query)
+    fql_queries = translation.translate_sql_to_fql(sql_query)
 
-    assert isinstance(fql_query, QueryExpression)
-    assert len(column_names) == len(aliases)
+    for fql_query in fql_queries:
+        assert isinstance(fql_query, QueryExpression)
 
 
 def test_translate_sql_to_fql_create():
@@ -64,27 +64,31 @@ def test_translate_sql_to_fql_create():
 
 def test_translate_sql_to_fql_drop():
     sql_query = "DROP TABLE users"
-    fql_query = translation.translate_sql_to_fql(sql_query)
+    fql_queries = translation.translate_sql_to_fql(sql_query)
 
-    assert isinstance(fql_query, QueryExpression)
+    for fql_query in fql_queries:
+        assert isinstance(fql_query, QueryExpression)
 
 
 def test_translate_sql_to_fql_insert():
     sql_query = "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)"
-    fql_query = translation.translate_sql_to_fql(sql_query)
+    fql_queries = translation.translate_sql_to_fql(sql_query)
 
-    assert isinstance(fql_query, QueryExpression)
+    for fql_query in fql_queries:
+        assert isinstance(fql_query, QueryExpression)
 
 
 def test_translate_sql_to_fql_delete():
     sql_query = "DELETE FROM users"
-    fql_query = translation.translate_sql_to_fql(sql_query)
+    fql_queries = translation.translate_sql_to_fql(sql_query)
 
-    assert isinstance(fql_query, QueryExpression)
+    for fql_query in fql_queries:
+        assert isinstance(fql_query, QueryExpression)
 
 
 def test_translate_sql_to_fql_update():
     sql_query = "UPDATE users SET users.name = 'Bob'"
-    fql_query = translation.translate_sql_to_fql(sql_query)
+    fql_queries = translation.translate_sql_to_fql(sql_query)
 
-    assert isinstance(fql_query, QueryExpression)
+    for fql_query in fql_queries:
+        assert isinstance(fql_query, QueryExpression)

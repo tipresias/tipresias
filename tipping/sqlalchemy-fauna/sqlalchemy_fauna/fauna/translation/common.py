@@ -9,6 +9,7 @@ from dateutil import parser
 
 from sqlparse import sql as token_groups
 from sqlparse import tokens as token_types
+from sqlparse.tokens import _TokenType as TokenType
 from mypy_extensions import TypedDict
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
@@ -29,7 +30,8 @@ Comparisons = TypedDict(
     },
 )
 
-TableFieldMap = typing.Dict[typing.Optional[str], typing.Dict[str, str]]
+FieldAliasMap = typing.Dict[str, str]
+TableFieldMap = typing.Dict[typing.Optional[str], FieldAliasMap]
 
 
 class _NumericString(Exception):
@@ -61,15 +63,14 @@ def _parse_date_value(value):
 
 def _parse_identifier(
     table_field_map: TableFieldMap,
-    maybe_identifier: typing.Any,
+    identifier: typing.Union[token_groups.Identifier, TokenType],
 ) -> TableFieldMap:
-    if not isinstance(
-        maybe_identifier, (token_groups.Identifier, token_groups.IdentifierList)
-    ):
+    if not isinstance(identifier, token_groups.Identifier):
         return table_field_map
 
-    identifier = maybe_identifier
-    idx, identifier_name = identifier.token_next_by(t=token_types.Name)
+    idx, identifier_name = identifier.token_next_by(
+        t=token_types.Name, i=token_groups.Function
+    )
 
     tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
     if next_token and next_token.match(token_types.Punctuation, "."):
@@ -106,63 +107,6 @@ def _parse_identifier(
         **table_field_map,
         table_name: {**table_field_map.get(table_name, {}), field_map_key: alias_name},
     }
-
-
-def _parse_comparisons(where_group: token_groups.Where) -> typing.Optional[Comparisons]:
-    if where_group is None:
-        return None
-
-    _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
-
-    if or_keyword is not None:
-        raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
-
-    _, between_keyword = where_group.token_next_by(m=(token_types.Keyword, "BETWEEN"))
-
-    if between_keyword is not None:
-        raise exceptions.NotSupportedError(
-            "BETWEEN not yet supported in WHERE clauses."
-        )
-
-    comparisons: Comparisons = {"by_id": None, "by_index": []}
-    condition_idx = 0
-
-    while True:
-        _, and_keyword = where_group.token_next_by(m=(token_types.Keyword, "AND"))
-        should_have_and_keyword = condition_idx > 0
-        condition_idx, condition = where_group.token_next_by(
-            i=token_groups.Comparison, idx=condition_idx
-        )
-
-        if condition is None:
-            break
-
-        assert not should_have_and_keyword or (
-            should_have_and_keyword and and_keyword is not None
-        )
-
-        _, column = condition.token_next_by(i=token_groups.Identifier)
-        # Assumes column has form <table_name>.<column_name>
-        condition_column = column.tokens[-1]
-
-        _, equals = condition.token_next_by(m=(token_types.Comparison, "="))
-        if equals is None:
-            raise exceptions.NotSupportedError(
-                "Only column-value equality conditions are currently supported"
-            )
-
-        _, condition_check = condition.token_next_by(t=token_types.Literal)
-        condition_value = extract_value(condition_check)
-
-        column_name = str(condition_column.value)
-
-        if column_name == "id":
-            assert isinstance(condition_value, str)
-            comparisons["by_id"] = condition_value
-        else:
-            comparisons["by_index"].append((column_name, condition_value))
-
-    return comparisons
 
 
 def extract_value(
@@ -213,8 +157,10 @@ def extract_value(
 
 
 def parse_identifiers(
-    identifiers: typing.Union[token_groups.Identifier, token_groups.IdentifierList],
-    table_name: str,
+    identifiers: typing.Union[
+        token_groups.Identifier, token_groups.IdentifierList, token_groups.Function
+    ],
+    table_name: typing.Optional[str] = None,
 ) -> TableFieldMap:
     """Extract raw table name, column name, and alias from SQL identifiers.
 
@@ -226,6 +172,11 @@ def parse_identifiers(
     --------
     typing.Tuple of table_names, column names, and column aliases.
     """
+    if isinstance(identifiers, token_groups.Function):
+        return _parse_identifier(
+            {table_name: {}}, token_groups.Identifier([identifiers])
+        )
+
     if isinstance(identifiers, token_groups.Identifier):
         return _parse_identifier({table_name: {}}, identifiers)
 
@@ -245,28 +196,67 @@ def parse_where(
     --------
     FQL query expression that matches on the same conditions as the WHERE clause.
     """
-    comparisons = _parse_comparisons(where_group)
-
-    if comparisons is None:
+    if where_group is None:
         return q.intersection(q.match(q.index(f"all_{collection_name}")))
 
-    matched_records = []
+    _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
 
-    if comparisons["by_id"] is not None:
-        if any(comparisons["by_index"]):
-            raise exceptions.NotSupportedError(
-                "When querying by ID, including other conditions in the WHERE "
-                "clause is not supported."
-            )
+    if or_keyword is not None:
+        raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
 
-        return q.ref(q.collection(collection_name), comparisons["by_id"])
+    _, between_keyword = where_group.token_next_by(m=(token_types.Keyword, "BETWEEN"))
 
-    for comparison_field, comparison_value in comparisons["by_index"]:
-        matched_records.append(
-            q.match(
-                q.index(f"{collection_name}_by_{comparison_field}"),
-                comparison_value,
-            )
+    if between_keyword is not None:
+        raise exceptions.NotSupportedError(
+            "BETWEEN not yet supported in WHERE clauses."
         )
+
+    comparisons: Comparisons = {"by_id": None, "by_index": []}
+    matched_records = []
+    condition_idx = 0
+
+    while True:
+        _, and_keyword = where_group.token_next_by(m=(token_types.Keyword, "AND"))
+        should_have_and_keyword = condition_idx > 0
+        condition_idx, condition = where_group.token_next_by(
+            i=token_groups.Comparison, idx=condition_idx
+        )
+
+        if condition is None:
+            break
+
+        assert not should_have_and_keyword or (
+            should_have_and_keyword and and_keyword is not None
+        )
+
+        _, column = condition.token_next_by(i=token_groups.Identifier)
+        # Assumes column has form <table_name>.<column_name>
+        condition_column = column.tokens[-1]
+
+        _, comparison = condition.token_next_by(t=token_types.Comparison)
+
+        if comparison.value == "=":
+            _, condition_check = condition.token_next_by(t=token_types.Literal)
+            condition_value = extract_value(condition_check)
+
+            column_name = str(condition_column.value)
+
+            if column_name == "id":
+                assert isinstance(condition_value, str)
+                matched_records.append(
+                    q.singleton(q.ref(q.collection(collection_name), condition_value))
+                )
+            else:
+                matched_records.append(
+                    q.match(
+                        q.index(f"{collection_name}_by_{column_name}"),
+                        condition_value,
+                    )
+                )
+                comparisons["by_index"].append((column_name, condition_value))
+        else:
+            raise exceptions.NotSupportedError(
+                "Only column-value equality conditions are currently supported"
+            )
 
     return q.intersection(*matched_records)

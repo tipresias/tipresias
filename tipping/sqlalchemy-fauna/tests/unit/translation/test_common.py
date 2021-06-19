@@ -51,10 +51,15 @@ def test_extract_value(_label, token_value, expected):
 
 
 table_name = "users"
-select_singl_column = f"SELECT users.id FROM {table_name}"
-select_columns = f"SELECT users.id, users.name FROM {table_name}"
+select_singl_column = f"SELECT {table_name}.id FROM {table_name}"
+select_columns = f"SELECT {table_name}.id, {table_name}.name FROM {table_name}"
 select_aliases = (
-    f"SELECT users.id AS user_id, users.name AS user_name FROM {table_name}"
+    f"SELECT {table_name}.id AS user_id, {table_name}.name AS user_name "
+    "FROM {table_name}"
+)
+select_function = f"SELECT count({table_name}.id) FROM {table_name}"
+select_function_alias = (
+    f"SELECT count({table_name}.id) AS count_{table_name} FROM {table_name}"
 )
 
 
@@ -64,12 +69,14 @@ select_aliases = (
         (select_singl_column, ["ref"], ["id"]),
         (select_columns, ["ref", "name"], ["id", "name"]),
         (select_aliases, ["ref", "name"], ["user_id", "user_name"]),
+        (select_function, [f"count({table_name}.id)"], [f"count({table_name}.id)"]),
+        (select_function_alias, [f"count({table_name}.id)"], [f"count_{table_name}"]),
     ],
 )
 def test_parse_identifiers(sql_query, expected_columns, expected_aliases):
     statement = sqlparse.parse(sql_query)[0]
     _, identifiers = statement.token_next_by(
-        i=(token_groups.Identifier, token_groups.IdentifierList)
+        i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
 
     table_field_map = common.parse_identifiers(identifiers, table_name)

@@ -15,6 +15,7 @@ from sqlalchemy import (
     exc as sqlalchemy_exceptions,
     select,
     delete,
+    func,
 )
 from sqlalchemy.orm import relationship
 import pytest
@@ -269,3 +270,20 @@ def test_relationships(fauna_session, parent_child):
     fauna_session.commit()
 
     assert len(parent.children) == 3
+
+
+def test_count(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    assert fauna_session.execute(select(func.count(User.id))).scalar() == 0
+
+    names = ["Bob", "Linda", "Louise"]
+
+    for name in names:
+        fauna_session.add(User(name=name))
+
+    fauna_session.commit()
+
+    assert fauna_session.execute(select(func.count(User.id))).scalar() == len(names)

@@ -1,5 +1,6 @@
 """DBAPI for use in the FaunaDialect."""
 
+from functools import reduce
 from typing import Dict, Any, List, Tuple, Union, Optional, Sequence, cast
 from datetime import date, datetime, time
 
@@ -9,7 +10,7 @@ from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
 
 from . import exceptions
-from .fauna import FaunaClient
+from .fauna import FaunaClient, translation
 
 
 PopulatedResultDescription = Tuple[Optional[str], Any, None, None, None, None, bool]
@@ -121,9 +122,19 @@ class FaunaQuery:
             ]
 
         _, identifiers = sql_statement.token_next_by(
-            i=(token_groups.Identifier, token_groups.IdentifierList)
+            i=(
+                token_groups.Identifier,
+                token_groups.IdentifierList,
+                token_groups.Function,
+            )
         )
-        _, column_names, alias_names = self._parse_identifiers(identifiers)
+        table_column_alias_map = translation.parse_identifiers(identifiers)
+        acc_map: Dict[str, str] = {}
+        column_alias_map = reduce(
+            lambda acc, curr: acc if any(acc) else curr[1],
+            table_column_alias_map.items(),
+            acc_map,
+        )
 
         return [
             (
@@ -135,7 +146,7 @@ class FaunaQuery:
                 None,  # [scale]
                 True,  # [null_ok]
             )
-            for column_name, alias_name in zip(*(column_names, alias_names))
+            for column_name, alias_name in column_alias_map.items()
         ]
 
     def _parse_identifiers(

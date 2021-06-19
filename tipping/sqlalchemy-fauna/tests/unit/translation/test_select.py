@@ -18,6 +18,8 @@ partial_select_info_schema_constraints = (
 )
 select_multiple_tables = "SELECT * FROM users, accounts"
 select_all = "SELECT * FROM users"
+select_sum = "SELECT sum(users.id) AS sum_1 from users"
+select_avg = "SELECT avg(users.id) AS avg_1 from users"
 
 # These are meant to be examples of SQL queries that are not currently supported,
 # but that are valid SQL and so should be supported eventually.
@@ -53,6 +55,8 @@ select_all = "SELECT * FROM users"
         ),
         (select_multiple_tables, "Only one table per query is currently supported"),
         (select_all, "Wildcards"),
+        (select_sum, "SUM"),
+        (select_avg, "AVG"),
     ],
 )
 def test_translating_unsupported_select(sql_query, error_message):
@@ -74,6 +78,7 @@ select_aliases = (
     "FROM users"
 )
 select_where_equals = select_values + " WHERE users.name = 'Bob'"
+select_count = "SELECT count(users.id) AS count_1 from users"
 
 
 @pytest.mark.parametrize(
@@ -85,6 +90,7 @@ select_where_equals = select_values + " WHERE users.name = 'Bob'"
         select_values,
         select_aliases,
         select_where_equals,
+        select_count,
     ],
 )
 def test_translate_select(sql_query):

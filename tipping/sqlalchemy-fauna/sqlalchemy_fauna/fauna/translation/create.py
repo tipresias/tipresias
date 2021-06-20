@@ -348,27 +348,22 @@ def _translate_create_table(
         {"name": table_name, "data": {"metadata": {"fields": field_metadata}}}
     )
 
-    index_queries: List[QueryExpression] = []
-
-    index_queries.append(
+    index_queries = [
+        q.create_index(
+            {
+                "name": f"{table_name}_by_ref_terms",
+                "source": q.collection(table_name),
+                "terms": [{"field": ["ref"]}],
+            }
+        ),
         q.create_index(
             {"name": f"all_{table_name}", "source": q.collection(table_name)}
-        )
-    )
+        ),
+    ]
 
     for field_name, field_data in field_metadata.items():
-        is_foreign_key = "references" in field_data.keys()
-        is_unique = field_data["unique"]
-        # Unique columns and foreign keys are such common filter values
-        # that it makes sense to automatically create indices for them
-        # on table creation.
-        is_useful_index = is_unique or is_foreign_key
-        if (
-            # Fauna can query documents by ID by default, so we don't need
-            # an index for it
-            field_name == "id"
-            or not is_useful_index
-        ):
+        # Fauna can query documents by ID by default, so we don't need an index for it
+        if field_name == "id":
             continue
 
         index_queries.append(
@@ -376,11 +371,25 @@ def _translate_create_table(
                 {
                     "name": f"{table_name}_by_{field_name}",
                     "source": q.collection(table_name),
-                    "terms": [{"field": ["data", field_name]}],
-                    "unique": is_unique,
+                    "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
                 }
             )
         )
+
+        # We need a separate index for unique fields, because the values-based indices
+        # contain the 'ref' field, which will never be duplicated
+        is_unique = field_data["unique"]
+        if is_unique:
+            index_queries.append(
+                q.create_index(
+                    {
+                        "name": f"{table_name}_by_{field_name}_terms",
+                        "source": q.collection(table_name),
+                        "terms": [{"field": ["data", field_name]}],
+                        "unique": is_unique,
+                    }
+                )
+            )
 
     index_queries.append(
         q.let(
@@ -388,10 +397,9 @@ def _translate_create_table(
             {"data": [{"id": q.var("collection")}]},
         )
     )
-    # Unfortunately, expressions in a 'Do' FQL function can not refer to each other
-    # (maybe there's some sort of hoisting or pre-run validation check under the hood?),
-    # so we have to run the expressions that create the collection
-    # and its associated indices separately
+    # Fauna creates resources asynchronously, so we cannot create and use a collection
+    # in the same transaction, so we have to run the expressions that create
+    # the collection and the indices that depend on it separately
     return [create_collection, q.do(*index_queries)]
 
 
@@ -414,18 +422,30 @@ def _translate_create_index(
         for token in column_identifiers.flatten()
         if token.ttype == token_types.Name
     ]
+
+    if len(index_fields) > 1:
+        raise exceptions.NotSupportedError(
+            "Creating indexes for multiple columns is not currently supported."
+        )
+
     index_terms = [{"field": ["data", index_field]} for index_field in index_fields]
-    index_name = f"{table_name}_by_{'_and_'.join(sorted(index_fields))}"
+    index_name = f"{table_name}_by_{'_and_'.join(sorted(index_fields))}_terms"
 
     return [
         q.do(
-            q.create_index(
-                {
-                    "name": index_name,
-                    "source": q.collection(table_name),
-                    "terms": index_terms,
-                    "unique": unique,
-                }
+            q.if_(
+                # We automatically create indices for some fields on collection creation,
+                # so we can skip explicit index creation if it already exists.
+                q.exists(q.index(index_name)),
+                None,
+                q.create_index(
+                    {
+                        "name": index_name,
+                        "source": q.collection(table_name),
+                        "terms": index_terms,
+                        "unique": unique,
+                    }
+                ),
             ),
             q.let(
                 {"collection": q.collection(table_name)},

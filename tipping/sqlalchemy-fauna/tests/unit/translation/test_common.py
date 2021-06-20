@@ -92,10 +92,6 @@ def test_parse_identifiers(sql_query, expected_columns, expected_aliases):
 
 
 select_values = "SELECT * FROM users"
-where_greater = select_values + f" WHERE users.age > {FAKE.pyint()}"
-where_greater_equal = select_values + f" WHERE users.age >= {FAKE.pyint()}"
-where_less = select_values + f" WHERE users.age < {FAKE.pyint()}"
-where_less_equal = select_values + f" WHERE users.age <= {FAKE.pyint()}"
 where_not_equal_1 = select_values + f" WHERE users.age <> {FAKE.pyint()}"
 where_not_equal_2 = select_values + f" WHERE users.age != {FAKE.pyint()}"
 where_between = (
@@ -116,41 +112,19 @@ where_or = (
     ["sql_query", "error_message"],
     [
         (
-            where_greater,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            where_greater_equal,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            where_less,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
-            where_less_equal,
-            "Only column-value equality conditions are currently supported",
-        ),
-        (
             where_not_equal_1,
-            "Only column-value equality conditions are currently supported",
+            "Only the following comparisons are supported in WHERE clauses",
         ),
         (
             where_not_equal_2,
-            "Only column-value equality conditions are currently supported",
+            "Only the following comparisons are supported in WHERE clauses",
         ),
-        (
-            where_between,
-            "BETWEEN not yet supported in WHERE clauses",
-        ),
+        (where_between, "BETWEEN not yet supported in WHERE clauses"),
         (
             where_like,
-            "Only column-value equality conditions are currently supported",
+            "Only the following comparisons are supported in WHERE clauses",
         ),
-        (
-            where_in,
-            "Only column-value equality conditions are currently supported",
-        ),
+        (where_in, "Only single, literal values are permitted"),
         (where_or, "OR not yet supported in WHERE clauses."),
     ],
 )
@@ -168,11 +142,24 @@ where_and = (
     where_equals
     + f" AND users.age = {FAKE.pyint()} AND users.finger_count = {FAKE.pyint()}"
 )
+where_greater = select_values + f" WHERE users.age > {FAKE.pyint()}"
+where_greater_equal = select_values + f" WHERE users.age >= {FAKE.pyint()}"
+where_less = select_values + f" WHERE users.age < {FAKE.pyint()}"
+where_less_equal = select_values + f" WHERE users.age <= {FAKE.pyint()}"
 
 
 @pytest.mark.parametrize(
     "sql_query",
-    [select_values, where_id, where_equals, where_and],
+    [
+        select_values,
+        where_id,
+        where_equals,
+        where_and,
+        where_greater,
+        where_greater_equal,
+        where_less,
+        where_less_equal,
+    ],
 )
 def test_translate_select(sql_query):
     statement = sqlparse.parse(sql_query)[0]

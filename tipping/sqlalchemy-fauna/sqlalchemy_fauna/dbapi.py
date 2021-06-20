@@ -285,8 +285,15 @@ def escape(value):
         return "'{}'".format(value.replace("'", "''"))
     if isinstance(value, bool):
         return "TRUE" if value else "FALSE"
-    if isinstance(value, (int, float)):
-        return str(value)
+    if not isinstance(value, str):
+        # Numpy integers and floats are technically not instances of int or float,
+        # so we make sure that we don't have a numeric string, then check if it's numeric
+        # via brute force.
+        try:
+            int(value)
+            return str(value)
+        except TypeError:
+            pass
     if isinstance(value, (datetime, date)):
         # We have to treat datetimes as strings in the SQL query, because otherwise sqlparser
         # doesn't know what to do with them

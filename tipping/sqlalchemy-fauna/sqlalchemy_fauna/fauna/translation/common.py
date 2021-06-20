@@ -61,6 +61,53 @@ def _parse_date_value(value):
     return date_value.astimezone(timezone.utc)
 
 
+def extract_value(
+    token: token_groups.Token,
+) -> typing.Union[str, int, float, None, bool, datetime]:
+    """ "Get the raw value from an SQL token.
+
+    Params:
+    -------
+    token: An SQL token created by sqlparse.
+
+    Returns:
+    --------
+    Raw token value of the relevant Python data type.
+    """
+    value = token.value
+
+    if value.upper() == "NONE":
+        return None
+
+    if value.upper() == "TRUE":
+        return True
+
+    if value.upper() == "FALSE":
+        return False
+
+    if "." in value:
+        try:
+            return float(value)
+        except ValueError:
+            pass
+
+    try:
+        return int(value)
+    except ValueError:
+        pass
+
+    # sqlparse leaves ' characters around string values in the SQL, so we strip them out.
+    string_value = re.sub("^'|'$", "", value)
+
+    try:
+        return _parse_date_value(string_value)
+    # Seems that mypy can't find the very real ParserError
+    except (parser.ParserError, ValueError, _NumericString):  # type: ignore
+        pass
+
+    return string_value
+
+
 def _parse_identifier(
     table_field_map: TableFieldMap,
     identifier: typing.Union[token_groups.Identifier, TokenType],
@@ -109,53 +156,6 @@ def _parse_identifier(
     }
 
 
-def extract_value(
-    token: token_groups.Token,
-) -> typing.Union[str, int, float, None, bool, datetime]:
-    """ "Get the raw value from an SQL token.
-
-    Params:
-    -------
-    token: An SQL token created by sqlparse.
-
-    Returns:
-    --------
-    Raw token value of the relevant Python data type.
-    """
-    value = token.value
-
-    if value.upper() == "NONE":
-        return None
-
-    if value.upper() == "TRUE":
-        return True
-
-    if value.upper() == "FALSE":
-        return False
-
-    if "." in value:
-        try:
-            return float(value)
-        except ValueError:
-            pass
-
-    try:
-        return int(value)
-    except ValueError:
-        pass
-
-    # sqlparse leaves ' characters around string values in the SQL, so we strip them out.
-    string_value = re.sub("^'|'$", "", value)
-
-    try:
-        return _parse_date_value(string_value)
-    # Seems that mypy can't find the very real ParserError
-    except (parser.ParserError, ValueError, _NumericString):  # type: ignore
-        pass
-
-    return string_value
-
-
 def parse_identifiers(
     identifiers: typing.Union[
         token_groups.Identifier, token_groups.IdentifierList, token_groups.Function
@@ -183,6 +183,105 @@ def parse_identifiers(
     return reduce(_parse_identifier, identifiers, {table_name: {}})
 
 
+def _parse_comparison(
+    collection_name: str, comparison_group: token_groups.Comparison
+) -> QueryExpression:
+    _, comparison_identifier = comparison_group.token_next_by(i=token_groups.Identifier)
+    table_field_map = _parse_identifier({collection_name: {}}, comparison_identifier)
+    field_names = list(table_field_map[collection_name].keys())
+    assert len(field_names) == 1
+    field_name = field_names[0]
+
+    comp_idx, comparison = comparison_group.token_next_by(t=token_types.Comparison)
+    value_idx, comparison_check = comparison_group.token_next_by(t=token_types.Literal)
+
+    if comparison_check is None:
+        raise exceptions.NotSupportedError(
+            "Only single, literal values are permitted for comparisons "
+            "in WHERE clauses."
+        )
+    comparison_value = extract_value(comparison_check)
+
+    convert_to_ref_set = lambda index_match: q.join(
+        index_match,
+        q.lambda_(
+            ["value", "ref"],
+            q.match(q.index(f"{collection_name}_by_ref_terms"), q.var("ref")),
+        ),
+    )
+
+    equality_range = q.range(
+        q.match(q.index(f"{collection_name}_by_{field_name}")),
+        [comparison_value],
+        [comparison_value],
+    )
+
+    if comparison.value == "=":
+        if field_name == "ref":
+            assert isinstance(comparison_value, str)
+            return q.singleton(q.ref(q.collection(collection_name), comparison_value))
+
+        return q.if_(
+            q.exists(q.index(f"{collection_name}_by_{field_name}_terms")),
+            q.match(
+                q.index(f"{collection_name}_by_{field_name}_terms"),
+                comparison_value,
+            ),
+            convert_to_ref_set(equality_range),
+        )
+
+    if comparison.value in [">=", ">"]:
+        field_value_greater_than_literal = value_idx > comp_idx
+
+        if field_value_greater_than_literal:
+            inclusive_comparison_range = q.range(
+                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                [comparison_value],
+                [],
+            )
+        else:
+            inclusive_comparison_range = q.range(
+                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                [],
+                [comparison_value],
+            )
+
+        if comparison.value == ">=":
+            return convert_to_ref_set(inclusive_comparison_range)
+
+        return convert_to_ref_set(
+            q.difference(inclusive_comparison_range, equality_range)
+        )
+
+    if comparison.value in ["<=", "<"]:
+        field_value_less_than_literal = value_idx > comp_idx
+
+        if field_value_less_than_literal:
+            inclusive_comparison_range = q.range(
+                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                [],
+                [comparison_value],
+            )
+        else:
+            inclusive_comparison_range = q.range(
+                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                [comparison_value],
+                [],
+            )
+
+        if comparison.value == "<=":
+            return convert_to_ref_set(inclusive_comparison_range)
+
+        return convert_to_ref_set(
+            q.difference(inclusive_comparison_range, equality_range)
+        )
+
+    raise exceptions.NotSupportedError(
+        "Only the following comparisons are supported in WHERE clauses: "
+        "'=', '>', '>=', '<', '<='"
+    )
+
+
 def parse_where(
     where_group: token_groups.Where, collection_name: str
 ) -> QueryExpression:
@@ -200,63 +299,35 @@ def parse_where(
         return q.intersection(q.match(q.index(f"all_{collection_name}")))
 
     _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
-
     if or_keyword is not None:
         raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
 
     _, between_keyword = where_group.token_next_by(m=(token_types.Keyword, "BETWEEN"))
-
     if between_keyword is not None:
         raise exceptions.NotSupportedError(
             "BETWEEN not yet supported in WHERE clauses."
         )
 
-    comparisons: Comparisons = {"by_id": None, "by_index": []}
-    matched_records = []
-    condition_idx = 0
+    comparisons = []
+    comparison_idx = 0
 
     while True:
-        _, and_keyword = where_group.token_next_by(m=(token_types.Keyword, "AND"))
-        should_have_and_keyword = condition_idx > 0
-        condition_idx, condition = where_group.token_next_by(
-            i=token_groups.Comparison, idx=condition_idx
+
+        _, and_keyword = where_group.token_next_by(
+            m=(token_types.Keyword, "AND"), idx=comparison_idx
+        )
+        should_have_and_keyword = comparison_idx > 0
+        comparison_idx, comparison = where_group.token_next_by(
+            i=token_groups.Comparison, idx=comparison_idx
         )
 
-        if condition is None:
+        if comparison is None:
             break
 
         assert not should_have_and_keyword or (
             should_have_and_keyword and and_keyword is not None
         )
 
-        _, column = condition.token_next_by(i=token_groups.Identifier)
-        # Assumes column has form <table_name>.<column_name>
-        condition_column = column.tokens[-1]
+        comparisons.append(_parse_comparison(collection_name, comparison))
 
-        _, comparison = condition.token_next_by(t=token_types.Comparison)
-
-        if comparison.value == "=":
-            _, condition_check = condition.token_next_by(t=token_types.Literal)
-            condition_value = extract_value(condition_check)
-
-            column_name = str(condition_column.value)
-
-            if column_name == "id":
-                assert isinstance(condition_value, str)
-                matched_records.append(
-                    q.singleton(q.ref(q.collection(collection_name), condition_value))
-                )
-            else:
-                matched_records.append(
-                    q.match(
-                        q.index(f"{collection_name}_by_{column_name}"),
-                        condition_value,
-                    )
-                )
-                comparisons["by_index"].append((column_name, condition_value))
-        else:
-            raise exceptions.NotSupportedError(
-                "Only column-value equality conditions are currently supported"
-            )
-
-    return q.intersection(*matched_records)
+    return q.intersection(*comparisons)

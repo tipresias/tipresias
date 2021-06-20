@@ -88,7 +88,16 @@ def fake_fixture_data(
             "season_game", axis=1, errors="ignore"
         )
         # Recreates data cleaning performed in data_import
-        .assign(date=lambda df: pd.to_datetime(df["date"], utc=True))
+        .assign(
+            date=lambda df: pd.to_datetime(df["date"], utc=True),
+            # Team name translations happen in augury's data pipeline
+            home_team=lambda df: df["home_team"].map(
+                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
+            ),
+            away_team=lambda df: df["away_team"].map(
+                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
+            ),
+        )
     )
 
 

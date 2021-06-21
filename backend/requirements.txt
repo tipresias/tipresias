@@ -15,7 +15,7 @@ sendgrid>=6.0,<6.99
 requests
 joblib
 gunicorn
-rollbar==0.15.2
+rollbar==0.16.1
 
 # Browser automation
 MechanicalSoup

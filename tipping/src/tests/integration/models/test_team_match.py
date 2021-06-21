@@ -5,6 +5,7 @@ from datetime import timezone
 import numpy as np
 from faker import Faker
 import pytest
+from sqlalchemy import select
 
 from tests.fixtures import data_factories
 from tipping.models import TeamMatch, Team, Match
@@ -12,12 +13,6 @@ from tipping.models.team import TeamName
 
 
 FAKE = Faker()
-
-
-@pytest.fixture
-def team():
-    team_name = np.random.choice(TeamName.values())
-    return Team(name=team_name)
 
 
 @pytest.fixture
@@ -29,8 +24,13 @@ def match():
     )
 
 
-def test_team_match_creation(fauna_session, team, match):
-    fauna_session.add(team)
+def test_team_match_creation(fauna_session, match):
+    team_name = np.random.choice(TeamName.values())
+    team = (
+        fauna_session.execute(select(Team).where(Team.name == team_name))
+        .scalars()
+        .one()
+    )
     fauna_session.add(match)
     fauna_session.commit()
 
@@ -52,10 +52,6 @@ def test_team_match_creation(fauna_session, team, match):
 def test_from_fixture(fauna_session):
     fixture_matches = data_factories.fake_fixture_data()
     next_match = fixture_matches.iloc[np.random.randint(0, len(fixture_matches)), :]
-
-    fauna_session.add(Team(name=next_match["home_team"]))
-    fauna_session.add(Team(name=next_match["away_team"]))
-    fauna_session.commit()
 
     team_matches = TeamMatch.from_fixture(fauna_session, next_match)
 

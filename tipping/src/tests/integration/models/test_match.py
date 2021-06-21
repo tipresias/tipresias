@@ -10,7 +10,6 @@ import pytest
 
 from tests.fixtures import data_factories
 from tipping.models.match import Match
-from tipping.models.team import Team
 
 
 FAKE = Faker()
@@ -36,16 +35,6 @@ def test_from_future_fixtures(fauna_session):
     upcoming_fixture_matches = fixture_matches.query(
         "round_number == @upcoming_round_number"
     )
-
-    teams = (
-        fixture_matches["home_team"]
-        .append(fixture_matches["away_team"])
-        .drop_duplicates()
-    )
-    for team in teams:
-        fauna_session.add(Team(name=team))
-
-    fauna_session.commit()
 
     with freeze_time(patched_date):
         assert fauna_session.execute(select(func.count(Match.id))).scalar() == 0

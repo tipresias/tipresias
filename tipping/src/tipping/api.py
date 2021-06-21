@@ -9,12 +9,14 @@ import pandas as pd
 from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.tipping import MonashSubmitter
+from tipping.models import Match
+from tipping import settings
+
 
 DEC = 12
 THIRTY_FIRST = 31
 JAN = 1
 FIRST = 1
-FIRST_ROUND = 1
 
 
 def _select_matches_from_current_round(
@@ -91,15 +93,25 @@ def update_fixture_data(verbose: int = 1) -> None:
     """
     right_now = datetime.now(tz=timezone.utc)  # pylint: disable=unused-variable
 
-    matches_from_current_round = _fetch_current_round_fixture(verbose)
+    matches_from_upcoming_round = _fetch_current_round_fixture(verbose)
 
-    if matches_from_current_round is None:
+    if matches_from_upcoming_round is None:
         return None
 
-    current_round = matches_from_current_round["round_number"].drop_duplicates().iloc[0]
-    future_matches = matches_from_current_round.query("date > @right_now")
+    upcoming_round = (
+        matches_from_upcoming_round["round_number"].drop_duplicates().iloc[0]
+    )
+    future_matches = matches_from_upcoming_round.query("date > @right_now")
 
-    data_export.update_fixture_data(future_matches, current_round)
+    data_export.update_fixture_data(future_matches, upcoming_round)
+
+    db_session = settings.Session()
+    matches = Match.from_future_fixtures(db_session, future_matches, upcoming_round)
+
+    for match in matches:
+        db_session.add(match)
+
+    db_session.commit()
 
     return None
 

@@ -7,6 +7,7 @@ provider:
   stage: prod
   region: ap-southeast-2
   environment:
+    DATABASE_HOST: ${env:DATABASE_HOST, 'db.fauna.com'}
     DATA_SCIENCE_SERVICE: ${env:DATA_SCIENCE_SERVICE}
     DATA_SCIENCE_SERVICE_TOKEN: ${env:DATA_SCIENCE_SERVICE_TOKEN}
     FAUNA_SCHEME: ${env:FAUNA_SCHEME, 'https'}

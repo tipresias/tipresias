@@ -28,8 +28,16 @@ black
 pytest
 pytest-env
 faker==8.7.0
-mypy==0.812
+mypy==0.902
 freezegun==1.1.0
 factory_boy
 coverage
 candystore==0.3.3
+
+# Types
+types-freezegun
+types-pkg_resources
+types-python-dateutil
+types-pytz
+types-requests
+types-toml

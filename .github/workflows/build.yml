@@ -114,6 +114,7 @@ jobs:
           DATA_SCIENCE_SERVICE: ${{ secrets.DATA_SCIENCE_SERVICE }}
           DATA_SCIENCE_SERVICE_TOKEN: ${{ secrets.DATA_SCIENCE_SERVICE_TOKEN }}
           DIGITAL_OCEAN_USER: ${{ secrets.DIGITAL_OCEAN_USER }}
+          FAUNA_SECRET: ${{ secrets.FAUNA_SECRET }}
           FOOTY_TIPS_USERNAME: ${{ secrets.FOOTY_TIPS_USERNAME }}
           FOOTY_TIPS_PASSWORD: ${{ secrets.FOOTY_TIPS_PASSWORD }}
           MONASH_USERNAME: ${{ secrets.MONASH_USERNAME }}

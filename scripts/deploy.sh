@@ -68,6 +68,6 @@ docker run \
   -e TIPRESIAS_APP_TOKEN=${TIPRESIAS_APP_TOKEN} \
   --name ${TIPPING_CONTAINER} \
   ${SERVICE_DOCKER_IMAGE} \
-  -c "npx sls deploy && alembic upgrade head"
+  /bin/bash -c "npx sls deploy && alembic upgrade head"
 
 echo "Serverless functions deployed!"

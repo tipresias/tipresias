@@ -54,6 +54,7 @@ TIPPING_CONTAINER=tipping
 docker run \
   -v ${HOME}/.aws:/app/.aws \
   -e AWS_SHARED_CREDENTIALS_FILE=".aws/credentials" \
+  -e DATABASE_HOST='db.fauna.com' \
   -e DATA_SCIENCE_SERVICE=${DATA_SCIENCE_SERVICE} \
   -e DATA_SCIENCE_SERVICE_TOKEN=${DATA_SCIENCE_SERVICE_TOKEN} \
   -e FAUNA_SECRET=${FAUNA_SECRET} \

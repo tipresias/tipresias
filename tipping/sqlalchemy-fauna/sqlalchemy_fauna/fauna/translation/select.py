@@ -282,7 +282,10 @@ def _translate_select_from_info_schema_constraints(
         q.get(q.collection(condition_value)),
     )
     collection_field_names = q.map_(
-        q.lambda_(["field_name", "field_metadata"], q.var("field_name")),
+        q.lambda_(
+            ["field_name", "field_metadata"],
+            q.if_(q.equals(q.var("field_name"), "ref"), "id", q.var("field_name")),
+        ),
         q.to_array(collection_fields),
     )
 
@@ -292,7 +295,7 @@ def _translate_select_from_info_schema_constraints(
     term_field = (
         q.let(
             {"field": q.select("field", q.var("term"))},
-            last_field_name,
+            q.if_(q.equals("ref", last_field_name), "id", last_field_name),
         ),
     )
     index_term_fields = q.union(

@@ -1,6 +1,7 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
 import typing
+from functools import reduce, partial
 
 from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
@@ -8,37 +9,87 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value, parse_identifiers, parse_where
+from .common import extract_value, parse_identifiers, parse_where, FieldAliasMap
 
+
+CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
+FunctionMap = typing.Dict[str, CalculationFunction]
+TableFunctionMap = typing.Dict[str, FunctionMap]
 
 DATA_KEY = "data"
 
 
-def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpression:
-    _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
+def _parse_function(
+    collection: QueryExpression,
+    function_map: typing.Dict[str, typing.Any],
+    identifier: token_groups.Identifier,
+) -> TableFunctionMap:
+    if not isinstance(identifier, token_groups.Identifier):
+        return function_map
 
-    if wildcard is not None:
-        raise exceptions.NotSupportedError("Wildcards ('*') are not yet supported")
+    _, function_token = identifier.token_next_by(i=token_groups.Function)
 
-    idx, identifiers = statement.token_next_by(
-        i=(token_groups.Identifier, token_groups.IdentifierList)
+    if function_token is None:
+        return function_map
+
+    function_name = function_token.value
+    _, function_id = function_token.token_next_by(i=token_groups.Identifier)
+    _, function_type = function_id.token_next_by(t=token_types.Name)
+    _, parenthesis = function_token.token_next_by(i=token_groups.Parenthesis)
+    _, table_column_identifier = parenthesis.token_next_by(i=token_groups.Identifier)
+    _, table_column_separator = table_column_identifier.token_next_by(
+        m=(token_types.Punctuation, ".")
     )
-    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
-    idx, table_identifier = statement.token_next_by(
-        i=(token_groups.Identifier), idx=idx
-    )
-    table_name = table_identifier.value
-    table_field_map = parse_identifiers(identifiers, table_name)
 
-    # We can only handle one table at a time for now
-    if len(table_field_map.keys()) > 1:
+    if table_column_separator is None:
+        table_name = None
+    else:
+        _, table = table_column_identifier.token_next_by(t=token_types.Name)
+        table_name = table.value
+
+    if function_type.value.lower() == "count":
+        calculation = q.count(collection)
+    else:
         raise exceptions.NotSupportedError(
-            "Only one table per query is currently supported"
+            "AVG and SUM functions are not yet supported."
         )
 
-    _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
-    records_to_select = parse_where(where_group, table_name)
+    if table_name is None:
+        assert len(function_map.keys()) == 1
+        return {
+            key: {**value, function_name: calculation}
+            for key, value in function_map.items()
+        }
 
+    return {
+        **function_map,
+        table_name: {**function_map.get(table_name, {}), function_name: calculation},
+    }
+
+
+def _parse_functions(
+    collection: QueryExpression,
+    identifiers: typing.Union[
+        token_groups.Identifier, token_groups.IdentifierList, token_groups.Function
+    ],
+    table_name: str,
+) -> TableFunctionMap:
+    parse_function = partial(_parse_function, collection)
+
+    if isinstance(identifiers, token_groups.Function):
+        return parse_function({table_name: {}}, token_groups.Identifier([identifiers]))
+
+    if isinstance(identifiers, token_groups.Identifier):
+        return parse_function({table_name: {}}, identifiers)
+
+    return reduce(parse_function, identifiers, {table_name: {}})
+
+
+def _translate_select_with_functions(
+    records_to_select: QueryExpression,
+    field_alias_map: FieldAliasMap,
+    field_functions: FunctionMap,
+):
     document_items = q.to_array(q.get(q.var("document")))
     flattened_items = q.union(
         q.map_(
@@ -56,17 +107,74 @@ def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpr
         )
     )
 
-    field_map = table_field_map[table_name]
-    selected_fields = list(field_map.keys())
+    selected_fields = list(field_alias_map.keys())
     field_alias = q.select_with_default(
         q.var("field"),
-        field_map,
+        field_alias_map,
         default=q.var("field"),
     )
-    field_value = q.select_with_default(
+
+    field_function = q.select_with_default(
+        q.var("field"), field_functions, default=None
+    )
+    basic_field = q.select_with_default(
+        q.var("field"), q.to_object(flattened_items), default=None
+    )
+    field_value = q.if_(q.is_null(field_function), basic_field, field_function)
+    translate_to_alias = q.lambda_("field", [field_alias, field_value])
+    # We map over selected_fields to build document object to maintain the order
+    # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
+    # to the incorrect keys.
+    aliased_document = q.to_object(q.map_(translate_to_alias, selected_fields))
+
+    paginated_documents = q.paginate(q.var("documents"))
+    # With aggregation functions, standard behaviour is to include the first value
+    # if any column selections are part of the query, at least until we add support
+    # for GROUP BY
+    first_document = q.select_with_default(0, paginated_documents, default={})
+    query_response = q.let(
+        {"documents": records_to_select},
+        q.map_(
+            q.lambda_("document", aliased_document),
+            [first_document],
+        ),
+    )
+
+    return q.let(
+        {"response": query_response},
+        {DATA_KEY: q.var("response")},
+    )
+
+
+def _translate_select_without_functions(
+    records_to_select: QueryExpression, field_alias_map: FieldAliasMap
+):
+    document_items = q.to_array(q.get(q.var("document")))
+    flattened_items = q.union(
+        q.map_(
+            q.lambda_(
+                ["key", "value"],
+                q.if_(
+                    q.equals(q.var("key"), DATA_KEY),
+                    q.to_array(q.var("value")),
+                    # We put single key/value pairs in nested arrays to match
+                    # the structure of the nested 'data' key/values
+                    [[q.var("key"), q.var("value")]],
+                ),
+            ),
+            document_items,
+        )
+    )
+
+    selected_fields = list(field_alias_map.keys())
+    field_alias = q.select_with_default(
         q.var("field"),
-        q.to_object(flattened_items),
-        default=None,
+        field_alias_map,
+        default=q.var("field"),
+    )
+
+    field_value = q.select_with_default(
+        q.var("field"), q.to_object(flattened_items), default=None
     )
     translate_to_alias = q.lambda_("field", [field_alias, field_value])
     # We map over selected_fields to build document object to maintain the order
@@ -74,9 +182,50 @@ def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpr
     # to the incorrect keys.
     aliased_document = q.to_object(q.map_(translate_to_alias, selected_fields))
 
-    return q.map_(
-        q.lambda_("document", aliased_document),
-        q.paginate(records_to_select),
+    return q.let(
+        {"documents": records_to_select},
+        q.map_(
+            q.lambda_("document", aliased_document),
+            q.paginate(q.var("documents")),
+        ),
+    )
+
+
+def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpression:
+    _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
+
+    if wildcard is not None:
+        raise exceptions.NotSupportedError("Wildcards ('*') are not yet supported")
+
+    idx, identifiers = statement.token_next_by(
+        i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
+    )
+    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
+    idx, table_identifier = statement.token_next_by(
+        i=(token_groups.Identifier), idx=idx
+    )
+    table_name = table_identifier.value
+    table_field_alias_map = parse_identifiers(identifiers, table_name)
+    field_alias_map = table_field_alias_map[table_name]
+
+    # We can only handle one table at a time for now
+    if len(table_field_alias_map.keys()) > 1:
+        raise exceptions.NotSupportedError(
+            "Only one table per query is currently supported"
+        )
+
+    _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
+    records_to_select = parse_where(where_group, table_name)
+
+    table_functions = _parse_functions(q.var("documents"), identifiers, table_name)
+    field_functions = table_functions[table_name]
+
+    return (
+        _translate_select_with_functions(
+            records_to_select, field_alias_map, field_functions
+        )
+        if len(field_functions)
+        else _translate_select_without_functions(records_to_select, field_alias_map)
     )
 
 

@@ -44,8 +44,17 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
     table_field_map = parse_identifiers(column_identifiers, table_name)
 
     idx, value_group = statement.token_next_by(i=token_groups.Values, idx=idx)
-    _, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
+
+    val_idx, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
     value_identifiers = parenthesis_group.flatten()
+
+    _, additional_parenthesis_group = value_group.token_next_by(
+        i=token_groups.Parenthesis, idx=val_idx
+    )
+    if additional_parenthesis_group is not None:
+        raise exceptions.NotSupportedError(
+            "INSERT for multiple rows is not supported yet."
+        )
 
     values = [
         value
@@ -123,4 +132,5 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
             document_fields,
         )
     )
+
     return [q.let({"document": create_document}, {"data": [document_response]})]

@@ -15,10 +15,12 @@ from sqlalchemy import (
     exc as sqlalchemy_exceptions,
     select,
     delete,
+    func,
 )
 from sqlalchemy.orm import relationship
 import pytest
 from faker import Faker
+import numpy as np
 
 from sqlalchemy_fauna import dialect
 
@@ -111,7 +113,7 @@ def test_create_index(fauna_engine):
             break
 
     assert name_index is not None
-    assert name_index["column_names"] == ["name"]
+    assert set(name_index["column_names"]) == set(["name", "date_joined", "age"])
 
 
 def test_drop_table(fauna_engine, user_model):
@@ -187,7 +189,7 @@ def test_select_all_records(fauna_session, user_model):
     assert len(users) == len(user_records)
 
 
-def test_select_by_unique_field(fauna_session, user_model):
+def test_select_by_field_equality(fauna_session, user_model):
     User, Base = user_model
     fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
@@ -208,6 +210,123 @@ def test_select_by_unique_field(fauna_session, user_model):
     # It fetches the records
     assert len(user_records) == 1
     assert user_records[0].name == filter_name
+
+
+def test_select_by_numeric_field_comparison(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    names_ages = [
+        ("Teddy", 45),
+        ("Bob", 40),
+        ("Linda", 40),
+        ("Tina", 14),
+        ("Louise", 10),
+    ]
+    users = [
+        User(name=name, date_joined=datetime.now(), age=age) for name, age in names_ages
+    ]
+    for user in users:
+        fauna_session.add(user)
+    fauna_session.commit()
+
+    filter_age = 40
+
+    # For '=' comparison
+    user_records = (
+        fauna_session.execute(select(User).where(User.age == filter_age))
+        .scalars()
+        .all()
+    )
+
+    assert len(user_records) == 2
+    for user_record in user_records:
+        assert user_record.age == filter_age
+
+    # For '>' comparison
+    user_records = (
+        fauna_session.execute(select(User).where(User.age > filter_age)).scalars().all()
+    )
+
+    assert len(user_records) == 1
+    for user_record in user_records:
+        assert user_record.age > filter_age
+
+    # For '>=' comparison
+    user_records = (
+        fauna_session.execute(select(User).where(User.age >= filter_age))
+        .scalars()
+        .all()
+    )
+
+    assert len(user_records) == 3
+    for user_record in user_records:
+        assert user_record.age >= filter_age
+
+    # For '<' comparison
+    user_records = (
+        fauna_session.execute(select(User).where(User.age < filter_age)).scalars().all()
+    )
+
+    assert len(user_records) == 2
+    for user_record in user_records:
+        assert user_record.age < filter_age
+
+    # For '<=' comparison
+    user_records = (
+        fauna_session.execute(select(User).where(User.age <= filter_age))
+        .scalars()
+        .all()
+    )
+
+    assert len(user_records) == 4
+    for user_record in user_records:
+        assert user_record.age <= filter_age
+
+
+def test_select_with_numpy_numeric_comparison(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    names_ages = [
+        ("Teddy", 45),
+        ("Bob", 40),
+        ("Linda", 40),
+        ("Tina", 14),
+        ("Louise", 10),
+    ]
+    users = [
+        User(name=name, date_joined=datetime.now(), age=age) for name, age in names_ages
+    ]
+    for user in users:
+        fauna_session.add(user)
+    fauna_session.commit()
+
+    # Numpy ints & floats aren't instances of Python's native int or float,
+    # so we need to perform extra checks to account for them.
+    filter_age = np.int16(40)
+
+    # For '=' comparison
+    user_records = (
+        fauna_session.execute(select(User).where(User.age == filter_age))
+        .scalars()
+        .all()
+    )
+
+    assert len(user_records) == 2
+    for user_record in user_records:
+        assert user_record.age == filter_age
+
+    # For '>' comparison
+    user_records = (
+        fauna_session.execute(select(User).where(User.age > filter_age)).scalars().all()
+    )
+
+    assert len(user_records) == 1
+    for user_record in user_records:
+        assert user_record.age > filter_age
 
 
 def test_delete_record_conditionally(fauna_session, user_model):
@@ -269,3 +388,20 @@ def test_relationships(fauna_session, parent_child):
     fauna_session.commit()
 
     assert len(parent.children) == 3
+
+
+def test_count(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    assert fauna_session.execute(select(func.count(User.id))).scalar() == 0
+
+    names = ["Bob", "Linda", "Louise"]
+
+    for name in names:
+        fauna_session.add(User(name=name))
+
+    fauna_session.commit()
+
+    assert fauna_session.execute(select(func.count(User.id))).scalar() == len(names)

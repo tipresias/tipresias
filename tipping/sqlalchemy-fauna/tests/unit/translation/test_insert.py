@@ -20,6 +20,9 @@ def test_translate_create(sql_query):
 
 
 insert_all_cols = "INSERT INTO users VALUES ('Bob', 30, 10)"
+insert_multiple = (
+    "INSERT INTO users (name, age) VALUES ('Bob', 45), ('Linda', 45), ('Tina', 14)"
+)
 
 
 @pytest.mark.parametrize(
@@ -28,7 +31,8 @@ insert_all_cols = "INSERT INTO users VALUES ('Bob', 30, 10)"
         (
             insert_all_cols,
             "INSERT INTO statements without column names are not currently supported",
-        )
+        ),
+        (insert_multiple, "INSERT for multiple rows is not supported yet"),
     ],
 )
 def test_translating_unsupported_create(sql_query, error_message):

@@ -48,23 +48,26 @@ echo "Main app deployed!"
 echo "Deploying serverless functions..."
 
 SERVICE_DOCKER_IMAGE=cfranklin11/${PROJECT_ID}_tipping:latest
+TIPPING_CONTAINER=tipping
 
 # Need lots of deploy-specific env vars, so we use docker instead of docker-compose
 docker run \
   -v ${HOME}/.aws:/app/.aws \
   -e AWS_SHARED_CREDENTIALS_FILE=".aws/credentials" \
-  -e TIPRESIAS_APP=${TIPRESIAS_APP} \
-  -e TIPRESIAS_APP_TOKEN=${TIPRESIAS_APP_TOKEN} \
   -e DATA_SCIENCE_SERVICE=${DATA_SCIENCE_SERVICE} \
   -e DATA_SCIENCE_SERVICE_TOKEN=${DATA_SCIENCE_SERVICE_TOKEN} \
-  -e TIPPING_SERVICE_TOKEN=${TIPPING_SERVICE_TOKEN} \
-  -e MONASH_USERNAME=${MONASH_USERNAME} \
-  -e MONASH_PASSWORD=${MONASH_PASSWORD} \
+  -e FAUNA_SECRET=${FAUNA_SECRET} \
   -e FOOTY_TIPS_USERNAME=${FOOTY_TIPS_USERNAME} \
   -e FOOTY_TIPS_PASSWORD=${FOOTY_TIPS_PASSWORD} \
-  -e SPLASH_SERVICE=${SPLASH_SERVICE} \
+  -e MONASH_USERNAME=${MONASH_USERNAME} \
+  -e MONASH_PASSWORD=${MONASH_PASSWORD} \
   -e ROLLBAR_TOKEN=${ROLLBAR_TOKEN} \
+  -e SPLASH_SERVICE=${SPLASH_SERVICE} \
+  -e TIPPING_SERVICE_TOKEN=${TIPPING_SERVICE_TOKEN} \
+  -e TIPRESIAS_APP=${TIPRESIAS_APP} \
+  -e TIPRESIAS_APP_TOKEN=${TIPRESIAS_APP_TOKEN} \
+  --name ${TIPPING_CONTAINER} \
   ${SERVICE_DOCKER_IMAGE} \
-  npx sls deploy
+  npx sls deploy && alembic upgrade head
 
 echo "Serverless functions deployed!"

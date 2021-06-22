@@ -9,6 +9,7 @@ from dateutil import parser
 
 from sqlparse import sql as token_groups
 from sqlparse import tokens as token_types
+from sqlparse.tokens import _TokenType as TokenType
 from mypy_extensions import TypedDict
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
@@ -29,7 +30,8 @@ Comparisons = TypedDict(
     },
 )
 
-TableFieldMap = typing.Dict[typing.Optional[str], typing.Dict[str, str]]
+FieldAliasMap = typing.Dict[str, str]
+TableFieldMap = typing.Dict[typing.Optional[str], FieldAliasMap]
 
 
 class _NumericString(Exception):
@@ -57,112 +59,6 @@ def _parse_date_value(value):
         return date_value.replace(tzinfo=timezone.utc)
 
     return date_value.astimezone(timezone.utc)
-
-
-def _parse_identifier(
-    table_field_map: TableFieldMap,
-    maybe_identifier: typing.Any,
-) -> TableFieldMap:
-    if not isinstance(
-        maybe_identifier, (token_groups.Identifier, token_groups.IdentifierList)
-    ):
-        return table_field_map
-
-    identifier = maybe_identifier
-    idx, identifier_name = identifier.token_next_by(t=token_types.Name)
-
-    tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
-    if next_token and next_token.match(token_types.Punctuation, "."):
-        idx = tok_idx
-        table_name = identifier_name.value
-        idx, column_identifier = identifier.token_next_by(t=token_types.Name, idx=idx)
-        column_name = column_identifier.value
-    else:
-        table_name = None
-        column_name = identifier_name.value
-
-    idx, as_keyword = identifier.token_next_by(m=(token_types.Keyword, "AS"), idx=idx)
-
-    if as_keyword is not None:
-        _, alias_identifier = identifier.token_next_by(
-            i=token_groups.Identifier, idx=idx
-        )
-        alias_name = alias_identifier.value
-    else:
-        alias_name = column_name
-
-    if table_name is None:
-        assert len(table_field_map.keys()) == 1
-        return {
-            key: {**value, column_name: alias_name}
-            for key, value in table_field_map.items()
-        }
-
-    # Fauna doesn't have an 'id' field, so we extract the ID value from the 'ref' included
-    # in query responses, but we still want to map the field name to aliases as with other
-    # fields for consistency when passing results to SQLAlchemy
-    field_map_key = "ref" if column_name == "id" else column_name
-    return {
-        **table_field_map,
-        table_name: {**table_field_map.get(table_name, {}), field_map_key: alias_name},
-    }
-
-
-def _parse_comparisons(where_group: token_groups.Where) -> typing.Optional[Comparisons]:
-    if where_group is None:
-        return None
-
-    _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
-
-    if or_keyword is not None:
-        raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
-
-    _, between_keyword = where_group.token_next_by(m=(token_types.Keyword, "BETWEEN"))
-
-    if between_keyword is not None:
-        raise exceptions.NotSupportedError(
-            "BETWEEN not yet supported in WHERE clauses."
-        )
-
-    comparisons: Comparisons = {"by_id": None, "by_index": []}
-    condition_idx = 0
-
-    while True:
-        _, and_keyword = where_group.token_next_by(m=(token_types.Keyword, "AND"))
-        should_have_and_keyword = condition_idx > 0
-        condition_idx, condition = where_group.token_next_by(
-            i=token_groups.Comparison, idx=condition_idx
-        )
-
-        if condition is None:
-            break
-
-        assert not should_have_and_keyword or (
-            should_have_and_keyword and and_keyword is not None
-        )
-
-        _, column = condition.token_next_by(i=token_groups.Identifier)
-        # Assumes column has form <table_name>.<column_name>
-        condition_column = column.tokens[-1]
-
-        _, equals = condition.token_next_by(m=(token_types.Comparison, "="))
-        if equals is None:
-            raise exceptions.NotSupportedError(
-                "Only column-value equality conditions are currently supported"
-            )
-
-        _, condition_check = condition.token_next_by(t=token_types.Literal)
-        condition_value = extract_value(condition_check)
-
-        column_name = str(condition_column.value)
-
-        if column_name == "id":
-            assert isinstance(condition_value, str)
-            comparisons["by_id"] = condition_value
-        else:
-            comparisons["by_index"].append((column_name, condition_value))
-
-    return comparisons
 
 
 def extract_value(
@@ -212,9 +108,59 @@ def extract_value(
     return string_value
 
 
+def _parse_identifier(
+    table_field_map: TableFieldMap,
+    identifier: typing.Union[token_groups.Identifier, TokenType],
+) -> TableFieldMap:
+    if not isinstance(identifier, token_groups.Identifier):
+        return table_field_map
+
+    idx, identifier_name = identifier.token_next_by(
+        t=token_types.Name, i=token_groups.Function
+    )
+
+    tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
+    if next_token and next_token.match(token_types.Punctuation, "."):
+        idx = tok_idx
+        table_name = identifier_name.value
+        idx, column_identifier = identifier.token_next_by(t=token_types.Name, idx=idx)
+        column_name = column_identifier.value
+    else:
+        table_name = None
+        column_name = identifier_name.value
+
+    idx, as_keyword = identifier.token_next_by(m=(token_types.Keyword, "AS"), idx=idx)
+
+    if as_keyword is not None:
+        _, alias_identifier = identifier.token_next_by(
+            i=token_groups.Identifier, idx=idx
+        )
+        alias_name = alias_identifier.value
+    else:
+        alias_name = column_name
+
+    if table_name is None:
+        assert len(table_field_map.keys()) == 1
+        return {
+            key: {**value, column_name: alias_name}
+            for key, value in table_field_map.items()
+        }
+
+    # Fauna doesn't have an 'id' field, so we extract the ID value from the 'ref' included
+    # in query responses, but we still want to map the field name to aliases as with other
+    # fields for consistency when passing results to SQLAlchemy
+    field_map_key = "ref" if column_name == "id" else column_name
+    return {
+        **table_field_map,
+        table_name: {**table_field_map.get(table_name, {}), field_map_key: alias_name},
+    }
+
+
 def parse_identifiers(
-    identifiers: typing.Union[token_groups.Identifier, token_groups.IdentifierList],
-    table_name: str,
+    identifiers: typing.Union[
+        token_groups.Identifier, token_groups.IdentifierList, token_groups.Function
+    ],
+    table_name: typing.Optional[str] = None,
 ) -> TableFieldMap:
     """Extract raw table name, column name, and alias from SQL identifiers.
 
@@ -226,10 +172,114 @@ def parse_identifiers(
     --------
     typing.Tuple of table_names, column names, and column aliases.
     """
+    if isinstance(identifiers, token_groups.Function):
+        return _parse_identifier(
+            {table_name: {}}, token_groups.Identifier([identifiers])
+        )
+
     if isinstance(identifiers, token_groups.Identifier):
         return _parse_identifier({table_name: {}}, identifiers)
 
     return reduce(_parse_identifier, identifiers, {table_name: {}})
+
+
+def _parse_comparison(
+    collection_name: str, comparison_group: token_groups.Comparison
+) -> QueryExpression:
+    _, comparison_identifier = comparison_group.token_next_by(i=token_groups.Identifier)
+    table_field_map = _parse_identifier({collection_name: {}}, comparison_identifier)
+    field_names = list(table_field_map[collection_name].keys())
+    assert len(field_names) == 1
+    field_name = field_names[0]
+
+    comp_idx, comparison = comparison_group.token_next_by(t=token_types.Comparison)
+    value_idx, comparison_check = comparison_group.token_next_by(t=token_types.Literal)
+
+    if comparison_check is None:
+        raise exceptions.NotSupportedError(
+            "Only single, literal values are permitted for comparisons "
+            "in WHERE clauses."
+        )
+    comparison_value = extract_value(comparison_check)
+
+    convert_to_ref_set = lambda index_match: q.join(
+        index_match,
+        q.lambda_(
+            ["value", "ref"],
+            q.match(q.index(f"{collection_name}_by_ref_terms"), q.var("ref")),
+        ),
+    )
+
+    equality_range = q.range(
+        q.match(q.index(f"{collection_name}_by_{field_name}")),
+        [comparison_value],
+        [comparison_value],
+    )
+
+    if comparison.value == "=":
+        if field_name == "ref":
+            assert isinstance(comparison_value, str)
+            return q.singleton(q.ref(q.collection(collection_name), comparison_value))
+
+        return q.if_(
+            q.exists(q.index(f"{collection_name}_by_{field_name}_terms")),
+            q.match(
+                q.index(f"{collection_name}_by_{field_name}_terms"),
+                comparison_value,
+            ),
+            convert_to_ref_set(equality_range),
+        )
+
+    if comparison.value in [">=", ">"]:
+        field_value_greater_than_literal = value_idx > comp_idx
+
+        if field_value_greater_than_literal:
+            inclusive_comparison_range = q.range(
+                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                [comparison_value],
+                [],
+            )
+        else:
+            inclusive_comparison_range = q.range(
+                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                [],
+                [comparison_value],
+            )
+
+        if comparison.value == ">=":
+            return convert_to_ref_set(inclusive_comparison_range)
+
+        return convert_to_ref_set(
+            q.difference(inclusive_comparison_range, equality_range)
+        )
+
+    if comparison.value in ["<=", "<"]:
+        field_value_less_than_literal = value_idx > comp_idx
+
+        if field_value_less_than_literal:
+            inclusive_comparison_range = q.range(
+                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                [],
+                [comparison_value],
+            )
+        else:
+            inclusive_comparison_range = q.range(
+                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                [comparison_value],
+                [],
+            )
+
+        if comparison.value == "<=":
+            return convert_to_ref_set(inclusive_comparison_range)
+
+        return convert_to_ref_set(
+            q.difference(inclusive_comparison_range, equality_range)
+        )
+
+    raise exceptions.NotSupportedError(
+        "Only the following comparisons are supported in WHERE clauses: "
+        "'=', '>', '>=', '<', '<='"
+    )
 
 
 def parse_where(
@@ -245,28 +295,39 @@ def parse_where(
     --------
     FQL query expression that matches on the same conditions as the WHERE clause.
     """
-    comparisons = _parse_comparisons(where_group)
-
-    if comparisons is None:
+    if where_group is None:
         return q.intersection(q.match(q.index(f"all_{collection_name}")))
 
-    matched_records = []
+    _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
+    if or_keyword is not None:
+        raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
 
-    if comparisons["by_id"] is not None:
-        if any(comparisons["by_index"]):
-            raise exceptions.NotSupportedError(
-                "When querying by ID, including other conditions in the WHERE "
-                "clause is not supported."
-            )
-
-        return q.ref(q.collection(collection_name), comparisons["by_id"])
-
-    for comparison_field, comparison_value in comparisons["by_index"]:
-        matched_records.append(
-            q.match(
-                q.index(f"{collection_name}_by_{comparison_field}"),
-                comparison_value,
-            )
+    _, between_keyword = where_group.token_next_by(m=(token_types.Keyword, "BETWEEN"))
+    if between_keyword is not None:
+        raise exceptions.NotSupportedError(
+            "BETWEEN not yet supported in WHERE clauses."
         )
 
-    return q.intersection(*matched_records)
+    comparisons = []
+    comparison_idx = 0
+
+    while True:
+
+        _, and_keyword = where_group.token_next_by(
+            m=(token_types.Keyword, "AND"), idx=comparison_idx
+        )
+        should_have_and_keyword = comparison_idx > 0
+        comparison_idx, comparison = where_group.token_next_by(
+            i=token_groups.Comparison, idx=comparison_idx
+        )
+
+        if comparison is None:
+            break
+
+        assert not should_have_and_keyword or (
+            should_have_and_keyword and and_keyword is not None
+        )
+
+        comparisons.append(_parse_comparison(collection_name, comparison))
+
+    return q.intersection(*comparisons)

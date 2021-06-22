@@ -1,16 +1,45 @@
 """Data model for AFL matches."""
 
-from datetime import datetime, timedelta
+from __future__ import annotations
 
-from sqlalchemy import Column, Integer, DateTime, String, ForeignKey
-from sqlalchemy.orm import relationship, validates
+import typing
+from datetime import datetime, timedelta, timezone
 
-from tipping.models.base import Base, ValidationError
-from tipping.models.team import Team
+from sqlalchemy import (
+    Column,
+    Integer,
+    DateTime,
+    String,
+    ForeignKey,
+    select,
+    func,
+)
+from sqlalchemy.orm import relationship, validates, session as orm_session
+
+import pandas as pd
+from mypy_extensions import TypedDict
+
+from .base import Base, ValidationError
+from .team import Team
+from .team_match import TeamMatch
 
 
 MIN_ROUND_NUMBER = 1
 MIN_MARGIN = 0
+FIRST_ROUND = 1
+
+
+FixtureData = TypedDict(
+    "FixtureData",
+    {
+        "date": datetime,
+        "year": int,
+        "round_number": int,
+        "home_team": str,
+        "away_team": str,
+        "venue": str,
+    },
+)
 
 
 class Match(Base):
@@ -27,6 +56,125 @@ class Match(Base):
     winner = relationship(Team)
     team_matches = relationship("TeamMatch", back_populates="match")
     predictions = relationship("Prediction", back_populates="match")
+
+    _db_session = None
+
+    @classmethod
+    def from_future_fixtures(
+        cls,
+        session: orm_session.Session,
+        fixture_matches: pd.DataFrame,
+        upcoming_round: int,
+    ) -> typing.List[Match]:
+        """Create match objects from upcoming fixture data.
+
+        Params:
+        -------
+        fixture_matches: Data frame of raw fixture data, without match scores.
+        upcoming_round: The current round or next if between rounds.
+
+        Returns:
+        --------
+        None
+        """
+        right_now = datetime.now(tz=timezone.utc)
+
+        saved_match_count = session.execute(
+            select(func.count(Match.id)).where(
+                Match.start_date_time > right_now,
+                Match.round_number == upcoming_round,
+            )
+        ).scalar()
+        future_matches = fixture_matches.query("date > @right_now")
+
+        if saved_match_count > 0 and saved_match_count == len(future_matches):
+            return []
+
+        year = future_matches["year"].max()
+
+        past_matches = (
+            (session.execute(select(Match).where(Match.start_date_time < right_now)))
+            .scalars()
+            .all()
+        )
+
+        prev_match = (
+            max(past_matches, key=lambda match: match.start_date_time)
+            if any(past_matches)
+            else None
+        )
+
+        if prev_match is not None:
+            assert upcoming_round in (prev_match.round_number + 1, FIRST_ROUND), (
+                "Expected upcoming round number to be 1 greater than previous round "
+                f"or 1, but upcoming round is {upcoming_round} in {year}, "
+                f" and previous round was {prev_match.round_number} "
+                f"in {prev_match.start_date_time.year}"
+            )
+
+        matches = []
+
+        for fixture_datum in future_matches.to_dict("records"):
+            match = Match.get_or_new(
+                session,
+                start_date_time=fixture_datum["date"],
+                round_number=fixture_datum["round_number"],
+                venue=fixture_datum["venue"],
+            )
+
+            team_matches = TeamMatch.from_fixture(session, fixture_datum)
+
+            for team_match in team_matches:
+                match.team_matches.append(team_match)
+
+            matches.append(match)
+
+        return matches
+
+    @classmethod
+    def get_or_new(
+        cls,
+        session: orm_session.Session,
+        start_date_time=None,
+        round_number=None,
+        venue=None,
+    ) -> Match:
+        """Get or instantiate a match object.
+
+        Params:
+        -------
+        start_date_time: When the match starts.
+        round_number: Round in which the match takes place.
+        venue: Stadium where the match is played.
+
+        Returns:
+        --------
+        A match record.
+        """
+        raw_date: datetime = (
+            start_date_time.to_pydatetime()
+            if isinstance(start_date_time, pd.Timestamp)
+            else start_date_time
+        )
+
+        match_date = raw_date.astimezone(timezone.utc)
+
+        maybe_match = session.execute(
+            select(Match).where(
+                Match.start_date_time == match_date,
+                Match.round_number == int(round_number),
+                Match.venue == venue,
+            )
+        ).scalar()
+
+        if maybe_match:
+            return maybe_match
+
+        return Match(
+            start_date_time=match_date,
+            round_number=int(round_number),
+            venue=venue,
+        )
 
     @validates("round_number")
     def validate_at_least_min_round(self, _key, round_number):

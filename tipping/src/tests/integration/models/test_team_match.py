@@ -2,24 +2,17 @@
 
 from datetime import timezone
 
-# from sqlalchemy import select
-from sqlalchemy.orm import sessionmaker
-
 import numpy as np
 from faker import Faker
 import pytest
+from sqlalchemy import select
 
+from tests.fixtures import data_factories
 from tipping.models import TeamMatch, Team, Match
 from tipping.models.team import TeamName
 
 
 FAKE = Faker()
-
-
-@pytest.fixture
-def team():
-    team_name = np.random.choice(TeamName.values())
-    return Team(name=team_name)
 
 
 @pytest.fixture
@@ -31,16 +24,15 @@ def match():
     )
 
 
-def test_team_match_creation(fauna_engine, team, match):
-    DBSession = sessionmaker(bind=fauna_engine)
-    session = DBSession()
-
-    session.add(team)
-    session.add(match)
-    session.commit()
-
-    # team_id = session.execute(select(Team.id)).scalars().first()
-    # match_id = session.execute(select(Match.id)).scalars().first()
+def test_team_match_creation(fauna_session, match):
+    team_name = np.random.choice(TeamName.values())
+    team = (
+        fauna_session.execute(select(Team).where(Team.name == team_name))
+        .scalars()
+        .one()
+    )
+    fauna_session.add(match)
+    fauna_session.commit()
 
     team_match = TeamMatch(
         team_id=team.id,
@@ -48,10 +40,23 @@ def test_team_match_creation(fauna_engine, team, match):
         at_home=FAKE.pybool(),
         score=np.random.randint(0, 100),
     )
-    session.add(team_match)
-    session.commit()
+    fauna_session.add(team_match)
+    fauna_session.commit()
 
     assert team_match.id is not None
     assert team_match.team.id == team.id
     assert team_match.match.id == match.id
     assert match.team_matches[0].score == team_match.score
+
+
+def test_from_fixture(fauna_session):
+    fixture_matches = data_factories.fake_fixture_data()
+    next_match = fixture_matches.iloc[np.random.randint(0, len(fixture_matches)), :]
+
+    team_matches = TeamMatch.from_fixture(fauna_session, next_match)
+
+    for team_match in team_matches:
+        if team_match.at_home:
+            assert team_match.team.name == next_match["home_team"]
+        else:
+            assert team_match.team.name == next_match["away_team"]

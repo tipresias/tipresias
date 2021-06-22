@@ -46,22 +46,24 @@ def test_get_table_names(user_model, fauna_engine):
         assert "users" in fauna_dialect.get_table_names(connection)
 
 
+users_columns = [
+    "id",
+    "name",
+    "date_joined",
+    "age",
+    "finger_count",
+    "is_premium_member",
+    "account_credit",
+    "job",
+]
+
+
 def test_get_columns(user_model, fauna_engine):
     _, Base = user_model
     Base.metadata.create_all(fauna_engine)
     fauna_dialect = dialect.FaunaDialect()
 
     with fauna_engine.connect() as connection:
-        users_columns = [
-            "id",
-            "name",
-            "date_joined",
-            "age",
-            "finger_count",
-            "is_premium_member",
-            "account_credit",
-            "job",
-        ]
         queried_columns = fauna_dialect.get_columns(connection, "users")
         assert {column["name"] for column in queried_columns} == set(users_columns)
 
@@ -74,5 +76,8 @@ def test_get_indexes(user_model, fauna_engine):
     with fauna_engine.connect() as connection:
         queried_indexes = fauna_dialect.get_indexes(connection, "users")
         index_names = {index["name"] for index in queried_indexes}
+        expected_index_names = [
+            f"users_by_{col}" for col in users_columns if col != "id"
+        ] + ["all_users", "users_by_ref_terms", "users_by_name_terms"]
 
-        assert index_names == set(["all_users", "users_by_name"])
+        assert index_names == set(expected_index_names)

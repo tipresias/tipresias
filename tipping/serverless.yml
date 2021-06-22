@@ -1,24 +1,4 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
-
 service: tipping
-# app and org for use with dashboard.serverless.com
-#app: your-app-name
-#org: your-org-name
-
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
-# frameworkVersion: "=X.X.X"
 
 provider:
   name: aws
@@ -27,19 +7,20 @@ provider:
   stage: prod
   region: ap-southeast-2
   environment:
-    PYTHON_ENV: production
-    TIPRESIAS_APP: ${env:TIPRESIAS_APP}
-    TIPRESIAS_APP_TOKEN: ${env:TIPRESIAS_APP_TOKEN}
     DATA_SCIENCE_SERVICE: ${env:DATA_SCIENCE_SERVICE}
     DATA_SCIENCE_SERVICE_TOKEN: ${env:DATA_SCIENCE_SERVICE_TOKEN}
-    TIPPING_SERVICE_TOKEN: ${env:TIPPING_SERVICE_TOKEN}
-    MONASH_USERNAME: ${env:MONASH_USERNAME}
-    MONASH_PASSWORD: ${env:MONASH_PASSWORD}
+    FAUNA_SCHEME: ${env:FAUNA_SCHEME, 'https'}
+    FAUNA_SECRET: ${env:FAUNA_SECRET}
     FOOTY_TIPS_USERNAME: ${env:FOOTY_TIPS_USERNAME}
     FOOTY_TIPS_PASSWORD: ${env:FOOTY_TIPS_PASSWORD}
-    SPLASH_SERVICE: ${env:SPLASH_SERVICE}
+    MONASH_USERNAME: ${env:MONASH_USERNAME}
+    MONASH_PASSWORD: ${env:MONASH_PASSWORD}
+    PYTHON_ENV: ${env:PYTHON_ENV, 'production'}
     ROLLBAR_TOKEN: ${env:ROLLBAR_TOKEN}
-    FAUNA_SCHEME: https
+    SPLASH_SERVICE: ${env:SPLASH_SERVICE}
+    TIPPING_SERVICE_TOKEN: ${env:TIPPING_SERVICE_TOKEN}
+    TIPRESIAS_APP: ${env:TIPRESIAS_APP}
+    TIPRESIAS_APP_TOKEN: ${env:TIPRESIAS_APP_TOKEN}
 plugins:
   - serverless-offline
   - serverless-python-requirements

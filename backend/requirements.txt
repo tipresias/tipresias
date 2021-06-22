@@ -33,3 +33,11 @@ freezegun==1.1.0
 factory_boy
 coverage
 candystore==0.3.3
+
+# Types
+types-freezegun
+types-pkg_resources
+types-python-dateutil
+types-pytz
+types-requests
+types-toml

@@ -72,7 +72,7 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
     }
 
     collection = q.get(q.collection(table_name))
-    field_metadata = q.select(["data", "metadata", "fields"], collection, default=[])
+    field_metadata = q.select(["data", "metadata", "fields"], collection, default={})
 
     get_field_value = lambda doc: q.select(
         q.var("field_name"),

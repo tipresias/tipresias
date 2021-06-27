@@ -13,6 +13,7 @@ from .drop import translate_drop
 from .insert import translate_insert
 from .delete import translate_delete
 from .update import translate_update
+from .alter import translate_alter
 
 
 def format_sql_query(sql_query: str) -> str:
@@ -58,5 +59,8 @@ def translate_sql_to_fql(
 
     if sql_statement.token_first().match(token_types.DML, "UPDATE"):
         return translate_update(sql_statement)
+
+    if sql_statement.token_first().match(token_types.DDL, "ALTER"):
+        return translate_alter(sql_statement)
 
     raise exceptions.NotSupportedError()

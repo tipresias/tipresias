@@ -78,7 +78,7 @@ select_aliases = (
     "FROM users"
 )
 select_where_equals = select_values + " WHERE users.name = 'Bob'"
-select_count = "SELECT count(users.id) AS count_1 from users"
+select_count = "SELECT count(users.id) AS count_1 FROM users"
 
 
 @pytest.mark.parametrize(

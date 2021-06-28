@@ -183,8 +183,56 @@ def parse_identifiers(
     return reduce(_parse_identifier, identifiers, {table_name: {}})
 
 
+def _parse_is_null(
+    where_group: token_groups.Where,
+    collection_name: str,
+    starting_idx: typing.Optional[int],
+) -> QueryExpression:
+    idx = starting_idx or 0
+    idx, comparison_identifier = where_group.token_next_by(
+        i=token_groups.Identifier, idx=idx
+    )
+    table_field_map = _parse_identifier({collection_name: {}}, comparison_identifier)
+    field_names = list(table_field_map[collection_name].keys())
+    assert len(field_names) == 1
+    field_name = field_names[0]
+
+    idx, is_keyword = where_group.token_next(idx, skip_ws=True, skip_cm=True)
+    idx, null_keyword = where_group.token_next(idx, skip_ws=True, skip_cm=True)
+
+    assert (
+        is_keyword
+        and is_keyword.value == "IS"
+        and null_keyword
+        and null_keyword.value == "NULL"
+    )
+
+    convert_to_ref_set = lambda index_match: q.join(
+        index_match,
+        q.lambda_(
+            ["value", "ref"],
+            q.match(q.index(f"{collection_name}_by_ref_terms"), q.var("ref")),
+        ),
+    )
+    comparison_value = None
+    equality_range = q.range(
+        q.match(q.index(f"{collection_name}_by_{field_name}")),
+        [comparison_value],
+        [comparison_value],
+    )
+
+    return q.if_(
+        q.exists(q.index(f"{collection_name}_by_{field_name}_terms")),
+        q.match(
+            q.index(f"{collection_name}_by_{field_name}_terms"),
+            comparison_value,
+        ),
+        convert_to_ref_set(equality_range),
+    )
+
+
 def _parse_comparison(
-    collection_name: str, comparison_group: token_groups.Comparison
+    comparison_group: token_groups.Comparison, collection_name: str
 ) -> QueryExpression:
     _, comparison_identifier = comparison_group.token_next_by(i=token_groups.Identifier)
     table_field_map = _parse_identifier({collection_name: {}}, comparison_identifier)
@@ -312,13 +360,12 @@ def parse_where(
     comparison_idx = 0
 
     while True:
-
-        _, and_keyword = where_group.token_next_by(
+        and_idx, and_keyword = where_group.token_next_by(
             m=(token_types.Keyword, "AND"), idx=comparison_idx
         )
         should_have_and_keyword = comparison_idx > 0
         comparison_idx, comparison = where_group.token_next_by(
-            i=token_groups.Comparison, idx=comparison_idx
+            m=(token_types.Keyword, "IS"), i=token_groups.Comparison, idx=comparison_idx
         )
 
         if comparison is None:
@@ -328,6 +375,11 @@ def parse_where(
             should_have_and_keyword and and_keyword is not None
         )
 
-        comparisons.append(_parse_comparison(collection_name, comparison))
+        comparison_query = (
+            _parse_is_null(where_group, collection_name, and_idx)
+            if comparison.value == "IS"
+            else _parse_comparison(comparison, collection_name)
+        )
+        comparisons.append(comparison_query)
 
     return q.intersection(*comparisons)

@@ -421,3 +421,21 @@ def test_select_distinct(fauna_session, user_model):
 
     assert len(distinct_ages) == 2
     assert set(distinct_ages) == set([40, 12])
+
+
+def test_select_is_null(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    user_attributes = [("Bob", "Cook"), ("Linda", "Waitress"), ("Louise", None)]
+
+    for name, job in user_attributes:
+        fauna_session.add(User(name=name, job=job))
+
+    queried_users = (
+        fauna_session.execute(select(User).where(User.job == None)).scalars().all()
+    )
+
+    assert len(queried_users) == 1
+    assert queried_users[0].job == None

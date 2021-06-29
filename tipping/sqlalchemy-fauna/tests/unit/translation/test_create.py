@@ -24,10 +24,24 @@ def test_translate_create(sql_query):
 
 
 create_check = "CREATE TABLE users (id INTEGER NOT NULL, age INTEGER CHECK (age > 40))"
+multiple_references = (
+    "CREATE TABLE users (id INTEGER NOT NULL, account_id INTEGER NOT NULL, "
+    "PRIMARY KEY (id), FOREIGN KEY(account_id) REFERENCES bank_accounts (id), "
+    "FOREIGN KEY(account_id) REFERENCES social_accounts (id))"
+)
+non_id_reference = (
+    "CREATE TABLE users (id INTEGER NOT NULL, account_name VARCHAR NOT NULL, "
+    "PRIMARY KEY (id), FOREIGN KEY(account_name) REFERENCES accounts (name))"
+)
 
 
 @pytest.mark.parametrize(
-    ["sql_query", "error_message"], [(create_check, "CHECK keyword is not supported")]
+    ["sql_query", "error_message"],
+    [
+        (create_check, "CHECK keyword is not supported"),
+        (multiple_references, "Foreign keys with multiple references"),
+        (non_id_reference, "Foreign keys referring to fields other than ID"),
+    ],
 )
 def test_translating_unsupported_create(sql_query, error_message):
     with pytest.raises(exceptions.NotSupportedError, match=error_message):

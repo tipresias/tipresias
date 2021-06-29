@@ -108,6 +108,34 @@ def extract_value(
     return string_value
 
 
+def get_foreign_key_ref(
+    foreign_value: typing.Any, references: typing.Any
+) -> QueryExpression:
+    """Get the Ref to a document associated with a foreign key value.
+
+    Params:
+    -------
+    foreign_value: The value to look up, usually an ID.
+    references: Field metadata dict that defines the collection (key) and field name (value)
+        that the foreign key refers to.
+
+    Returns:
+    --------
+    Fauna query expression that returns an array of Refs for the associated document(s).
+    """
+    assert isinstance(foreign_value, str)
+    return q.let(
+        {
+            # Assumes that there is only one reference per foreign key
+            # and that it refers to the associated collection's ID field.
+            # This is enforced via NotSupported errors when creating collections.
+            "reference": q.union(q.to_array(references)),
+            "foreign_collection": q.collection(q.select(0, q.var("reference"))),
+        },
+        q.ref(q.var("foreign_collection"), foreign_value),
+    )
+
+
 def _parse_identifier(
     table_field_map: TableFieldMap,
     identifier: typing.Union[token_groups.Identifier, TokenType],
@@ -258,6 +286,10 @@ def _parse_comparison(
         ),
     )
 
+    get_collection_fields = lambda name: q.select(
+        ["data", "metadata", "fields"], q.get(q.collection(name))
+    )
+
     equality_range = q.range(
         q.match(q.index(f"{collection_name}_by_{field_name}")),
         [comparison_value],
@@ -269,13 +301,29 @@ def _parse_comparison(
             assert isinstance(comparison_value, str)
             return q.singleton(q.ref(q.collection(collection_name), comparison_value))
 
-        return q.if_(
-            q.exists(q.index(f"{collection_name}_by_{field_name}_terms")),
-            q.match(
-                q.index(f"{collection_name}_by_{field_name}_terms"),
-                comparison_value,
+        return q.let(
+            {
+                "ref_index": q.index(f"{collection_name}_by_{field_name}_refs"),
+                "term_index": q.index(f"{collection_name}_by_{field_name}_terms"),
+                "references": q.select(
+                    [field_name, "references"], get_collection_fields(collection_name)
+                ),
+            },
+            q.if_(
+                q.exists(q.var("ref_index")),
+                q.match(
+                    q.var("ref_index"),
+                    get_foreign_key_ref(comparison_value, q.var("references")),
+                ),
+                q.if_(
+                    q.exists(q.var("term_index")),
+                    q.match(
+                        q.var("term_index"),
+                        comparison_value,
+                    ),
+                    convert_to_ref_set(equality_range),
+                ),
             ),
-            convert_to_ref_set(equality_range),
         )
 
     if comparison.value in [">=", ">"]:

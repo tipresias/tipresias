@@ -8,6 +8,7 @@ from sqlparse import tokens as token_types
 from faker import Faker
 import sqlparse
 from faunadb.objects import _Expr as QueryExpression
+from faunadb import query as q
 
 from sqlalchemy_fauna import exceptions
 from sqlalchemy_fauna.fauna.translation import common
@@ -168,4 +169,13 @@ def test_parsing_where(sql_query):
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
     fql_query = common.parse_where(where_group, "users")
+    assert isinstance(fql_query, QueryExpression)
+
+
+def test_get_foreign_key_ref():
+    fql_query = q.let(
+        {"references": {}},
+        common.get_foreign_key_ref(FAKE.credit_card_number(), q.var("references")),
+    )
+
     assert isinstance(fql_query, QueryExpression)

@@ -1,6 +1,6 @@
 """Translate a CREATE SQL query into an equivalent FQL query."""
 
-from typing import Dict, Union, List, Optional
+import typing
 from datetime import datetime
 from functools import reduce
 from copy import deepcopy
@@ -20,18 +20,22 @@ FieldMetadata = TypedDict(
     {
         "unique": bool,
         "not_null": bool,
-        "default": Union[str, int, float, bool, datetime, None],
+        "default": typing.Union[str, int, float, bool, datetime, None],
         "type": str,
+        "references": typing.Dict[str, str],
     },
 )
-FieldsMetadata = Dict[str, FieldMetadata]
+FieldsMetadata = typing.Dict[str, FieldMetadata]
 CollectionMetadata = TypedDict("CollectionMetadata", {"fields": FieldsMetadata})
 
+
+EMPTY_DICT: typing.Dict[str, typing.Any] = {}
 DEFAULT_FIELD_METADATA: FieldMetadata = {
     "unique": False,
     "not_null": False,
     "default": None,
     "type": "",
+    "references": EMPTY_DICT,
 }
 
 DATA_TYPE_MAP = {
@@ -73,7 +77,7 @@ DATA_TYPE_MAP = {
 
 
 def _contains_column_name(
-    token_group: Union[
+    token_group: typing.Union[
         token_groups.TokenList,
         token_groups.IdentifierList,
         token_groups.Identifier,
@@ -87,7 +91,7 @@ def _contains_column_name(
 def _define_primary_key(
     metadata: FieldsMetadata,
     column_definition_group: token_groups.TokenList,
-) -> Optional[FieldsMetadata]:
+) -> typing.Optional[FieldsMetadata]:
     idx, constraint_keyword = column_definition_group.token_next_by(
         m=(token_types.Keyword, "CONSTRAINT")
     )
@@ -137,7 +141,7 @@ def _define_primary_key(
 def _define_unique_constraint(
     metadata: FieldsMetadata,
     column_definition_group: token_groups.TokenList,
-) -> Optional[FieldsMetadata]:
+) -> typing.Optional[FieldsMetadata]:
     idx, unique_keyword = column_definition_group.token_next_by(
         m=(token_types.Keyword, "UNIQUE")
     )
@@ -175,7 +179,7 @@ def _define_unique_constraint(
 
 def _define_foreign_key_constraint(
     metadata: FieldsMetadata, column_definition_group: token_groups.TokenList
-) -> Optional[FieldsMetadata]:
+) -> typing.Optional[FieldsMetadata]:
     idx, foreign_keyword = column_definition_group.token_next_by(
         m=(token_types.Keyword, "FOREIGN")
     )
@@ -200,11 +204,21 @@ def _define_foreign_key_constraint(
     )
     reference_column_name = reference_column.value
 
+    if any(metadata.get(column_name, EMPTY_DICT).get("references", EMPTY_DICT)):
+        raise exceptions.NotSupportedError(
+            "Foreign keys with multiple references are not currently supported."
+        )
+
+    if reference_column_name != "id":
+        raise exceptions.NotSupportedError(
+            "Foreign keys referring to fields other than ID are not currently supported."
+        )
+
     return {
         **metadata,
         column_name: {
             **DEFAULT_FIELD_METADATA,  # type: ignore
-            **metadata.get(column_name, {}),
+            **metadata.get(column_name, EMPTY_DICT),
             "references": {reference_table_name: reference_column_name},
         },
     }
@@ -241,7 +255,7 @@ def _define_column(
     if check_keyword is not None:
         raise exceptions.NotSupportedError("CHECK keyword is not supported.")
 
-    column_metadata: Union[FieldMetadata, Dict[str, str]] = metadata.get(
+    column_metadata: typing.Union[FieldMetadata, typing.Dict[str, str]] = metadata.get(
         column_name, {}
     )
     is_primary_key = primary_key_keyword is not None
@@ -267,7 +281,7 @@ def _define_column(
         **metadata,
         column_name: {
             **DEFAULT_FIELD_METADATA,  # type: ignore
-            **metadata.get(column_name, {}),  # type: ignore
+            **metadata.get(column_name, EMPTY_DICT),  # type: ignore
             "unique": is_unique,
             "not_null": is_not_null,
             "default": default_value,
@@ -282,18 +296,18 @@ def _build_fields_metadata(
 ) -> FieldsMetadata:
     return (
         _define_primary_key(metadata, column_definition_group)
-        or _define_unique_constraint(metadata, column_definition_group)
         or _define_foreign_key_constraint(metadata, column_definition_group)
+        or _define_unique_constraint(metadata, column_definition_group)
         or _define_column(metadata, column_definition_group)
     )
 
 
 def _split_column_identifiers_by_comma(
     column_identifiers: token_groups.IdentifierList,
-) -> List[token_groups.TokenList]:
+) -> typing.List[token_groups.TokenList]:
     column_tokens = list(column_identifiers.flatten())
     column_token_list = token_groups.TokenList(column_tokens)
-    comma_idxs: List[Optional[int]] = [None]
+    comma_idxs: typing.List[typing.Optional[int]] = [None]
     comma_idx = -1
 
     while True:
@@ -333,7 +347,7 @@ def _extract_column_definitions(
 
 def _translate_create_table(
     statement: token_groups.Statement, table_token_idx: int
-) -> List[QueryExpression]:
+) -> typing.List[QueryExpression]:
     idx, table_identifier = statement.token_next_by(
         i=token_groups.Identifier, idx=table_token_idx
     )
@@ -391,6 +405,20 @@ def _translate_create_table(
                 )
             )
 
+        # We need a ref-based index for foreign keys to permit JOIN queries via matching
+        # document refs
+        is_foreign_key = any(field_data["references"])
+        if is_foreign_key:
+            index_queries.append(
+                q.create_index(
+                    {
+                        "name": f"{table_name}_by_{field_name}_refs",
+                        "source": q.collection(table_name),
+                        "terms": [{"field": ["data", field_name]}],
+                    }
+                )
+            )
+
     index_queries.append(
         q.let(
             {"collection": q.collection(table_name)},
@@ -405,7 +433,7 @@ def _translate_create_table(
 
 def _translate_create_index(
     statement: token_groups.Statement, idx: int
-) -> List[QueryExpression]:
+) -> typing.List[QueryExpression]:
     _, unique = statement.token_next_by(m=(token_types.Keyword, "UNIQUE"), idx=idx)
     idx, _ = statement.token_next_by(m=(token_types.Keyword, "ON"), idx=idx)
     _, index_params = statement.token_next_by(i=token_groups.Function, idx=idx)
@@ -455,7 +483,7 @@ def _translate_create_index(
     ]
 
 
-def translate_create(statement: token_groups.Statement) -> List[QueryExpression]:
+def translate_create(statement: token_groups.Statement) -> typing.List[QueryExpression]:
     """Translate a CREATE SQL query into an equivalent FQL query.
 
     Params:

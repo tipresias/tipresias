@@ -65,7 +65,7 @@ class TeamMatch(Base):
     @validates("score")
     def validate_postive_score(self, _key, score):
         """Validate that the score isn't negative."""
-        if score >= MIN_SCORE:
+        if score is None or score >= MIN_SCORE:
             return score
 
         raise ValidationError(

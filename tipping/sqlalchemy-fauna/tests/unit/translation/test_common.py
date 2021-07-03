@@ -179,3 +179,22 @@ def test_get_foreign_key_ref():
     )
 
     assert isinstance(fql_query, QueryExpression)
+
+
+single_table = select_values
+multi_table = f"{select_values}, accounts"
+join_table = f"{select_values} JOIN accounts ON accounts.user_id = users.id"
+
+
+@pytest.mark.parametrize(
+    ["sql_query", "expected_names"],
+    [
+        (single_table, ["users"]),
+        (multi_table, ["users", "accounts"]),
+        (join_table, ["users", "accounts"]),
+    ],
+)
+def test_parse_table_names(sql_query, expected_names):
+    statement = sqlparse.parse(sql_query)[0]
+    table_names = common.parse_table_names(statement)
+    assert set(table_names) == set(expected_names)

@@ -1,16 +1,36 @@
 """External-facing API for fetching and updating application data."""
 
-from typing import Optional
-from datetime import datetime, timezone
+import typing
+from datetime import datetime, timezone, timedelta
 from warnings import warn
+import pytz
 
 import pandas as pd
+from mypy_extensions import TypedDict
 
 from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.tipping import MonashSubmitter
 from tipping.models import Match
 from tipping import settings
+
+
+MatchData = TypedDict(
+    "MatchData",
+    {
+        "date": typing.Union[datetime, typing.Timestamp],
+        "year": int,
+        "round": str,
+        "round_number": int,
+        "home_team": str,
+        "away_team": str,
+        "venue": str,
+        "home_score": int,
+        "away_score": int,
+        "match_id": int,
+        "crowd": int,
+    },
+)
 
 
 DEC = 12
@@ -21,7 +41,7 @@ FIRST = 1
 
 def _select_matches_from_current_round(
     fixture_data_frame: pd.DataFrame, beginning_of_today: datetime, after=True
-) -> Optional[pd.DataFrame]:
+) -> typing.Optional[pd.DataFrame]:
     if not fixture_data_frame.any().any():
         warn(
             "Fixture for the upcoming round haven't been posted yet, "
@@ -59,7 +79,7 @@ def _select_matches_from_current_round(
     return fixture_for_current_round
 
 
-def _fetch_current_round_fixture(verbose, after=True) -> Optional[pd.DataFrame]:
+def _fetch_current_round_fixture(verbose, after=True) -> typing.Optional[pd.DataFrame]:
     right_now = datetime.now(tz=timezone.utc)
     beginning_of_today = right_now.replace(hour=0, minute=0, second=0, microsecond=0)
     beginning_of_this_year = datetime(
@@ -117,7 +137,7 @@ def update_fixture_data(verbose: int = 1) -> None:
 
 
 def update_match_predictions(
-    tips_submitters=None, verbose=1, ml_model_names: Optional[str] = None
+    tips_submitters=None, verbose=1, ml_model_names: typing.Optional[str] = None
 ) -> None:
     """Fetch predictions from ML models and send them to the main app.
 
@@ -169,6 +189,53 @@ def update_match_predictions(
 
     for submitter in tips_submitters:
         submitter.submit_tips(updated_prediction_records)
+
+    return None
+
+
+def backfill_recent_match_results(
+    match_results: typing.List[MatchData], verbose=1
+) -> None:
+    """
+    Updates scores for all played matches without score data.
+
+    Params:
+    -------
+    match_results: List of match dicts that include home & away scores.
+    verbose: Whether to print info messages.
+    """
+    if verbose == 1:
+        print("Filling in results for recent matches...")
+
+    earliest_date_time_without_results = Match.earliest_date_time_without_results()
+
+    if earliest_date_time_without_results is None:
+        if verbose == 1:
+            print("No played matches are missing results.")
+
+        return None
+
+    if not any(match_results):
+        print("Results data is not yet available to update match records.")
+        return None
+
+    # Subtract a day to have a buffer to allow for mismatched start times,
+    # because fixture data have correct start times, but match results data
+    # just have basic dates, which means they're given dummy start times,
+    # which will be ealier than the actual fixture start time.
+    date_time_filter = (  # pylint: disable=unused-variable
+        earliest_date_time_without_results - timedelta(days=1)
+    )
+    right_now = datetime.now(tz=pytz.UTC)  # pylint: disable=unused-variable
+    match_results_to_fill = pd.DataFrame(match_results).query(
+        "date >= @date_time_filter & date < @right_now"
+    )
+
+    if not match_results_to_fill.any().any():
+        print("Results data is not yet available to update match records.")
+        return None
+
+    Match.update_results(pd.DataFrame(match_results_to_fill))
 
     return None
 
@@ -232,9 +299,9 @@ def update_match_results(verbose=1) -> None:
 
 def fetch_match_predictions(
     year_range: str,
-    round_number: Optional[int] = None,
-    ml_models: Optional[str] = None,
-    train_models: Optional[bool] = False,
+    round_number: typing.Optional[int] = None,
+    ml_models: typing.Optional[str] = None,
+    train_models: typing.Optional[bool] = False,
 ) -> pd.DataFrame:
     """
     Fetch prediction data from ML models.

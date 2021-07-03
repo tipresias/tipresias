@@ -188,7 +188,7 @@ def parse_identifiers(
     identifiers: typing.Union[
         token_groups.Identifier, token_groups.IdentifierList, token_groups.Function
     ],
-    table_name: typing.Optional[str] = None,
+    table_names: typing.Optional[typing.List[str]] = None,
 ) -> TableFieldMap:
     """Extract raw table name, column name, and alias from SQL identifiers.
 
@@ -200,15 +200,18 @@ def parse_identifiers(
     --------
     typing.Tuple of table_names, column names, and column aliases.
     """
+    table_names = table_names or ["NULL"]
+    initial_table_field_map: TableFieldMap = {name: {} for name in table_names}
+
     if isinstance(identifiers, token_groups.Function):
         return _parse_identifier(
-            {table_name: {}}, token_groups.Identifier([identifiers])
+            initial_table_field_map, token_groups.Identifier([identifiers])
         )
 
     if isinstance(identifiers, token_groups.Identifier):
-        return _parse_identifier({table_name: {}}, identifiers)
+        return _parse_identifier(initial_table_field_map, identifiers)
 
-    return reduce(_parse_identifier, identifiers, {table_name: {}})
+    return reduce(_parse_identifier, identifiers, initial_table_field_map)
 
 
 def _parse_is_null(
@@ -378,19 +381,9 @@ def _parse_comparison(
     )
 
 
-def parse_where(
+def _parse_where_for_collection(
     where_group: token_groups.Where, collection_name: str
 ) -> QueryExpression:
-    """Convert an SQL WHERE clause into an FQL match query.
-
-    Params:
-    -------
-    where_group: An SQL token group representing a WHERE clause.
-
-    Returns:
-    --------
-    FQL query expression that matches on the same conditions as the WHERE clause.
-    """
     if where_group is None:
         return q.intersection(q.match(q.index(f"all_{collection_name}")))
 
@@ -431,3 +424,51 @@ def parse_where(
         comparisons.append(comparison_query)
 
     return q.intersection(*comparisons)
+
+
+def parse_where(
+    where_group: token_groups.Where, collection_names: typing.List[str]
+) -> QueryExpression:
+    """Convert an SQL WHERE clause into an FQL match query.
+
+    Params:
+    -------
+    where_group: An SQL token group representing a WHERE clause.
+    collection_names: List of collection names whose documents will be filtered.
+
+    Returns:
+    --------
+    FQL query expression that matches on the same conditions as the WHERE clause.
+    """
+    index_sets = [_parse_where_for_collection(name) for name in collection_names]
+
+
+def parse_table_names(statement: token_groups.Statement) -> typing.List[str]:
+    """ "Parse SQL to extract the names of all tables involved in the query.
+
+    Params:
+    -------
+    statement: SQL statement from sqlparse
+
+    Returns:
+    --------
+    List of table/collection names.
+    """
+    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
+    idx, primary_table_identifiers = statement.token_next(
+        skip_cm=True, skip_ws=True, idx=idx
+    )
+    primary_tables = parse_identifiers(primary_table_identifiers, "tables")
+    table_names = list(primary_tables["tables"].keys())
+
+    idx, join_keyword = statement.token_next_by(m=(token_types.Keyword, "JOIN"))
+
+    if join_keyword is None:
+        return table_names
+
+    idx, join_table_identifiers = statement.token_next(
+        skip_cm=True, skip_ws=True, idx=idx
+    )
+    join_tables = parse_identifiers(join_table_identifiers, "tables")
+
+    return table_names + list(join_tables["tables"].keys())

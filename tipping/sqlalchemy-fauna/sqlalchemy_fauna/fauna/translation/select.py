@@ -9,7 +9,13 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value, parse_identifiers, parse_where, FieldAliasMap
+from .common import (
+    extract_value,
+    parse_identifiers,
+    parse_table_names,
+    parse_where,
+    FieldAliasMap,
+)
 
 
 CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
@@ -207,7 +213,6 @@ def _translate_select_without_functions(
 
 def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpression:
     _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
-
     if wildcard is not None:
         raise exceptions.NotSupportedError("Wildcards ('*') are not yet supported")
 
@@ -216,13 +221,8 @@ def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpr
     idx, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
-    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
-    idx, table_identifier = statement.token_next_by(
-        i=(token_groups.Identifier), idx=idx
-    )
-    table_name = table_identifier.value
-    table_field_alias_map = parse_identifiers(identifiers, table_name)
-    field_alias_map = table_field_alias_map[table_name]
+    table_names = parse_table_names(statement)
+    table_field_alias_map = parse_identifiers(identifiers, table_names)
 
     # We can only handle one table at a time for now
     if len(table_field_alias_map.keys()) > 1:

@@ -24,11 +24,6 @@ from .team import Team
 from .team_match import TeamMatch
 
 
-MIN_ROUND_NUMBER = 1
-MIN_MARGIN = 0
-FIRST_ROUND = 1
-
-
 FixtureData = TypedDict(
     "FixtureData",
     {
@@ -40,6 +35,13 @@ FixtureData = TypedDict(
         "venue": str,
     },
 )
+
+
+MIN_ROUND_NUMBER = 1
+MIN_MARGIN = 0
+FIRST_ROUND = 1
+# Rough estimate, but exactitude isn't necessary here
+GAME_LENGTH_HRS = 3
 
 
 class Match(Base):
@@ -175,6 +177,42 @@ class Match(Base):
             round_number=int(round_number),
             venue=venue,
         )
+
+    @classmethod
+    def played_without_results(cls):
+        """
+        Get all matches that don't have any associated results data.
+
+        Returns:
+        --------
+        A query set of past matches that haven't been updated with final scores yet.
+        """
+        right_now = datetime.now(tz=timezone.utc)
+        match_duration_ago = right_now - timedelta(hours=GAME_LENGTH_HRS)
+
+        return (
+            select(Match.start_date_time, Match.venue)
+            .where(Match.start_date_time < match_duration_ago)
+            .join(Match.team_matches)
+            .where(TeamMatch.score == None)  # pylint: disable=singleton-comparison
+            # Filtering by teammatch attributes returns duplicate matches
+            # (one for each associated teammatch)
+            .distinct()
+        )
+
+    @classmethod
+    def earliest_date_time_without_results(cls) -> typing.Optional[datetime]:
+        """
+        Get the earliest start_date_time of played matches without results.
+
+        Returns:
+        --------
+        Date-time for the first past match without scores.
+        """
+        if not any(cls.played_without_results()):
+            return None
+
+        return cls.played_without_results().earliest("start_date_time").start_date_time
 
     @validates("round_number")
     def validate_at_least_min_round(self, _key, round_number):

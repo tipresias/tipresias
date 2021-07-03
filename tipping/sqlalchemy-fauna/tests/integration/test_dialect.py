@@ -1,5 +1,7 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
+from functools import reduce
+
 import pytest
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float
@@ -81,3 +83,8 @@ def test_get_indexes(user_model, fauna_engine):
         ] + ["all_users", "users_by_ref_terms", "users_by_name_terms"]
 
         assert index_names == set(expected_index_names)
+
+        index_columns = reduce(
+            lambda acc, curr: set(curr["column_names"]) | acc, queried_indexes, set([])
+        )
+        assert index_columns == set(users_columns)

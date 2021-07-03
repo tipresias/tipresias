@@ -86,7 +86,7 @@ def _parse_functions(
 
 
 def _translate_select_with_functions(
-    records_to_select: QueryExpression,
+    documents_to_select: QueryExpression,
     field_alias_map: FieldAliasMap,
     field_functions: FunctionMap,
 ):
@@ -133,7 +133,7 @@ def _translate_select_with_functions(
     # for GROUP BY
     first_document = q.select_with_default(0, paginated_documents, default={})
     query_response = q.let(
-        {"documents": records_to_select},
+        {"documents": documents_to_select},
         q.map_(
             q.lambda_("document", aliased_document),
             [first_document],
@@ -147,10 +147,11 @@ def _translate_select_with_functions(
 
 
 def _translate_select_without_functions(
-    records_to_select: QueryExpression, field_alias_map: FieldAliasMap
+    documents_to_select: QueryExpression,
+    field_alias_map: FieldAliasMap,
+    distinct=False,
 ):
-    document_items = q.to_array(q.get(q.var("document")))
-    flattened_items = q.union(
+    flatten = lambda items: q.union(
         q.map_(
             q.lambda_(
                 ["key", "value"],
@@ -162,32 +163,45 @@ def _translate_select_without_functions(
                     [[q.var("key"), q.var("value")]],
                 ),
             ),
-            document_items,
+            items,
         )
     )
 
-    selected_fields = list(field_alias_map.keys())
-    field_alias = q.select_with_default(
-        q.var("field"),
-        field_alias_map,
-        default=q.var("field"),
+    translate_fields_to_aliases = lambda document_fields: q.lambda_(
+        "field",
+        [
+            q.select_with_default(
+                q.var("field"), field_alias_map, default=q.var("field")
+            ),
+            q.select_with_default(q.var("field"), document_fields, default=None),
+        ],
     )
 
-    field_value = q.select_with_default(
-        q.var("field"), q.to_object(flattened_items), default=None
-    )
-    translate_to_alias = q.lambda_("field", [field_alias, field_value])
     # We map over selected_fields to build document object to maintain the order
     # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
     # to the incorrect keys.
-    aliased_document = q.to_object(q.map_(translate_to_alias, selected_fields))
+    selected_fields = list(field_alias_map.keys())
+    select_document_fields = q.lambda_(
+        "document",
+        q.to_object(
+            q.map_(
+                translate_fields_to_aliases(
+                    q.to_object(flatten(q.to_array(q.get(q.var("document")))))
+                ),
+                selected_fields,
+            )
+        ),
+    )
+    translate_documents = lambda documents: q.map_(
+        select_document_fields,
+        q.paginate(documents),
+    )
 
     return q.let(
-        {"documents": records_to_select},
-        q.map_(
-            q.lambda_("document", aliased_document),
-            q.paginate(q.var("documents")),
-        ),
+        {"documents": documents_to_select},
+        q.distinct(translate_documents(q.var("documents")))
+        if distinct
+        else translate_documents(q.var("documents")),
     )
 
 
@@ -196,6 +210,8 @@ def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpr
 
     if wildcard is not None:
         raise exceptions.NotSupportedError("Wildcards ('*') are not yet supported")
+
+    _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
 
     idx, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
@@ -215,17 +231,19 @@ def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpr
         )
 
     _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
-    records_to_select = parse_where(where_group, table_name)
+    documents_to_select = parse_where(where_group, table_name)
 
     table_functions = _parse_functions(q.var("documents"), identifiers, table_name)
     field_functions = table_functions[table_name]
 
     return (
         _translate_select_with_functions(
-            records_to_select, field_alias_map, field_functions
+            documents_to_select, field_alias_map, field_functions
         )
         if len(field_functions)
-        else _translate_select_without_functions(records_to_select, field_alias_map)
+        else _translate_select_without_functions(
+            documents_to_select, field_alias_map, distinct=distinct
+        )
     )
 
 
@@ -282,7 +300,10 @@ def _translate_select_from_info_schema_constraints(
         q.get(q.collection(condition_value)),
     )
     collection_field_names = q.map_(
-        q.lambda_(["field_name", "field_metadata"], q.var("field_name")),
+        q.lambda_(
+            ["field_name", "field_metadata"],
+            q.if_(q.equals(q.var("field_name"), "ref"), "id", q.var("field_name")),
+        ),
         q.to_array(collection_fields),
     )
 
@@ -292,7 +313,7 @@ def _translate_select_from_info_schema_constraints(
     term_field = (
         q.let(
             {"field": q.select("field", q.var("term"))},
-            last_field_name,
+            q.if_(q.equals("ref", last_field_name), "id", last_field_name),
         ),
     )
     index_term_fields = q.union(

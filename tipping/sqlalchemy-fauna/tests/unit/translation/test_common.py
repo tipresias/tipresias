@@ -146,6 +146,7 @@ where_greater = select_values + f" WHERE users.age > {FAKE.pyint()}"
 where_greater_equal = select_values + f" WHERE users.age >= {FAKE.pyint()}"
 where_less = select_values + f" WHERE users.age < {FAKE.pyint()}"
 where_less_equal = select_values + f" WHERE users.age <= {FAKE.pyint()}"
+where_is_null = select_values + f" WHERE users.job IS NULL"
 
 
 @pytest.mark.parametrize(
@@ -159,9 +160,10 @@ where_less_equal = select_values + f" WHERE users.age <= {FAKE.pyint()}"
         where_greater_equal,
         where_less,
         where_less_equal,
+        where_is_null,
     ],
 )
-def test_translate_select(sql_query):
+def test_parsing_where(sql_query):
     statement = sqlparse.parse(sql_query)[0]
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 

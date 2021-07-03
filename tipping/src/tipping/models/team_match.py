@@ -26,7 +26,7 @@ class TeamMatch(Base):
     match_id = Column(Integer, ForeignKey("matches.id"), nullable=False)
     match = relationship("Match", back_populates="team_matches")
     at_home = Column(Boolean, nullable=False)
-    score = Column(Integer, default=0)
+    score = Column(Integer)
 
     @classmethod
     def from_fixture(

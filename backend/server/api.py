@@ -135,7 +135,7 @@ def backfill_recent_match_results(match_results: List[MatchData], verbose=1) -> 
         "date >= @date_time_filter & date < @right_now"
     )
 
-    if not match_results_to_fill.any().any():
+    if not match_results_to_fill.size:
         print("Results data is not yet available to update match records.")
         return None
 

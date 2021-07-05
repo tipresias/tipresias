@@ -116,7 +116,7 @@ class RoundPredictionType(graphene.ObjectType):
             .sort_index()
         )
 
-        if not principal_predictions.any().any():
+        if not principal_predictions.size:
             return []
 
         non_principal_predictions = (

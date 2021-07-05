@@ -170,7 +170,7 @@ class Match(models.Model):
         # results data for a week before raising an error.
         if (
             self.start_date_time > timezone.localtime() - timedelta(days=WEEK_IN_DAYS)
-            and not match_result.any().any()
+            and not match_result.size
         ):
             warn(
                 f"Unable to update the match between {self.team(at_home=True).name} "
@@ -181,7 +181,7 @@ class Match(models.Model):
 
             return False
 
-        assert match_result.any().any(), (
+        assert match_result.size, (
             "Didn't find any match data rows that matched match record:\n"
             "{\n"
             f"    start_date_time: {self.start_date_time},\n"

@@ -167,10 +167,12 @@ class Prediction(models.Model):
     def _calculate_predicted_win_probability(
         cls, home_win_probability: np.number, away_win_probability: np.number
     ) -> np.number:
-        predicted_loser_oppo_win_proba = 1 - min(
+        predicted_loser_oppo_win_proba = 1 - np.min(
             [home_win_probability, away_win_probability]
         )
-        predicted_winner_win_proba = max([home_win_probability, away_win_probability])
+        predicted_winner_win_proba = np.max(
+            [home_win_probability, away_win_probability]
+        )
         predicted_win_probability = np.mean(
             [predicted_loser_oppo_win_proba, predicted_winner_win_proba]
         )

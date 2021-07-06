@@ -19,7 +19,7 @@ class TestSeedDb(TestCase):
     def setUp(self):
         joblib.dump = MagicMock()
 
-        min_seed_year = int(seed_db.YEAR_RANGE.split("-")[0])
+        min_seed_year = int(seed_db.YEAR_RANGE.split("-", maxsplit=1)[0])
         # Min year needs to be greather than 2010, or weird stuff can happen
         # due to betting data only going back to 2010
         self.assertGreater(min_seed_year, 2010)
@@ -114,9 +114,3 @@ class TestSeedDb(TestCase):
         return self.match_results_data_frame.query(
             "date >= @start_datetime & date <= @end_datetime"
         ).to_dict("records")
-
-    @staticmethod
-    def __clear_db():
-        Team.objects.all().delete()
-        Match.objects.all().delete()
-        MLModel.objects.all().delete()

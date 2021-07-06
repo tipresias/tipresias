@@ -9,8 +9,9 @@ import pandas as pd
 from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.tipping import MonashSubmitter
-from tipping.models import Match
-from tipping import settings
+
+# from tipping.models import Match
+# from tipping import settings
 
 
 DEC = 12

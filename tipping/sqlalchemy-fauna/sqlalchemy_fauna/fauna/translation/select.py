@@ -9,7 +9,7 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value, parse_identifiers, parse_where, FieldAliasMap
+from . import common
 from .models import Table
 
 
@@ -17,7 +17,6 @@ CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
 FunctionMap = typing.Dict[str, CalculationFunction]
 TableFunctionMap = typing.Dict[str, FunctionMap]
 
-DATA_KEY = "data"
 MAX_PAGE_SIZE = 100000
 
 
@@ -89,7 +88,7 @@ def _parse_functions(
 
 def _translate_select_with_functions(
     documents_to_select: QueryExpression,
-    field_alias_map: FieldAliasMap,
+    field_alias_map: common.FieldAliasMap,
     field_functions: FunctionMap,
 ):
     document_items = q.to_array(q.get(q.var("document")))
@@ -98,7 +97,7 @@ def _translate_select_with_functions(
             q.lambda_(
                 ["key", "value"],
                 q.if_(
-                    q.equals(q.var("key"), DATA_KEY),
+                    q.equals(q.var("key"), common.DATA),
                     q.to_array(q.var("value")),
                     # We put single key/value pairs in nested arrays to match
                     # the structure of the nested 'data' key/values
@@ -110,19 +109,17 @@ def _translate_select_with_functions(
     )
 
     selected_fields = list(field_alias_map.keys())
-    field_alias = q.select_with_default(
+    field_alias = q.select(
         q.var("field"),
         field_alias_map,
         default=q.var("field"),
     )
 
-    field_function = q.select_with_default(
-        q.var("field"), field_functions, default=None
+    field_function = q.select(q.var("field"), field_functions, default=common.NULL)
+    basic_field = q.select(q.var("field"), q.to_object(flattened_items))
+    field_value = q.if_(
+        q.equals(field_function, common.NULL), basic_field, field_function
     )
-    basic_field = q.select_with_default(
-        q.var("field"), q.to_object(flattened_items), default=None
-    )
-    field_value = q.if_(q.is_null(field_function), basic_field, field_function)
     translate_to_alias = q.lambda_("field", [field_alias, field_value])
     # We map over selected_fields to build document object to maintain the order
     # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
@@ -133,7 +130,7 @@ def _translate_select_with_functions(
     # With aggregation functions, standard behaviour is to include the first value
     # if any column selections are part of the query, at least until we add support
     # for GROUP BY
-    first_document = q.select_with_default(0, paginated_documents, default={})
+    first_document = q.select(0, paginated_documents, default={})
     query_response = q.let(
         {"documents": documents_to_select},
         q.map_(
@@ -144,13 +141,13 @@ def _translate_select_with_functions(
 
     return q.let(
         {"response": query_response},
-        {DATA_KEY: q.var("response")},
+        {common.DATA: q.var("response")},
     )
 
 
 def _translate_select_without_functions(
     documents_to_select: QueryExpression,
-    field_alias_map: FieldAliasMap,
+    field_alias_map: common.FieldAliasMap,
     distinct=False,
 ):
     flatten = lambda items: q.union(
@@ -158,7 +155,7 @@ def _translate_select_without_functions(
             q.lambda_(
                 ["key", "value"],
                 q.if_(
-                    q.equals(q.var("key"), DATA_KEY),
+                    q.equals(q.var("key"), common.DATA),
                     q.to_array(q.var("value")),
                     # We put single key/value pairs in nested arrays to match
                     # the structure of the nested 'data' key/values
@@ -171,12 +168,24 @@ def _translate_select_without_functions(
 
     translate_fields_to_aliases = lambda document_fields: q.lambda_(
         "field",
-        [
-            q.select_with_default(
-                q.var("field"), field_alias_map, default=q.var("field")
-            ),
-            q.select_with_default(q.var("field"), document_fields, default=None),
-        ],
+        q.let(
+            {
+                "field_name": q.select(
+                    q.var("field"), field_alias_map, default=q.var("field")
+                ),
+                "field_value": q.select(
+                    q.var("field"), document_fields, default=common.NULL
+                ),
+            },
+            [
+                q.var("field_name"),
+                q.if_(
+                    q.equals(q.var("field_value"), common.NULL),
+                    None,
+                    q.var("field_value"),
+                ),
+            ],
+        ),
     )
 
     # We map over selected_fields to build document object to maintain the order
@@ -221,11 +230,11 @@ def _translate_select_from_table(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
 
-    table_field_alias_map = parse_identifiers(identifiers, table.name)
+    table_field_alias_map = common.parse_identifiers(identifiers, table.name)
     field_alias_map = table_field_alias_map[table.name]
 
     _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
-    documents_to_select = parse_where(where_group, table.name)
+    documents_to_select = common.parse_where(where_group, table.name)
 
     table_functions = _parse_functions(q.var("documents"), identifiers, table.name)
     field_functions = table_functions[table.name]
@@ -275,7 +284,7 @@ def _translate_select_from_info_schema_constraints(
         )
 
     _, condition_check = where_group.token_next(idx, skip_ws=True)
-    condition_value = extract_value(condition_check)
+    condition_value = common.extract_value(condition_check)
 
     is_based_on_collection = q.lambda_(
         "index",
@@ -290,7 +299,7 @@ def _translate_select_from_info_schema_constraints(
     )
 
     collection_fields = q.select(
-        ["data", "metadata", "fields"],
+        [common.DATA, "metadata", "fields"],
         q.get(q.collection(condition_value)),
     )
     collection_field_names = q.map_(
@@ -368,11 +377,11 @@ def _translate_select_from_info_schema_columns(
         )
 
     _, condition_check = where_group.token_next(idx, skip_ws=True)
-    condition_value = extract_value(condition_check)
+    condition_value = common.extract_value(condition_check)
 
     collection = q.collection(condition_value)
     field_metadata = q.select(
-        [DATA_KEY, "metadata", "fields"],
+        [common.DATA, "metadata", "fields"],
         q.get(collection),
     )
     # Selecting column info from INFORMATION_SCHEMA returns foreign keys
@@ -404,7 +413,7 @@ def _translate_select_from_info_schema_columns(
     return q.let(
         {
             "response": {
-                DATA_KEY: q.union(
+                common.DATA: q.union(
                     [id_column],
                     metadata_response,
                 )

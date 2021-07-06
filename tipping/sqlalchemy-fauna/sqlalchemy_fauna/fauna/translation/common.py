@@ -35,6 +35,7 @@ TableFieldMap = typing.Dict[typing.Optional[str], FieldAliasMap]
 
 
 NULL = "NULL"
+DATA = "data"
 
 
 class _NumericString(Exception):
@@ -299,7 +300,7 @@ def _parse_comparison(
     )
 
     get_collection_fields = lambda name: q.select(
-        ["data", "metadata", "fields"], q.get(q.collection(name))
+        [DATA, "metadata", "fields"], q.get(q.collection(name))
     )
 
     equality_range = q.range(

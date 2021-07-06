@@ -9,11 +9,7 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .common import parse_identifiers, extract_value, get_foreign_key_ref
-
-
-DATA_KEY = "data"
-NULL = "NULL"
+from . import common
 
 
 def _build_document(
@@ -23,7 +19,7 @@ def _build_document(
     value_group: token_groups.Values,
     collection_name: str,
 ) -> typing.Dict[str, typing.Union[str, int, float, datetime, None, bool]]:
-    table_field_map = parse_identifiers(column_identifiers, collection_name)
+    table_field_map = common.parse_identifiers(column_identifiers, collection_name)
     val_idx, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
     value_identifiers = parenthesis_group.flatten()
 
@@ -46,7 +42,7 @@ def _build_document(
         values
     ), f"Lengths didn't match:\ncolumns: {column_names}\nvalues: {values}"
 
-    return {col: extract_value(val) for col, val in zip(column_names, values)}
+    return {col: common.extract_value(val) for col, val in zip(column_names, values)}
 
 
 def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpression]:
@@ -87,13 +83,15 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
     get_field_value = lambda document, field_name, field_constraints: q.let(
         {
             "references": q.select("references", field_constraints, default={}),
-            "default_value": q.select("default", field_constraints, default=NULL),
+            "default_value": q.select(
+                "default", field_constraints, default=common.NULL
+            ),
             "field_value": q.select(field_name, document, q.var("default_value")),
         },
         q.if_(
             q.equals(q.var("references"), {}),
             q.var("field_value"),
-            get_foreign_key_ref(q.var("field_value"), q.var("references")),
+            common.get_foreign_key_ref(q.var("field_value"), q.var("references")),
         ),
     )
 
@@ -126,7 +124,7 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
                 q.lambda_(
                     ["key", "value"],
                     q.if_(
-                        q.equals(q.var("key"), DATA_KEY),
+                        q.equals(q.var("key"), common.DATA),
                         q.to_array(q.var("value")),
                         # We put single key/value pairs in nested arrays to match
                         # the structure of the nested 'data' key/values
@@ -156,7 +154,7 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
         field_name,
     )
     get_response_field_value = lambda document, field_name: q.select(
-        field_name, document, default=NULL
+        field_name, document, default=common.NULL
     )
     build_document_response = lambda document, metadata: q.to_object(
         q.map_(

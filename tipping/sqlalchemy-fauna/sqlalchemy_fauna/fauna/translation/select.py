@@ -10,6 +10,7 @@ from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
 from .common import extract_value, parse_identifiers, parse_where, FieldAliasMap
+from .models import Table
 
 
 CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
@@ -206,7 +207,9 @@ def _translate_select_without_functions(
     )
 
 
-def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpression:
+def _translate_select_from_table(
+    statement: token_groups.Statement, table: Table
+) -> QueryExpression:
     _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
 
     if wildcard is not None:
@@ -217,25 +220,15 @@ def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpr
     idx, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
-    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
-    idx, table_identifier = statement.token_next_by(
-        i=(token_groups.Identifier), idx=idx
-    )
-    table_name = table_identifier.value
-    table_field_alias_map = parse_identifiers(identifiers, table_name)
-    field_alias_map = table_field_alias_map[table_name]
 
-    # We can only handle one table at a time for now
-    if len(table_field_alias_map.keys()) > 1:
-        raise exceptions.NotSupportedError(
-            "Only one table per query is currently supported"
-        )
+    table_field_alias_map = parse_identifiers(identifiers, table.name)
+    field_alias_map = table_field_alias_map[table.name]
 
     _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
-    documents_to_select = parse_where(where_group, table_name)
+    documents_to_select = parse_where(where_group, table.name)
 
-    table_functions = _parse_functions(q.var("documents"), identifiers, table_name)
-    field_functions = table_functions[table_name]
+    table_functions = _parse_functions(q.var("documents"), identifiers, table.name)
+    field_functions = table_functions[table.name]
 
     return (
         _translate_select_with_functions(
@@ -442,22 +435,6 @@ def _translate_select_from_info_schema_tables() -> QueryExpression:
     )
 
 
-def _extract_table_name(statement: token_groups.Statement) -> str:
-    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
-    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
-
-    if table_identifier is None:
-        _, table_identifier_list = statement.token_next_by(
-            i=(token_groups.IdentifierList), idx=idx
-        )
-
-        if table_identifier_list is not None:
-            raise exceptions.NotSupportedError(
-                "Only one table per query is currently supported"
-            )
-    return table_identifier.value
-
-
 def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpression]:
     """Translate a SELECT SQL query into an equivalent FQL query.
 
@@ -469,20 +446,28 @@ def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpr
     --------
     A tuple of FQL query expression, selected column  names, and their aliases.
     """
-    table_name = _extract_table_name(statement)
+    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
+    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
+
+    if table_identifier is None:
+        raise exceptions.NotSupportedError(
+            "Only one table per query is currently supported"
+        )
+
+    table = Table(table_identifier)
 
     # TODO: As I've looked into INFORMATION_SCHEMA queries more, I realise
     # that these aren't returning valid responses for the given SQL queries,
     # but just the data that SQLAlchemy needs for some of the Dialect methods.
     # It's okay for now, but should probably fix these query responses eventually
     # and put the SQLAlchemy-specific logic/transformation in FaunaDialect
-    if table_name == "INFORMATION_SCHEMA.TABLES":
+    if table.name == "INFORMATION_SCHEMA.TABLES":
         return [_translate_select_from_info_schema_tables()]
 
-    if table_name == "INFORMATION_SCHEMA.COLUMNS":
+    if table.name == "INFORMATION_SCHEMA.COLUMNS":
         return [_translate_select_from_info_schema_columns(statement)]
 
-    if table_name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
+    if table.name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
         return [_translate_select_from_info_schema_constraints(statement)]
 
-    return [_translate_select_from_table(statement)]
+    return [_translate_select_from_table(statement, table)]

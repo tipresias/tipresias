@@ -8,6 +8,7 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
+from .models import Table
 
 
 def _translate_drop_default(table_name: str, column_name: str) -> QueryExpression:
@@ -59,7 +60,7 @@ def translate_alter(statement: token_groups.Statement) -> typing.List[QueryExpre
     assert table_keyword is not None
 
     idx, table_identifier = statement.token_next_by(i=token_groups.Identifier, idx=idx)
-    table_name = table_identifier.value
+    table = Table(table_identifier)
 
     _, second_alter = statement.token_next_by(m=(token_types.DDL, "ALTER"), idx=idx)
     _, column_keyword = statement.token_next_by(
@@ -67,7 +68,7 @@ def translate_alter(statement: token_groups.Statement) -> typing.List[QueryExpre
     )
 
     if second_alter and column_keyword:
-        return [_translate_alter_column(statement, table_name, idx)]
+        return [_translate_alter_column(statement, table.name, idx)]
 
     raise exceptions.NotSupportedError(
         "For ALTER TABLE queries, only ALTER COLUMN is currently supported."

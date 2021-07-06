@@ -13,6 +13,7 @@ from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
 from .common import extract_value
+from .models import Table
 
 
 FieldMetadata = TypedDict(
@@ -198,7 +199,7 @@ def _define_foreign_key_constraint(
     idx, reference_table = column_definition_group.token_next_by(
         t=token_types.Name, idx=idx
     )
-    reference_table_name = reference_table.value
+    reference_table = Table(reference_table)
     idx, reference_column = column_definition_group.token_next_by(
         t=token_types.Name, idx=idx
     )
@@ -219,7 +220,7 @@ def _define_foreign_key_constraint(
         column_name: {
             **DEFAULT_FIELD_METADATA,  # type: ignore
             **metadata.get(column_name, EMPTY_DICT),
-            "references": {reference_table_name: reference_column_name},
+            "references": {reference_table.name: reference_column_name},
         },
     }
 
@@ -351,7 +352,7 @@ def _translate_create_table(
     idx, table_identifier = statement.token_next_by(
         i=token_groups.Identifier, idx=table_token_idx
     )
-    table_name = table_identifier.value
+    table = Table(table_identifier)
 
     idx, column_identifiers = statement.token_next_by(
         i=token_groups.Parenthesis, idx=idx
@@ -359,19 +360,19 @@ def _translate_create_table(
 
     field_metadata = _extract_column_definitions(column_identifiers)
     create_collection = q.create_collection(
-        {"name": table_name, "data": {"metadata": {"fields": field_metadata}}}
+        {"name": table.name, "data": {"metadata": {"fields": field_metadata}}}
     )
 
     index_queries = [
         q.create_index(
             {
-                "name": f"{table_name}_by_ref_terms",
-                "source": q.collection(table_name),
+                "name": f"{table.name}_by_ref_terms",
+                "source": q.collection(table.name),
                 "terms": [{"field": ["ref"]}],
             }
         ),
         q.create_index(
-            {"name": f"all_{table_name}", "source": q.collection(table_name)}
+            {"name": f"all_{table.name}", "source": q.collection(table.name)}
         ),
     ]
 
@@ -383,8 +384,8 @@ def _translate_create_table(
         index_queries.append(
             q.create_index(
                 {
-                    "name": f"{table_name}_by_{field_name}",
-                    "source": q.collection(table_name),
+                    "name": f"{table.name}_by_{field_name}",
+                    "source": q.collection(table.name),
                     "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
                 }
             )
@@ -397,8 +398,8 @@ def _translate_create_table(
             index_queries.append(
                 q.create_index(
                     {
-                        "name": f"{table_name}_by_{field_name}_terms",
-                        "source": q.collection(table_name),
+                        "name": f"{table.name}_by_{field_name}_terms",
+                        "source": q.collection(table.name),
                         "terms": [{"field": ["data", field_name]}],
                         "unique": is_unique,
                     }
@@ -412,8 +413,8 @@ def _translate_create_table(
             index_queries.append(
                 q.create_index(
                     {
-                        "name": f"{table_name}_by_{field_name}_refs",
-                        "source": q.collection(table_name),
+                        "name": f"{table.name}_by_{field_name}_refs",
+                        "source": q.collection(table.name),
                         "terms": [{"field": ["data", field_name]}],
                     }
                 )
@@ -421,7 +422,7 @@ def _translate_create_table(
 
     index_queries.append(
         q.let(
-            {"collection": q.collection(table_name)},
+            {"collection": q.collection(table.name)},
             {"data": [{"id": q.var("collection")}]},
         )
     )
@@ -439,7 +440,7 @@ def _translate_create_index(
     _, index_params = statement.token_next_by(i=token_groups.Function, idx=idx)
 
     params_idx, table_identifier = index_params.token_next_by(i=token_groups.Identifier)
-    table_name = table_identifier.value
+    table = Table(table_identifier)
 
     params_idx, column_identifiers = index_params.token_next_by(
         i=token_groups.Parenthesis, idx=params_idx
@@ -457,7 +458,7 @@ def _translate_create_index(
         )
 
     index_terms = [{"field": ["data", index_field]} for index_field in index_fields]
-    index_name = f"{table_name}_by_{'_and_'.join(sorted(index_fields))}_terms"
+    index_name = f"{table.name}_by_{'_and_'.join(sorted(index_fields))}_terms"
 
     return [
         q.do(
@@ -469,14 +470,14 @@ def _translate_create_index(
                 q.create_index(
                     {
                         "name": index_name,
-                        "source": q.collection(table_name),
+                        "source": q.collection(table.name),
                         "terms": index_terms,
                         "unique": unique,
                     }
                 ),
             ),
             q.let(
-                {"collection": q.collection(table_name)},
+                {"collection": q.collection(table.name)},
                 {"data": [{"id": q.var("collection")}]},
             ),
         )

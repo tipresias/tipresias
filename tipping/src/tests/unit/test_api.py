@@ -13,7 +13,8 @@ from candystore import CandyStore
 from tests.fixtures import data_factories
 from tipping import api
 from tipping.tipping import FootyTipsSubmitter
-from tipping.models import Match
+
+# from tipping.models import Match
 
 
 TODAY = date.today()

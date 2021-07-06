@@ -163,6 +163,21 @@ def test_insert_record(fauna_session, user_model):
     assert isinstance(int(created_user.id), int)
 
 
+def test_insert_with_null_foreign_key(fauna_session, parent_child):
+    Base = parent_child["base"]
+    Child = parent_child["child"]
+
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    child = Child(name="Gene")
+    fauna_session.add(child)
+    fauna_session.commit()
+
+    assert child.id is not None
+    assert child.parent_id is None
+
+
 def test_select_empty_table(fauna_session, user_model):
     User, Base = user_model
     fauna_engine = fauna_session.get_bind()

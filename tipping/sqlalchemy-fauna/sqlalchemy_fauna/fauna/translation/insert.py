@@ -1,6 +1,7 @@
 """Translate a INSERT SQL query into an equivalent FQL query."""
 
 import typing
+from datetime import datetime
 
 from sqlparse import sql as token_groups
 from sqlparse import tokens as token_types
@@ -8,10 +9,44 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .common import parse_identifiers, extract_value
+from .common import parse_identifiers, extract_value, get_foreign_key_ref
 
 
 DATA_KEY = "data"
+NULL = "NULL"
+
+
+def _build_document(
+    column_identifiers: typing.Union[
+        token_groups.IdentifierList, token_groups.Identifier
+    ],
+    value_group: token_groups.Values,
+    collection_name: str,
+) -> typing.Dict[str, typing.Union[str, int, float, datetime, None, bool]]:
+    table_field_map = parse_identifiers(column_identifiers, collection_name)
+    val_idx, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
+    value_identifiers = parenthesis_group.flatten()
+
+    _, additional_parenthesis_group = value_group.token_next_by(
+        i=token_groups.Parenthesis, idx=val_idx
+    )
+    if additional_parenthesis_group is not None:
+        raise exceptions.NotSupportedError(
+            "INSERT for multiple rows is not supported yet."
+        )
+
+    values = [
+        value
+        for value in value_identifiers
+        if not value.ttype == token_types.Punctuation and not value.is_whitespace
+    ]
+    column_names = table_field_map[collection_name].keys()
+
+    assert len(column_names) == len(
+        values
+    ), f"Lengths didn't match:\ncolumns: {column_names}\nvalues: {values}"
+
+    return {col: extract_value(val) for col, val in zip(column_names, values)}
 
 
 def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpression]:
@@ -33,7 +68,7 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
         )
 
     func_idx, table_identifier = function_group.token_next_by(i=token_groups.Identifier)
-    table_name = table_identifier.value
+    collection_name = table_identifier.value
 
     _, column_group = function_group.token_next_by(
         i=token_groups.Parenthesis, idx=func_idx
@@ -41,56 +76,57 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
     _, column_identifiers = column_group.token_next_by(
         i=(token_groups.IdentifierList, token_groups.Identifier)
     )
-    table_field_map = parse_identifiers(column_identifiers, table_name)
-
     idx, value_group = statement.token_next_by(i=token_groups.Values, idx=idx)
 
-    val_idx, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
-    value_identifiers = parenthesis_group.flatten()
-
-    _, additional_parenthesis_group = value_group.token_next_by(
-        i=token_groups.Parenthesis, idx=val_idx
+    document_to_insert = _build_document(
+        column_identifiers, value_group, collection_name
     )
-    if additional_parenthesis_group is not None:
-        raise exceptions.NotSupportedError(
-            "INSERT for multiple rows is not supported yet."
-        )
 
-    values = [
-        value
-        for value in value_identifiers
-        if not value.ttype == token_types.Punctuation and not value.is_whitespace
-    ]
-    column_names = table_field_map[table_name].keys()
-
-    assert len(column_names) == len(
-        values
-    ), f"Lengths didn't match:\ncolumns: {column_names}\nvalues: {values}"
-
-    record_to_insert = {
-        col: extract_value(val) for col, val in zip(column_names, values)
-    }
-
-    collection = q.get(q.collection(table_name))
+    collection = q.get(q.collection(collection_name))
     field_metadata = q.select(["data", "metadata", "fields"], collection, default={})
 
-    get_field_value = lambda doc: q.select(
-        q.var("field_name"),
-        doc,
-        q.select("default", q.var("field_constraints")),
+    # Fauna's Select doesn't play nice with null values, so we have to wrap it in an
+    # if/else if the underlying value & default are null
+    get_field_value = lambda field_name, field_constraints: q.let(
+        {
+            "field_value": q.select(
+                field_name,
+                document_to_insert,
+                q.select("default", field_constraints, default=NULL),
+            )
+        },
+        q.if_(q.equals(q.var("field_value"), NULL), None, q.var("field_value")),
     )
-    fill_blank_values_with_defaults = lambda doc: q.lambda_(
-        ["field_name", "field_constraints"],
-        [q.var("field_name"), get_field_value(doc)],
+
+    replace_foreign_key_with_ref = lambda field_value, field_constraints: q.let(
+        {"references": q.select("references", field_constraints)},
+        q.if_(
+            q.equals(q.var("references"), {}),
+            field_value,
+            get_foreign_key_ref(field_value, q.var("references")),
+        ),
     )
 
     document_to_create = q.to_object(
         q.map_(
-            fill_blank_values_with_defaults(record_to_insert),
+            q.lambda_(
+                ["field_name", "field_constraints"],
+                [
+                    q.var("field_name"),
+                    replace_foreign_key_with_ref(
+                        get_field_value(
+                            q.var("field_name"), q.var("field_constraints")
+                        ),
+                        q.var("field_constraints"),
+                    ),
+                ],
+            ),
             q.to_array(field_metadata),
         )
     )
-    create_document = q.create(q.collection(table_name), {"data": document_to_create})
+    create_document = q.create(
+        q.collection(collection_name), {"data": document_to_create}
+    )
 
     flattened_items = q.union(
         q.map_(

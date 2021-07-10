@@ -34,6 +34,9 @@ FieldAliasMap = typing.Dict[str, str]
 TableFieldMap = typing.Dict[typing.Optional[str], FieldAliasMap]
 
 
+NULL = "NULL"
+
+
 class _NumericString(Exception):
     pass
 
@@ -130,13 +133,18 @@ def get_foreign_key_ref(
             # and that it refers to the associated collection's ID field
             # (e.g. {'associated_table': 'id'}).
             # This is enforced via NotSupported errors when creating collections.
-            "reference": q.union(q.to_array(references)),
-            "foreign_collection": q.collection(q.select(0, q.var("reference"))),
+            "references": q.union(q.to_array(references)),
+            "reference_collection": q.select(0, q.var("references"), default=NULL),
+            "is_blank_reference": q.or_(
+                q.is_null(foreign_value),
+                q.equals(foreign_value, NULL),
+                q.equals(q.var("reference_collection"), NULL),
+            ),
         },
         q.if_(
-            q.equals(foreign_value, None),
+            q.var("is_blank_reference"),
             None,
-            q.ref(q.var("foreign_collection"), foreign_value),
+            q.ref(q.collection(q.var("reference_collection")), foreign_value),
         ),
     )
 
@@ -311,7 +319,9 @@ def _parse_comparison(
                 "ref_index": q.index(f"{collection_name}_by_{field_name}_refs"),
                 "term_index": q.index(f"{collection_name}_by_{field_name}_terms"),
                 "references": q.select(
-                    [field_name, "references"], get_collection_fields(collection_name)
+                    [field_name, "references"],
+                    get_collection_fields(collection_name),
+                    default={},
                 ),
                 "comparison_value": comparison_value,
             },

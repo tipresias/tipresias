@@ -14,7 +14,7 @@ from tests.fixtures import data_factories
 from tipping import api
 from tipping.tipping import FootyTipsSubmitter
 
-# from tipping.models import Match
+from tipping.models import Match
 
 
 TODAY = date.today()
@@ -56,9 +56,11 @@ class TestApi(TestCase):
 
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import.DataImporter")
-    # @patch("tipping.api.settings.Session")
-    # @patch("tipping.api.Match")
-    def test_update_fixture_data(self, MockDataImporter, mock_data_export):
+    @patch("tipping.api.settings.Session")
+    @patch("tipping.api.Match")
+    def test_update_fixture_data(
+        self, MockMatch, MockSession, MockDataImporter, mock_data_export
+    ):
         with freeze_time(datetime(2020, 5, 1, tzinfo=pytz.UTC)):
             right_now = datetime.now(tz=pytz.UTC)
             this_year = right_now.year
@@ -75,23 +77,23 @@ class TestApi(TestCase):
 
             mock_data_export.update_fixture_data = MagicMock()
 
-            # mock_db_session = MagicMock()
-            # mock_db_session.add = MagicMock()
-            # mock_db_session.commit = MagicMock()
-            # MockSession.return_value = mock_db_session
+            mock_db_session = MagicMock()
+            mock_db_session.add = MagicMock()
+            mock_db_session.commit = MagicMock()
+            MockSession.return_value = mock_db_session
 
             fixture_to_update = fixture.query(
                 "round_number == @upcoming_round & date > @right_now"
             )
-            # mock_matches = [
-            #     Match(
-            #         start_date_time=match["date"],
-            #         venue=match["venue"],
-            #         round_number=match["round_number"],
-            #     )
-            #     for _, match in fixture_to_update.iterrows()
-            # ]
-            # MockMatch.from_future_fixtures = MagicMock(return_value=mock_matches)
+            mock_matches = [
+                Match(
+                    start_date_time=match["date"],
+                    venue=match["venue"],
+                    round_number=match["round_number"],
+                )
+                for _, match in fixture_to_update.iterrows()
+            ]
+            MockMatch.from_future_fixtures = MagicMock(return_value=mock_matches)
 
             self.api.update_fixture_data()
 
@@ -103,10 +105,10 @@ class TestApi(TestCase):
             self.assertTrue(data_are_equal)
             self.assertEqual(call_args[1], upcoming_round)
 
-            # # It saves data to DB
-            # MockMatch.from_future_fixtures.assert_called()
-            # self.assertEqual(mock_db_session.add.call_count, len(mock_matches))
-            # mock_db_session.commit.assert_called()
+            # It saves data to DB
+            MockMatch.from_future_fixtures.assert_called()
+            self.assertEqual(mock_db_session.add.call_count, len(mock_matches))
+            mock_db_session.commit.assert_called()
 
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import.DataImporter._fetch_data")

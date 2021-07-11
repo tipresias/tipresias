@@ -7,8 +7,7 @@ from time import sleep
 import logging
 from datetime import datetime
 
-from faunadb import client
-from faunadb import errors as fauna_errors
+from faunadb import client, errors as fauna_errors
 from faunadb.objects import FaunaTime, Ref, _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
@@ -81,7 +80,7 @@ class FaunaClient:
             if "document data is not valid" not in str(err) or retries >= 10:
                 raise err
 
-            sleep(retries)
+            sleep(retries * 2)
             return self._execute_with_retries(query, retries=(retries + 1))
 
     def _fauna_data_to_sqlalchemy_result(

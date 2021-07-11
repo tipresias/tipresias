@@ -104,8 +104,7 @@ def extract_value(
 
     try:
         return _parse_date_value(string_value)
-    # Seems that mypy can't find the very real ParserError
-    except (parser.ParserError, ValueError, _NumericString):  # type: ignore
+    except (parser.ParserError, ValueError, _NumericString):
         pass
 
     return string_value

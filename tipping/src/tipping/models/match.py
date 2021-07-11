@@ -27,7 +27,8 @@ from .team_match import TeamMatch
 MIN_ROUND_NUMBER = 1
 MIN_MARGIN = 0
 FIRST_ROUND = 1
-
+JAN = 1
+FIRST = 1
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -92,24 +93,32 @@ class Match(Base):
 
         year = future_matches["year"].max()
 
-        past_matches = (
-            (session.execute(select(Match).where(Match.start_date_time < right_now)))
+        past_matches_this_season = (
+            (
+                session.execute(
+                    select(Match).where(
+                        Match.start_date_time < right_now,
+                        Match.start_date_time
+                        > datetime(right_now.year, JAN, FIRST, tzinfo=timezone.utc),
+                    )
+                )
+            )
             .scalars()
             .all()
         )
 
-        prev_match = (
-            max(past_matches, key=lambda match: match.start_date_time)
-            if any(past_matches)
+        prev_match_this_season = (
+            max(past_matches_this_season, key=lambda match: match.start_date_time)
+            if any(past_matches_this_season)
             else None
         )
 
-        if prev_match is not None:
-            assert upcoming_round in (prev_match.round_number + 1, FIRST_ROUND), (
+        if prev_match_this_season is not None:
+            assert upcoming_round == prev_match_this_season.round_number + 1, (
                 "Expected upcoming round number to be 1 greater than previous round "
                 f"or 1, but upcoming round is {upcoming_round} in {year}, "
-                f" and previous round was {prev_match.round_number} "
-                f"in {prev_match.start_date_time.year}"
+                f" and previous round was {prev_match_this_season.round_number} "
+                f"in {prev_match_this_season.start_date_time.year}"
             )
 
         matches = []

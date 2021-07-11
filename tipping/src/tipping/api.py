@@ -10,8 +10,8 @@ from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.tipping import MonashSubmitter
 
-# from tipping.models import Match
-# from tipping import settings
+from tipping.models import Match
+from tipping import settings
 
 
 DEC = 12
@@ -106,15 +106,13 @@ def update_fixture_data(verbose: int = 1) -> None:
 
     data_export.update_fixture_data(future_matches, upcoming_round)
 
-    # Disabled until I can fix the bugs with the FQL queries when the foreign key value
-    # is blank.
-    # db_session = settings.Session()
-    # matches = Match.from_future_fixtures(db_session, future_matches, upcoming_round)
+    db_session = settings.Session()
+    matches = Match.from_future_fixtures(db_session, future_matches, upcoming_round)
 
-    # for match in matches:
-    #     db_session.add(match)
+    for match in matches:
+        db_session.add(match)
 
-    # db_session.commit()
+    db_session.commit()
 
     return None
 

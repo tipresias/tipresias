@@ -13,7 +13,7 @@ from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
 from .common import extract_value
-from .models import Table
+from .models import Column, Table
 
 
 FieldMetadata = TypedDict(
@@ -200,17 +200,18 @@ def _define_foreign_key_constraint(
         t=token_types.Name, idx=idx
     )
     reference_table = Table(reference_table)
-    idx, reference_column = column_definition_group.token_next_by(
+    idx, reference_column_identifier = column_definition_group.token_next_by(
         t=token_types.Name, idx=idx
     )
-    reference_column_name = reference_column.value
+    reference_column = Column(token_groups.Identifier(reference_column_identifier))
+    reference_table.add_column(reference_column)
 
     if any(metadata.get(column_name, EMPTY_DICT).get("references", EMPTY_DICT)):
         raise exceptions.NotSupportedError(
             "Foreign keys with multiple references are not currently supported."
         )
 
-    if reference_column_name != "id":
+    if reference_column.name != "id":
         raise exceptions.NotSupportedError(
             "Foreign keys referring to fields other than ID are not currently supported."
         )
@@ -220,7 +221,7 @@ def _define_foreign_key_constraint(
         column_name: {
             **DEFAULT_FIELD_METADATA,  # type: ignore
             **metadata.get(column_name, EMPTY_DICT),
-            "references": {reference_table.name: reference_column_name},
+            "references": {reference_table.name: reference_column.name},
         },
     }
 

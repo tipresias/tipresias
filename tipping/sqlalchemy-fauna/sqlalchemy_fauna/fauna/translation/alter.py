@@ -8,7 +8,7 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .models import Table
+from .models import Column, Table
 
 
 def _translate_drop_default(table_name: str, column_name: str) -> QueryExpression:
@@ -26,19 +26,20 @@ def _translate_drop_default(table_name: str, column_name: str) -> QueryExpressio
 
 def _translate_alter_column(
     statement: token_groups.Statement,
-    table_name: str,
+    table: Table,
     starting_idx: int,
 ) -> QueryExpression:
     idx, column_identifier = statement.token_next_by(
         i=token_groups.Identifier, idx=starting_idx
     )
-    column_name = column_identifier.value
+    column = Column(column_identifier)
+    table.add_column(column)
 
     _, drop = statement.token_next_by(m=(token_types.DDL, "DROP"), idx=idx)
     _, default = statement.token_next_by(m=(token_types.Keyword, "DEFAULT"))
 
     if drop and default:
-        return _translate_drop_default(table_name, column_name)
+        return _translate_drop_default(table.name, table.columns[0].name)
 
     raise exceptions.NotSupportedError(
         "For statements with ALTER COLUMN, only DROP DEFAULT is currently supported."
@@ -68,7 +69,7 @@ def translate_alter(statement: token_groups.Statement) -> typing.List[QueryExpre
     )
 
     if second_alter and column_keyword:
-        return [_translate_alter_column(statement, table.name, idx)]
+        return [_translate_alter_column(statement, table, idx)]
 
     raise exceptions.NotSupportedError(
         "For ALTER TABLE queries, only ALTER COLUMN is currently supported."

@@ -17,6 +17,7 @@ FunctionMap = typing.Dict[str, CalculationFunction]
 TableFunctionMap = typing.Dict[str, FunctionMap]
 
 DATA_KEY = "data"
+MAX_PAGE_SIZE = 100000
 
 
 def _parse_function(
@@ -127,7 +128,7 @@ def _translate_select_with_functions(
     # to the incorrect keys.
     aliased_document = q.to_object(q.map_(translate_to_alias, selected_fields))
 
-    paginated_documents = q.paginate(q.var("documents"))
+    paginated_documents = q.paginate(q.var("documents"), size=MAX_PAGE_SIZE)
     # With aggregation functions, standard behaviour is to include the first value
     # if any column selections are part of the query, at least until we add support
     # for GROUP BY
@@ -194,7 +195,7 @@ def _translate_select_without_functions(
     )
     translate_documents = lambda documents: q.map_(
         select_document_fields,
-        q.paginate(documents),
+        q.paginate(documents, size=MAX_PAGE_SIZE),
     )
 
     return q.let(
@@ -292,7 +293,7 @@ def _translate_select_from_info_schema_constraints(
     )
     indexes_based_on_collection = q.filter_(
         is_based_on_collection,
-        q.paginate(q.indexes()),
+        q.paginate(q.indexes(), size=MAX_PAGE_SIZE),
     )
 
     collection_fields = q.select(
@@ -437,7 +438,7 @@ def _translate_select_from_info_schema_tables() -> QueryExpression:
 
     return q.map_(
         get_collection_ref,
-        q.paginate(q.collections()),
+        q.paginate(q.collections(), size=MAX_PAGE_SIZE),
     )
 
 

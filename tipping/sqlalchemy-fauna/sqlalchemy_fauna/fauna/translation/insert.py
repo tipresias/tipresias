@@ -82,91 +82,111 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
         column_identifiers, value_group, collection_name
     )
 
-    collection = q.get(q.collection(collection_name))
-    field_metadata = q.select(["data", "metadata", "fields"], collection, default={})
-
     # Fauna's Select doesn't play nice with null values, so we have to wrap it in an
     # if/else if the underlying value & default are null
-    get_field_value = lambda field_name, field_constraints: q.let(
+    get_field_value = lambda document, field_name, field_constraints: q.let(
         {
-            "field_value": q.select(
-                field_name,
-                document_to_insert,
-                q.select("default", field_constraints, default=NULL),
-            )
+            "references": q.select("references", field_constraints, default={}),
+            "default_value": q.select("default", field_constraints, default=NULL),
+            "field_value": q.select(field_name, document, q.var("default_value")),
         },
-        q.if_(q.equals(q.var("field_value"), NULL), None, q.var("field_value")),
-    )
-
-    replace_foreign_key_with_ref = lambda field_value, field_constraints: q.let(
-        {"references": q.select("references", field_constraints)},
         q.if_(
             q.equals(q.var("references"), {}),
-            field_value,
-            get_foreign_key_ref(field_value, q.var("references")),
+            q.var("field_value"),
+            get_foreign_key_ref(q.var("field_value"), q.var("references")),
         ),
     )
 
-    document_to_create = q.to_object(
-        q.map_(
-            q.lambda_(
-                ["field_name", "field_constraints"],
-                [
-                    q.var("field_name"),
-                    replace_foreign_key_with_ref(
+    build_document = lambda metadata: q.let(
+        {"document": document_to_insert},
+        q.to_object(
+            q.map_(
+                q.lambda_(
+                    ["field_name", "field_constraints"],
+                    [
+                        q.var("field_name"),
                         get_field_value(
-                            q.var("field_name"), q.var("field_constraints")
+                            q.var("document"),
+                            q.var("field_name"),
+                            q.var("field_constraints"),
                         ),
-                        q.var("field_constraints"),
-                    ),
-                ],
-            ),
-            q.to_array(field_metadata),
-        )
+                    ],
+                ),
+                q.to_array(metadata),
+            )
+        ),
     )
-    create_document = q.create(
-        q.collection(collection_name), {"data": document_to_create}
+    create_document = lambda collection, metadata: q.create(
+        collection, {"data": build_document(metadata)}
     )
 
-    flattened_items = q.union(
-        q.map_(
-            q.lambda_(
-                ["key", "value"],
-                q.if_(
-                    q.equals(q.var("key"), DATA_KEY),
-                    q.to_array(q.var("value")),
-                    # We put single key/value pairs in nested arrays to match
-                    # the structure of the nested 'data' key/values
-                    [[q.var("key"), q.var("value")]],
+    flatten_response_fields = lambda response: q.to_object(
+        q.union(
+            q.map_(
+                q.lambda_(
+                    ["key", "value"],
+                    q.if_(
+                        q.equals(q.var("key"), DATA_KEY),
+                        q.to_array(q.var("value")),
+                        # We put single key/value pairs in nested arrays to match
+                        # the structure of the nested 'data' key/values
+                        [[q.var("key"), q.var("value")]],
+                    ),
                 ),
-            ),
-            q.to_array(q.var("document")),
+                q.to_array(response),
+            )
         )
     )
 
     # We map over field_metadata, with the ref ID inserted first, to build the document object
     # in order to maintain the order of fields as queried. Otherwise, SQLAlchemy
     # gets confused and assigns values to the incorrect keys.
-    document_fields = q.union(
+    get_collection_field_names = lambda metadata: q.union(
         ["ref"],
         q.map_(
             q.lambda_(["field", "_"], q.var("field")),
-            q.to_array(field_metadata),
+            q.to_array(metadata),
         ),
     )
-    field_name = q.if_(
-        q.equals(q.var("field"), "ref"),
+    # We convert 'ref' back into 'id' in the response, because that's the primary key
+    # that SQLAlchemy expects.
+    get_response_field_name = lambda field_name: q.if_(
+        q.equals(field_name, "ref"),
         "id",
-        q.var("field"),
+        field_name,
     )
-    field_value = q.select_with_default(
-        q.var("field"), q.to_object(flattened_items), default=None
+    get_response_field_value = lambda document, field_name: q.select(
+        field_name, document, default=NULL
     )
-    document_response = q.to_object(
+    build_document_response = lambda document, metadata: q.to_object(
         q.map_(
-            q.lambda_("field", [field_name, field_value]),
-            document_fields,
+            q.lambda_(
+                "field_name",
+                [
+                    get_response_field_name(q.var("field_name")),
+                    get_response_field_value(document, q.var("field_name")),
+                ],
+            ),
+            get_collection_field_names(metadata),
         )
     )
 
-    return [q.let({"document": create_document}, {"data": [document_response]})]
+    get_metadata = lambda collection: q.select(
+        ["data", "metadata", "fields"],
+        q.get(collection),
+        default={},
+    )
+
+    return [
+        q.let(
+            {
+                "collection": q.collection(collection_name),
+                "metadata": get_metadata(q.var("collection")),
+                "document_response": create_document(
+                    q.var("collection"), q.var("metadata")
+                ),
+                "document": flatten_response_fields(q.var("document_response")),
+            },
+            {"data": [build_document_response(q.var("document"), q.var("metadata"))]},
+        )
+    ]

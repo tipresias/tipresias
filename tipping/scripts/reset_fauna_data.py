@@ -68,71 +68,140 @@ def _print_document_counts():
         print(f"\t{collection}: {result}")
 
 
+def _assign_ref(ref_collection, ref_id):
+    return q.if_(q.is_null(ref_id), None, q.ref(ref_collection, ref_id))
+
+
+def _create_documents(collection_name, records, build_document):
+    return _execute_with_retries(
+        q.let(
+            {"collection": q.collection(collection_name)},
+            q.map_(
+                q.lambda_(
+                    "document",
+                    q.create(
+                        q.var("collection"),
+                        {"data": build_document(q.var("document"))},
+                    ),
+                ),
+                records,
+            ),
+        )
+    )
+
+
 def _load_predictions(data):
     predictions = data["predictions"]
-    # Not very efficient, but we create documents one at a time to retrieve each ID
-    # and save it for later, because we want to maintain the association between
-    # the Django PK and Fauna ID.
-    for document in predictions.values():
-        ml_model_id = data["ml_models"][document["ml_model_id"]]["id"]
-        document["ml_model_id"] = q.ref(q.collection("ml_models"), ml_model_id)
+    records = list(predictions.values())
 
-        match_id = data["matches"][document["match_id"]]["id"]
-        document["match_id"] = q.ref(q.collection("matches"), match_id)
+    build_document = lambda prediction: q.let(
+        {
+            "teams": q.collection("teams"),
+            "matches": q.collection("matches"),
+            "ml_models": q.collection("ml_models"),
+        },
+        q.to_object(
+            q.map_(
+                q.lambda_(
+                    ["key", "value"],
+                    [
+                        q.var("key"),
+                        q.if_(
+                            q.equals(q.var("key"), "predicted_winner_id"),
+                            _assign_ref(q.var("teams"), q.var("value")),
+                            q.if_(
+                                q.equals(q.var("key"), "match_id"),
+                                _assign_ref(q.var("matches"), q.var("value")),
+                                q.if_(
+                                    q.equals(q.var("key"), "ml_model_id"),
+                                    _assign_ref(q.var("ml_models"), q.var("value")),
+                                    q.var("value"),
+                                ),
+                            ),
+                        ),
+                    ],
+                ),
+                q.to_array(prediction),
+            )
+        ),
+    )
 
-        predicted_winner_id = data["teams"][document["predicted_winner_id"]]["id"]
-        document["predicted_winner_id"] = q.ref(
-            q.collection("teams"), predicted_winner_id
-        )
+    documents = _create_documents("predictions", records, build_document)
 
-        result = _execute_with_retries(
-            q.create(q.collection("predictions"), {"data": document})
-        )
-        document["id"] = result["ref"].id()
+    for record, document in zip(records, documents):
+        record["id"] = document["ref"].id()
 
 
 def _load_team_matches(data):
     team_matches = data["team_matches"]
-    # Not very efficient, but we create documents one at a time to retrieve each ID
-    # and save it for later, because we want to maintain the association between
-    # the Django PK and Fauna ID.
-    for document in team_matches.values():
-        team_id = data["teams"][document["team_id"]]["id"]
-        document["team_id"] = q.ref(q.collection("teams"), team_id)
+    records = list(team_matches.values())
+    build_document = lambda team_match: q.let(
+        {"teams": q.collection("teams"), "matches": q.collection("matches")},
+        q.to_object(
+            q.map_(
+                q.lambda_(
+                    ["key", "value"],
+                    [
+                        q.var("key"),
+                        q.if_(
+                            q.equals(q.var("key"), "team_id"),
+                            _assign_ref(q.var("teams"), q.var("value")),
+                            q.if_(
+                                q.equals(q.var("key"), "match_id"),
+                                _assign_ref(q.var("matches"), q.var("value")),
+                                q.var("value"),
+                            ),
+                        ),
+                    ],
+                ),
+                q.to_array(team_match),
+            )
+        ),
+    )
 
-        match_id = data["matches"][document["match_id"]]["id"]
-        document["match_id"] = q.ref(q.collection("matches"), match_id)
+    documents = _create_documents("team_matches", records, build_document)
 
-        result = _execute_with_retries(
-            q.create(q.collection("team_matches"), {"data": document})
-        )
-        document["id"] = result["ref"].id()
+    for record, document in zip(records, documents):
+        record["id"] = document["ref"].id()
 
 
 def _load_matches(data):
     matches = data["matches"]
-    # Not very efficient, but we create documents one at a time to retrieve each ID
-    # and save it for later, because we want to maintain the association between
-    # the Django PK and Fauna ID.
-    for document in matches.values():
-        if document["winner_id"] is not None:
-            winner_id = data["teams"][document["winner_id"]]["id"]
-            document["winner_id"] = q.ref(q.collection("teams"), winner_id)
-
-        result = _execute_with_retries(
-            q.create(q.collection("matches"), {"data": document})
+    records = list(matches.values())
+    build_document = lambda match: q.to_object(
+        q.map_(
+            q.lambda_(
+                ["key", "value"],
+                q.let(
+                    {"teams": q.collection("teams")},
+                    [
+                        q.var("key"),
+                        q.if_(
+                            q.equals(q.var("key"), "winner_id"),
+                            _assign_ref(q.var("teams"), q.var("value")),
+                            q.var("value"),
+                        ),
+                    ],
+                ),
+            ),
+            q.to_array(match),
         )
+    )
 
-        document["id"] = result["ref"].id()
+    documents = _create_documents("matches", records, build_document)
+
+    for record, document in zip(records, documents):
+        record["id"] = document["ref"].id()
 
 
 def _load_ml_models(ml_models):
-    # Not very efficient, but we create documents one at a time to retrieve each ID
-    # and save it for later, because we want to maintain the association between
-    # the Django PK and Fauna ID.
-    for document in ml_models.values():
-        result = _execute_with_retries(q.create(q.collection("ml_models"), document))
-        document["id"] = result["ref"].id()
+    records = list(ml_models.values())
+
+    build_document = lambda ml_model: ml_model
+    documents = _create_documents("ml_models", records, build_document)
+
+    for record, document in zip(records, documents):
+        record["id"] = document["ref"].id()
 
 
 def _load_data_into_fauna(data):
@@ -219,12 +288,20 @@ def _set_up_fauna():
 
 def main(filepath):
     """Load a Django data dump into a Fauna DB."""
+    start_time = datetime.now()
+    print("\nStart time:", start_time, "\n")
+
     if database_url.netloc != "db.fauna.com":
         _set_up_fauna()
+
     _delete_data()
     subprocess.run("alembic upgrade head", check=True, shell=True)
     data_dump = _read_data_dump(filepath)
     _load_data_into_fauna(data_dump)
+
+    end_time = datetime.now()
+    print("\nEnd time:", end_time, "\n")
+    print("\nTotal run time:", end_time - start_time, "\n")
     _print_document_counts()
 
 

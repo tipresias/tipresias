@@ -63,10 +63,29 @@ def test_from_future_fixtures(fauna_session):
         assert total_match_count == created_match_count
 
 
+def _get_matches_from_different_days(fixture_matches):
+    first_match = fixture_matches.iloc[0, :]
+    next_match_idx = np.random.randint(1, len(fixture_matches))
+    next_match = fixture_matches.iloc[next_match_idx, :]
+
+    while True:
+        if next_match["date"].to_pydatetime() > first_match[
+            "date"
+        ].to_pydatetime() + timedelta(days=1):
+            break
+
+        next_match_idx = next_match_idx + 1
+        assert next_match_idx < len(fixture_matches)
+
+        next_match = fixture_matches.iloc[next_match_idx, :]
+
+    return first_match, next_match
+
+
 def test_from_future_fixtures_with_skipped_round(fauna_session):
     fixture_matches = data_factories.fake_fixture_data()
-    first_match = fixture_matches.iloc[0, :]
-    next_match = fixture_matches.iloc[np.random.randint(1, len(fixture_matches)), :]
+    first_match, next_match = _get_matches_from_different_days(fixture_matches)
+
     patched_date = next_match["date"].to_pydatetime() - timedelta(days=1)
     upcoming_round_number = int(next_match["round_number"]) + 1
 

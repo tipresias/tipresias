@@ -3,14 +3,13 @@
 import typing
 from functools import reduce, partial
 
-from sqlparse import tokens as token_types
-from sqlparse import sql as token_groups
+from sqlparse import tokens as token_types, sql as token_groups
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
 from . import common
-from .models import Table
+from .models import Column, Table
 
 
 CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
@@ -230,22 +229,22 @@ def _translate_select_from_table(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
 
-    table_field_alias_map = common.parse_identifiers(identifiers, table.name)
-    field_alias_map = table_field_alias_map[table.name]
+    for column in Column.from_identifier_group(identifiers):
+        table.add_column(column)
 
     _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
-    documents_to_select = common.parse_where(where_group, table.name)
+    documents_to_select = common.parse_where(where_group, table)
 
     table_functions = _parse_functions(q.var("documents"), identifiers, table.name)
     field_functions = table_functions[table.name]
 
     return (
         _translate_select_with_functions(
-            documents_to_select, field_alias_map, field_functions
+            documents_to_select, table.column_alias_map, field_functions
         )
         if len(field_functions)
         else _translate_select_without_functions(
-            documents_to_select, field_alias_map, distinct=distinct
+            documents_to_select, table.column_alias_map, distinct=distinct
         )
     )
 

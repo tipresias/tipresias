@@ -48,7 +48,7 @@ def translate_update(statement: token_groups.Statement) -> typing.List[QueryExpr
     update_value_value = extract_value(update_value)
 
     _, where_group = statement.token_next_by(i=token_groups.Where)
-    records_to_update = parse_where(where_group, table.name)
+    records_to_update = parse_where(where_group, table)
 
     updated_count = q.do(
         q.update(

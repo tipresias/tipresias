@@ -9,17 +9,13 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from . import common
+from . import common, models
 
 
 def _build_document(
-    column_identifiers: typing.Union[
-        token_groups.IdentifierList, token_groups.Identifier
-    ],
+    table: models.Table,
     value_group: token_groups.Values,
-    collection_name: str,
 ) -> typing.Dict[str, typing.Union[str, int, float, datetime, None, bool]]:
-    table_field_map = common.parse_identifiers(column_identifiers, collection_name)
     val_idx, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
     value_identifiers = parenthesis_group.flatten()
 
@@ -36,7 +32,7 @@ def _build_document(
         for value in value_identifiers
         if not value.ttype == token_types.Punctuation and not value.is_whitespace
     ]
-    column_names = table_field_map[collection_name].keys()
+    column_names = list(map(str, table.columns))
 
     assert len(column_names) == len(
         values
@@ -64,7 +60,7 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
         )
 
     func_idx, table_identifier = function_group.token_next_by(i=token_groups.Identifier)
-    collection_name = table_identifier.value
+    table = models.Table(table_identifier)
 
     _, column_group = function_group.token_next_by(
         i=token_groups.Parenthesis, idx=func_idx
@@ -72,11 +68,13 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
     _, column_identifiers = column_group.token_next_by(
         i=(token_groups.IdentifierList, token_groups.Identifier)
     )
+
+    for column in models.Column.from_identifier_group(column_identifiers):
+        table.add_column(column)
+
     idx, value_group = statement.token_next_by(i=token_groups.Values, idx=idx)
 
-    document_to_insert = _build_document(
-        column_identifiers, value_group, collection_name
-    )
+    document_to_insert = _build_document(table, value_group)
 
     # Fauna's Select doesn't play nice with null values, so we have to wrap it in an
     # if/else if the underlying value & default are null
@@ -178,7 +176,7 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
     return [
         q.let(
             {
-                "collection": q.collection(collection_name),
+                "collection": q.collection(table.name),
                 "metadata": get_metadata(q.var("collection")),
                 "document_response": create_document(
                     q.var("collection"), q.var("metadata")

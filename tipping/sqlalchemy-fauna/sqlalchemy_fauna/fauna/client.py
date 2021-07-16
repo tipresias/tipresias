@@ -80,7 +80,7 @@ class FaunaClient:
             if "document data is not valid" not in str(err) or retries >= 10:
                 raise err
 
-            sleep(retries * 2)
+            sleep(retries)
             return self._execute_with_retries(query, retries=(retries + 1))
 
     def _fauna_data_to_sqlalchemy_result(

@@ -54,14 +54,18 @@ class FaunaClient:
             for fql_query in fql_queries:
                 result = self._execute_with_retries(fql_query)
         except fauna_errors.BadRequest as err:
-            if "document is not unique" not in str(err):
-                raise err
+            # The response from Fauna contains more information about where to find
+            # the bug in the FQL, but it gets lost in the default error message.
+            fauna_response = err.request_result.response_content
 
-            # TODO: this isn't a terribly helpful error message, but executing the queries
-            # to make a better one is a little tricky, so leaving it as-is for now.
-            raise exceptions.ProgrammingError(
-                "Tried to create a document with duplicate value for a unique field."
-            )
+            if "document is not unique" in str(err):
+                # TODO: this isn't a terribly helpful error message, but executing the queries
+                # to make a better one is a little tricky, so leaving it as-is for now.
+                raise exceptions.ProgrammingError(
+                    "Tried to create a document with duplicate value for a unique field."
+                ) from err
+
+            raise exceptions.InternalError(fauna_response) from err
 
         return [self._fauna_data_to_sqlalchemy_result(data) for data in result["data"]]
 
@@ -80,7 +84,7 @@ class FaunaClient:
             if "document data is not valid" not in str(err) or retries >= 10:
                 raise err
 
-            sleep(retries * 2)
+            sleep(retries)
             return self._execute_with_retries(query, retries=(retries + 1))
 
     def _fauna_data_to_sqlalchemy_result(

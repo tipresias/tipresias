@@ -3,20 +3,19 @@
 import typing
 from functools import reduce, partial
 
-from sqlparse import tokens as token_types
-from sqlparse import sql as token_groups
+from sqlparse import tokens as token_types, sql as token_groups
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value, parse_identifiers, parse_where, FieldAliasMap
+from . import common
+from .models import Column, Table
 
 
 CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
 FunctionMap = typing.Dict[str, CalculationFunction]
 TableFunctionMap = typing.Dict[str, FunctionMap]
 
-DATA_KEY = "data"
 MAX_PAGE_SIZE = 100000
 
 
@@ -52,7 +51,7 @@ def _parse_function(
         calculation = q.count(collection)
     else:
         raise exceptions.NotSupportedError(
-            "AVG and SUM functions are not yet supported."
+            "MIN, MAX, AVG, and SUM functions are not yet supported."
         )
 
     if table_name is None:
@@ -88,68 +87,95 @@ def _parse_functions(
 
 def _translate_select_with_functions(
     documents_to_select: QueryExpression,
-    field_alias_map: FieldAliasMap,
+    field_alias_map: common.FieldAliasMap,
     field_functions: FunctionMap,
 ):
-    document_items = q.to_array(q.get(q.var("document")))
-    flattened_items = q.union(
-        q.map_(
-            q.lambda_(
-                ["key", "value"],
-                q.if_(
-                    q.equals(q.var("key"), DATA_KEY),
-                    q.to_array(q.var("value")),
-                    # We put single key/value pairs in nested arrays to match
-                    # the structure of the nested 'data' key/values
-                    [[q.var("key"), q.var("value")]],
-                ),
-            ),
-            document_items,
-        )
-    )
-
     selected_fields = list(field_alias_map.keys())
-    field_alias = q.select_with_default(
-        q.var("field"),
-        field_alias_map,
-        default=q.var("field"),
+
+    apply_alias = lambda field_name: q.select(
+        field_name, field_alias_map, default=field_name
     )
 
-    field_function = q.select_with_default(
-        q.var("field"), field_functions, default=None
+    extract_basic_field_value = lambda document, field_name: q.let(
+        {"value": q.select(field_name, document, common.NULL)},
+        q.if_(q.equals(q.var("value"), common.NULL), None, q.var("value")),
     )
-    basic_field = q.select_with_default(
-        q.var("field"), q.to_object(flattened_items), default=None
+    extract_document_value = lambda document, field_name: q.select(
+        field_name,
+        field_functions,
+        default=extract_basic_field_value(document, field_name),
     )
-    field_value = q.if_(q.is_null(field_function), basic_field, field_function)
-    translate_to_alias = q.lambda_("field", [field_alias, field_value])
+    translate_to_alias = lambda document, field_name: [
+        apply_alias(field_name),
+        extract_document_value(document, field_name),
+    ]
+
+    flatten_document_fields = lambda document: q.let(
+        {
+            "field_items": q.map_(
+                q.lambda_(
+                    ["field_name", "field_value"],
+                    q.if_(
+                        q.equals(q.var("field_name"), common.DATA),
+                        q.to_array(q.var("field_value")),
+                        # We put single key/value pairs in nested arrays to match
+                        # the structure of the nested 'data' key/values
+                        [[q.var("field_name"), q.var("field_value")]],
+                    ),
+                ),
+                q.to_array(document),
+            ),
+            "flattened_items": q.if_(
+                q.is_empty(q.var("field_items")),
+                q.var("field_items"),
+                q.union(q.var("field_items")),
+            ),
+        },
+        q.to_object(q.var("flattened_items")),
+    )
     # We map over selected_fields to build document object to maintain the order
     # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
     # to the incorrect keys.
-    aliased_document = q.to_object(q.map_(translate_to_alias, selected_fields))
+    apply_field_aliases = lambda document: q.to_object(
+        q.map_(
+            q.lambda_(
+                "field_name",
+                translate_to_alias(document, q.var("field_name")),
+            ),
+            selected_fields,
+        )
+    )
 
-    paginated_documents = q.paginate(q.var("documents"), size=MAX_PAGE_SIZE)
     # With aggregation functions, standard behaviour is to include the first value
     # if any column selections are part of the query, at least until we add support
     # for GROUP BY
-    first_document = q.select_with_default(0, paginated_documents, default={})
-    query_response = q.let(
-        {"documents": documents_to_select},
-        q.map_(
-            q.lambda_("document", aliased_document),
-            [first_document],
+    get_first_document = lambda documents: q.let(
+        {
+            "first_document": q.select(
+                0, q.paginate(documents, size=MAX_PAGE_SIZE), default=common.NULL
+            )
+        },
+        q.if_(
+            q.equals(q.var("first_document"), common.NULL),
+            {},
+            q.get(q.var("first_document")),
         ),
     )
 
     return q.let(
-        {"response": query_response},
-        {DATA_KEY: q.var("response")},
+        {
+            "documents": documents_to_select,
+            "response": apply_field_aliases(
+                flatten_document_fields(get_first_document((q.var("documents"))))
+            ),
+        },
+        {common.DATA: [q.var("response")]},
     )
 
 
 def _translate_select_without_functions(
     documents_to_select: QueryExpression,
-    field_alias_map: FieldAliasMap,
+    field_alias_map: common.FieldAliasMap,
     distinct=False,
 ):
     flatten = lambda items: q.union(
@@ -157,7 +183,7 @@ def _translate_select_without_functions(
             q.lambda_(
                 ["key", "value"],
                 q.if_(
-                    q.equals(q.var("key"), DATA_KEY),
+                    q.equals(q.var("key"), common.DATA),
                     q.to_array(q.var("value")),
                     # We put single key/value pairs in nested arrays to match
                     # the structure of the nested 'data' key/values
@@ -170,12 +196,24 @@ def _translate_select_without_functions(
 
     translate_fields_to_aliases = lambda document_fields: q.lambda_(
         "field",
-        [
-            q.select_with_default(
-                q.var("field"), field_alias_map, default=q.var("field")
-            ),
-            q.select_with_default(q.var("field"), document_fields, default=None),
-        ],
+        q.let(
+            {
+                "field_name": q.select(
+                    q.var("field"), field_alias_map, default=q.var("field")
+                ),
+                "field_value": q.select(
+                    q.var("field"), document_fields, default=common.NULL
+                ),
+            },
+            [
+                q.var("field_name"),
+                q.if_(
+                    q.equals(q.var("field_value"), common.NULL),
+                    None,
+                    q.var("field_value"),
+                ),
+            ],
+        ),
     )
 
     # We map over selected_fields to build document object to maintain the order
@@ -206,7 +244,9 @@ def _translate_select_without_functions(
     )
 
 
-def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpression:
+def _translate_select_from_table(
+    statement: token_groups.Statement, table: Table
+) -> QueryExpression:
     _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
 
     if wildcard is not None:
@@ -217,33 +257,23 @@ def _translate_select_from_table(statement: token_groups.Statement) -> QueryExpr
     idx, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
-    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"), idx=idx)
-    idx, table_identifier = statement.token_next_by(
-        i=(token_groups.Identifier), idx=idx
-    )
-    table_name = table_identifier.value
-    table_field_alias_map = parse_identifiers(identifiers, table_name)
-    field_alias_map = table_field_alias_map[table_name]
 
-    # We can only handle one table at a time for now
-    if len(table_field_alias_map.keys()) > 1:
-        raise exceptions.NotSupportedError(
-            "Only one table per query is currently supported"
-        )
+    for column in Column.from_identifier_group(identifiers):
+        table.add_column(column)
 
     _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
-    documents_to_select = parse_where(where_group, table_name)
+    documents_to_select = common.parse_where(where_group, table)
 
-    table_functions = _parse_functions(q.var("documents"), identifiers, table_name)
-    field_functions = table_functions[table_name]
+    table_functions = _parse_functions(q.var("documents"), identifiers, table.name)
+    field_functions = table_functions[table.name]
 
     return (
         _translate_select_with_functions(
-            documents_to_select, field_alias_map, field_functions
+            documents_to_select, table.column_alias_map, field_functions
         )
         if len(field_functions)
         else _translate_select_without_functions(
-            documents_to_select, field_alias_map, distinct=distinct
+            documents_to_select, table.column_alias_map, distinct=distinct
         )
     )
 
@@ -282,7 +312,7 @@ def _translate_select_from_info_schema_constraints(
         )
 
     _, condition_check = where_group.token_next(idx, skip_ws=True)
-    condition_value = extract_value(condition_check)
+    condition_value = common.extract_value(condition_check)
 
     is_based_on_collection = q.lambda_(
         "index",
@@ -297,7 +327,7 @@ def _translate_select_from_info_schema_constraints(
     )
 
     collection_fields = q.select(
-        ["data", "metadata", "fields"],
+        [common.DATA, "metadata", "fields"],
         q.get(q.collection(condition_value)),
     )
     collection_field_names = q.map_(
@@ -375,11 +405,11 @@ def _translate_select_from_info_schema_columns(
         )
 
     _, condition_check = where_group.token_next(idx, skip_ws=True)
-    condition_value = extract_value(condition_check)
+    condition_value = common.extract_value(condition_check)
 
     collection = q.collection(condition_value)
     field_metadata = q.select(
-        [DATA_KEY, "metadata", "fields"],
+        [common.DATA, "metadata", "fields"],
         q.get(collection),
     )
     # Selecting column info from INFORMATION_SCHEMA returns foreign keys
@@ -411,7 +441,7 @@ def _translate_select_from_info_schema_columns(
     return q.let(
         {
             "response": {
-                DATA_KEY: q.union(
+                common.DATA: q.union(
                     [id_column],
                     metadata_response,
                 )
@@ -442,22 +472,6 @@ def _translate_select_from_info_schema_tables() -> QueryExpression:
     )
 
 
-def _extract_table_name(statement: token_groups.Statement) -> str:
-    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
-    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
-
-    if table_identifier is None:
-        _, table_identifier_list = statement.token_next_by(
-            i=(token_groups.IdentifierList), idx=idx
-        )
-
-        if table_identifier_list is not None:
-            raise exceptions.NotSupportedError(
-                "Only one table per query is currently supported"
-            )
-    return table_identifier.value
-
-
 def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpression]:
     """Translate a SELECT SQL query into an equivalent FQL query.
 
@@ -469,20 +483,28 @@ def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpr
     --------
     A tuple of FQL query expression, selected column  names, and their aliases.
     """
-    table_name = _extract_table_name(statement)
+    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
+    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
+
+    if table_identifier is None:
+        raise exceptions.NotSupportedError(
+            "Only one table per query is currently supported"
+        )
+
+    table = Table(table_identifier)
 
     # TODO: As I've looked into INFORMATION_SCHEMA queries more, I realise
     # that these aren't returning valid responses for the given SQL queries,
     # but just the data that SQLAlchemy needs for some of the Dialect methods.
     # It's okay for now, but should probably fix these query responses eventually
     # and put the SQLAlchemy-specific logic/transformation in FaunaDialect
-    if table_name == "INFORMATION_SCHEMA.TABLES":
+    if table.name == "INFORMATION_SCHEMA.TABLES":
         return [_translate_select_from_info_schema_tables()]
 
-    if table_name == "INFORMATION_SCHEMA.COLUMNS":
+    if table.name == "INFORMATION_SCHEMA.COLUMNS":
         return [_translate_select_from_info_schema_columns(statement)]
 
-    if table_name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
+    if table.name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
         return [_translate_select_from_info_schema_constraints(statement)]
 
-    return [_translate_select_from_table(statement)]
+    return [_translate_select_from_table(statement, table)]

@@ -1,7 +1,6 @@
 """DBAPI for use in the FaunaDialect."""
 
-from functools import reduce
-from typing import Dict, Any, List, Tuple, Union, Optional, Sequence, cast
+import typing
 from datetime import date, datetime, time
 
 from faunadb.client import FaunaClient
@@ -10,12 +9,15 @@ from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
 
 from . import exceptions
-from .fauna import FaunaClient, translation
+from .fauna import FaunaClient
+from .fauna.translation import models
 
 
-PopulatedResultDescription = Tuple[Optional[str], Any, None, None, None, None, bool]
-ResultDescription = List[Union[Tuple, PopulatedResultDescription]]
-ResultData = List[Sequence]
+PopulatedResultDescription = typing.Tuple[
+    typing.Optional[str], typing.Any, None, None, None, None, bool
+]
+ResultDescription = typing.List[typing.Union[typing.Tuple, PopulatedResultDescription]]
+ResultData = typing.List[typing.Sequence]
 
 
 def connect(**connect_kwargs):
@@ -59,7 +61,7 @@ class FaunaQuery:
     def __init__(self, client: FaunaClient):
         self.client = client
 
-    def execute(self, query: str) -> Tuple[ResultData, ResultDescription]:
+    def execute(self, query: str) -> typing.Tuple[ResultData, ResultDescription]:
         """Execute an SQL query as a Fauna query."""
         result = self.client.sql(query)
 
@@ -71,8 +73,8 @@ class FaunaQuery:
         return data, description
 
     def _get_description_from_data(
-        self, result: List[Dict[str, Any]]
-    ) -> Optional[ResultDescription]:
+        self, result: typing.List[typing.Dict[str, typing.Any]]
+    ) -> typing.Optional[ResultDescription]:
         """
         Return description from the result of the SQL query.
 
@@ -121,20 +123,23 @@ class FaunaQuery:
                 )
             ]
 
-        _, identifiers = sql_statement.token_next_by(
+        idx, _ = sql_statement.token_next_by(m=(token_types.Keyword, "FROM"))
+        _, table_identifier = sql_statement.token_next_by(
+            i=(token_groups.Identifier), idx=idx
+        )
+
+        table = models.Table(table_identifier)
+
+        _, column_identifiers = sql_statement.token_next_by(
             i=(
                 token_groups.Identifier,
                 token_groups.IdentifierList,
                 token_groups.Function,
             )
         )
-        table_column_alias_map = translation.parse_identifiers(identifiers)
-        acc_map: Dict[str, str] = {}
-        column_alias_map = reduce(
-            lambda acc, curr: acc if any(acc) else curr[1],
-            table_column_alias_map.items(),
-            acc_map,
-        )
+
+        for column in models.Column.from_identifier_group(column_identifiers):
+            table.add_column(column)
 
         return [
             (
@@ -146,63 +151,11 @@ class FaunaQuery:
                 None,  # [scale]
                 True,  # [null_ok]
             )
-            for column_name, alias_name in column_alias_map.items()
+            for column_name, alias_name in table.column_alias_map.items()
         ]
 
-    def _parse_identifiers(
-        self, identifiers: Union[token_groups.Identifier, token_groups.IdentifierList]
-    ) -> Tuple[Sequence[Optional[str]], Sequence[str], Sequence[Optional[str]]]:
-        if isinstance(identifiers, token_groups.Identifier):
-            table_name, column_name, alias_name = self._parse_identifier(identifiers)
-            return ((table_name,), (column_name,), (alias_name,))
-
-        return cast(
-            Tuple[Sequence[Optional[str]], Sequence[str], Sequence[Optional[str]]],
-            tuple(
-                zip(
-                    *[
-                        self._parse_identifier(identifier)
-                        for identifier in identifiers
-                        if isinstance(identifier, token_groups.Identifier)
-                    ]
-                )
-            ),
-        )
-
     @staticmethod
-    def _parse_identifier(
-        identifier: token_groups.Identifier,
-    ) -> Tuple[Optional[str], str, Optional[str]]:
-        idx, identifier_name = identifier.token_next_by(t=token_types.Name)
-
-        tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
-        if next_token and next_token.match(token_types.Punctuation, "."):
-            idx = tok_idx
-            table_name = identifier_name.value
-            idx, column_identifier = identifier.token_next_by(
-                t=token_types.Name, idx=idx
-            )
-            column_name = column_identifier.value
-        else:
-            table_name = None
-            column_name = identifier_name.value
-
-        idx, as_keyword = identifier.token_next_by(
-            m=(token_types.Keyword, "AS"), idx=idx
-        )
-
-        if as_keyword is not None:
-            _, alias_identifier = identifier.token_next_by(
-                i=token_groups.Identifier, idx=idx
-            )
-            alias_name = alias_identifier.value
-        else:
-            alias_name = None
-
-        return (table_name, column_name, alias_name)
-
-    @staticmethod
-    def _infer_field_type(value: Any) -> Optional[str]:
+    def _infer_field_type(value: typing.Any) -> typing.Optional[str]:
         if isinstance(value, str):
             return "string"
         if isinstance(value, (int, float)):

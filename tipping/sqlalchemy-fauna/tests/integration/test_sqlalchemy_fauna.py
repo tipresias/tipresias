@@ -427,6 +427,27 @@ def test_count(fauna_session, user_model):
     assert fauna_session.execute(select(func.count(User.id))).scalar() == len(names)
 
 
+def test_count_with_empty_results(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    assert fauna_session.execute(select(func.count(User.id))).scalar() == 0
+
+    names = ["Bob", "Linda", "Louise"]
+
+    for name in names:
+        fauna_session.add(User(name=name))
+
+    fauna_session.commit()
+
+    user_count = fauna_session.execute(
+        select(func.count(User.id)).where(User.name == "No one")
+    ).scalar()
+
+    assert user_count == 0
+
+
 def test_select_distinct(fauna_session, user_model):
     User, Base = user_model
     fauna_engine = fauna_session.get_bind()

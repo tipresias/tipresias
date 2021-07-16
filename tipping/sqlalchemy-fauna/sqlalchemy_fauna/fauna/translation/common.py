@@ -4,17 +4,16 @@ import typing
 import re
 from datetime import datetime, timezone
 from warnings import warn
-from functools import reduce
 from dateutil import parser
 
 from sqlparse import sql as token_groups
 from sqlparse import tokens as token_types
-from sqlparse.tokens import _TokenType as TokenType
 from mypy_extensions import TypedDict
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
 
 from sqlalchemy_fauna import exceptions
+from . import models
 
 TableNames = typing.Sequence[typing.Optional[str]]
 ColumnNames = typing.Sequence[str]
@@ -35,6 +34,7 @@ TableFieldMap = typing.Dict[typing.Optional[str], FieldAliasMap]
 
 
 NULL = "NULL"
+DATA = "data"
 
 
 class _NumericString(Exception):
@@ -148,94 +148,19 @@ def get_foreign_key_ref(
     )
 
 
-def _parse_identifier(
-    table_field_map: TableFieldMap,
-    identifier: typing.Union[token_groups.Identifier, TokenType],
-) -> TableFieldMap:
-    if not isinstance(identifier, token_groups.Identifier):
-        return table_field_map
-
-    idx, identifier_name = identifier.token_next_by(
-        t=token_types.Name, i=token_groups.Function
-    )
-
-    tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
-    if next_token and next_token.match(token_types.Punctuation, "."):
-        idx = tok_idx
-        table_name = identifier_name.value
-        idx, column_identifier = identifier.token_next_by(t=token_types.Name, idx=idx)
-        column_name = column_identifier.value
-    else:
-        table_name = None
-        column_name = identifier_name.value
-
-    idx, as_keyword = identifier.token_next_by(m=(token_types.Keyword, "AS"), idx=idx)
-
-    if as_keyword is not None:
-        _, alias_identifier = identifier.token_next_by(
-            i=token_groups.Identifier, idx=idx
-        )
-        alias_name = alias_identifier.value
-    else:
-        alias_name = column_name
-
-    if table_name is None:
-        assert len(table_field_map.keys()) == 1
-        return {
-            key: {**value, column_name: alias_name}
-            for key, value in table_field_map.items()
-        }
-
-    # Fauna doesn't have an 'id' field, so we extract the ID value from the 'ref' included
-    # in query responses, but we still want to map the field name to aliases as with other
-    # fields for consistency when passing results to SQLAlchemy
-    field_map_key = "ref" if column_name == "id" else column_name
-    return {
-        **table_field_map,
-        table_name: {**table_field_map.get(table_name, {}), field_map_key: alias_name},
-    }
-
-
-def parse_identifiers(
-    identifiers: typing.Union[
-        token_groups.Identifier, token_groups.IdentifierList, token_groups.Function
-    ],
-    table_name: typing.Optional[str] = None,
-) -> TableFieldMap:
-    """Extract raw table name, column name, and alias from SQL identifiers.
-
-    Params:
-    -------
-    identifiers: Either a single identifier or identifier list.
-
-    Returns:
-    --------
-    typing.Tuple of table_names, column names, and column aliases.
-    """
-    if isinstance(identifiers, token_groups.Function):
-        return _parse_identifier(
-            {table_name: {}}, token_groups.Identifier([identifiers])
-        )
-
-    if isinstance(identifiers, token_groups.Identifier):
-        return _parse_identifier({table_name: {}}, identifiers)
-
-    return reduce(_parse_identifier, identifiers, {table_name: {}})
-
-
 def _parse_is_null(
     where_group: token_groups.Where,
-    collection_name: str,
+    table: models.Table,
     starting_idx: typing.Optional[int],
 ) -> QueryExpression:
     idx = starting_idx or 0
     idx, comparison_identifier = where_group.token_next_by(
         i=token_groups.Identifier, idx=idx
     )
-    table_field_map = _parse_identifier({collection_name: {}}, comparison_identifier)
-    field_names = list(table_field_map[collection_name].keys())
-    assert len(field_names) == 1
-    field_name = field_names[0]
+    columns = models.Column.from_identifier_group(comparison_identifier)
+    assert len(columns) == 1
+    table.add_column(columns[0])
+    field_name = columns[0].name
 
     idx, is_keyword = where_group.token_next(idx, skip_ws=True, skip_cm=True)
     idx, null_keyword = where_group.token_next(idx, skip_ws=True, skip_cm=True)
@@ -251,20 +176,20 @@ def _parse_is_null(
         index_match,
         q.lambda_(
             ["value", "ref"],
-            q.match(q.index(f"{collection_name}_by_ref_terms"), q.var("ref")),
+            q.match(q.index(f"{table.name}_by_ref_terms"), q.var("ref")),
         ),
     )
     comparison_value = None
     equality_range = q.range(
-        q.match(q.index(f"{collection_name}_by_{field_name}")),
+        q.match(q.index(f"{table.name}_by_{field_name}")),
         [comparison_value],
         [comparison_value],
     )
 
     return q.if_(
-        q.exists(q.index(f"{collection_name}_by_{field_name}_terms")),
+        q.exists(q.index(f"{table.name}_by_{field_name}_terms")),
         q.match(
-            q.index(f"{collection_name}_by_{field_name}_terms"),
+            q.index(f"{table.name}_by_{field_name}_terms"),
             comparison_value,
         ),
         convert_to_ref_set(equality_range),
@@ -272,13 +197,13 @@ def _parse_is_null(
 
 
 def _parse_comparison(
-    comparison_group: token_groups.Comparison, collection_name: str
+    comparison_group: token_groups.Comparison, table: models.Table
 ) -> QueryExpression:
     _, comparison_identifier = comparison_group.token_next_by(i=token_groups.Identifier)
-    table_field_map = _parse_identifier({collection_name: {}}, comparison_identifier)
-    field_names = list(table_field_map[collection_name].keys())
-    assert len(field_names) == 1
-    field_name = field_names[0]
+    columns = models.Column.from_identifier_group(comparison_identifier)
+    assert len(columns) == 1
+    table.add_column(columns[0])
+    field_name = columns[0].name
 
     comp_idx, comparison = comparison_group.token_next_by(t=token_types.Comparison)
     value_idx, comparison_check = comparison_group.token_next_by(t=token_types.Literal)
@@ -294,16 +219,16 @@ def _parse_comparison(
         index_match,
         q.lambda_(
             ["value", "ref"],
-            q.match(q.index(f"{collection_name}_by_ref_terms"), q.var("ref")),
+            q.match(q.index(f"{table.name}_by_ref_terms"), q.var("ref")),
         ),
     )
 
     get_collection_fields = lambda name: q.select(
-        ["data", "metadata", "fields"], q.get(q.collection(name))
+        [DATA, "metadata", "fields"], q.get(q.collection(name))
     )
 
     equality_range = q.range(
-        q.match(q.index(f"{collection_name}_by_{field_name}")),
+        q.match(q.index(f"{table.name}_by_{field_name}")),
         [comparison_value],
         [comparison_value],
     )
@@ -311,15 +236,15 @@ def _parse_comparison(
     if comparison.value == "=":
         if field_name == "ref":
             assert isinstance(comparison_value, str)
-            return q.singleton(q.ref(q.collection(collection_name), comparison_value))
+            return q.singleton(q.ref(q.collection(table.name), comparison_value))
 
         return q.let(
             {
-                "ref_index": q.index(f"{collection_name}_by_{field_name}_refs"),
-                "term_index": q.index(f"{collection_name}_by_{field_name}_terms"),
+                "ref_index": q.index(f"{table.name}_by_{field_name}_refs"),
+                "term_index": q.index(f"{table.name}_by_{field_name}_terms"),
                 "references": q.select(
                     [field_name, "references"],
-                    get_collection_fields(collection_name),
+                    get_collection_fields(table.name),
                     default={},
                 ),
                 "comparison_value": comparison_value,
@@ -346,13 +271,13 @@ def _parse_comparison(
 
         if field_value_greater_than_literal:
             inclusive_comparison_range = q.range(
-                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                q.match(q.index(f"{table.name}_by_{field_name}")),
                 [comparison_value],
                 [],
             )
         else:
             inclusive_comparison_range = q.range(
-                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                q.match(q.index(f"{table.name}_by_{field_name}")),
                 [],
                 [comparison_value],
             )
@@ -369,13 +294,13 @@ def _parse_comparison(
 
         if field_value_less_than_literal:
             inclusive_comparison_range = q.range(
-                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                q.match(q.index(f"{table.name}_by_{field_name}")),
                 [],
                 [comparison_value],
             )
         else:
             inclusive_comparison_range = q.range(
-                q.match(q.index(f"{collection_name}_by_{field_name}")),
+                q.match(q.index(f"{table.name}_by_{field_name}")),
                 [comparison_value],
                 [],
             )
@@ -394,7 +319,7 @@ def _parse_comparison(
 
 
 def parse_where(
-    where_group: token_groups.Where, collection_name: str
+    where_group: token_groups.Where, table: models.Table
 ) -> QueryExpression:
     """Convert an SQL WHERE clause into an FQL match query.
 
@@ -407,7 +332,7 @@ def parse_where(
     FQL query expression that matches on the same conditions as the WHERE clause.
     """
     if where_group is None:
-        return q.intersection(q.match(q.index(f"all_{collection_name}")))
+        return q.intersection(q.match(q.index(f"all_{table.name}")))
 
     _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
     if or_keyword is not None:
@@ -439,9 +364,9 @@ def parse_where(
         )
 
         comparison_query = (
-            _parse_is_null(where_group, collection_name, and_idx)
+            _parse_is_null(where_group, table, and_idx)
             if comparison.value == "IS"
-            else _parse_comparison(comparison, collection_name)
+            else _parse_comparison(comparison, table)
         )
         comparisons.append(comparison_query)
 

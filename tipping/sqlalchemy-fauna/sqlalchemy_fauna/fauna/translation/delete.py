@@ -7,6 +7,7 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from .common import parse_where
+from . import models
 
 
 def translate_delete(statement: token_groups.Statement) -> typing.List[QueryExpression]:
@@ -20,10 +21,11 @@ def translate_delete(statement: token_groups.Statement) -> typing.List[QueryExpr
     --------
     An FQL query expression.
     """
-    idx, table = statement.token_next_by(i=token_groups.Identifier)
+    idx, table_identifier = statement.token_next_by(i=token_groups.Identifier)
+    table = models.Table(table_identifier)
     _, where_group = statement.token_next_by(i=(token_groups.Where), idx=idx)
 
-    records_to_delete = parse_where(where_group, table.value)
+    records_to_delete = parse_where(where_group, table)
     delete_records = q.delete(q.select("ref", q.get(records_to_delete)))
 
     return [

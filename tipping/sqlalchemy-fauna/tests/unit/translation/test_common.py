@@ -11,7 +11,7 @@ from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
 
 from sqlalchemy_fauna import exceptions
-from sqlalchemy_fauna.fauna.translation import common
+from sqlalchemy_fauna.fauna.translation import common, models
 
 FAKE = Faker()
 
@@ -49,47 +49,6 @@ def test_extract_value(_label, token_value, expected):
     token = token_groups.Token(token_types.Literal, token_value)
     value = common.extract_value(token)
     assert value == expected
-
-
-table_name = "users"
-select_singl_column = f"SELECT {table_name}.id FROM {table_name}"
-select_columns = f"SELECT {table_name}.id, {table_name}.name FROM {table_name}"
-select_aliases = (
-    f"SELECT {table_name}.id AS user_id, {table_name}.name AS user_name "
-    "FROM {table_name}"
-)
-select_function = f"SELECT count({table_name}.id) FROM {table_name}"
-select_function_alias = (
-    f"SELECT count({table_name}.id) AS count_{table_name} FROM {table_name}"
-)
-
-
-@pytest.mark.parametrize(
-    ["sql_query", "expected_columns", "expected_aliases"],
-    [
-        (select_singl_column, ["ref"], ["id"]),
-        (select_columns, ["ref", "name"], ["id", "name"]),
-        (select_aliases, ["ref", "name"], ["user_id", "user_name"]),
-        (select_function, [f"count({table_name}.id)"], [f"count({table_name}.id)"]),
-        (select_function_alias, [f"count({table_name}.id)"], [f"count_{table_name}"]),
-    ],
-)
-def test_parse_identifiers(sql_query, expected_columns, expected_aliases):
-    statement = sqlparse.parse(sql_query)[0]
-    _, identifiers = statement.token_next_by(
-        i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
-    )
-
-    table_field_map = common.parse_identifiers(identifiers, table_name)
-
-    for table in table_field_map.keys():
-        assert table == table_name
-
-    for column in table_field_map[table_name]:
-        assert column in expected_columns
-
-    for alias in table_field_map[table_name].values():
-        assert alias in expected_aliases
 
 
 select_values = "SELECT * FROM users"
@@ -131,10 +90,13 @@ where_or = (
 )
 def test_parsing_unsupported_where(sql_query, error_message):
     statement = sqlparse.parse(sql_query)[0]
+    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
+    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
+    table = models.Table(table_identifier)
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
     with pytest.raises(exceptions.NotSupportedError, match=error_message):
-        common.parse_where(where_group, "users")
+        common.parse_where(where_group, table)
 
 
 where_id = select_values + f" WHERE users.id = '{FAKE.credit_card_number}'"
@@ -147,7 +109,7 @@ where_greater = select_values + f" WHERE users.age > {FAKE.pyint()}"
 where_greater_equal = select_values + f" WHERE users.age >= {FAKE.pyint()}"
 where_less = select_values + f" WHERE users.age < {FAKE.pyint()}"
 where_less_equal = select_values + f" WHERE users.age <= {FAKE.pyint()}"
-where_is_null = select_values + f" WHERE users.job IS NULL"
+where_is_null = select_values + " WHERE users.job IS NULL"
 
 
 @pytest.mark.parametrize(
@@ -166,9 +128,12 @@ where_is_null = select_values + f" WHERE users.job IS NULL"
 )
 def test_parsing_where(sql_query):
     statement = sqlparse.parse(sql_query)[0]
+    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
+    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
+    table = models.Table(table_identifier)
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
-    fql_query = common.parse_where(where_group, "users")
+    fql_query = common.parse_where(where_group, table)
     assert isinstance(fql_query, QueryExpression)
 
 

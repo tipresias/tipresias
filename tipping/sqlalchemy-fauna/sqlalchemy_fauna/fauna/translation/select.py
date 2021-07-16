@@ -51,7 +51,7 @@ def _parse_function(
         calculation = q.count(collection)
     else:
         raise exceptions.NotSupportedError(
-            "AVG and SUM functions are not yet supported."
+            "MIN, MAX, AVG, and SUM functions are not yet supported."
         )
 
     if table_name is None:
@@ -90,57 +90,86 @@ def _translate_select_with_functions(
     field_alias_map: common.FieldAliasMap,
     field_functions: FunctionMap,
 ):
-    document_items = q.to_array(q.get(q.var("document")))
-    flattened_items = q.union(
-        q.map_(
-            q.lambda_(
-                ["key", "value"],
-                q.if_(
-                    q.equals(q.var("key"), common.DATA),
-                    q.to_array(q.var("value")),
-                    # We put single key/value pairs in nested arrays to match
-                    # the structure of the nested 'data' key/values
-                    [[q.var("key"), q.var("value")]],
-                ),
-            ),
-            document_items,
-        )
-    )
-
     selected_fields = list(field_alias_map.keys())
-    field_alias = q.select(
-        q.var("field"),
-        field_alias_map,
-        default=q.var("field"),
+
+    apply_alias = lambda field_name: q.select(
+        field_name, field_alias_map, default=field_name
     )
 
-    field_function = q.select(q.var("field"), field_functions, default=common.NULL)
-    basic_field = q.select(q.var("field"), q.to_object(flattened_items))
-    field_value = q.if_(
-        q.equals(field_function, common.NULL), basic_field, field_function
+    extract_basic_field_value = lambda document, field_name: q.let(
+        {"value": q.select(field_name, document, common.NULL)},
+        q.if_(q.equals(q.var("value"), common.NULL), None, q.var("value")),
     )
-    translate_to_alias = q.lambda_("field", [field_alias, field_value])
+    extract_document_value = lambda document, field_name: q.select(
+        field_name,
+        field_functions,
+        default=extract_basic_field_value(document, field_name),
+    )
+    translate_to_alias = lambda document, field_name: [
+        apply_alias(field_name),
+        extract_document_value(document, field_name),
+    ]
+
+    flatten_document_fields = lambda document: q.let(
+        {
+            "field_items": q.map_(
+                q.lambda_(
+                    ["field_name", "field_value"],
+                    q.if_(
+                        q.equals(q.var("field_name"), common.DATA),
+                        q.to_array(q.var("field_value")),
+                        # We put single key/value pairs in nested arrays to match
+                        # the structure of the nested 'data' key/values
+                        [[q.var("field_name"), q.var("field_value")]],
+                    ),
+                ),
+                q.to_array(document),
+            ),
+            "flattened_items": q.if_(
+                q.is_empty(q.var("field_items")),
+                q.var("field_items"),
+                q.union(q.var("field_items")),
+            ),
+        },
+        q.to_object(q.var("flattened_items")),
+    )
     # We map over selected_fields to build document object to maintain the order
     # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
     # to the incorrect keys.
-    aliased_document = q.to_object(q.map_(translate_to_alias, selected_fields))
+    apply_field_aliases = lambda document: q.to_object(
+        q.map_(
+            q.lambda_(
+                "field_name",
+                translate_to_alias(document, q.var("field_name")),
+            ),
+            selected_fields,
+        )
+    )
 
-    paginated_documents = q.paginate(q.var("documents"), size=MAX_PAGE_SIZE)
     # With aggregation functions, standard behaviour is to include the first value
     # if any column selections are part of the query, at least until we add support
     # for GROUP BY
-    first_document = q.select(0, paginated_documents, default={})
-    query_response = q.let(
-        {"documents": documents_to_select},
-        q.map_(
-            q.lambda_("document", aliased_document),
-            [first_document],
+    get_first_document = lambda documents: q.let(
+        {
+            "first_document": q.select(
+                0, q.paginate(documents, size=MAX_PAGE_SIZE), default=common.NULL
+            )
+        },
+        q.if_(
+            q.equals(q.var("first_document"), common.NULL),
+            {},
+            q.get(q.var("first_document")),
         ),
     )
 
     return q.let(
-        {"response": query_response},
-        {common.DATA: q.var("response")},
+        {
+            "documents": documents_to_select,
+            "response": apply_field_aliases(
+                flatten_document_fields(get_first_document((q.var("documents"))))
+            ),
+        },
+        {common.DATA: [q.var("response")]},
     )
 
 

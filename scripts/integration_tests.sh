@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -euo pipefail
 
 DOCKER_COMPOSE_FILE="${1:-docker-compose.yml}"
+EXIT=0
 
 docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
 ./scripts/wait-for-it.sh localhost:3000 -t 30 -- echo "Server ready"
@@ -10,13 +10,17 @@ docker-compose -f ${DOCKER_COMPOSE_FILE} up -d
 # App backend tests
 echo "Running backend integration tests..."
 docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm backend \
-  coverage run manage.py test --no-input
+  coverage run manage.py test --no-input \
+  || EXIT=$?
+
 docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm backend coverage xml
 
 # Tipping service tests
 echo "Running tipping service integration tests..."
 docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm tipping \
-  coverage run -m pytest src
+  coverage run -m pytest src \
+  || EXIT=$?
+
 docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm tipping coverage xml
 
 # Running tests for sqlalchemy-fauna separately, because pytest
@@ -25,4 +29,7 @@ docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm tipping coverage xml
 # a separate package in its own repo.
 echo "Running sqlalchemy-fauna tests..."
 docker-compose -f ${DOCKER_COMPOSE_FILE} run --rm tipping \
-  pytest sqlalchemy-fauna
+  pytest sqlalchemy-fauna \
+  || EXIT=$?
+
+exit $EXIT

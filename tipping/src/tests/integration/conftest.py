@@ -4,6 +4,7 @@ import os
 import re
 from contextlib import contextmanager
 from unittest.mock import patch
+import subprocess
 
 import pytest
 from sqlalchemy import create_engine
@@ -18,29 +19,45 @@ registry.register("fauna", "sqlalchemy_fauna.dialect", "FaunaDialect")
 
 @pytest.fixture(scope="session", autouse=True)
 def _setup_faunadb():
-    os.system(
-        "npx fauna add-endpoint http://faunadb:8443/ --alias localhost --key secret"
+    subprocess.run(
+        "npx fauna add-endpoint http://faunadb:8443/ --alias localhost --key secret",
+        check=True,
+        shell=True,
     )
 
 
 @contextmanager
 def _setup_teardown_test_db():
-    os.system("npx fauna create-database test --endpoint localhost")
-
-    create_key_output = os.popen(
-        "npx fauna create-key test --endpoint=localhost"
-    ).read()
-    secret_key = (
-        re.search("secret: (.+)", create_key_output).group(CAPTURED_MATCH).strip()
+    subprocess.run(
+        "npx fauna create-database test --endpoint localhost",
+        check=True,
+        shell=True,
     )
 
-    with patch.dict(os.environ, {**os.environ, "FAUNA_SECRET": secret_key}):
-        os.system("alembic upgrade head")
+    try:
+        create_key_output = subprocess.run(
+            "npx fauna create-key test --endpoint=localhost",
+            check=True,
+            shell=True,
+            capture_output=True,
+            encoding="utf8",
+        )
+        secret_key = (
+            re.search("secret: (.+)", create_key_output.stdout)
+            .group(CAPTURED_MATCH)
+            .strip()
+        )
 
-        try:
+        with patch.dict(os.environ, {**os.environ, "FAUNA_SECRET": secret_key}):
+            subprocess.run("alembic upgrade head", check=True, shell=True)
+
             yield secret_key
-        finally:
-            os.system("npx fauna delete-database test --endpoint localhost")
+    finally:
+        subprocess.run(
+            "npx fauna delete-database test --endpoint localhost",
+            check=True,
+            shell=True,
+        )
 
 
 @pytest.fixture(scope="function")

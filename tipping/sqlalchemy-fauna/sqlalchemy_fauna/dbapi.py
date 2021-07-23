@@ -128,7 +128,7 @@ class FaunaQuery:
             i=(token_groups.Identifier), idx=idx
         )
 
-        table = models.Table(table_identifier)
+        table = models.Table.from_identifier(table_identifier)
 
         _, column_identifiers = sql_statement.token_next_by(
             i=(

@@ -52,28 +52,10 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
     --------
     An FQL query expression.
     """
-    idx, function_group = statement.token_next_by(i=token_groups.Function)
+    sql_query = models.SQLQuery.from_statement(statement)
+    table = sql_query.tables[0]
 
-    if function_group is None:
-        raise exceptions.NotSupportedError(
-            "INSERT INTO statements without column names are not currently supported."
-        )
-
-    func_idx, table_identifier = function_group.token_next_by(i=token_groups.Identifier)
-    table = models.Table(table_identifier)
-
-    _, column_group = function_group.token_next_by(
-        i=token_groups.Parenthesis, idx=func_idx
-    )
-    _, column_identifiers = column_group.token_next_by(
-        i=(token_groups.IdentifierList, token_groups.Identifier)
-    )
-
-    for column in models.Column.from_identifier_group(column_identifiers):
-        table.add_column(column)
-
-    idx, value_group = statement.token_next_by(i=token_groups.Values, idx=idx)
-
+    _, value_group = statement.token_next_by(i=token_groups.Values)
     document_to_insert = _build_document(table, value_group)
 
     # Fauna's Select doesn't play nice with null values, so we have to wrap it in an

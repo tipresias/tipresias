@@ -92,7 +92,7 @@ def test_parsing_unsupported_where(sql_query, error_message):
     statement = sqlparse.parse(sql_query)[0]
     idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
     _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
-    table = models.Table(table_identifier)
+    table = models.Table.from_identifier(table_identifier)
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
     with pytest.raises(exceptions.NotSupportedError, match=error_message):
@@ -130,7 +130,7 @@ def test_parsing_where(sql_query):
     statement = sqlparse.parse(sql_query)[0]
     idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
     _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
-    table = models.Table(table_identifier)
+    table = models.Table.from_identifier(table_identifier)
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
     fql_query = common.parse_where(where_group, table)

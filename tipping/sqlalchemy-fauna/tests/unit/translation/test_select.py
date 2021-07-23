@@ -16,8 +16,6 @@ partial_select_info_schema_columns = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS"
 partial_select_info_schema_constraints = (
     "SELECT * FROM INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE"
 )
-select_multiple_tables = "SELECT * FROM users, accounts"
-select_all = "SELECT * FROM users"
 select_sum = "SELECT sum(users.id) AS sum_1 from users"
 select_avg = "SELECT avg(users.id) AS avg_1 from users"
 
@@ -53,8 +51,6 @@ select_avg = "SELECT avg(users.id) AS avg_1 from users"
             partial_select_info_schema_constraints + " WHERE TABLE_NAME LIKE 'users'",
             "Only column-value-based conditions",
         ),
-        (select_multiple_tables, "Only one table per query is currently supported"),
-        (select_all, "Wildcards"),
         (select_sum, "SUM"),
         (select_avg, "AVG"),
     ],

@@ -235,6 +235,18 @@ class SQLQuery:
         --------
         A new SQLQuery object.
         """
+        first_token = statement.token_first(skip_cm=True, skip_ws=True)
+
+        if first_token.match(token_types.DML, "SELECT"):
+            return cls._build_select_query(statement)
+
+        if first_token.match(token_types.DML, "UPDATE"):
+            return cls._build_update_query(statement)
+
+        raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
+
+    @classmethod
+    def _build_select_query(cls, statement: token_groups.Statement) -> SQLQuery:
         idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
         _, table_identifier = statement.token_next_by(
             i=(token_groups.Identifier), idx=idx
@@ -264,6 +276,28 @@ class SQLQuery:
 
         for column in Column.from_identifier_group(identifiers):
             table.add_column(column)
+
+        return cls(tables=[table])
+
+    @classmethod
+    def _build_update_query(cls, statement: token_groups.Statement) -> SQLQuery:
+        idx, table_identifier = statement.token_next_by(i=token_groups.Identifier)
+
+        if table_identifier is None:
+            raise exceptions.NotSupportedError(
+                "Only one table per query is currently supported"
+            )
+
+        table = Table.from_identifier(table_identifier)
+
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "SET"), idx=idx)
+        idx, comparison_group = statement.token_next_by(
+            i=token_groups.Comparison, idx=idx
+        )
+
+        _, update_column = comparison_group.token_next_by(i=token_groups.Identifier)
+        column = Column.from_identifier(update_column)
+        table.add_column(column)
 
         return cls(tables=[table])
 

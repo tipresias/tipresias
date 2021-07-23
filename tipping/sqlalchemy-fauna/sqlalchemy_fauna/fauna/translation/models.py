@@ -246,6 +246,9 @@ class SQLQuery:
         if first_token.match(token_types.DML, "INSERT"):
             return cls._build_insert_query(statement)
 
+        if first_token.match(token_types.DML, "DELETE"):
+            return cls._build_delete_query(statement)
+
         raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
 
     @classmethod
@@ -327,6 +330,13 @@ class SQLQuery:
 
         for column in Column.from_identifier_group(column_identifiers):
             table.add_column(column)
+
+        return cls(tables=[table])
+
+    @classmethod
+    def _build_delete_query(cls, statement: token_groups.Statement) -> SQLQuery:
+        _, table_identifier = statement.token_next_by(i=token_groups.Identifier)
+        table = Table.from_identifier(table_identifier)
 
         return cls(tables=[table])
 

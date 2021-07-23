@@ -21,10 +21,10 @@ def translate_delete(statement: token_groups.Statement) -> typing.List[QueryExpr
     --------
     An FQL query expression.
     """
-    idx, table_identifier = statement.token_next_by(i=token_groups.Identifier)
-    table = models.Table.from_identifier(table_identifier)
-    _, where_group = statement.token_next_by(i=(token_groups.Where), idx=idx)
+    sql_query = models.SQLQuery.from_statement(statement)
+    table = sql_query.tables[0]
 
+    _, where_group = statement.token_next_by(i=(token_groups.Where))
     records_to_delete = parse_where(where_group, table)
     delete_records = q.delete(q.select("ref", q.get(records_to_delete)))
 

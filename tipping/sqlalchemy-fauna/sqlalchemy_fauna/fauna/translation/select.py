@@ -9,7 +9,7 @@ from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
 from . import common
-from .models import Column, Table
+from sqlalchemy_fauna.fauna.translation import models
 
 
 CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
@@ -245,21 +245,15 @@ def _translate_select_without_functions(
 
 
 def _translate_select_from_table(
-    statement: token_groups.Statement, table: Table
+    statement: token_groups.Statement, sql_query: models.SQLQuery
 ) -> QueryExpression:
-    _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
-
-    if wildcard is not None:
-        raise exceptions.NotSupportedError("Wildcards ('*') are not yet supported")
+    table = sql_query.tables[0]
 
     _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
 
     idx, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
-
-    for column in Column.from_identifier_group(identifiers):
-        table.add_column(column)
 
     _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
     documents_to_select = common.parse_where(where_group, table)
@@ -486,12 +480,14 @@ def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpr
     idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
     _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
 
+    # If we can't find a single table identifier, it means that multiple tables
+    # are referenced in the FROM clause, which isn't supported.
     if table_identifier is None:
         raise exceptions.NotSupportedError(
             "Only one table per query is currently supported"
         )
 
-    table = Table.from_identifier(table_identifier)
+    table = models.Table.from_identifier(table_identifier)
 
     # TODO: As I've looked into INFORMATION_SCHEMA queries more, I realise
     # that these aren't returning valid responses for the given SQL queries,
@@ -507,4 +503,9 @@ def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpr
     if table.name == "INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE":
         return [_translate_select_from_info_schema_constraints(statement)]
 
-    return [_translate_select_from_table(statement, table)]
+    # TODO: We have duplicate logic defining tables, because INFORMATION_SCHEMA queries
+    # are a special case that are going to require a rewrite eventually, so easier
+    # to ignore them for now in order to progress with this refactor.
+    sql_query = models.SQLQuery.from_statement(statement)
+    table = sql_query.tables[0]
+    return [_translate_select_from_table(statement, sql_query)]

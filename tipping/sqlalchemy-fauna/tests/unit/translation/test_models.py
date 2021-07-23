@@ -3,7 +3,9 @@
 import sqlparse
 from sqlparse import sql as token_groups, tokens as token_types
 import pytest
+
 from sqlalchemy_fauna.fauna.translation import models
+from sqlalchemy_fauna import exceptions
 
 column_name = "name"
 
@@ -115,3 +117,41 @@ def test_add_column():
     table.add_column(column)
 
     assert table.columns == [column]
+
+
+def test_sql_query():
+    sql_query = models.SQLQuery(tables=[models.Table(name="table")])
+    assert len(sql_query.tables) == 1
+    assert sql_query.tables[0].name == "table"
+
+
+def test_sql_query_from_statement():
+    table_name = "users"
+    column_name = "name"
+    sql_string = f"SELECT users.{column_name} FROM {table_name}"
+    statement = sqlparse.parse(sql_string)[0]
+
+    sql_query = models.SQLQuery.from_statement(statement)
+    table = sql_query.tables[0]
+    column = table.columns[0]
+    assert table.name == table_name
+    assert column.name == column_name
+
+
+@pytest.mark.parametrize(
+    ["sql_string", "error_message"],
+    [
+        (
+            "SELECT users.name, accounts.number from users, accounts",
+            "Only one table per query is currently supported",
+        ),
+        # Using regex's "any character" symbol instead of the expected single-quotes,
+        # because getting the escapes right through multiple layers of code is super annoying.
+        ("SELECT * from users", "Wildcards (.*.) are not yet supported"),
+    ],
+)
+def test_unsupported_sql_query_statements(sql_string, error_message):
+    statement = sqlparse.parse(sql_string)[0]
+
+    with pytest.raises(exceptions.NotSupportedError, match=error_message):
+        models.SQLQuery.from_statement(statement)

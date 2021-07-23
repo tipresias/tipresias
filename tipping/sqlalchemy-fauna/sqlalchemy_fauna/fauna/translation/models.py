@@ -210,3 +210,64 @@ class Table:
 
     def __str__(self) -> str:
         return self.name
+
+
+class SQLQuery:
+    """Representation of an entire SQL query statement.
+
+    Params:
+    -------
+    tables: List of tables referenced in the query.
+    """
+
+    def __init__(self, tables: typing.List[Table]):
+        self._tables = tables
+
+    @classmethod
+    def from_statement(cls, statement: token_groups.Statement) -> SQLQuery:
+        """Extract an SQLQuery object from an SQL statement token.
+
+        Params:
+        -------
+        statement: SQL token that contains the entire query.
+
+        Returns:
+        --------
+        A new SQLQuery object.
+        """
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
+        _, table_identifier = statement.token_next_by(
+            i=(token_groups.Identifier), idx=idx
+        )
+
+        # If we can't find a single table identifier, it means that multiple tables
+        # are referenced in the FROM clause, which isn't supported.
+        if table_identifier is None:
+            raise exceptions.NotSupportedError(
+                "Only one table per query is currently supported"
+            )
+
+        table = Table.from_identifier(table_identifier)
+
+        _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
+
+        if wildcard is not None:
+            raise exceptions.NotSupportedError("Wildcards ('*') are not yet supported")
+
+        idx, identifiers = statement.token_next_by(
+            i=(
+                token_groups.Identifier,
+                token_groups.IdentifierList,
+                token_groups.Function,
+            )
+        )
+
+        for column in Column.from_identifier_group(identifiers):
+            table.add_column(column)
+
+        return cls(tables=[table])
+
+    @property
+    def tables(self):
+        """List of data tables referenced in the SQL query."""
+        return self._tables

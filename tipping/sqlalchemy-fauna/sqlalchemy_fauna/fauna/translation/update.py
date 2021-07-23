@@ -36,7 +36,7 @@ def translate_update(statement: token_groups.Statement) -> typing.List[QueryExpr
     idx, comparison_group = statement.token_next_by(i=token_groups.Comparison, idx=idx)
 
     _, update_column = comparison_group.token_next_by(i=token_groups.Identifier)
-    column = Column(update_column)
+    column = Column.from_identifier(update_column)
     table.add_column(column)
 
     idx, comparison = comparison_group.token_next_by(m=(token_types.Comparison, "="))

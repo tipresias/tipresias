@@ -5,7 +5,6 @@ from sqlparse import sql as token_groups, tokens as token_types
 import pytest
 from sqlalchemy_fauna.fauna.translation import models
 
-
 column_name = "name"
 
 
@@ -17,17 +16,21 @@ column_name = "name"
         (f"users.{column_name} AS user_name", "users", "user_name"),
     ],
 )
-def test_column(column_sql, expected_table_name, expected_alias):
+def test_column_from_identifier(column_sql, expected_table_name, expected_alias):
     sql_query = f"SELECT {column_sql} FROM users"
     statement = sqlparse.parse(sql_query)[0]
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
-    column = models.Column(column_identifier)
+    column = models.Column.from_identifier(column_identifier)
 
     assert column.name == column_name
-    assert str(column) == column_name
     assert column.table_name == expected_table_name
     assert column.alias == expected_alias
+
+
+def test_column():
+    column = models.Column(table_name="users", name="name", alias="alias")
+    assert str(column) == "name"
     assert column.alias_map == {column.name: column.alias}
 
     table = models.Table(name="users", columns=[column])
@@ -79,7 +82,7 @@ def test_table():
     statement = sqlparse.parse(sql_query)[0]
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
-    column = models.Column(column_identifier)
+    column = models.Column.from_identifier(column_identifier)
     table = models.Table(name=table_name, columns=[column])
     assert table.name == table_name
     assert str(table) == table_name
@@ -89,7 +92,7 @@ def test_table():
     assert table.column_alias_map == {column.name: column.alias}
 
 
-def test_from_identifier():
+def test_table_from_identifier():
     table_name = "users"
     sql_query = f"SELECT users.name FROM {table_name}"
     statement = sqlparse.parse(sql_query)[0]
@@ -106,7 +109,7 @@ def test_add_column():
     statement = sqlparse.parse(sql_query)[0]
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
-    column = models.Column(column_identifier)
+    column = models.Column.from_identifier(column_identifier)
     table = models.Table(name=table_name)
 
     table.add_column(column)

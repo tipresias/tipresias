@@ -6,9 +6,14 @@ import typing
 from functools import reduce
 
 from sqlparse import sql as token_groups, tokens as token_types
+from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
 
+
+ColumnParams = TypedDict(
+    "ColumnParams", {"table_name": typing.Optional[str], "name": str, "alias": str}
+)
 
 # Probably not a complete list, but covers the basics
 FUNCTION_NAMES = {"min", "max", "count", "avg", "sum"}
@@ -21,19 +26,11 @@ class Column:
     identifier: Parsed SQL Identifier for a column name and/or alias.
     """
 
-    def __init__(self, identifier: token_groups.Identifier):
-        self.name = ""
-        self.alias = ""
+    def __init__(self, table_name: typing.Optional[str], name: str, alias: str):
+        self.name = name
+        self.alias = alias
+        self._table_name = table_name
         self._table: typing.Optional[Table] = None
-        self._table_name: typing.Optional[str] = None
-
-        idx = self._assign_names(identifier)
-        self._assign_alias(identifier, idx)
-        # Fauna doesn't have an 'id' field, so we extract the ID value from the 'ref' included
-        # in query responses, but we still want to map the field name to aliases as with other
-        # fields for consistency when passing results to SQLAlchemy
-        if self.name == "id":
-            self.name = "ref"
 
     @classmethod
     def from_identifier_group(
@@ -54,7 +51,7 @@ class Column:
         """
         if isinstance(identifiers, token_groups.IdentifierList):
             return [
-                Column(id)
+                Column.from_identifier(id)
                 for id in identifiers
                 if isinstance(id, token_groups.Identifier)
             ]
@@ -64,7 +61,7 @@ class Column:
             _, name = identifier.token_next_by(t=token_types.Name)
 
             if name.value.lower() in FUNCTION_NAMES:
-                return [Column(token_groups.Identifier([identifiers]))]
+                return [Column.from_identifier(token_groups.Identifier([identifiers]))]
 
             _, parenthesis = identifiers.token_next_by(i=token_groups.Parenthesis)
             _, column_id_list = parenthesis.token_next_by(i=token_groups.IdentifierList)
@@ -75,11 +72,61 @@ class Column:
             return columns
 
         if isinstance(identifiers, token_groups.Identifier):
-            return [Column(identifiers)]
+            return [Column.from_identifier(identifiers)]
 
         raise exceptions.InternalError(
             f"Tried to create a column from unsupported SQL token type {type(identifiers)}"
         )
+
+    @classmethod
+    def from_identifier(cls, identifier: token_groups.Identifier) -> Column:
+        """Create a column from an SQL identifier token.
+
+        Params:
+        -------
+        identifier: SQL token with column label.
+
+        Returns:
+        --------
+        A Column object based on the given identifier token.
+        """
+        idx, identifier_name = identifier.token_next_by(
+            t=token_types.Name, i=token_groups.Function
+        )
+
+        _, maybe_dot = identifier.token_next(idx, skip_ws=True, skip_cm=True)
+        if maybe_dot is None or not maybe_dot.match(token_types.Punctuation, "."):
+            table_name = None
+            name = identifier_name.value
+        else:
+            table_name = identifier_name.value
+            idx, column_name_token = identifier.token_next_by(
+                t=token_types.Name, idx=idx
+            )
+            # Fauna doesn't have an 'id' field, so we extract the ID value from the 'ref' included
+            # in query responses, but we still want to map the field name to aliases as with other
+            # fields for consistency when passing results to SQLAlchemy
+            name = "ref" if column_name_token.value == "id" else column_name_token.value
+
+        idx, as_keyword = identifier.token_next_by(
+            m=(token_types.Keyword, "AS"), idx=idx
+        )
+
+        if as_keyword is None:
+            alias = "id" if name == "ref" else name
+        else:
+            _, alias_identifier = identifier.token_next_by(
+                i=token_groups.Identifier, idx=idx
+            )
+            alias = alias_identifier.value
+
+        column_params: ColumnParams = {
+            "table_name": table_name,
+            "name": name,
+            "alias": alias,
+        }
+
+        return Column(**column_params)
 
     @property
     def table(self) -> typing.Optional[Table]:
@@ -102,42 +149,6 @@ class Column:
     def alias_map(self) -> typing.Dict[str, str]:
         """Dictionary that maps the column name to its alias in the SQL query."""
         return {self.name: self.alias}
-
-    def _assign_names(self, identifier: token_groups.Identifier) -> int:
-        idx, identifier_name = identifier.token_next_by(
-            t=token_types.Name, i=token_groups.Function
-        )
-
-        tok_idx, next_token = identifier.token_next(idx, skip_ws=True)
-        if next_token and next_token.match(token_types.Punctuation, "."):
-            idx = tok_idx
-            table_name = identifier_name.value
-            idx, column_identifier = identifier.token_next_by(
-                t=token_types.Name, idx=idx
-            )
-            column_name = column_identifier.value
-        else:
-            table_name = None
-            column_name = identifier_name.value
-
-        self.name = column_name
-        self._table_name = table_name
-
-        return idx
-
-    def _assign_alias(self, identifier: token_groups.Identifier, idx: int):
-        assert self.name is not None
-        idx, as_keyword = identifier.token_next_by(
-            m=(token_types.Keyword, "AS"), idx=idx
-        )
-
-        if as_keyword is None:
-            self.alias = "id" if self.name == "ref" else self.name
-        else:
-            _, alias_identifier = identifier.token_next_by(
-                i=token_groups.Identifier, idx=idx
-            )
-            self.alias = alias_identifier.value
 
     def __str__(self) -> str:
         return self.name

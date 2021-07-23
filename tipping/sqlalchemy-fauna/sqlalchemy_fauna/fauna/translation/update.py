@@ -30,7 +30,7 @@ def translate_update(statement: token_groups.Statement) -> typing.List[QueryExpr
             "Only one table per query is currently supported"
         )
 
-    table = Table(table_identifier)
+    table = Table.from_identifier(table_identifier)
 
     idx, _ = statement.token_next_by(m=(token_types.Keyword, "SET"), idx=idx)
     idx, comparison_group = statement.token_next_by(i=token_groups.Comparison, idx=idx)

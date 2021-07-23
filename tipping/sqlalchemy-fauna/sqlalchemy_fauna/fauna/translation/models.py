@@ -5,8 +5,7 @@ from __future__ import annotations
 import typing
 from functools import reduce
 
-from sqlparse import sql as token_groups
-from sqlparse import tokens as token_types
+from sqlparse import sql as token_groups, tokens as token_types
 
 from sqlalchemy_fauna import exceptions
 
@@ -149,21 +148,32 @@ class Table:
 
     Params:
     -------
-    identifier: Parsed SQL Identifier for a table name.
+    name: Name of the table.
     columns: Column objects that belong to the given table.
     """
 
-    def __init__(
-        self,
-        identifier: token_groups.Identifier,
-        columns: typing.Optional[typing.List[Column]] = None,
-    ):
-        self.name = identifier.value
+    def __init__(self, name: str, columns: typing.Optional[typing.List[Column]] = None):
+        self.name = name
         self._columns: typing.List[Column] = []
 
         columns = columns or []
         for column in columns:
             self.add_column(column)
+
+    @classmethod
+    def from_identifier(cls, identifier: token_groups.Identifier) -> Table:
+        """Extract table name from an SQL identifier.
+
+        Params:
+        -------
+        identifier: SQL token that contains the table's name.
+
+        Returns:
+        --------
+        A new Table object.
+        """
+        name = identifier.value
+        return cls(name=name)
 
     @property
     def columns(self) -> typing.List[Column]:

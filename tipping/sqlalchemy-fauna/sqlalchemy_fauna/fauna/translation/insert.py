@@ -60,7 +60,7 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
         )
 
     func_idx, table_identifier = function_group.token_next_by(i=token_groups.Identifier)
-    table = models.Table(table_identifier)
+    table = models.Table.from_identifier(table_identifier)
 
     _, column_group = function_group.token_next_by(
         i=token_groups.Parenthesis, idx=func_idx

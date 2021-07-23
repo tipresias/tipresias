@@ -61,7 +61,7 @@ def translate_alter(statement: token_groups.Statement) -> typing.List[QueryExpre
     assert table_keyword is not None
 
     idx, table_identifier = statement.token_next_by(i=token_groups.Identifier, idx=idx)
-    table = Table(table_identifier)
+    table = Table.from_identifier(table_identifier)
 
     _, second_alter = statement.token_next_by(m=(token_types.DDL, "ALTER"), idx=idx)
     _, column_keyword = statement.token_next_by(

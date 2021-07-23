@@ -491,7 +491,7 @@ def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpr
             "Only one table per query is currently supported"
         )
 
-    table = Table(table_identifier)
+    table = Table.from_identifier(table_identifier)
 
     # TODO: As I've looked into INFORMATION_SCHEMA queries more, I realise
     # that these aren't returning valid responses for the given SQL queries,

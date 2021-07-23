@@ -1,7 +1,7 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 import sqlparse
-from sqlparse import sql as token_groups
+from sqlparse import sql as token_groups, tokens as token_types
 import pytest
 from sqlalchemy_fauna.fauna.translation import models
 
@@ -20,8 +20,7 @@ column_name = "name"
 def test_column(column_sql, expected_table_name, expected_alias):
     sql_query = f"SELECT {column_sql} FROM users"
     statement = sqlparse.parse(sql_query)[0]
-    idx, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
-    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
+    _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
     column = models.Column(column_identifier)
 
@@ -31,7 +30,7 @@ def test_column(column_sql, expected_table_name, expected_alias):
     assert column.alias == expected_alias
     assert column.alias_map == {column.name: column.alias}
 
-    table = models.Table(table_identifier, columns=[column])
+    table = models.Table(name="users", columns=[column])
     column.table = table
     assert column.table_name == table.name
 
@@ -78,11 +77,10 @@ def test_table():
     table_name = "users"
     sql_query = f"SELECT users.name FROM {table_name}"
     statement = sqlparse.parse(sql_query)[0]
-    idx, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
-    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
+    _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
     column = models.Column(column_identifier)
-    table = models.Table(table_identifier, columns=[column])
+    table = models.Table(name=table_name, columns=[column])
     assert table.name == table_name
     assert str(table) == table_name
 
@@ -91,15 +89,25 @@ def test_table():
     assert table.column_alias_map == {column.name: column.alias}
 
 
+def test_from_identifier():
+    table_name = "users"
+    sql_query = f"SELECT users.name FROM {table_name}"
+    statement = sqlparse.parse(sql_query)[0]
+    idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
+    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
+
+    table = models.Table.from_identifier(table_identifier)
+    assert table.name == table_name
+
+
 def test_add_column():
     table_name = "users"
     sql_query = f"SELECT users.name FROM {table_name}"
     statement = sqlparse.parse(sql_query)[0]
-    idx, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
-    _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
+    _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
     column = models.Column(column_identifier)
-    table = models.Table(table_identifier)
+    table = models.Table(name=table_name)
 
     table.add_column(column)
 

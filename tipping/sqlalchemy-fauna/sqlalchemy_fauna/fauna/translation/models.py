@@ -243,6 +243,9 @@ class SQLQuery:
         if first_token.match(token_types.DML, "UPDATE"):
             return cls._build_update_query(statement)
 
+        if first_token.match(token_types.DML, "INSERT"):
+            return cls._build_insert_query(statement)
+
         raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
 
     @classmethod
@@ -298,6 +301,32 @@ class SQLQuery:
         _, update_column = comparison_group.token_next_by(i=token_groups.Identifier)
         column = Column.from_identifier(update_column)
         table.add_column(column)
+
+        return cls(tables=[table])
+
+    @classmethod
+    def _build_insert_query(cls, statement: token_groups.Statement) -> SQLQuery:
+        _, function_group = statement.token_next_by(i=token_groups.Function)
+
+        if function_group is None:
+            raise exceptions.NotSupportedError(
+                "INSERT INTO statements without column names are not currently supported."
+            )
+
+        func_idx, table_identifier = function_group.token_next_by(
+            i=token_groups.Identifier
+        )
+        table = Table.from_identifier(table_identifier)
+
+        _, column_group = function_group.token_next_by(
+            i=token_groups.Parenthesis, idx=func_idx
+        )
+        _, column_identifiers = column_group.token_next_by(
+            i=(token_groups.IdentifierList, token_groups.Identifier)
+        )
+
+        for column in Column.from_identifier_group(column_identifiers):
+            table.add_column(column)
 
         return cls(tables=[table])
 

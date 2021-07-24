@@ -8,8 +8,7 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from . import common
-from sqlalchemy_fauna.fauna.translation import models
+from . import common, models
 
 
 CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
@@ -249,8 +248,6 @@ def _translate_select_from_table(
 ) -> QueryExpression:
     table = sql_query.tables[0]
 
-    _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
-
     idx, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
@@ -267,7 +264,7 @@ def _translate_select_from_table(
         )
         if len(field_functions)
         else _translate_select_without_functions(
-            documents_to_select, table.column_alias_map, distinct=distinct
+            documents_to_select, table.column_alias_map, distinct=sql_query.distinct
         )
     )
 

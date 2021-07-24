@@ -125,10 +125,11 @@ def test_sql_query():
     assert sql_query.tables[0].name == "table"
 
 
-def test_sql_query_from_statement():
+@pytest.mark.parametrize("distinct", ["DISTINCT", ""])
+def test_sql_query_from_statement(distinct):
     table_name = "users"
     column_name = "name"
-    sql_string = f"SELECT users.{column_name} FROM {table_name}"
+    sql_string = f"SELECT {distinct} users.{column_name} FROM {table_name}"
     statement = sqlparse.parse(sql_string)[0]
 
     sql_query = models.SQLQuery.from_statement(statement)
@@ -136,6 +137,7 @@ def test_sql_query_from_statement():
     column = table.columns[0]
     assert table.name == table_name
     assert column.name == column_name
+    assert sql_query.distinct == bool(distinct)
 
 
 @pytest.mark.parametrize(

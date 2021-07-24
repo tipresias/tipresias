@@ -220,7 +220,9 @@ class SQLQuery:
     tables: List of tables referenced in the query.
     """
 
-    def __init__(self, tables: typing.List[Table]):
+    def __init__(self, tables: typing.List[Table] = None, distinct: bool = False):
+        self.distinct = distinct
+        tables = tables or []
         self._tables = tables
 
     @classmethod
@@ -283,7 +285,9 @@ class SQLQuery:
         for column in Column.from_identifier_group(identifiers):
             table.add_column(column)
 
-        return cls(tables=[table])
+        _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
+
+        return cls(tables=[table], distinct=bool(distinct))
 
     @classmethod
     def _build_update_query(cls, statement: token_groups.Statement) -> SQLQuery:

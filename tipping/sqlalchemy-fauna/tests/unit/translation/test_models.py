@@ -157,3 +157,14 @@ def test_unsupported_sql_query_statements(sql_string, error_message):
 
     with pytest.raises(exceptions.NotSupportedError, match=error_message):
         models.SQLQuery.from_statement(statement)
+
+
+def test_filter():
+    column = models.Column(name="name", alias="name", table_name="users")
+    operator = "="
+    value = "Bob"
+    where_filter = models.Filter(column=column, operator=operator, value=value)
+
+    assert where_filter.column == column
+    assert where_filter.operator == operator
+    assert where_filter.value == value

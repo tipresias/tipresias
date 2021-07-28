@@ -154,6 +154,23 @@ class Column:
         return self.name
 
 
+class Filter:
+    """Representation of filter applied by WHERE clause in SQL.
+
+    Params:
+    -------
+    column: An instance of the Column used in the filter.
+    operator: The comparison operator.
+    value: The raw value being compared for the filter.
+    """
+
+    def __init__(self, column: Column, operator: str, value: typing.Union[str, int, float]):
+        self.column = column
+        self.operator = operator
+        self.value = value
+
+
+
 class Table:
     """Representation of a table object in SQL.
 

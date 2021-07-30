@@ -3,10 +3,13 @@
 import sqlparse
 from sqlparse import sql as token_groups, tokens as token_types
 import pytest
+from faker import Faker
 
 from sqlalchemy_fauna.fauna.translation import models
 from sqlalchemy_fauna import exceptions
 
+
+Fake = Faker()
 column_name = "name"
 
 
@@ -168,3 +171,86 @@ def test_filter():
     assert where_filter.column == column
     assert where_filter.operator == operator
     assert where_filter.value == value
+
+
+select_values = "SELECT * FROM users"
+where_not_equal_1 = select_values + f" WHERE users.age <> {Fake.pyint()}"
+where_not_equal_2 = select_values + f" WHERE users.age != {Fake.pyint()}"
+where_between = (
+    select_values + f" WHERE users.age BETWEEN {Fake.pyint()} AND {Fake.pyint}"
+)
+where_like = select_values + f" WHERE users.name LIKE '%{Fake.first_name()}%'"
+where_in = (
+    select_values
+    + f" WHERE users.name IN ('{Fake.first_name()}', '{Fake.first_name()}')"
+)
+where_or = (
+    select_values
+    + f" WHERE users.name = '{Fake.first_name()}' OR users.age = {Fake.pyint()}"
+)
+
+
+@pytest.mark.parametrize(
+    ["sql_query", "error_message"],
+    [
+        (
+            where_not_equal_1,
+            "Only the following comparisons are supported in WHERE clauses",
+        ),
+        (
+            where_not_equal_2,
+            "Only the following comparisons are supported in WHERE clauses",
+        ),
+        (where_between, "BETWEEN not yet supported in WHERE clauses"),
+        (
+            where_like,
+            "Only the following comparisons are supported in WHERE clauses",
+        ),
+        (where_in, "Only the following comparisons are supported in WHERE clauses"),
+        (where_or, "OR not yet supported in WHERE clauses."),
+    ],
+)
+def test_unsupported_filter_from_where_group(sql_query, error_message):
+    statement = sqlparse.parse(sql_query)[0]
+    _, where_group = statement.token_next_by(i=(token_groups.Where))
+
+    with pytest.raises(exceptions.NotSupportedError, match=error_message):
+        models.Filter.from_where_group(where_group)
+
+
+where_id = select_values + f" WHERE users.id = '{Fake.credit_card_number}'"
+where_equals = select_values + f" WHERE users.name = '{Fake.first_name()}'"
+where_and = (
+    where_equals
+    + f" AND users.age = {Fake.pyint()} AND users.finger_count = {Fake.pyint()}"
+)
+where_greater = select_values + f" WHERE users.age > {Fake.pyint()}"
+where_greater_equal = select_values + f" WHERE users.age >= {Fake.pyint()}"
+where_less = select_values + f" WHERE users.age < {Fake.pyint()}"
+where_less_equal = select_values + f" WHERE users.age <= {Fake.pyint()}"
+where_is_null = select_values + " WHERE users.job IS NULL"
+where_reverse_comparison = select_values + " WHERE 'Bob' = users.name"
+
+
+@pytest.mark.parametrize(
+    "sql_string",
+    [
+        select_values,
+        where_id,
+        where_equals,
+        where_and,
+        where_greater,
+        where_greater_equal,
+        where_less,
+        where_less_equal,
+        where_is_null,
+        where_reverse_comparison,
+    ],
+)
+def test_filter_from_where_group(sql_string):
+    statement = sqlparse.parse(sql_string)[0]
+    _, where_group = statement.token_next_by(i=(token_groups.Where))
+
+    where_filters = models.Filter.from_where_group(where_group)
+    for where_filter in where_filters:
+        assert isinstance(where_filter, models.Filter)

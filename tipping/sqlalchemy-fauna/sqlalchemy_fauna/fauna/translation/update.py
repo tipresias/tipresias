@@ -8,7 +8,8 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value, parse_where
+from .common import extract_value
+from .where import parse_where
 from .models import SQLQuery
 
 

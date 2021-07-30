@@ -6,8 +6,7 @@ from sqlparse import sql as token_groups
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
-from .common import parse_where
-from . import models
+from . import models, where
 
 
 def translate_delete(statement: token_groups.Statement) -> typing.List[QueryExpression]:
@@ -25,7 +24,7 @@ def translate_delete(statement: token_groups.Statement) -> typing.List[QueryExpr
     table = sql_query.tables[0]
 
     _, where_group = statement.token_next_by(i=(token_groups.Where))
-    records_to_delete = parse_where(where_group, table)
+    records_to_delete = where.parse_where(where_group, table)
     delete_records = q.delete(q.select("ref", q.get(records_to_delete)))
 
     return [

@@ -83,18 +83,23 @@ def test_from_identifier_group(sql_query, expected_columns, expected_aliases):
 
 def test_table():
     table_name = "users"
-    sql_query = f"SELECT users.name FROM {table_name}"
+    sql_query = f"SELECT users.name FROM {table_name} WHERE users.name = 'Bob'"
     statement = sqlparse.parse(sql_query)[0]
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
+    _, where_group = statement.token_next_by(i=(token_groups.Where))
 
     column = models.Column.from_identifier(column_identifier)
-    table = models.Table(name=table_name, columns=[column])
+    sql_filters = models.Filter.from_where_group(where_group)
+    table = models.Table(name=table_name, columns=[column], filters=sql_filters)
     assert table.name == table_name
     assert str(table) == table_name
 
     assert len(table.columns) == 1
     assert table.columns[0].name == column.name
     assert table.column_alias_map == {column.name: column.alias}
+
+    assert len(table.filters) == 1
+    assert table.filters[0].value == sql_filters[0].value
 
 
 def test_table_from_identifier():
@@ -122,10 +127,35 @@ def test_add_column():
     assert table.columns == [column]
 
 
+def test_add_filter():
+    table_name = "users"
+    sql_query = f"SELECT users.name FROM {table_name} WHERE users.age > 30"
+    statement = sqlparse.parse(sql_query)[0]
+    _, where_group = statement.token_next_by(i=(token_groups.Where))
+
+    sql_filters = models.Filter.from_where_group(where_group)
+    table = models.Table(name=table_name)
+
+    table.add_filter(sql_filters[0])
+
+    assert table.filters == sql_filters
+
+
 def test_sql_query():
     sql_query = models.SQLQuery(tables=[models.Table(name="table")])
     assert len(sql_query.tables) == 1
     assert sql_query.tables[0].name == "table"
+
+
+def test_sql_add_filter_to_table():
+    column = models.Column(table_name="users", name="name", alias="name")
+    table = models.Table(name="users", columns=[column])
+    sql_query = models.SQLQuery(tables=[table])
+    sql_filter = models.Filter(column=column, operator="=", value="Bob")
+
+    sql_query.add_filter_to_table(sql_filter)
+
+    assert table.filters[0] == sql_filter
 
 
 @pytest.mark.parametrize("distinct", ["DISTINCT", ""])

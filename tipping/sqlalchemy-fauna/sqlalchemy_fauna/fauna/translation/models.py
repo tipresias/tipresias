@@ -179,6 +179,8 @@ class Filter:
         self.column = column
         self.operator = operator
         self.value = value
+        self._table: typing.Optional[Table] = None
+        self._table_name = column.table_name
 
     @classmethod
     def from_where_group(cls, where_group: token_groups.Where) -> typing.List[Filter]:
@@ -298,6 +300,23 @@ class Filter:
 
         return operator_value
 
+    @property
+    def table(self) -> typing.Optional[Table]:
+        """Table object associated with this column."""
+        return self._table
+
+    @table.setter
+    def table(self, table: Table):
+        assert self._table_name in (None, table.name)
+
+        self._table = table
+        self._table_name = table.name
+
+    @property
+    def table_name(self) -> typing.Optional[str]:
+        """Name of the associated table in the SQL query."""
+        return self._table_name
+
 
 class Table:
     """Representation of a table object in SQL.
@@ -308,13 +327,23 @@ class Table:
     columns: Column objects that belong to the given table.
     """
 
-    def __init__(self, name: str, columns: typing.Optional[typing.List[Column]] = None):
+    def __init__(
+        self,
+        name: str,
+        columns: typing.Optional[typing.List[Column]] = None,
+        filters: typing.Optional[typing.List[Filter]] = None,
+    ):
         self.name = name
         self._columns: typing.List[Column] = []
+        self._filters: typing.List[Filter] = []
 
         columns = columns or []
         for column in columns:
             self.add_column(column)
+
+        filters = filters or []
+        for sql_filter in filters:
+            self.add_filter(sql_filter)
 
     @classmethod
     def from_identifier(cls, identifier: token_groups.Identifier) -> Table:
@@ -346,6 +375,18 @@ class Table:
         except StopIteration:
             column.table = self
             self._columns.append(column)
+
+    @property
+    def filters(self) -> typing.List[Filter]:
+        """List of filter objects associated with this table."""
+        return self._filters
+
+    def add_filter(self, sql_filter: Filter):
+        """Add an associated column object to this table."""
+        assert self.name is not None
+
+        sql_filter.table = self
+        self._filters.append(sql_filter)
 
     @property
     def column_alias_map(self) -> typing.Dict[str, str]:
@@ -385,18 +426,25 @@ class SQLQuery:
         first_token = statement.token_first(skip_cm=True, skip_ws=True)
 
         if first_token.match(token_types.DML, "SELECT"):
-            return cls._build_select_query(statement)
+            sql_instance = cls._build_select_query(statement)
 
         if first_token.match(token_types.DML, "UPDATE"):
-            return cls._build_update_query(statement)
+            sql_instance = cls._build_update_query(statement)
 
         if first_token.match(token_types.DML, "INSERT"):
-            return cls._build_insert_query(statement)
+            sql_instance = cls._build_insert_query(statement)
 
         if first_token.match(token_types.DML, "DELETE"):
-            return cls._build_delete_query(statement)
+            sql_instance = cls._build_delete_query(statement)
 
-        raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
+        if sql_instance is None:
+            raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
+
+        _, where_group = statement.token_next_by(i=(token_groups.Where))
+        for where_filter in Filter.from_where_group(where_group):
+            sql_instance.add_filter_to_table(where_filter)
+
+        return sql_instance
 
     @classmethod
     def _build_select_query(cls, statement: token_groups.Statement) -> SQLQuery:
@@ -493,3 +541,21 @@ class SQLQuery:
     def tables(self):
         """List of data tables referenced in the SQL query."""
         return self._tables
+
+    def add_filter_to_table(self, sql_filter: Filter):
+        """Associates the given Filter with the Table that it applies to.
+
+        Params:
+        -------
+        sql_filter: An instance of Filter.
+        """
+        try:
+            table = next(
+                table for table in self.tables if table.name == sql_filter.table_name
+            )
+        except StopIteration:
+            raise exceptions.Error(  # pylint: disable=raise-missing-from
+                f"Didn't find table '{sql_filter.table_name}' in queried tables."
+            )
+
+        table.add_filter(sql_filter)

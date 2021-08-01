@@ -159,7 +159,7 @@ def test_sql_add_filter_to_table():
 
 
 @pytest.mark.parametrize("distinct", ["DISTINCT", ""])
-def test_sql_query_from_statement(distinct):
+def test_sql_query_from_statement_distinct(distinct):
     table_name = "users"
     column_name = "name"
     sql_string = f"SELECT {distinct} users.{column_name} FROM {table_name}"
@@ -171,6 +171,27 @@ def test_sql_query_from_statement(distinct):
     assert table.name == table_name
     assert column.name == column_name
     assert sql_query.distinct == bool(distinct)
+
+
+@pytest.mark.parametrize(
+    "sql_string",
+    [
+        (
+            "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
+            "FROM users"
+        ),
+        "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)",
+        "DELETE FROM users",
+        "UPDATE users SET users.name = 'Bob'",
+    ],
+)
+def test_sql_query_from_statement(sql_string):
+    table_name = "users"
+    statement = sqlparse.parse(sql_string)[0]
+
+    sql_query = models.SQLQuery.from_statement(statement)
+    table = sql_query.tables[0]
+    assert table.name == table_name
 
 
 @pytest.mark.parametrize(

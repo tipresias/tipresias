@@ -425,17 +425,43 @@ class SQLQuery:
         """
         first_token = statement.token_first(skip_cm=True, skip_ws=True)
 
+        idx, _ = statement.token_next_by(
+            m=[
+                (token_types.Keyword, "FROM"),
+                (token_types.Keyword, "INTO"),
+                (token_types.DML, "UPDATE"),
+            ]
+        )
+        _, maybe_table_identifier = statement.token_next(
+            idx=idx, skip_cm=True, skip_ws=True
+        )
+
+        if isinstance(maybe_table_identifier, token_groups.Function):
+            maybe_table_identifier = maybe_table_identifier.token_first(
+                skip_cm=True, skip_ws=True
+            )
+
+        # If we can't find a single table identifier, it means that multiple tables
+        # are referenced in the FROM/INTO clause, which isn't supported.
+        if not isinstance(maybe_table_identifier, token_groups.Identifier):
+            raise exceptions.NotSupportedError(
+                "Only one table per query is currently supported"
+            )
+
+        table_identifier = maybe_table_identifier
+        table = Table.from_identifier(table_identifier)
+
         if first_token.match(token_types.DML, "SELECT"):
-            sql_instance = cls._build_select_query(statement)
+            sql_instance = cls._build_select_query(statement, table)
 
         if first_token.match(token_types.DML, "UPDATE"):
-            sql_instance = cls._build_update_query(statement)
+            sql_instance = cls._build_update_query(statement, table)
 
         if first_token.match(token_types.DML, "INSERT"):
-            sql_instance = cls._build_insert_query(statement)
+            sql_instance = cls._build_insert_query(statement, table)
 
         if first_token.match(token_types.DML, "DELETE"):
-            sql_instance = cls._build_delete_query(statement)
+            sql_instance = cls._build_delete_query(table)
 
         if sql_instance is None:
             raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
@@ -447,27 +473,15 @@ class SQLQuery:
         return sql_instance
 
     @classmethod
-    def _build_select_query(cls, statement: token_groups.Statement) -> SQLQuery:
-        idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
-        _, table_identifier = statement.token_next_by(
-            i=(token_groups.Identifier), idx=idx
-        )
-
-        # If we can't find a single table identifier, it means that multiple tables
-        # are referenced in the FROM clause, which isn't supported.
-        if table_identifier is None:
-            raise exceptions.NotSupportedError(
-                "Only one table per query is currently supported"
-            )
-
-        table = Table.from_identifier(table_identifier)
-
+    def _build_select_query(
+        cls, statement: token_groups.Statement, table: Table
+    ) -> SQLQuery:
         _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
 
         if wildcard is not None:
             raise exceptions.NotSupportedError("Wildcards ('*') are not yet supported")
 
-        idx, identifiers = statement.token_next_by(
+        _, identifiers = statement.token_next_by(
             i=(
                 token_groups.Identifier,
                 token_groups.IdentifierList,
@@ -483,17 +497,10 @@ class SQLQuery:
         return cls(tables=[table], distinct=bool(distinct))
 
     @classmethod
-    def _build_update_query(cls, statement: token_groups.Statement) -> SQLQuery:
-        idx, table_identifier = statement.token_next_by(i=token_groups.Identifier)
-
-        if table_identifier is None:
-            raise exceptions.NotSupportedError(
-                "Only one table per query is currently supported"
-            )
-
-        table = Table.from_identifier(table_identifier)
-
-        idx, _ = statement.token_next_by(m=(token_types.Keyword, "SET"), idx=idx)
+    def _build_update_query(
+        cls, statement: token_groups.Statement, table: Table
+    ) -> SQLQuery:
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "SET"))
         idx, comparison_group = statement.token_next_by(
             i=token_groups.Comparison, idx=idx
         )
@@ -505,7 +512,7 @@ class SQLQuery:
         return cls(tables=[table])
 
     @classmethod
-    def _build_insert_query(cls, statement: token_groups.Statement) -> SQLQuery:
+    def _build_insert_query(cls, statement: token_groups.Statement, table: Table) -> SQLQuery:
         _, function_group = statement.token_next_by(i=token_groups.Function)
 
         if function_group is None:
@@ -513,14 +520,7 @@ class SQLQuery:
                 "INSERT INTO statements without column names are not currently supported."
             )
 
-        func_idx, table_identifier = function_group.token_next_by(
-            i=token_groups.Identifier
-        )
-        table = Table.from_identifier(table_identifier)
-
-        _, column_group = function_group.token_next_by(
-            i=token_groups.Parenthesis, idx=func_idx
-        )
+        _, column_group = function_group.token_next_by(i=token_groups.Parenthesis)
         _, column_identifiers = column_group.token_next_by(
             i=(token_groups.IdentifierList, token_groups.Identifier)
         )
@@ -531,10 +531,7 @@ class SQLQuery:
         return cls(tables=[table])
 
     @classmethod
-    def _build_delete_query(cls, statement: token_groups.Statement) -> SQLQuery:
-        _, table_identifier = statement.token_next_by(i=token_groups.Identifier)
-        table = Table.from_identifier(table_identifier)
-
+    def _build_delete_query(cls, table: Table) -> SQLQuery:
         return cls(tables=[table])
 
     @property

@@ -8,7 +8,7 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from . import common, models, where
+from . import common, models, fql
 
 
 CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
@@ -248,12 +248,11 @@ def _translate_select_from_table(
 ) -> QueryExpression:
     table = sql_query.tables[0]
 
-    idx, identifiers = statement.token_next_by(
+    _, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
 
-    _, where_group = statement.token_next_by(i=token_groups.Where, idx=idx)
-    documents_to_select = where.parse_where(where_group, table)
+    documents_to_select = fql.define_document_set(table)
 
     table_functions = _parse_functions(q.var("documents"), identifiers, table.name)
     field_functions = table_functions[table.name]

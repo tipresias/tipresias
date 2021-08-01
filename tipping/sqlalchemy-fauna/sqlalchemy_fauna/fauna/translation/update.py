@@ -8,7 +8,8 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value, parse_where
+from . import fql
+from .common import extract_value
 from .models import SQLQuery
 
 
@@ -34,9 +35,7 @@ def translate_update(statement: token_groups.Statement) -> typing.List[QueryExpr
 
     _, update_value = comparison_group.token_next(idx, skip_ws=True)
     update_value_value = extract_value(update_value)
-
-    _, where_group = statement.token_next_by(i=token_groups.Where)
-    records_to_update = parse_where(where_group, table)
+    records_to_update = fql.define_document_set(table)
 
     updated_count = q.do(
         q.update(

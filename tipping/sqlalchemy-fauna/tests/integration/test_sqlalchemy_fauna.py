@@ -328,6 +328,17 @@ def test_select_with_numpy_numeric_comparison(fauna_session, user_model):
     for user_record in user_records:
         assert user_record.age > filter_age
 
+    # For '<=' comparison
+    user_records = (
+        fauna_session.execute(select(User).where(User.age <= filter_age))
+        .scalars()
+        .all()
+    )
+
+    assert len(user_records) == 4
+    for user_record in user_records:
+        assert user_record.age <= filter_age
+
 
 def test_delete_record_conditionally(fauna_session, user_model):
     User, Base = user_model
@@ -475,8 +486,12 @@ def test_select_is_null(fauna_session, user_model):
         fauna_session.add(User(name=name, job=job))
 
     queried_users = (
-        fauna_session.execute(select(User).where(User.job == None)).scalars().all()
+        fauna_session.execute(
+            select(User).where(User.job == None)  # pylint: disable=singleton-comparison
+        )
+        .scalars()
+        .all()
     )
 
     assert len(queried_users) == 1
-    assert queried_users[0].job == None
+    assert queried_users[0].job is None

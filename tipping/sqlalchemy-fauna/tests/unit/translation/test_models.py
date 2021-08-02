@@ -174,36 +174,55 @@ def test_sql_query_from_statement_distinct(distinct):
 
 
 @pytest.mark.parametrize(
-    "sql_string",
+    ["sql_string", "table_names"],
     [
         (
             "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
-            "FROM users"
+            "FROM users",
+            ["users"],
         ),
-        "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)",
-        "DELETE FROM users",
-        "UPDATE users SET users.name = 'Bob'",
+        (
+            "SELECT users.name, transactions.number FROM users "
+            "JOIN accounts ON users.id = accounts.user_id "
+            "JOIN transactions ON accounts.id = transactions.account_id",
+            ["users", "accounts", "transactions"],
+        ),
+        (
+            "SELECT users.name, accounts.number FROM users "
+            "JOIN accounts ON users.id = accounts.user_id",
+            ["users", "accounts"],
+        ),
+        (
+            "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)",
+            ["users"],
+        ),
+        ("DELETE FROM users", ["users"]),
+        ("UPDATE users SET users.name = 'Bob'", ["users"]),
     ],
 )
-def test_sql_query_from_statement(sql_string):
-    table_name = "users"
+def test_sql_query_from_statement(sql_string, table_names):
     statement = sqlparse.parse(sql_string)[0]
 
     sql_query = models.SQLQuery.from_statement(statement)
-    table = sql_query.tables[0]
-    assert table.name == table_name
+    query_table_names = {table.name for table in sql_query.tables}
+    assert query_table_names == set(table_names)
 
 
 @pytest.mark.parametrize(
     ["sql_string", "error_message"],
     [
         (
-            "SELECT users.name, accounts.number from users, accounts",
-            "Only one table per query is currently supported",
+            "SELECT users.name, accounts.number FROM users, accounts",
+            "must join them together with a JOIN clause",
         ),
         # Using regex's "any character" symbol instead of the expected single-quotes,
         # because getting the escapes right through multiple layers of code is super annoying.
         ("SELECT * from users", "Wildcards (.*.) are not yet supported"),
+        (
+            "SELECT users.name, accounts.number FROM users "
+            "JOIN accounts ON users.name = accounts.user_name",
+            "Table joins are only permitted on IDs and foreign keys that refer to IDs",
+        ),
     ],
 )
 def test_unsupported_sql_query_statements(sql_string, error_message):

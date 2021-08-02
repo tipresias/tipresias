@@ -424,7 +424,37 @@ class SQLQuery:
         A new SQLQuery object.
         """
         first_token = statement.token_first(skip_cm=True, skip_ws=True)
+        tables = cls._collect_tables(statement)
 
+        if first_token.match(token_types.DML, "SELECT"):
+            sql_instance = cls._build_select_query(statement, tables)
+
+        if first_token.match(token_types.DML, "UPDATE"):
+            assert len(tables) == 1
+            table = tables[0]
+            sql_instance = cls._build_update_query(statement, table)
+
+        if first_token.match(token_types.DML, "INSERT"):
+            assert len(tables) == 1
+            table = tables[0]
+            sql_instance = cls._build_insert_query(statement, table)
+
+        if first_token.match(token_types.DML, "DELETE"):
+            assert len(tables) == 1
+            table = tables[0]
+            sql_instance = cls._build_delete_query(table)
+
+        if sql_instance is None:
+            raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
+
+        _, where_group = statement.token_next_by(i=(token_groups.Where))
+        for where_filter in Filter.from_where_group(where_group):
+            sql_instance.add_filter_to_table(where_filter)
+
+        return sql_instance
+
+    @classmethod
+    def _collect_tables(cls, statement: token_groups.Statement) -> typing.List[Table]:
         idx, _ = statement.token_next_by(
             m=[
                 (token_types.Keyword, "FROM"),
@@ -445,36 +475,50 @@ class SQLQuery:
         # are referenced in the FROM/INTO clause, which isn't supported.
         if not isinstance(maybe_table_identifier, token_groups.Identifier):
             raise exceptions.NotSupportedError(
-                "Only one table per query is currently supported"
+                "In order to query multiple tables at a time, you must join them "
+                "together with a JOIN clause."
             )
 
         table_identifier = maybe_table_identifier
-        table = Table.from_identifier(table_identifier)
+        tables = [Table.from_identifier(table_identifier)]
 
-        if first_token.match(token_types.DML, "SELECT"):
-            sql_instance = cls._build_select_query(statement, table)
+        while True:
+            idx, join_kw = statement.token_next_by(
+                m=(token_types.Keyword, "JOIN"), idx=idx
+            )
+            if join_kw is None:
+                break
 
-        if first_token.match(token_types.DML, "UPDATE"):
-            sql_instance = cls._build_update_query(statement, table)
+            idx, table_identifier = statement.token_next(
+                idx, skip_ws=True, skip_cm=True
+            )
+            table = Table.from_identifier(table_identifier)
 
-        if first_token.match(token_types.DML, "INSERT"):
-            sql_instance = cls._build_insert_query(statement, table)
+            idx, comparison_group = statement.token_next_by(
+                i=token_groups.Comparison, idx=idx
+            )
+            comp_idx, identifier = comparison_group.token_next_by(
+                i=token_groups.Identifier
+            )
+            join_on_id = ".id" in identifier.value
+            comp_idx, identifier = comparison_group.token_next_by(
+                i=token_groups.Identifier, idx=comp_idx
+            )
+            join_on_id = join_on_id or ".id" in identifier.value
 
-        if first_token.match(token_types.DML, "DELETE"):
-            sql_instance = cls._build_delete_query(table)
+            if not join_on_id:
+                raise exceptions.NotSupportedError(
+                    "Table joins are only permitted on IDs and foreign keys "
+                    f"that refer to IDs, but tried to join on {comparison_group.value}."
+                )
 
-        if sql_instance is None:
-            raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
+            tables.append(table)
 
-        _, where_group = statement.token_next_by(i=(token_groups.Where))
-        for where_filter in Filter.from_where_group(where_group):
-            sql_instance.add_filter_to_table(where_filter)
-
-        return sql_instance
+        return tables
 
     @classmethod
     def _build_select_query(
-        cls, statement: token_groups.Statement, table: Table
+        cls, statement: token_groups.Statement, tables: typing.List[Table]
     ) -> SQLQuery:
         _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
 
@@ -490,11 +534,18 @@ class SQLQuery:
         )
 
         for column in Column.from_identifier_group(identifiers):
+            try:
+                table = next(
+                    table for table in tables if table.name == column.table_name
+                )
+            except StopIteration:
+                table = tables[0]
+
             table.add_column(column)
 
         _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
 
-        return cls(tables=[table], distinct=bool(distinct))
+        return cls(tables=tables, distinct=bool(distinct))
 
     @classmethod
     def _build_update_query(
@@ -512,7 +563,9 @@ class SQLQuery:
         return cls(tables=[table])
 
     @classmethod
-    def _build_insert_query(cls, statement: token_groups.Statement, table: Table) -> SQLQuery:
+    def _build_insert_query(
+        cls, statement: token_groups.Statement, table: Table
+    ) -> SQLQuery:
         _, function_group = statement.token_next_by(i=token_groups.Function)
 
         if function_group is None:

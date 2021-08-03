@@ -64,7 +64,7 @@ def _execute_with_retries(query, retries=0):
 def _print_document_counts():
     print("\nDocument counts by collection")
     for collection in COLLECTIONS:
-        result = _execute_with_retries(q.count(q.match(q.index(f"all_{collection}"))))
+        result = _execute_with_retries(q.count(q.match(q.index(f"{collection}_all"))))
         print(f"\t{collection}: {result}")
 
 
@@ -237,7 +237,7 @@ def _assign_ids_to_teams(teams):
     result = _execute_with_retries(
         q.map_(
             q.lambda_("team", q.get(q.var("team"))),
-            q.paginate(q.match(q.index("all_teams"))),
+            q.paginate(q.match(q.index("teams_all"))),
         )
     )
     team_documents = result["data"]

@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float
 
 from sqlalchemy_fauna import dialect
+from sqlalchemy_fauna.fauna.translation import common
 
 
 @pytest.fixture()
@@ -79,8 +80,10 @@ def test_get_indexes(user_model, fauna_engine):
         queried_indexes = fauna_dialect.get_indexes(connection, "users")
         index_names = {index["name"] for index in queried_indexes}
         expected_index_names = [
-            f"users_by_{col}" for col in users_columns if col != "id"
-        ] + ["all_users", "users_by_ref_terms", "users_by_name_terms"]
+            common.index_name("users", col, common.IndexType.VALUE)
+            for col in users_columns
+            if col != "id"
+        ] + ["users_all", "users_ref", "users_by_name_term"]
 
         assert index_names == set(expected_index_names)
 

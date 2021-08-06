@@ -2,7 +2,7 @@
 
 import typing
 from datetime import datetime
-from functools import reduce
+from functools import partial, reduce
 from copy import deepcopy
 
 from sqlparse import tokens as token_types
@@ -12,7 +12,7 @@ from faunadb.objects import _Expr as QueryExpression
 from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
-from .common import extract_value
+from . import common
 
 
 FieldMetadata = TypedDict(
@@ -274,7 +274,7 @@ def _define_column(
     default_value = (
         default_keyword
         if default_keyword is None
-        else extract_value(default_keyword.value)
+        else common.extract_value(default_keyword.value)
     )
 
     return {
@@ -361,18 +361,25 @@ def _translate_create_table(
     create_collection = q.create_collection(
         {"name": table_name, "data": {"metadata": {"fields": field_metadata}}}
     )
+    index_by_collection = partial(common.index_name, table_name)
 
     index_queries = [
         q.create_index(
             {
-                "name": f"{table_name}_by_ref_terms",
+                "name": index_by_collection(index_type=common.IndexType.REF),
                 "source": q.collection(table_name),
                 "terms": [{"field": ["ref"]}],
             }
         ),
         q.create_index(
-            {"name": f"all_{table_name}", "source": q.collection(table_name)}
+            {"name": index_by_collection(), "source": q.collection(table_name)}
         ),
+    ]
+
+    foreign_references = [
+        field_name
+        for field_name, field_data in field_metadata.items()
+        if any(field_data["references"])
     ]
 
     for field_name, field_data in field_metadata.items():
@@ -380,10 +387,12 @@ def _translate_create_table(
         if field_name == "id":
             continue
 
+        index_by_field = partial(index_by_collection, field_name)
+
         index_queries.append(
             q.create_index(
                 {
-                    "name": f"{table_name}_by_{field_name}",
+                    "name": index_by_field(common.IndexType.VALUE),
                     "source": q.collection(table_name),
                     "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
                 }
@@ -397,7 +406,7 @@ def _translate_create_table(
             index_queries.append(
                 q.create_index(
                     {
-                        "name": f"{table_name}_by_{field_name}_terms",
+                        "name": index_by_field(common.IndexType.TERM),
                         "source": q.collection(table_name),
                         "terms": [{"field": ["data", field_name]}],
                         "unique": is_unique,
@@ -409,15 +418,25 @@ def _translate_create_table(
         # document refs
         is_foreign_key = any(field_data["references"])
         if is_foreign_key:
-            index_queries.append(
-                q.create_index(
-                    {
-                        "name": f"{table_name}_by_{field_name}_refs",
-                        "source": q.collection(table_name),
-                        "terms": [{"field": ["data", field_name]}],
-                    }
+            # We create a foreign ref index per foreign ref that exists in the collection,
+            # because this permits us to access any foreign ref we may need to continue
+            # a chain of joins.
+            for foreign_reference in foreign_references:
+                index_queries.append(
+                    q.create_index(
+                        {
+                            "name": index_by_field(
+                                common.IndexType.REF, foreign_key_name=foreign_reference
+                            ),
+                            "source": q.collection(table_name),
+                            "terms": [{"field": ["data", field_name]}],
+                            "values": [
+                                {"field": ["data", foreign_reference]},
+                                {"field": ["ref"]},
+                            ],
+                        }
+                    )
                 )
-            )
 
     index_queries.append(
         q.let(
@@ -457,7 +476,9 @@ def _translate_create_index(
         )
 
     index_terms = [{"field": ["data", index_field]} for index_field in index_fields]
-    index_name = f"{table_name}_by_{'_and_'.join(sorted(index_fields))}_terms"
+    index_name = common.index_name(
+        table_name, column_name=index_fields[0], index_type=common.IndexType.TERM
+    )
 
     return [
         q.do(

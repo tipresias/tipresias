@@ -1,5 +1,6 @@
 """Parse WHERE clauses to generate comparable FQL queries."""
 
+from functools import partial
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
 
@@ -10,12 +11,16 @@ from . import models, common
 def _define_match_set(query_filter: models.Filter) -> QueryExpression:
     field_name = query_filter.column.name
     comparison_value = query_filter.value
+    index_name_for_collection = partial(common.index_name, query_filter.table_name)
 
     convert_to_ref_set = lambda index_match: q.join(
         index_match,
         q.lambda_(
             ["value", "ref"],
-            q.match(q.index(f"{query_filter.table_name}_by_ref_terms"), q.var("ref")),
+            q.match(
+                q.index(index_name_for_collection(index_type=common.IndexType.REF)),
+                q.var("ref"),
+            ),
         ),
     )
 
@@ -23,8 +28,9 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
         [common.DATA, "metadata", "fields"], q.get(q.collection(name))
     )
 
+    index_name_for_field = partial(index_name_for_collection, field_name)
     equality_range = q.range(
-        q.match(q.index(f"{query_filter.table_name}_by_{field_name}")),
+        q.match(q.index(index_name_for_field(common.IndexType.VALUE))),
         [comparison_value],
         [comparison_value],
     )
@@ -38,10 +44,12 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
 
         return q.let(
             {
-                "ref_index": q.index(f"{query_filter.table_name}_by_{field_name}_refs"),
-                "term_index": q.index(
-                    f"{query_filter.table_name}_by_{field_name}_terms"
+                "ref_index": q.index(
+                    index_name_for_field(
+                        common.IndexType.REF, foreign_key_name=field_name
+                    )
                 ),
+                "term_index": q.index(index_name_for_field(common.IndexType.TERM)),
                 "references": q.select(
                     [field_name, "references"],
                     get_collection_fields(query_filter.table_name),
@@ -51,17 +59,19 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
             },
             q.if_(
                 q.exists(q.var("ref_index")),
-                q.match(
-                    q.var("ref_index"),
-                    common.get_foreign_key_ref(
-                        q.var("comparison_value"), q.var("references")
+                convert_to_ref_set(
+                    q.match(
+                        q.var("ref_index"),
+                        common.get_foreign_key_ref(
+                            q.var("comparison_value"), q.var("references")
+                        ),
                     ),
                 ),
                 q.if_(
                     q.exists(q.var("term_index")),
                     q.match(
                         q.var("term_index"),
-                        comparison_value,
+                        q.var("comparison_value"),
                     ),
                     convert_to_ref_set(equality_range),
                 ),
@@ -75,7 +85,7 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
     # all query translation, so I'm leaving this note as a warning.
     if query_filter.operator in [">=", ">"]:
         inclusive_comparison_range = q.range(
-            q.match(q.index(f"{query_filter.table_name}_by_{field_name}")),
+            q.match(q.index(index_name_for_field(common.IndexType.VALUE))),
             [comparison_value],
             [],
         )
@@ -89,7 +99,7 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
 
     if query_filter.operator in ["<=", "<"]:
         inclusive_comparison_range = q.range(
-            q.match(q.index(f"{query_filter.table_name}_by_{field_name}")),
+            q.match(q.index(index_name_for_field(common.IndexType.VALUE))),
             [],
             [comparison_value],
         )
@@ -120,7 +130,7 @@ def define_document_set(table: models.Table) -> QueryExpression:
     filters = table.filters
 
     if not any(filters):
-        return q.intersection(q.match(q.index(f"all_{table.name}")))
+        return q.intersection(q.match(q.index(common.index_name(table.name))))
 
     document_sets = [_define_match_set(query_filter) for query_filter in filters]
     return q.intersection(*document_sets)

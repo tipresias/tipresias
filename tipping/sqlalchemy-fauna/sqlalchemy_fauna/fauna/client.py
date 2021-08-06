@@ -17,6 +17,9 @@ from . import translation
 SQLResult = typing.List[typing.Dict[str, typing.Any]]
 
 
+MAX_RETRIES = 9
+
+
 class FaunaClientError(Exception):
     """Errors raised by the FaunaClient while executing queries."""
 
@@ -81,10 +84,13 @@ class FaunaClient:
         try:
             return self._client.query(query)
         except fauna_errors.BadRequest as err:
-            if "document data is not valid" not in str(err) or retries >= 10:
+            if "document data is not valid" not in str(err) or retries > MAX_RETRIES:
                 raise err
 
-            sleep(retries)
+            # 9 retries at this rate of backoff will make us wait a total of 90 seconds
+            # before raising the error, which allows for a buffer beyond the 60 seconds
+            # recommended in the relevant error message from Fauna.
+            sleep((retries + 1) * 2)
             return self._execute_with_retries(query, retries=(retries + 1))
 
     def _fauna_data_to_sqlalchemy_result(

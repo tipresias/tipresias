@@ -1,5 +1,6 @@
 """Shared SQL translations and utilities for various statement types."""
 
+import enum
 import typing
 import re
 from datetime import datetime, timezone
@@ -35,6 +36,15 @@ DATA = "data"
 
 class _NumericString(Exception):
     pass
+
+
+class IndexType(enum.Enum):
+    """Enum for the different types of Fauna indices used."""
+
+    ALL = "all"
+    REF = "ref"
+    TERM = "term"
+    VALUE = "value"
 
 
 def _parse_date_value(value):
@@ -142,3 +152,41 @@ def get_foreign_key_ref(
             q.ref(q.collection(q.var("reference_collection")), foreign_value),
         ),
     )
+
+
+def index_name(
+    table_name: str,
+    column_name: typing.Optional[str] = None,
+    index_type: IndexType = IndexType.ALL,
+    foreign_key_name: typing.Optional[str] = None,
+) -> str:
+    """Get index name based on its configuration and internal conventions.
+
+    Params:
+    -------
+    table_name: Name of the index's source collection as represented by the SQL table.
+    column_name: Name of the column whose values are used to match index terms or values.
+    index_type: Internal convention that determines how the index matches documents
+        and what values are returned.
+    """
+    is_valid_column_name = (
+        column_name is not None and index_type != IndexType.ALL
+    ) or (column_name is None and index_type in [IndexType.ALL, IndexType.REF])
+    assert is_valid_column_name
+
+    is_valid_foreign_key_name = (
+        foreign_key_name is None
+        and (index_type != IndexType.REF or column_name is None)
+    ) or (
+        foreign_key_name is not None
+        and column_name is not None
+        and index_type == IndexType.REF
+    )
+    assert is_valid_foreign_key_name
+
+    column_substring = "" if column_name is None else f"_by_{column_name}"
+    index_type_substring = f"_{index_type.value}"
+    foreign_key_substring = (
+        "" if foreign_key_name is None else f"_to_{foreign_key_name}"
+    )
+    return table_name + column_substring + index_type_substring + foreign_key_substring

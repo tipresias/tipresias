@@ -108,7 +108,7 @@ def test_create_index(fauna_engine):
     name_index = None
 
     for index in indexes:
-        if index["name"] == "users_by_name":
+        if index["name"] == "users_by_name_value":
             name_index = index
             break
 

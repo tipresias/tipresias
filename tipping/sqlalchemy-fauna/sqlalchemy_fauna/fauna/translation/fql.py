@@ -71,7 +71,7 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
                     q.exists(q.var("term_index")),
                     q.match(
                         q.var("term_index"),
-                        comparison_value,
+                        q.var("comparison_value"),
                     ),
                     convert_to_ref_set(equality_range),
                 ),

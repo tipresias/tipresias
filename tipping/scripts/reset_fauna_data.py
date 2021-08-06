@@ -68,14 +68,18 @@ def _print_document_counts():
         print(f"\t{collection}: {result}")
 
 
-def _assign_ref(ref_collection, ref_id):
-    return q.if_(q.is_null(ref_id), None, q.ref(ref_collection, ref_id))
+def _assign_ref(ref_collection, ref_map, record_id):
+    return q.if_(
+        q.is_null(record_id),
+        None,
+        q.ref(ref_collection, q.select([q.to_string(record_id), "id"], ref_map)),
+    )
 
 
-def _create_documents(collection_name, records, build_document):
+def _create_documents(let_params, records, build_document):
     return _execute_with_retries(
         q.let(
-            {"collection": q.collection(collection_name)},
+            let_params,
             q.map_(
                 q.lambda_(
                     "document",
@@ -94,39 +98,47 @@ def _load_predictions(data):
     predictions = data["predictions"]
     records = list(predictions.values())
 
-    build_document = lambda prediction: q.let(
-        {
-            "teams": q.collection("teams"),
-            "matches": q.collection("matches"),
-            "ml_models": q.collection("ml_models"),
-        },
-        q.to_object(
-            q.map_(
-                q.lambda_(
-                    ["key", "value"],
-                    [
-                        q.var("key"),
+    build_document = lambda prediction: q.to_object(
+        q.map_(
+            q.lambda_(
+                ["key", "value"],
+                [
+                    q.var("key"),
+                    q.if_(
+                        q.equals(q.var("key"), "predicted_winner_id"),
+                        _assign_ref(q.var("teams"), q.var("team_map"), q.var("value")),
                         q.if_(
-                            q.equals(q.var("key"), "predicted_winner_id"),
-                            _assign_ref(q.var("teams"), q.var("value")),
+                            q.equals(q.var("key"), "match_id"),
+                            _assign_ref(
+                                q.var("matches"), q.var("match_map"), q.var("value")
+                            ),
                             q.if_(
-                                q.equals(q.var("key"), "match_id"),
-                                _assign_ref(q.var("matches"), q.var("value")),
-                                q.if_(
-                                    q.equals(q.var("key"), "ml_model_id"),
-                                    _assign_ref(q.var("ml_models"), q.var("value")),
+                                q.equals(q.var("key"), "ml_model_id"),
+                                _assign_ref(
+                                    q.var("ml_models"),
+                                    q.var("ml_model_map"),
                                     q.var("value"),
                                 ),
+                                q.var("value"),
                             ),
                         ),
-                    ],
-                ),
-                q.to_array(prediction),
-            )
-        ),
+                    ),
+                ],
+            ),
+            q.to_array(prediction),
+        )
     )
+    let_params = {
+        "collection": q.collection("predictions"),
+        "teams": q.collection("teams"),
+        "team_map": data["teams"],
+        "matches": q.collection("matches"),
+        "match_map": data["matches"],
+        "ml_models": q.collection("ml_models"),
+        "ml_model_map": data["ml_models"],
+    }
 
-    documents = _create_documents("predictions", records, build_document)
+    documents = _create_documents(let_params, records, build_document)
 
     for record, document in zip(records, documents):
         record["id"] = document["ref"].id()
@@ -135,31 +147,39 @@ def _load_predictions(data):
 def _load_team_matches(data):
     team_matches = data["team_matches"]
     records = list(team_matches.values())
-    build_document = lambda team_match: q.let(
-        {"teams": q.collection("teams"), "matches": q.collection("matches")},
-        q.to_object(
-            q.map_(
-                q.lambda_(
-                    ["key", "value"],
-                    [
-                        q.var("key"),
+    build_document = lambda team_match: q.to_object(
+        q.map_(
+            q.lambda_(
+                ["key", "value"],
+                [
+                    q.var("key"),
+                    q.if_(
+                        q.equals(q.var("key"), "team_id"),
+                        _assign_ref(q.var("teams"), q.var("team_map"), q.var("value")),
                         q.if_(
-                            q.equals(q.var("key"), "team_id"),
-                            _assign_ref(q.var("teams"), q.var("value")),
-                            q.if_(
-                                q.equals(q.var("key"), "match_id"),
-                                _assign_ref(q.var("matches"), q.var("value")),
+                            q.equals(q.var("key"), "match_id"),
+                            _assign_ref(
+                                q.var("matches"),
+                                q.var("match_map"),
                                 q.var("value"),
                             ),
+                            q.var("value"),
                         ),
-                    ],
-                ),
-                q.to_array(team_match),
-            )
-        ),
+                    ),
+                ],
+            ),
+            q.to_array(team_match),
+        )
     )
+    let_params = {
+        "collection": q.collection("team_matches"),
+        "teams": q.collection("teams"),
+        "team_map": data["teams"],
+        "matches": q.collection("matches"),
+        "match_map": data["matches"],
+    }
 
-    documents = _create_documents("team_matches", records, build_document)
+    documents = _create_documents(let_params, records, build_document)
 
     for record, document in zip(records, documents):
         record["id"] = document["ref"].id()
@@ -172,23 +192,25 @@ def _load_matches(data):
         q.map_(
             q.lambda_(
                 ["key", "value"],
-                q.let(
-                    {"teams": q.collection("teams")},
-                    [
-                        q.var("key"),
-                        q.if_(
-                            q.equals(q.var("key"), "winner_id"),
-                            _assign_ref(q.var("teams"), q.var("value")),
-                            q.var("value"),
-                        ),
-                    ],
-                ),
+                [
+                    q.var("key"),
+                    q.if_(
+                        q.equals(q.var("key"), "winner_id"),
+                        _assign_ref(q.var("teams"), q.var("team_map"), q.var("value")),
+                        q.var("value"),
+                    ),
+                ],
             ),
             q.to_array(match),
         )
     )
+    let_params = {
+        "collection": q.collection("matches"),
+        "teams": q.collection("teams"),
+        "team_map": data["teams"],
+    }
 
-    documents = _create_documents("matches", records, build_document)
+    documents = _create_documents(let_params, records, build_document)
 
     for record, document in zip(records, documents):
         record["id"] = document["ref"].id()
@@ -198,7 +220,8 @@ def _load_ml_models(ml_models):
     records = list(ml_models.values())
 
     build_document = lambda ml_model: ml_model
-    documents = _create_documents("ml_models", records, build_document)
+    let_params = {"collection": q.collection("ml_models")}
+    documents = _create_documents(let_params, records, build_document)
 
     for record, document in zip(records, documents):
         record["id"] = document["ref"].id()
@@ -253,7 +276,7 @@ def _collect_db_data(acc, record):
     collection = MODEL_TO_COLLECTION[record["model"]]
     document = _convert_to_document(record)
 
-    return {**acc, collection: {**acc.get(collection, {}), record["pk"]: document}}
+    return {**acc, collection: {**acc.get(collection, {}), str(record["pk"]): document}}
 
 
 def _read_data_dump(filepath):

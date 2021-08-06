@@ -158,6 +158,7 @@ def index_name(
     table_name: str,
     column_name: typing.Optional[str] = None,
     index_type: IndexType = IndexType.ALL,
+    foreign_key_name: typing.Optional[str] = None,
 ) -> str:
     """Get index name based on its configuration and internal conventions.
 
@@ -168,10 +169,24 @@ def index_name(
     index_type: Internal convention that determines how the index matches documents
         and what values are returned.
     """
-    assert (column_name is not None and index_type != IndexType.ALL) or (
-        column_name is None and index_type in [IndexType.ALL, IndexType.REF]
+    is_valid_column_name = (
+        column_name is not None and index_type != IndexType.ALL
+    ) or (column_name is None and index_type in [IndexType.ALL, IndexType.REF])
+    assert is_valid_column_name
+
+    is_valid_foreign_key_name = (
+        foreign_key_name is None
+        and (index_type != IndexType.REF or column_name is None)
+    ) or (
+        foreign_key_name is not None
+        and column_name is not None
+        and index_type == IndexType.REF
     )
+    assert is_valid_foreign_key_name
 
     column_substring = "" if column_name is None else f"_by_{column_name}"
     index_type_substring = f"_{index_type.value}"
-    return table_name + column_substring + index_type_substring
+    foreign_key_substring = (
+        "" if foreign_key_name is None else f"_to_{foreign_key_name}"
+    )
+    return table_name + column_substring + index_type_substring + foreign_key_substring

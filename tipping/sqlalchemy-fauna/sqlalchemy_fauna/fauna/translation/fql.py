@@ -44,7 +44,11 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
 
         return q.let(
             {
-                "ref_index": q.index(index_name_for_field(common.IndexType.REF)),
+                "ref_index": q.index(
+                    index_name_for_field(
+                        common.IndexType.REF, foreign_key_name=field_name
+                    )
+                ),
                 "term_index": q.index(index_name_for_field(common.IndexType.TERM)),
                 "references": q.select(
                     [field_name, "references"],
@@ -55,10 +59,12 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
             },
             q.if_(
                 q.exists(q.var("ref_index")),
-                q.match(
-                    q.var("ref_index"),
-                    common.get_foreign_key_ref(
-                        q.var("comparison_value"), q.var("references")
+                convert_to_ref_set(
+                    q.match(
+                        q.var("ref_index"),
+                        common.get_foreign_key_ref(
+                            q.var("comparison_value"), q.var("references")
+                        ),
                     ),
                 ),
                 q.if_(

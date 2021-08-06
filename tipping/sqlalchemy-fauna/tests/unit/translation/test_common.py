@@ -63,6 +63,7 @@ def test_get_foreign_key_ref():
         (("users",), "users_all"),
         (("users", None, common.IndexType.REF), "users_ref"),
         (("users", "name", common.IndexType.TERM), "users_by_name_term"),
+        (("users", "name", common.IndexType.REF, "age"), "users_by_name_ref_to_age"),
     ],
 )
 def test_index_name(params, expected_name):
@@ -70,7 +71,13 @@ def test_index_name(params, expected_name):
 
 
 @pytest.mark.parametrize(
-    "params", [("users", "name"), ("users", None, common.IndexType.VALUE)]
+    "params",
+    [
+        ("users", "name"),
+        ("users", None, common.IndexType.VALUE),
+        ("users", None, common.IndexType.REF, "age"),
+        ("users", "name", common.IndexType.VALUE, "age"),
+    ],
 )
 def test_invalid_index_name(params):
     with pytest.raises(AssertionError):

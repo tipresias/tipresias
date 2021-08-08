@@ -1,5 +1,6 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
+import functools
 import typing
 from functools import reduce, partial
 
@@ -14,8 +15,6 @@ from . import common, models, fql
 CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
 FunctionMap = typing.Dict[str, CalculationFunction]
 TableFunctionMap = typing.Dict[str, FunctionMap]
-
-MAX_PAGE_SIZE = 100000
 
 
 def _parse_function(
@@ -85,10 +84,11 @@ def _parse_functions(
 
 
 def _translate_select_with_functions(
-    documents_to_select: QueryExpression,
-    field_alias_map: common.FieldAliasMap,
+    table: models.Table,
     field_functions: FunctionMap,
 ):
+    documents_to_select = fql.define_document_set(table)
+    field_alias_map = table.column_alias_map
     selected_fields = list(field_alias_map.keys())
 
     apply_alias = lambda field_name: q.select(
@@ -151,7 +151,7 @@ def _translate_select_with_functions(
     get_first_document = lambda documents: q.let(
         {
             "first_document": q.select(
-                0, q.paginate(documents, size=MAX_PAGE_SIZE), default=common.NULL
+                0, q.paginate(documents, size=fql.MAX_PAGE_SIZE), default=common.NULL
             )
         },
         q.if_(
@@ -173,10 +173,23 @@ def _translate_select_with_functions(
 
 
 def _translate_select_without_functions(
-    documents_to_select: QueryExpression,
-    field_alias_map: common.FieldAliasMap,
-    distinct=False,
+    tables: typing.List[models.Table], distinct=False
 ):
+    from_table = tables[0]
+    if len(tables) > 1:
+        documents_to_select = fql.join_collections(from_table)
+    else:
+        documents_to_select = q.paginate(
+            fql.define_document_set(from_table), size=fql.MAX_PAGE_SIZE
+        )
+
+    initial_field_alias_map: typing.Dict[str, str] = {}
+    field_alias_map = functools.reduce(
+        lambda alias_map, table: {**alias_map, **table.column_alias_map},
+        tables,
+        initial_field_alias_map,
+    )
+
     flatten = lambda items: q.union(
         q.map_(
             q.lambda_(
@@ -220,52 +233,65 @@ def _translate_select_without_functions(
     # to the incorrect keys.
     selected_fields = list(field_alias_map.keys())
     select_document_fields = q.lambda_(
-        "document",
-        q.to_object(
-            q.map_(
-                translate_fields_to_aliases(
-                    q.to_object(flatten(q.to_array(q.get(q.var("document")))))
+        "maybe_document",
+        q.let(
+            {
+                "document": q.if_(
+                    q.is_ref(q.var("maybe_document")),
+                    q.get(q.var("maybe_document")),
+                    q.var("maybe_document"),
                 ),
-                selected_fields,
-            )
+                "flattened_document": q.to_object(
+                    flatten(q.to_array(q.var("document")))
+                ),
+            },
+            q.to_object(
+                q.map_(
+                    translate_fields_to_aliases(q.var("flattened_document")),
+                    selected_fields,
+                )
+            ),
         ),
     )
-    translate_documents = lambda documents: q.map_(
-        select_document_fields,
-        q.paginate(documents, size=MAX_PAGE_SIZE),
-    )
+    translate_documents = lambda documents: q.map_(select_document_fields, documents)
+
+    select_query = translate_documents(q.var("documents"))
+    if distinct:
+        select_query = q.distinct(select_query)
 
     return q.let(
-        {"documents": documents_to_select},
-        q.distinct(translate_documents(q.var("documents")))
-        if distinct
-        else translate_documents(q.var("documents")),
+        {"documents": documents_to_select, "translated_documents": select_query},
+        # Need to nest the results in a 'data' object if they're in the form of an array,
+        # if they're paginated results, Fauna does this automatically
+        q.if_(
+            q.is_array(q.var("translated_documents")),
+            {"data": q.var("translated_documents")},
+            q.var("translated_documents"),
+        ),
     )
 
 
 def _translate_select_from_table(
     statement: token_groups.Statement, sql_query: models.SQLQuery
 ) -> QueryExpression:
-    table = sql_query.tables[0]
-
     _, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
+    tables = sql_query.tables
 
-    documents_to_select = fql.define_document_set(table)
+    for table in tables:
+        table_functions = _parse_functions(q.var("documents"), identifiers, table.name)
+        field_functions = table_functions[table.name]
 
-    table_functions = _parse_functions(q.var("documents"), identifiers, table.name)
-    field_functions = table_functions[table.name]
+        if any(field_functions):
+            if len(tables) > 1:
+                raise exceptions.NotSupportedError(
+                    "SQL functions across multiple tables are not yet supported."
+                )
 
-    return (
-        _translate_select_with_functions(
-            documents_to_select, table.column_alias_map, field_functions
-        )
-        if len(field_functions)
-        else _translate_select_without_functions(
-            documents_to_select, table.column_alias_map, distinct=sql_query.distinct
-        )
-    )
+            return _translate_select_with_functions(table, field_functions)
+
+    return _translate_select_without_functions(tables, distinct=sql_query.distinct)
 
 
 def _translate_select_from_info_schema_constraints(
@@ -313,7 +339,7 @@ def _translate_select_from_info_schema_constraints(
     )
     indexes_based_on_collection = q.filter_(
         is_based_on_collection,
-        q.paginate(q.indexes(), size=MAX_PAGE_SIZE),
+        q.paginate(q.indexes(), size=fql.MAX_PAGE_SIZE),
     )
 
     collection_fields = q.select(
@@ -458,7 +484,7 @@ def _translate_select_from_info_schema_tables() -> QueryExpression:
 
     return q.map_(
         get_collection_ref,
-        q.paginate(q.collections(), size=MAX_PAGE_SIZE),
+        q.paginate(q.collections(), size=fql.MAX_PAGE_SIZE),
     )
 
 
@@ -503,5 +529,4 @@ def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpr
     # are a special case that are going to require a rewrite eventually, so easier
     # to ignore them for now in order to progress with this refactor.
     sql_query = models.SQLQuery.from_statement(statement)
-    table = sql_query.tables[0]
     return [_translate_select_from_table(statement, sql_query)]

@@ -53,6 +53,10 @@ select_avg = "SELECT avg(users.id) AS avg_1 from users"
         ),
         (select_sum, "SUM"),
         (select_avg, "AVG"),
+        (
+            "SELECT COUNT(users.id) FROM users JOIN accounts ON users.id = accounts.user_id",
+            "SQL functions across multiple tables are not yet supported",
+        ),
     ],
 )
 def test_translating_unsupported_select(sql_query, error_message):
@@ -75,10 +79,14 @@ select_aliases = (
 )
 select_where_equals = select_values + " WHERE users.name = 'Bob'"
 select_count = "SELECT count(users.id) AS count_1 FROM users"
+select_join = (
+    "SELECT users.name, accounts.number FROM users "
+    "JOIN accounts ON users.id = accounts.user_id"
+)
 
 
 @pytest.mark.parametrize(
-    "sql_query",
+    "sql_string",
     [
         select_info_schema_tables,
         select_info_schema_columns,
@@ -87,10 +95,11 @@ select_count = "SELECT count(users.id) AS count_1 FROM users"
         select_aliases,
         select_where_equals,
         select_count,
+        select_join,
     ],
 )
-def test_translate_select(sql_query):
-    fql_queries = select.translate_select(sqlparse.parse(sql_query)[0])
+def test_translate_select(sql_string):
+    fql_queries = select.translate_select(sqlparse.parse(sql_string)[0])
 
     for fql_query in fql_queries:
         assert isinstance(fql_query, QueryExpression)

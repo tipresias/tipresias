@@ -1,10 +1,12 @@
 """Collection of objects representing RDB structures in SQL queries"""
 
 from __future__ import annotations
+import functools
 
 import typing
 from functools import reduce
 from datetime import datetime
+import enum
 
 from sqlparse import sql as token_groups, tokens as token_types
 from mypy_extensions import TypedDict
@@ -17,10 +19,23 @@ ColumnParams = TypedDict(
     "ColumnParams", {"table_name": typing.Optional[str], "name": str, "alias": str}
 )
 
+
+class JoinDirection(enum.Enum):
+    """Enum for table join directions."""
+
+    LEFT = "left"
+    RIGHT = "right"
+
+
 # Probably not a complete list, but covers the basics
 FUNCTION_NAMES = {"min", "max", "count", "avg", "sum"}
 GREATER_THAN = ">"
 LESS_THAN = "<"
+
+REVERSE_JOIN = {
+    JoinDirection.LEFT: JoinDirection.RIGHT,
+    JoinDirection.RIGHT: JoinDirection.LEFT,
+}
 
 
 class Column:
@@ -40,7 +55,10 @@ class Column:
     def from_identifier_group(
         cls,
         identifiers: typing.Union[
-            token_groups.Identifier, token_groups.IdentifierList, token_groups.Function
+            token_groups.Identifier,
+            token_groups.IdentifierList,
+            token_groups.Function,
+            token_groups.Comparison,
         ],
     ) -> typing.List[Column]:
         """Create column objects from any of the possible SQL identifier objects.
@@ -53,7 +71,9 @@ class Column:
         --------
         A list of column objects.
         """
-        if isinstance(identifiers, token_groups.IdentifierList):
+        if isinstance(
+            identifiers, (token_groups.IdentifierList, token_groups.Comparison)
+        ):
             return [
                 Column.from_identifier(id)
                 for id in identifiers
@@ -336,6 +356,10 @@ class Table:
         self.name = name
         self._columns: typing.List[Column] = []
         self._filters: typing.List[Filter] = []
+        self.left_join_table: typing.Optional[Table] = None
+        self.left_join_key: typing.Optional[Column] = None
+        self.right_join_table: typing.Optional[Table] = None
+        self.right_join_key: typing.Optional[Column] = None
 
         columns = columns or []
         for column in columns:
@@ -387,6 +411,45 @@ class Table:
 
         sql_filter.table = self
         self._filters.append(sql_filter)
+
+    def add_join(
+        self,
+        foreign_table: Table,
+        comparison_group: token_groups.Comparison,
+        direction: JoinDirection,
+    ):
+        """Add a foreign reference via join."""
+        setattr(self, f"{direction.value}_join_table", foreign_table)
+        setattr(foreign_table, f"{REVERSE_JOIN[direction].value}_join_table", self)
+
+        join_columns = Column.from_identifier_group(comparison_group)
+        join_on_id = functools.reduce(
+            lambda has_id, column: has_id or column.name == "ref", join_columns, False
+        )
+
+        if not join_on_id:
+            raise exceptions.NotSupportedError(
+                "Table joins are only permitted on IDs and foreign keys "
+                f"that refer to IDs, but tried to join on {comparison_group.value}."
+            )
+
+        join_key = next(
+            join_column
+            for join_column in join_columns
+            if join_column.table_name == self.name
+        )
+        setattr(self, f"{direction.value}_join_key", join_key)
+
+        foreign_join_key = next(
+            join_column
+            for join_column in join_columns
+            if join_column.table_name == foreign_table.name
+        )
+        setattr(
+            foreign_table,
+            f"{REVERSE_JOIN[direction].value}_join_key",
+            foreign_join_key,
+        )
 
     @property
     def column_alias_map(self) -> typing.Dict[str, str]:
@@ -497,21 +560,8 @@ class SQLQuery:
             idx, comparison_group = statement.token_next_by(
                 i=token_groups.Comparison, idx=idx
             )
-            comp_idx, identifier = comparison_group.token_next_by(
-                i=token_groups.Identifier
-            )
-            join_on_id = ".id" in identifier.value
-            comp_idx, identifier = comparison_group.token_next_by(
-                i=token_groups.Identifier, idx=comp_idx
-            )
-            join_on_id = join_on_id or ".id" in identifier.value
 
-            if not join_on_id:
-                raise exceptions.NotSupportedError(
-                    "Table joins are only permitted on IDs and foreign keys "
-                    f"that refer to IDs, but tried to join on {comparison_group.value}."
-                )
-
+            table.add_join(tables[-1], comparison_group, JoinDirection.LEFT)
             tables.append(table)
 
         return tables

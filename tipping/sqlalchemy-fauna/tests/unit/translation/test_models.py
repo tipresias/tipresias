@@ -141,6 +141,48 @@ def test_add_filter():
     assert table.filters == sql_filters
 
 
+def test_add_join():
+    table_name = "users"
+    foreign_table_name = "accounts"
+    sql_query = (
+        f"SELECT {table_name}.name, {foreign_table_name}.amount "
+        f"FROM {table_name} JOIN {foreign_table_name} "
+        f"ON {table_name}.id = {foreign_table_name}.user_id"
+    )
+    statement = sqlparse.parse(sql_query)[0]
+    _, comparison_group = statement.token_next_by(i=(token_groups.Comparison))
+
+    table = models.Table(name=table_name)
+    foreign_table = models.Table(name=foreign_table_name)
+
+    table.add_join(foreign_table, comparison_group, models.JoinDirection.RIGHT)
+
+    assert table.right_join_table == foreign_table
+    assert table.right_join_key.name == "ref"
+    assert foreign_table.left_join_table == table
+    assert foreign_table.left_join_key.name == "user_id"
+
+
+def test_invalid_add_join():
+    table_name = "users"
+    foreign_table_name = "accounts"
+    sql_query = (
+        f"SELECT {table_name}.name, {foreign_table_name}.amount "
+        f"FROM {table_name} JOIN {foreign_table_name} "
+        f"ON {table_name}.name = {foreign_table_name}.user_name"
+    )
+    statement = sqlparse.parse(sql_query)[0]
+    _, comparison_group = statement.token_next_by(i=(token_groups.Comparison))
+
+    table = models.Table(name=table_name)
+    foreign_table = models.Table(name=foreign_table_name)
+
+    with pytest.raises(
+        exceptions.NotSupportedError, match="Table joins are only permitted on IDs"
+    ):
+        table.add_join(foreign_table, comparison_group, models.JoinDirection.RIGHT)
+
+
 def test_sql_query():
     sql_query = models.SQLQuery(tables=[models.Table(name="table")])
     assert len(sql_query.tables) == 1

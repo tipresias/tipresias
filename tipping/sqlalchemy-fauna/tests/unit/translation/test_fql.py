@@ -31,7 +31,7 @@ where_or = (
     "filter_params",
     [{"operator": "LIKE"}],
 )
-def test_parsing_unsupported_where(filter_params):
+def test_unsupported_define_document_set(filter_params):
     table_name = Fake.word()
     column_params = {
         "name": Fake.word(),
@@ -65,7 +65,7 @@ def test_parsing_unsupported_where(filter_params):
         ({"operator": "<", "value": Fake.pyint()}, {}),
     ],
 )
-def test_parsing_where(filter_params, column_params):
+def test_define_document_set(filter_params, column_params):
     table_name = Fake.word()
     base_column_params = {
         "name": Fake.word(),
@@ -85,3 +85,73 @@ def test_parsing_where(filter_params, column_params):
 
     fql_query = fql.define_document_set(table)
     assert isinstance(fql_query, QueryExpression)
+
+
+def test_join_collections():
+    from_table = models.Table(name=Fake.word())
+
+    first_child_table = models.Table(name=Fake.word())
+    from_table.right_join_table = first_child_table
+    from_table.right_join_key = models.Column(
+        name="ref", table_name=from_table.name, alias=Fake.word()
+    )
+    first_child_table.left_join_table = from_table
+    first_child_table.left_join_key = models.Column(
+        name=Fake.word(), table_name=first_child_table.name, alias=Fake.word()
+    )
+
+    join_query = fql.join_collections(from_table)
+    assert isinstance(join_query, QueryExpression)
+
+    second_child_table = models.Table(name=Fake.word())
+    first_child_table.right_join_table = second_child_table
+    first_child_table.right_join_key = models.Column(
+        name="ref", table_name=first_child_table.name, alias=Fake.word()
+    )
+    second_child_table.left_join_table = first_child_table
+    second_child_table.left_join_key = models.Column(
+        name=Fake.word(), table_name=second_child_table.name, alias=Fake.word()
+    )
+
+    join_query = fql.join_collections(from_table)
+    assert isinstance(join_query, QueryExpression)
+
+    first_parent_table = models.Table(name=Fake.word())
+    second_child_table.right_join_table = first_parent_table
+    second_child_table.right_join_key = models.Column(
+        name=Fake.word(), table_name=second_child_table.name, alias=Fake.word()
+    )
+    first_parent_table.left_join_table = second_child_table
+    first_parent_table.left_join_key = models.Column(
+        name="ref", table_name=first_parent_table.name, alias=Fake.word()
+    )
+
+    join_query = fql.join_collections(from_table)
+    assert isinstance(join_query, QueryExpression)
+
+    second_parent_table = models.Table(name=Fake.word())
+    first_parent_table.right_join_table = second_parent_table
+    first_parent_table.right_join_key = models.Column(
+        name=Fake.word(), table_name=first_parent_table.name, alias=Fake.word()
+    )
+    second_parent_table.left_join_table = first_parent_table
+    second_parent_table.left_join_key = models.Column(
+        name="ref", table_name=second_parent_table.name, alias=Fake.word()
+    )
+
+    join_query = fql.join_collections(from_table)
+    assert isinstance(join_query, QueryExpression)
+
+
+def test_invalid_join_collections():
+    from_table = models.Table(name=Fake.word())
+    with pytest.raises(AssertionError):
+        fql.join_collections(from_table)
+
+    further_left_table = models.Table(name=Fake.word())
+    from_table.left_join_table = further_left_table
+    from_table.left_join_key = models.Column(
+        name=Fake.word(), table_name=further_left_table.name, alias=Fake.word()
+    )
+    with pytest.raises(AssertionError):
+        fql.join_collections(from_table)

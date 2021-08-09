@@ -16,7 +16,5 @@ A Fauna dialect for SQLAlchemy
 
 For keeping track of next steps for extending SQL support. Not meant to be comprehensive.
 
-- Support `JOIN` for cross-table filtering & results
-  - Nest merged documents to avoid ones with the same field names  from different collections overwriting each other
 - Support `ON DELETE` strategies for foreign keys (currently is just `SET NULL` I suppose since the ref no longer exists)
 - Support `GROUP BY`

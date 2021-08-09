@@ -172,9 +172,8 @@ def _translate_select_with_functions(
     )
 
 
-def _translate_select_without_functions(
-    tables: typing.List[models.Table], distinct=False
-):
+def _translate_select_without_functions(sql_query: models.SQLQuery, distinct=False):
+    tables = sql_query.tables
     from_table = tables[0]
     if len(tables) > 1:
         documents_to_select = fql.join_collections(from_table)
@@ -185,8 +184,8 @@ def _translate_select_without_functions(
 
     initial_field_alias_map: typing.Dict[str, str] = {}
     field_alias_map = functools.reduce(
-        lambda alias_map, table: {**alias_map, **table.column_alias_map},
-        tables,
+        lambda alias_map, column: {**alias_map, **column.alias_map},
+        sql_query.columns,
         initial_field_alias_map,
     )
 
@@ -291,7 +290,7 @@ def _translate_select_from_table(
 
             return _translate_select_with_functions(table, field_functions)
 
-    return _translate_select_without_functions(tables, distinct=sql_query.distinct)
+    return _translate_select_without_functions(sql_query, distinct=sql_query.distinct)
 
 
 def _translate_select_from_info_schema_constraints(

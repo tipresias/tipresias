@@ -1,5 +1,6 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
+import functools
 import sqlparse
 from sqlparse import sql as token_groups, tokens as token_types
 import pytest
@@ -184,9 +185,16 @@ def test_invalid_add_join():
 
 
 def test_sql_query():
-    sql_query = models.SQLQuery(tables=[models.Table(name="table")])
+    table_name = Fake.word()
+    column_name = Fake.word()
+    sql_query = models.SQLQuery(
+        tables=[models.Table(name=table_name)],
+        columns=[models.Column(name=column_name, alias=Fake.word())],
+    )
     assert len(sql_query.tables) == 1
-    assert sql_query.tables[0].name == "table"
+    assert sql_query.tables[0].name == table_name
+    assert len(sql_query.columns) == 1
+    assert sql_query.columns[0].name == column_name
 
 
 def test_sql_add_filter_to_table():
@@ -216,38 +224,53 @@ def test_sql_query_from_statement_distinct(distinct):
 
 
 @pytest.mark.parametrize(
-    ["sql_string", "table_names"],
+    ["sql_string", "expected_table_names", "expected_column_names"],
     [
         (
             "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
             "FROM users",
             ["users"],
+            ["ref", "name", "date_joined", "age", "finger_count"],
         ),
         (
-            "SELECT users.name, transactions.number FROM users "
+            "SELECT users.name, transactions.number, users.age FROM users "
             "JOIN accounts ON users.id = accounts.user_id "
             "JOIN transactions ON accounts.id = transactions.account_id",
             ["users", "accounts", "transactions"],
+            ["name", "number", "age"],
         ),
         (
-            "SELECT users.name, accounts.number FROM users "
+            "SELECT accounts.number, users.name FROM users "
             "JOIN accounts ON users.id = accounts.user_id",
             ["users", "accounts"],
+            ["number", "name"],
         ),
         (
             "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)",
             ["users"],
+            ["name", "age", "finger_count"],
         ),
-        ("DELETE FROM users", ["users"]),
-        ("UPDATE users SET users.name = 'Bob'", ["users"]),
+        ("DELETE FROM users", ["users"], []),
+        ("UPDATE users SET users.name = 'Bob'", ["users"], ["name"]),
     ],
 )
-def test_sql_query_from_statement(sql_string, table_names):
+def test_sql_query_from_statement(
+    sql_string, expected_table_names, expected_column_names
+):
     statement = sqlparse.parse(sql_string)[0]
-
     sql_query = models.SQLQuery.from_statement(statement)
-    query_table_names = {table.name for table in sql_query.tables}
-    assert query_table_names == set(table_names)
+
+    query_table_names = [table.name for table in sql_query.tables]
+    assert query_table_names == expected_table_names
+
+    query_column_names = [col.name for col in sql_query.columns]
+    table_column_names = functools.reduce(
+        lambda col_names, table: col_names + [col.name for col in table.columns],
+        sql_query.tables,
+        [],
+    )
+    assert set(query_column_names) == set(table_column_names)
+    assert query_column_names == expected_column_names
 
 
 @pytest.mark.parametrize(

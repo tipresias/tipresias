@@ -45,7 +45,7 @@ class Column:
     identifier: Parsed SQL Identifier for a column name and/or alias.
     """
 
-    def __init__(self, table_name: typing.Optional[str], name: str, alias: str):
+    def __init__(self, name: str, alias: str, table_name: typing.Optional[str] = None):
         self.name = name
         self.alias = alias
         self._table_name = table_name
@@ -469,10 +469,17 @@ class SQLQuery:
     tables: List of tables referenced in the query.
     """
 
-    def __init__(self, tables: typing.List[Table] = None, distinct: bool = False):
+    def __init__(
+        self,
+        tables: typing.List[Table] = None,
+        columns: typing.List[Column] = None,
+        distinct: bool = False,
+    ):
         self.distinct = distinct
         tables = tables or []
         self._tables = tables
+        columns = columns or []
+        self._columns = columns
 
     @classmethod
     def from_statement(cls, statement: token_groups.Statement) -> SQLQuery:
@@ -582,6 +589,7 @@ class SQLQuery:
                 token_groups.Function,
             )
         )
+        columns = []
 
         for column in Column.from_identifier_group(identifiers):
             try:
@@ -591,11 +599,12 @@ class SQLQuery:
             except StopIteration:
                 table = tables[0]
 
+            columns.append(column)
             table.add_column(column)
 
         _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
 
-        return cls(tables=tables, distinct=bool(distinct))
+        return cls(tables=tables, columns=columns, distinct=bool(distinct))
 
     @classmethod
     def _build_update_query(
@@ -610,7 +619,7 @@ class SQLQuery:
         column = Column.from_identifier(update_column)
         table.add_column(column)
 
-        return cls(tables=[table])
+        return cls(tables=[table], columns=[column])
 
     @classmethod
     def _build_insert_query(
@@ -627,11 +636,13 @@ class SQLQuery:
         _, column_identifiers = column_group.token_next_by(
             i=(token_groups.IdentifierList, token_groups.Identifier)
         )
+        columns = []
 
         for column in Column.from_identifier_group(column_identifiers):
+            columns.append(column)
             table.add_column(column)
 
-        return cls(tables=[table])
+        return cls(tables=[table], columns=columns)
 
     @classmethod
     def _build_delete_query(cls, table: Table) -> SQLQuery:
@@ -641,6 +652,11 @@ class SQLQuery:
     def tables(self):
         """List of data tables referenced in the SQL query."""
         return self._tables
+
+    @property
+    def columns(self):
+        """List of columns referenced in the SQL query in the order that they appear."""
+        return self._columns
 
     def add_filter_to_table(self, sql_filter: Filter):
         """Associates the given Filter with the Table that it applies to.

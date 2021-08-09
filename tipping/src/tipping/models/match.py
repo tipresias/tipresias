@@ -11,9 +11,8 @@ from sqlalchemy import (
     DateTime,
     String,
     ForeignKey,
-    select,
-    func,
 )
+from sqlalchemy.sql import Select, select, func
 from sqlalchemy.orm import relationship, validates, session as orm_session
 
 import pandas as pd
@@ -29,6 +28,9 @@ MIN_MARGIN = 0
 FIRST_ROUND = 1
 JAN = 1
 FIRST = 1
+# Rough estimate, but exactitude isn't necessary here. The AFL fixture tends to separate
+# match start times by just under 3 hrs (2:50 - 2:55 from my small sample).
+GAME_LENGTH_HRS = 3
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -183,6 +185,27 @@ class Match(Base):
             start_date_time=match_date,
             round_number=int(round_number),
             venue=venue,
+        )
+
+    @classmethod
+    def played_without_results(cls) -> Select:
+        """
+        Get all matches that don't have any associated results data.
+        Returns:
+        --------
+        A query set of past matches that haven't been updated with final scores yet.
+        """
+        right_now = datetime.now(tz=timezone.utc)
+        match_duration_ago = right_now - timedelta(hours=GAME_LENGTH_HRS)
+
+        return (
+            select(Match)
+            .where(Match.start_date_time < match_duration_ago)
+            .join(Match.team_matches)
+            .where(TeamMatch.score == None)  # pylint: disable=singleton-comparison
+            # Filtering by teammatch attributes returns duplicate matches
+            # (one for each associated teammatch)
+            .distinct()
         )
 
     @validates("round_number")

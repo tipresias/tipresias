@@ -418,6 +418,15 @@ def _translate_create_table(
         # document refs
         is_foreign_key = any(field_data["references"])
         if is_foreign_key:
+            index_queries.append(
+                q.create_index(
+                    {
+                        "name": index_by_field(common.IndexType.REF),
+                        "source": q.collection(table_name),
+                        "terms": [{"field": ["data", field_name]}],
+                    }
+                )
+            )
             # We create a foreign ref index per foreign ref that exists in the collection,
             # because this permits us to access any foreign ref we may need to continue
             # a chain of joins.

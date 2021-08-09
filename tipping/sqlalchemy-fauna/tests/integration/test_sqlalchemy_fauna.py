@@ -495,3 +495,35 @@ def test_select_is_null(fauna_session, user_model):
 
     assert len(queried_users) == 1
     assert queried_users[0].job is None
+
+
+def test_join(fauna_session, parent_child):
+    Base = parent_child["base"]
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    Parent = parent_child["parent"]
+    Child = parent_child["child"]
+
+    parents = [
+        ("Bob", ["Louise", "Tina", "Gene"]),
+        ("Jimmy", ["Jimmy Jr.", "Ollie", "Andy"]),
+    ]
+
+    for parent_name, child_names in parents:
+        parent = Parent(name=parent_name)
+        fauna_session.add(parent)
+
+        for child_name in child_names:
+            child = Child(name=child_name, parent=parent)
+            fauna_session.add(child)
+
+    result = fauna_session.execute(
+        select(Parent, Child).join(Parent.children).where(Child.name == "Louise")
+    )
+    rows = list(result)
+
+    assert len(rows) == 1
+    queried_parent, queried_child = rows[0]
+    assert queried_child.name == "Louise"
+    assert queried_parent.name == queried_child.parent.name

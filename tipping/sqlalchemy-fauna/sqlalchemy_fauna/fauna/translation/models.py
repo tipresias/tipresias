@@ -1,10 +1,12 @@
 """Collection of objects representing RDB structures in SQL queries"""
 
 from __future__ import annotations
+import functools
 
 import typing
 from functools import reduce
 from datetime import datetime
+import enum
 
 from sqlparse import sql as token_groups, tokens as token_types
 from mypy_extensions import TypedDict
@@ -17,10 +19,23 @@ ColumnParams = TypedDict(
     "ColumnParams", {"table_name": typing.Optional[str], "name": str, "alias": str}
 )
 
+
+class JoinDirection(enum.Enum):
+    """Enum for table join directions."""
+
+    LEFT = "left"
+    RIGHT = "right"
+
+
 # Probably not a complete list, but covers the basics
 FUNCTION_NAMES = {"min", "max", "count", "avg", "sum"}
 GREATER_THAN = ">"
 LESS_THAN = "<"
+
+REVERSE_JOIN = {
+    JoinDirection.LEFT: JoinDirection.RIGHT,
+    JoinDirection.RIGHT: JoinDirection.LEFT,
+}
 
 
 class Column:
@@ -30,7 +45,7 @@ class Column:
     identifier: Parsed SQL Identifier for a column name and/or alias.
     """
 
-    def __init__(self, table_name: typing.Optional[str], name: str, alias: str):
+    def __init__(self, name: str, alias: str, table_name: typing.Optional[str] = None):
         self.name = name
         self.alias = alias
         self._table_name = table_name
@@ -40,7 +55,10 @@ class Column:
     def from_identifier_group(
         cls,
         identifiers: typing.Union[
-            token_groups.Identifier, token_groups.IdentifierList, token_groups.Function
+            token_groups.Identifier,
+            token_groups.IdentifierList,
+            token_groups.Function,
+            token_groups.Comparison,
         ],
     ) -> typing.List[Column]:
         """Create column objects from any of the possible SQL identifier objects.
@@ -53,7 +71,9 @@ class Column:
         --------
         A list of column objects.
         """
-        if isinstance(identifiers, token_groups.IdentifierList):
+        if isinstance(
+            identifiers, (token_groups.IdentifierList, token_groups.Comparison)
+        ):
             return [
                 Column.from_identifier(id)
                 for id in identifiers
@@ -336,6 +356,10 @@ class Table:
         self.name = name
         self._columns: typing.List[Column] = []
         self._filters: typing.List[Filter] = []
+        self.left_join_table: typing.Optional[Table] = None
+        self.left_join_key: typing.Optional[Column] = None
+        self.right_join_table: typing.Optional[Table] = None
+        self.right_join_key: typing.Optional[Column] = None
 
         columns = columns or []
         for column in columns:
@@ -388,6 +412,45 @@ class Table:
         sql_filter.table = self
         self._filters.append(sql_filter)
 
+    def add_join(
+        self,
+        foreign_table: Table,
+        comparison_group: token_groups.Comparison,
+        direction: JoinDirection,
+    ):
+        """Add a foreign reference via join."""
+        setattr(self, f"{direction.value}_join_table", foreign_table)
+        setattr(foreign_table, f"{REVERSE_JOIN[direction].value}_join_table", self)
+
+        join_columns = Column.from_identifier_group(comparison_group)
+        join_on_id = functools.reduce(
+            lambda has_id, column: has_id or column.name == "ref", join_columns, False
+        )
+
+        if not join_on_id:
+            raise exceptions.NotSupportedError(
+                "Table joins are only permitted on IDs and foreign keys "
+                f"that refer to IDs, but tried to join on {comparison_group.value}."
+            )
+
+        join_key = next(
+            join_column
+            for join_column in join_columns
+            if join_column.table_name == self.name
+        )
+        setattr(self, f"{direction.value}_join_key", join_key)
+
+        foreign_join_key = next(
+            join_column
+            for join_column in join_columns
+            if join_column.table_name == foreign_table.name
+        )
+        setattr(
+            foreign_table,
+            f"{REVERSE_JOIN[direction].value}_join_key",
+            foreign_join_key,
+        )
+
     @property
     def column_alias_map(self) -> typing.Dict[str, str]:
         """Dictionary that maps column names to their aliases in the SQL query."""
@@ -406,10 +469,17 @@ class SQLQuery:
     tables: List of tables referenced in the query.
     """
 
-    def __init__(self, tables: typing.List[Table] = None, distinct: bool = False):
+    def __init__(
+        self,
+        tables: typing.List[Table] = None,
+        columns: typing.List[Column] = None,
+        distinct: bool = False,
+    ):
         self.distinct = distinct
         tables = tables or []
         self._tables = tables
+        columns = columns or []
+        self._columns = columns
 
     @classmethod
     def from_statement(cls, statement: token_groups.Statement) -> SQLQuery:
@@ -424,18 +494,25 @@ class SQLQuery:
         A new SQLQuery object.
         """
         first_token = statement.token_first(skip_cm=True, skip_ws=True)
+        tables = cls._collect_tables(statement)
 
         if first_token.match(token_types.DML, "SELECT"):
-            sql_instance = cls._build_select_query(statement)
+            sql_instance = cls._build_select_query(statement, tables)
 
         if first_token.match(token_types.DML, "UPDATE"):
-            sql_instance = cls._build_update_query(statement)
+            assert len(tables) == 1
+            table = tables[0]
+            sql_instance = cls._build_update_query(statement, table)
 
         if first_token.match(token_types.DML, "INSERT"):
-            sql_instance = cls._build_insert_query(statement)
+            assert len(tables) == 1
+            table = tables[0]
+            sql_instance = cls._build_insert_query(statement, table)
 
         if first_token.match(token_types.DML, "DELETE"):
-            sql_instance = cls._build_delete_query(statement)
+            assert len(tables) == 1
+            table = tables[0]
+            sql_instance = cls._build_delete_query(table)
 
         if sql_instance is None:
             raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
@@ -447,53 +524,93 @@ class SQLQuery:
         return sql_instance
 
     @classmethod
-    def _build_select_query(cls, statement: token_groups.Statement) -> SQLQuery:
-        idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
-        _, table_identifier = statement.token_next_by(
-            i=(token_groups.Identifier), idx=idx
+    def _collect_tables(cls, statement: token_groups.Statement) -> typing.List[Table]:
+        idx, _ = statement.token_next_by(
+            m=[
+                (token_types.Keyword, "FROM"),
+                (token_types.Keyword, "INTO"),
+                (token_types.DML, "UPDATE"),
+            ]
+        )
+        _, maybe_table_identifier = statement.token_next(
+            idx=idx, skip_cm=True, skip_ws=True
         )
 
-        # If we can't find a single table identifier, it means that multiple tables
-        # are referenced in the FROM clause, which isn't supported.
-        if table_identifier is None:
-            raise exceptions.NotSupportedError(
-                "Only one table per query is currently supported"
+        if isinstance(maybe_table_identifier, token_groups.Function):
+            maybe_table_identifier = maybe_table_identifier.token_first(
+                skip_cm=True, skip_ws=True
             )
 
-        table = Table.from_identifier(table_identifier)
+        # If we can't find a single table identifier, it means that multiple tables
+        # are referenced in the FROM/INTO clause, which isn't supported.
+        if not isinstance(maybe_table_identifier, token_groups.Identifier):
+            raise exceptions.NotSupportedError(
+                "In order to query multiple tables at a time, you must join them "
+                "together with a JOIN clause."
+            )
 
+        table_identifier = maybe_table_identifier
+        tables = [Table.from_identifier(table_identifier)]
+
+        while True:
+            idx, join_kw = statement.token_next_by(
+                m=(token_types.Keyword, "JOIN"), idx=idx
+            )
+            if join_kw is None:
+                break
+
+            idx, table_identifier = statement.token_next(
+                idx, skip_ws=True, skip_cm=True
+            )
+            table = Table.from_identifier(table_identifier)
+
+            idx, comparison_group = statement.token_next_by(
+                i=token_groups.Comparison, idx=idx
+            )
+
+            table.add_join(tables[-1], comparison_group, JoinDirection.LEFT)
+            tables.append(table)
+
+        return tables
+
+    @classmethod
+    def _build_select_query(
+        cls, statement: token_groups.Statement, tables: typing.List[Table]
+    ) -> SQLQuery:
         _, wildcard = statement.token_next_by(t=(token_types.Wildcard))
 
         if wildcard is not None:
             raise exceptions.NotSupportedError("Wildcards ('*') are not yet supported")
 
-        idx, identifiers = statement.token_next_by(
+        _, identifiers = statement.token_next_by(
             i=(
                 token_groups.Identifier,
                 token_groups.IdentifierList,
                 token_groups.Function,
             )
         )
+        columns = []
 
         for column in Column.from_identifier_group(identifiers):
+            try:
+                table = next(
+                    table for table in tables if table.name == column.table_name
+                )
+            except StopIteration:
+                table = tables[0]
+
+            columns.append(column)
             table.add_column(column)
 
         _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
 
-        return cls(tables=[table], distinct=bool(distinct))
+        return cls(tables=tables, columns=columns, distinct=bool(distinct))
 
     @classmethod
-    def _build_update_query(cls, statement: token_groups.Statement) -> SQLQuery:
-        idx, table_identifier = statement.token_next_by(i=token_groups.Identifier)
-
-        if table_identifier is None:
-            raise exceptions.NotSupportedError(
-                "Only one table per query is currently supported"
-            )
-
-        table = Table.from_identifier(table_identifier)
-
-        idx, _ = statement.token_next_by(m=(token_types.Keyword, "SET"), idx=idx)
+    def _build_update_query(
+        cls, statement: token_groups.Statement, table: Table
+    ) -> SQLQuery:
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "SET"))
         idx, comparison_group = statement.token_next_by(
             i=token_groups.Comparison, idx=idx
         )
@@ -502,10 +619,12 @@ class SQLQuery:
         column = Column.from_identifier(update_column)
         table.add_column(column)
 
-        return cls(tables=[table])
+        return cls(tables=[table], columns=[column])
 
     @classmethod
-    def _build_insert_query(cls, statement: token_groups.Statement) -> SQLQuery:
+    def _build_insert_query(
+        cls, statement: token_groups.Statement, table: Table
+    ) -> SQLQuery:
         _, function_group = statement.token_next_by(i=token_groups.Function)
 
         if function_group is None:
@@ -513,34 +632,31 @@ class SQLQuery:
                 "INSERT INTO statements without column names are not currently supported."
             )
 
-        func_idx, table_identifier = function_group.token_next_by(
-            i=token_groups.Identifier
-        )
-        table = Table.from_identifier(table_identifier)
-
-        _, column_group = function_group.token_next_by(
-            i=token_groups.Parenthesis, idx=func_idx
-        )
+        _, column_group = function_group.token_next_by(i=token_groups.Parenthesis)
         _, column_identifiers = column_group.token_next_by(
             i=(token_groups.IdentifierList, token_groups.Identifier)
         )
+        columns = []
 
         for column in Column.from_identifier_group(column_identifiers):
+            columns.append(column)
             table.add_column(column)
 
-        return cls(tables=[table])
+        return cls(tables=[table], columns=columns)
 
     @classmethod
-    def _build_delete_query(cls, statement: token_groups.Statement) -> SQLQuery:
-        _, table_identifier = statement.token_next_by(i=token_groups.Identifier)
-        table = Table.from_identifier(table_identifier)
-
+    def _build_delete_query(cls, table: Table) -> SQLQuery:
         return cls(tables=[table])
 
     @property
     def tables(self):
         """List of data tables referenced in the SQL query."""
         return self._tables
+
+    @property
+    def columns(self):
+        """List of columns referenced in the SQL query in the order that they appear."""
+        return self._columns
 
     def add_filter_to_table(self, sql_filter: Filter):
         """Associates the given Filter with the Table that it applies to.

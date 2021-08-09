@@ -1,5 +1,6 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
+import functools
 import typing
 from functools import reduce, partial
 
@@ -14,8 +15,6 @@ from . import common, models, fql
 CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
 FunctionMap = typing.Dict[str, CalculationFunction]
 TableFunctionMap = typing.Dict[str, FunctionMap]
-
-MAX_PAGE_SIZE = 100000
 
 
 def _parse_function(
@@ -85,10 +84,11 @@ def _parse_functions(
 
 
 def _translate_select_with_functions(
-    documents_to_select: QueryExpression,
-    field_alias_map: common.FieldAliasMap,
+    table: models.Table,
     field_functions: FunctionMap,
 ):
+    documents_to_select = fql.define_document_set(table)
+    field_alias_map = table.column_alias_map
     selected_fields = list(field_alias_map.keys())
 
     apply_alias = lambda field_name: q.select(
@@ -151,7 +151,7 @@ def _translate_select_with_functions(
     get_first_document = lambda documents: q.let(
         {
             "first_document": q.select(
-                0, q.paginate(documents, size=MAX_PAGE_SIZE), default=common.NULL
+                0, q.paginate(documents, size=fql.MAX_PAGE_SIZE), default=common.NULL
             )
         },
         q.if_(
@@ -172,40 +172,46 @@ def _translate_select_with_functions(
     )
 
 
-def _translate_select_without_functions(
-    documents_to_select: QueryExpression,
-    field_alias_map: common.FieldAliasMap,
-    distinct=False,
-):
-    flatten = lambda items: q.union(
-        q.map_(
-            q.lambda_(
-                ["key", "value"],
-                q.if_(
-                    q.equals(q.var("key"), common.DATA),
-                    q.to_array(q.var("value")),
-                    # We put single key/value pairs in nested arrays to match
-                    # the structure of the nested 'data' key/values
-                    [[q.var("key"), q.var("value")]],
-                ),
-            ),
-            items,
+def _translate_select_without_functions(sql_query: models.SQLQuery, distinct=False):
+    tables = sql_query.tables
+    from_table = tables[0]
+    if len(tables) > 1:
+        maybe_documents_to_select = fql.join_collections(from_table)
+    else:
+        maybe_documents_to_select = q.paginate(
+            fql.define_document_set(from_table), size=fql.MAX_PAGE_SIZE
         )
+
+    initial_field_alias_map: typing.Dict[str, typing.Dict[str, str]] = {}
+    field_alias_map = functools.reduce(
+        lambda alias_map, column: {
+            **alias_map,
+            column.table_name: {
+                **alias_map.get(column.table_name, {}),
+                **column.alias_map,
+            },
+        },
+        sql_query.columns,
+        initial_field_alias_map,
     )
 
-    translate_fields_to_aliases = lambda document_fields: q.lambda_(
-        "field",
+    translate_fields_to_aliases = lambda document: q.lambda_(
+        ["collection_name", "field_name"],
         q.let(
             {
-                "field_name": q.select(
-                    q.var("field"), field_alias_map, default=q.var("field")
+                "alias_name": q.select(
+                    [q.var("collection_name"), q.var("field_name")],
+                    field_alias_map,
+                    default=q.var("field_name"),
                 ),
                 "field_value": q.select(
-                    q.var("field"), document_fields, default=common.NULL
+                    [q.var("collection_name"), q.var("field_name")],
+                    document,
+                    default=common.NULL,
                 ),
             },
             [
-                q.var("field_name"),
+                q.var("alias_name"),
                 q.if_(
                     q.equals(q.var("field_value"), common.NULL),
                     None,
@@ -215,57 +221,75 @@ def _translate_select_without_functions(
         ),
     )
 
-    # We map over selected_fields to build document object to maintain the order
-    # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
-    # to the incorrect keys.
-    selected_fields = list(field_alias_map.keys())
-    select_document_fields = q.lambda_(
-        "document",
-        q.to_object(
-            q.map_(
-                translate_fields_to_aliases(
-                    q.to_object(flatten(q.to_array(q.get(q.var("document")))))
+    translate_document_fields = q.lambda_(
+        "maybe_document",
+        q.let(
+            {
+                "document": q.if_(
+                    q.is_ref(q.var("maybe_document")),
+                    {
+                        from_table.name: q.merge(
+                            q.select(common.DATA, q.get(q.var("maybe_document"))),
+                            {"ref": q.var("maybe_document")},
+                        )
+                    },
+                    q.var("maybe_document"),
                 ),
-                selected_fields,
-            )
+            },
+            q.to_object(
+                q.map_(
+                    translate_fields_to_aliases(q.var("document")),
+                    # We map over selected_fields to build document object to maintain the order
+                    # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
+                    # to the incorrect keys.
+                    [[col.table_name, col.name] for col in sql_query.columns],
+                )
+            ),
         ),
     )
-    translate_documents = lambda documents: q.map_(
-        select_document_fields,
-        q.paginate(documents, size=MAX_PAGE_SIZE),
+    translate_documents = lambda maybe_documents: q.map_(
+        translate_document_fields, maybe_documents
     )
 
     return q.let(
-        {"documents": documents_to_select},
-        q.distinct(translate_documents(q.var("documents")))
-        if distinct
-        else translate_documents(q.var("documents")),
+        {
+            "maybe_documents": maybe_documents_to_select,
+            "translated_documents": translate_documents(q.var("maybe_documents")),
+            "result": q.distinct(q.var("translated_documents"))
+            if distinct
+            else q.var("translated_documents"),
+        },
+        # Need to nest the results in a 'data' object if they're in the form of an array,
+        # if they're paginated results, Fauna does this automatically
+        q.if_(
+            q.is_array(q.var("result")),
+            {"data": q.var("result")},
+            q.var("result"),
+        ),
     )
 
 
 def _translate_select_from_table(
     statement: token_groups.Statement, sql_query: models.SQLQuery
 ) -> QueryExpression:
-    table = sql_query.tables[0]
-
     _, identifiers = statement.token_next_by(
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
+    tables = sql_query.tables
 
-    documents_to_select = fql.define_document_set(table)
+    for table in tables:
+        table_functions = _parse_functions(q.var("documents"), identifiers, table.name)
+        field_functions = table_functions[table.name]
 
-    table_functions = _parse_functions(q.var("documents"), identifiers, table.name)
-    field_functions = table_functions[table.name]
+        if any(field_functions):
+            if len(tables) > 1:
+                raise exceptions.NotSupportedError(
+                    "SQL functions across multiple tables are not yet supported."
+                )
 
-    return (
-        _translate_select_with_functions(
-            documents_to_select, table.column_alias_map, field_functions
-        )
-        if len(field_functions)
-        else _translate_select_without_functions(
-            documents_to_select, table.column_alias_map, distinct=sql_query.distinct
-        )
-    )
+            return _translate_select_with_functions(table, field_functions)
+
+    return _translate_select_without_functions(sql_query, distinct=sql_query.distinct)
 
 
 def _translate_select_from_info_schema_constraints(
@@ -313,7 +337,7 @@ def _translate_select_from_info_schema_constraints(
     )
     indexes_based_on_collection = q.filter_(
         is_based_on_collection,
-        q.paginate(q.indexes(), size=MAX_PAGE_SIZE),
+        q.paginate(q.indexes(), size=fql.MAX_PAGE_SIZE),
     )
 
     collection_fields = q.select(
@@ -458,7 +482,7 @@ def _translate_select_from_info_schema_tables() -> QueryExpression:
 
     return q.map_(
         get_collection_ref,
-        q.paginate(q.collections(), size=MAX_PAGE_SIZE),
+        q.paginate(q.collections(), size=fql.MAX_PAGE_SIZE),
     )
 
 
@@ -503,5 +527,4 @@ def translate_select(statement: token_groups.Statement) -> typing.List[QueryExpr
     # are a special case that are going to require a rewrite eventually, so easier
     # to ignore them for now in order to progress with this refactor.
     sql_query = models.SQLQuery.from_statement(statement)
-    table = sql_query.tables[0]
     return [_translate_select_from_table(statement, sql_query)]

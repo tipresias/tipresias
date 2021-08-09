@@ -1,5 +1,6 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
+import functools
 import sqlparse
 from sqlparse import sql as token_groups, tokens as token_types
 import pytest
@@ -141,10 +142,59 @@ def test_add_filter():
     assert table.filters == sql_filters
 
 
+def test_add_join():
+    table_name = "users"
+    foreign_table_name = "accounts"
+    sql_query = (
+        f"SELECT {table_name}.name, {foreign_table_name}.amount "
+        f"FROM {table_name} JOIN {foreign_table_name} "
+        f"ON {table_name}.id = {foreign_table_name}.user_id"
+    )
+    statement = sqlparse.parse(sql_query)[0]
+    _, comparison_group = statement.token_next_by(i=(token_groups.Comparison))
+
+    table = models.Table(name=table_name)
+    foreign_table = models.Table(name=foreign_table_name)
+
+    table.add_join(foreign_table, comparison_group, models.JoinDirection.RIGHT)
+
+    assert table.right_join_table == foreign_table
+    assert table.right_join_key.name == "ref"
+    assert foreign_table.left_join_table == table
+    assert foreign_table.left_join_key.name == "user_id"
+
+
+def test_invalid_add_join():
+    table_name = "users"
+    foreign_table_name = "accounts"
+    sql_query = (
+        f"SELECT {table_name}.name, {foreign_table_name}.amount "
+        f"FROM {table_name} JOIN {foreign_table_name} "
+        f"ON {table_name}.name = {foreign_table_name}.user_name"
+    )
+    statement = sqlparse.parse(sql_query)[0]
+    _, comparison_group = statement.token_next_by(i=(token_groups.Comparison))
+
+    table = models.Table(name=table_name)
+    foreign_table = models.Table(name=foreign_table_name)
+
+    with pytest.raises(
+        exceptions.NotSupportedError, match="Table joins are only permitted on IDs"
+    ):
+        table.add_join(foreign_table, comparison_group, models.JoinDirection.RIGHT)
+
+
 def test_sql_query():
-    sql_query = models.SQLQuery(tables=[models.Table(name="table")])
+    table_name = Fake.word()
+    column_name = Fake.word()
+    sql_query = models.SQLQuery(
+        tables=[models.Table(name=table_name)],
+        columns=[models.Column(name=column_name, alias=Fake.word())],
+    )
     assert len(sql_query.tables) == 1
-    assert sql_query.tables[0].name == "table"
+    assert sql_query.tables[0].name == table_name
+    assert len(sql_query.columns) == 1
+    assert sql_query.columns[0].name == column_name
 
 
 def test_sql_add_filter_to_table():
@@ -159,7 +209,7 @@ def test_sql_add_filter_to_table():
 
 
 @pytest.mark.parametrize("distinct", ["DISTINCT", ""])
-def test_sql_query_from_statement(distinct):
+def test_sql_query_from_statement_distinct(distinct):
     table_name = "users"
     column_name = "name"
     sql_string = f"SELECT {distinct} users.{column_name} FROM {table_name}"
@@ -174,15 +224,70 @@ def test_sql_query_from_statement(distinct):
 
 
 @pytest.mark.parametrize(
+    ["sql_string", "expected_table_names", "expected_column_names"],
+    [
+        (
+            "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
+            "FROM users",
+            ["users"],
+            ["ref", "name", "date_joined", "age", "finger_count"],
+        ),
+        (
+            "SELECT users.name, transactions.number, users.age FROM users "
+            "JOIN accounts ON users.id = accounts.user_id "
+            "JOIN transactions ON accounts.id = transactions.account_id",
+            ["users", "accounts", "transactions"],
+            ["name", "number", "age"],
+        ),
+        (
+            "SELECT accounts.number, users.name FROM users "
+            "JOIN accounts ON users.id = accounts.user_id",
+            ["users", "accounts"],
+            ["number", "name"],
+        ),
+        (
+            "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)",
+            ["users"],
+            ["name", "age", "finger_count"],
+        ),
+        ("DELETE FROM users", ["users"], []),
+        ("UPDATE users SET users.name = 'Bob'", ["users"], ["name"]),
+    ],
+)
+def test_sql_query_from_statement(
+    sql_string, expected_table_names, expected_column_names
+):
+    statement = sqlparse.parse(sql_string)[0]
+    sql_query = models.SQLQuery.from_statement(statement)
+
+    query_table_names = [table.name for table in sql_query.tables]
+    assert query_table_names == expected_table_names
+
+    query_column_names = [col.name for col in sql_query.columns]
+    table_column_names = functools.reduce(
+        lambda col_names, table: col_names + [col.name for col in table.columns],
+        sql_query.tables,
+        [],
+    )
+    assert set(query_column_names) == set(table_column_names)
+    assert query_column_names == expected_column_names
+
+
+@pytest.mark.parametrize(
     ["sql_string", "error_message"],
     [
         (
-            "SELECT users.name, accounts.number from users, accounts",
-            "Only one table per query is currently supported",
+            "SELECT users.name, accounts.number FROM users, accounts",
+            "must join them together with a JOIN clause",
         ),
         # Using regex's "any character" symbol instead of the expected single-quotes,
         # because getting the escapes right through multiple layers of code is super annoying.
         ("SELECT * from users", "Wildcards (.*.) are not yet supported"),
+        (
+            "SELECT users.name, accounts.number FROM users "
+            "JOIN accounts ON users.name = accounts.user_name",
+            "Table joins are only permitted on IDs and foreign keys that refer to IDs",
+        ),
     ],
 )
 def test_unsupported_sql_query_statements(sql_string, error_message):

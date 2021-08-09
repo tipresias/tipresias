@@ -176,48 +176,42 @@ def _translate_select_without_functions(sql_query: models.SQLQuery, distinct=Fal
     tables = sql_query.tables
     from_table = tables[0]
     if len(tables) > 1:
-        documents_to_select = fql.join_collections(from_table)
+        maybe_documents_to_select = fql.join_collections(from_table)
     else:
-        documents_to_select = q.paginate(
+        maybe_documents_to_select = q.paginate(
             fql.define_document_set(from_table), size=fql.MAX_PAGE_SIZE
         )
 
-    initial_field_alias_map: typing.Dict[str, str] = {}
+    initial_field_alias_map: typing.Dict[str, typing.Dict[str, str]] = {}
     field_alias_map = functools.reduce(
-        lambda alias_map, column: {**alias_map, **column.alias_map},
+        lambda alias_map, column: {
+            **alias_map,
+            column.table_name: {
+                **alias_map.get(column.table_name, {}),
+                **column.alias_map,
+            },
+        },
         sql_query.columns,
         initial_field_alias_map,
     )
 
-    flatten = lambda items: q.union(
-        q.map_(
-            q.lambda_(
-                ["key", "value"],
-                q.if_(
-                    q.equals(q.var("key"), common.DATA),
-                    q.to_array(q.var("value")),
-                    # We put single key/value pairs in nested arrays to match
-                    # the structure of the nested 'data' key/values
-                    [[q.var("key"), q.var("value")]],
-                ),
-            ),
-            items,
-        )
-    )
-
-    translate_fields_to_aliases = lambda document_fields: q.lambda_(
-        "field",
+    translate_fields_to_aliases = lambda document: q.lambda_(
+        ["collection_name", "field_name"],
         q.let(
             {
-                "field_name": q.select(
-                    q.var("field"), field_alias_map, default=q.var("field")
+                "alias_name": q.select(
+                    [q.var("collection_name"), q.var("field_name")],
+                    field_alias_map,
+                    default=q.var("field_name"),
                 ),
                 "field_value": q.select(
-                    q.var("field"), document_fields, default=common.NULL
+                    [q.var("collection_name"), q.var("field_name")],
+                    document,
+                    default=common.NULL,
                 ),
             },
             [
-                q.var("field_name"),
+                q.var("alias_name"),
                 q.if_(
                     q.equals(q.var("field_value"), common.NULL),
                     None,
@@ -227,45 +221,50 @@ def _translate_select_without_functions(sql_query: models.SQLQuery, distinct=Fal
         ),
     )
 
-    # We map over selected_fields to build document object to maintain the order
-    # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
-    # to the incorrect keys.
-    selected_fields = list(field_alias_map.keys())
-    select_document_fields = q.lambda_(
+    translate_document_fields = q.lambda_(
         "maybe_document",
         q.let(
             {
                 "document": q.if_(
                     q.is_ref(q.var("maybe_document")),
-                    q.get(q.var("maybe_document")),
+                    {
+                        from_table.name: q.merge(
+                            q.select(common.DATA, q.get(q.var("maybe_document"))),
+                            {"ref": q.var("maybe_document")},
+                        )
+                    },
                     q.var("maybe_document"),
-                ),
-                "flattened_document": q.to_object(
-                    flatten(q.to_array(q.var("document")))
                 ),
             },
             q.to_object(
                 q.map_(
-                    translate_fields_to_aliases(q.var("flattened_document")),
-                    selected_fields,
+                    translate_fields_to_aliases(q.var("document")),
+                    # We map over selected_fields to build document object to maintain the order
+                    # of fields as queried. Otherwise, SQLAlchemy gets confused and assigns values
+                    # to the incorrect keys.
+                    [[col.table_name, col.name] for col in sql_query.columns],
                 )
             ),
         ),
     )
-    translate_documents = lambda documents: q.map_(select_document_fields, documents)
-
-    select_query = translate_documents(q.var("documents"))
-    if distinct:
-        select_query = q.distinct(select_query)
+    translate_documents = lambda maybe_documents: q.map_(
+        translate_document_fields, maybe_documents
+    )
 
     return q.let(
-        {"documents": documents_to_select, "translated_documents": select_query},
+        {
+            "maybe_documents": maybe_documents_to_select,
+            "translated_documents": translate_documents(q.var("maybe_documents")),
+            "result": q.distinct(q.var("translated_documents"))
+            if distinct
+            else q.var("translated_documents"),
+        },
         # Need to nest the results in a 'data' object if they're in the form of an array,
         # if they're paginated results, Fauna does this automatically
         q.if_(
-            q.is_array(q.var("translated_documents")),
-            {"data": q.var("translated_documents")},
-            q.var("translated_documents"),
+            q.is_array(q.var("result")),
+            {"data": q.var("result")},
+            q.var("result"),
         ),
     )
 

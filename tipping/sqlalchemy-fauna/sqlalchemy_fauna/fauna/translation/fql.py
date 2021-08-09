@@ -139,7 +139,7 @@ def define_document_set(table: models.Table) -> QueryExpression:
 
 def _build_merge(*table_names: str):
     merge = lambda agg_merge, table_name: q.merge(
-        agg_merge, q.var(f"{table_name}_data")
+        agg_merge, {table_name: q.var(f"{table_name}_data")}
     )
     return functools.reduce(merge, table_names, q.merge({}, {}))
 

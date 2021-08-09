@@ -518,10 +518,12 @@ def test_join(fauna_session, parent_child):
             child = Child(name=child_name, parent=parent)
             fauna_session.add(child)
 
-    queried_parent_children = fauna_session.execute(
-        select(Parent.id, Child.name)
-        .join(Parent.children)
-        .where(Child.name == "Louise")
+    result = fauna_session.execute(
+        select(Parent, Child).join(Parent.children).where(Child.name == "Louise")
     )
+    rows = list(result)
 
-    assert len(list(queried_parent_children)) == 1
+    assert len(rows) == 1
+    queried_parent, queried_child = rows[0]
+    assert queried_child.name == "Louise"
+    assert queried_parent.name == queried_child.parent.name

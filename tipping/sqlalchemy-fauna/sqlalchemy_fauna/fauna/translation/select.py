@@ -177,26 +177,26 @@ def _translate_select_without_functions(sql_query: models.SQLQuery, distinct=Fal
     from_table = tables[0]
     order_by = sql_query.order_by
 
-    print(order_by)
+    if order_by is not None and len(order_by.columns) > 1:
+        raise exceptions.NotSupportedError(
+            "Ordering by multiple columns is not yet supported."
+        )
 
     if len(tables) > 1:
-        if order_by is not None:
+        if order_by is not None and order_by.columns[0].table_name != from_table.name:
             raise exceptions.NotSupportedError(
-                "Fauna uses indexes for ordering of results, and we currently cannot "
-                "simultaneously join indices together and match on a value-based index "
-                "for ordering purposes. Either select one table at a time or remove "
+                "Fauna uses indexes for both joining and ordering of results, "
+                "and we currently can only sort the principal table "
+                "(i.e. the one after 'FROM') in the query. You can sort on a column "
+                "from the principal table, query one table at a time, or remove "
                 "the ordering constraint."
             )
-        maybe_documents_to_select = fql.join_collections(from_table)
+        maybe_documents_to_select = fql.join_collections(from_table, order_by)
 
     else:
         document_set = fql.define_document_set(from_table)
         if order_by is None:
             maybe_documents_to_select = q.paginate(document_set, size=fql.MAX_PAGE_SIZE)
-        elif len(order_by.columns) > 1:
-            raise exceptions.NotSupportedError(
-                "Ordering by multiple columns is not yet supported."
-            )
         else:
             ordered_result = q.join(
                 document_set,

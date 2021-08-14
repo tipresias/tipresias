@@ -1,6 +1,7 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 from datetime import datetime, timezone
+import functools
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import (
@@ -551,3 +552,38 @@ def test_order_by(fauna_session, user_model):
     )
     user_names = [user.name for user in users]
     assert user_names == list(reversed(sorted(names)))
+
+
+def test_join_order_by(fauna_session, parent_child):
+    Base = parent_child["base"]
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    Parent = parent_child["parent"]
+    Child = parent_child["child"]
+
+    parents = [
+        ("Bob", ["Louise", "Tina", "Gene"]),
+        ("Jimmy", ["Jimmy Jr.", "Ollie", "Andy"]),
+    ]
+
+    for parent_name, child_names in parents:
+        parent = Parent(name=parent_name)
+        fauna_session.add(parent)
+
+        for child_name in child_names:
+            child = Child(name=child_name, parent=parent)
+            fauna_session.add(child)
+
+    children = (
+        fauna_session.execute(
+            select(Child, Parent).join(Child.parent).order_by(Child.name)
+        )
+        .scalars()
+        .all()
+    )
+
+    child_names = functools.reduce(
+        lambda agg_names, curr_names: agg_names + curr_names[1], parents, []
+    )
+    assert [child.name for child in children] == sorted(child_names)

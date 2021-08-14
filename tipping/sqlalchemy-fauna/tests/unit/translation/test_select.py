@@ -66,7 +66,7 @@ select_order_multiple = (
         ),
         (
             select_join_order_by,
-            "Either select one table at a time or remove the ordering constraint",
+            "we currently can only sort the principal table",
         ),
         (select_order_multiple, "Ordering by multiple columns is not yet supported"),
     ],
@@ -99,6 +99,11 @@ select_order_by = "SELECT users.name, users.age FROM users ORDER BY users.name"
 select_order_by_desc = (
     "SELECT users.name, users.age FROM users ORDER BY users.name DESC"
 )
+select_join_order_by_principal = (
+    "SELECT users.name, accounts.number FROM users "
+    "JOIN accounts ON users.id = accounts.user_id "
+    "ORDER BY users.name"
+)
 
 
 @pytest.mark.parametrize(
@@ -114,6 +119,7 @@ select_order_by_desc = (
         select_join,
         select_order_by,
         select_order_by_desc,
+        select_join_order_by_principal,
     ],
 )
 def test_translate_select(sql_string):

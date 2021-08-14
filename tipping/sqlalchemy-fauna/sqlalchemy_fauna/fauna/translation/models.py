@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import functools
+import itertools
 
 import typing
 from functools import reduce
@@ -25,6 +26,13 @@ class JoinDirection(enum.Enum):
 
     LEFT = "left"
     RIGHT = "right"
+
+
+class OrderDirection(enum.Enum):
+    """Enum for direction of results ordering."""
+
+    ASC = "ASC"
+    DESC = "DESC"
 
 
 # Probably not a complete list, but covers the basics
@@ -461,12 +469,119 @@ class Table:
         return self.name
 
 
+class OrderBy:
+    """Representation of result ordering in an SQL query.
+
+    Params:
+    -------
+    columns: List of columns whose values determing the ordering of the results.
+    direction: Direction in which the results are ordered, either 'ASC' (the default)
+        or 'DESC'.
+    """
+
+    def __init__(
+        self,
+        columns: typing.List[Column],
+        direction: OrderDirection = OrderDirection.ASC,
+    ):
+        assert any(columns)
+        self._columns = columns
+        self._direction = direction or OrderDirection.ASC
+
+    @classmethod
+    def from_statement(
+        cls, statement: token_groups.Statement
+    ) -> typing.Optional[OrderBy]:
+        """Extract results ordering from an SQL statement.
+
+        Params:
+        -------
+        statement: A full SQL statement
+
+        Returns:
+        --------
+        An OrderBy object with the SQL ORDER BY attributes.
+        """
+        idx, order_by = statement.token_next_by(m=(token_types.Keyword, "ORDER BY"))
+        if order_by is None:
+            return None
+
+        idx, identifier = statement.token_next(skip_cm=True, skip_ws=True, idx=idx)
+        direction = cls._extract_direction(identifier)
+
+        if direction is None:
+            columns = Column.from_identifier_group(identifier)
+        else:
+            # Because of how sqlparse erroneously groups the final column identifier
+            # with the direction keyword, we have to parse identifiers separately,
+            # drilling down an extra level for the final token.
+            nested_columns = [
+                Column.from_identifier_group(token)
+                for token in identifier.tokens[:-1]
+                if isinstance(
+                    token, (token_groups.Identifier, token_groups.IdentifierList)
+                )
+            ]
+
+            # If we order by a single column, the final token will be the
+            # direction keyword token. Otherwise, it will be an identifier with both
+            # the final column identifier and the direction keyword.
+            maybe_column_identifier = identifier.tokens[-1]
+            if maybe_column_identifier.is_group:
+                column_identifier = maybe_column_identifier
+                _, final_column_identifier = column_identifier.token_next_by(
+                    i=token_groups.Identifier
+                )
+                nested_columns.append(
+                    Column.from_identifier_group(final_column_identifier)
+                )
+
+            columns = list(itertools.chain.from_iterable(nested_columns))
+
+        return cls(columns=columns, direction=direction)
+
+    @classmethod
+    def _extract_direction(cls, identifier: token_groups.Identifier) -> OrderDirection:
+        _, direction_token = identifier.token_next_by(t=token_types.Keyword)
+
+        if direction_token is None:
+            PENULTIMATE_TOKEN = -2
+            # For some reason, when ordering by multiple columns with a direction keyword,
+            # sqlparse groups the final column with the direction in an Identifier token.
+            # There is an open issue (https://github.com/andialbrecht/sqlparse/issues/606),
+            # though without any response, so it seems to be a bug.
+            _, direction_identifier = identifier.token_next_by(
+                i=token_groups.Identifier, idx=PENULTIMATE_TOKEN
+            )
+            if direction_identifier is not None:
+                _, direction_token = direction_identifier.token_next_by(
+                    t=token_types.Keyword
+                )
+
+        return (
+            getattr(OrderDirection, direction_token.value) if direction_token else None
+        )
+
+    @property
+    def columns(self) -> typing.List[Column]:
+        """List of columns referenced in the SQL query in the order that they appear."""
+        return self._columns
+
+    @property
+    def direction(self) -> OrderDirection:
+        """Direction of the ordering."""
+        return self._direction
+
+
 class SQLQuery:
     """Representation of an entire SQL query statement.
 
     Params:
     -------
     tables: List of tables referenced in the query.
+    columns: List of columns referenced in the query.
+    distinct: Whether the results should be unique.
+    order_by: Object representing how the results should be ordered.
     """
 
     def __init__(
@@ -474,12 +589,14 @@ class SQLQuery:
         tables: typing.List[Table] = None,
         columns: typing.List[Column] = None,
         distinct: bool = False,
+        order_by: typing.Optional[OrderBy] = None,
     ):
         self.distinct = distinct
         tables = tables or []
         self._tables = tables
         columns = columns or []
         self._columns = columns
+        self._order_by = order_by
 
     @classmethod
     def from_statement(cls, statement: token_groups.Statement) -> SQLQuery:
@@ -604,7 +721,11 @@ class SQLQuery:
 
         _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
 
-        return cls(tables=tables, columns=columns, distinct=bool(distinct))
+        order_by = OrderBy.from_statement(statement)
+
+        return cls(
+            tables=tables, columns=columns, distinct=bool(distinct), order_by=order_by
+        )
 
     @classmethod
     def _build_update_query(
@@ -649,14 +770,19 @@ class SQLQuery:
         return cls(tables=[table])
 
     @property
-    def tables(self):
+    def tables(self) -> typing.List[Table]:
         """List of data tables referenced in the SQL query."""
         return self._tables
 
     @property
-    def columns(self):
+    def columns(self) -> typing.List[Column]:
         """List of columns referenced in the SQL query in the order that they appear."""
         return self._columns
+
+    @property
+    def order_by(self) -> typing.Optional[OrderBy]:
+        """How the results of the query should be ordered."""
+        return self._order_by
 
     def add_filter_to_table(self, sql_filter: Filter):
         """Associates the given Filter with the Table that it applies to.

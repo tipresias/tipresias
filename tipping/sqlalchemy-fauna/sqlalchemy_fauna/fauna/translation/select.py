@@ -175,19 +175,53 @@ def _translate_select_with_functions(
 def _translate_select_without_functions(sql_query: models.SQLQuery, distinct=False):
     tables = sql_query.tables
     from_table = tables[0]
+    order_by = sql_query.order_by
+
+    print(order_by)
+
     if len(tables) > 1:
+        if order_by is not None:
+            raise exceptions.NotSupportedError(
+                "Fauna uses indexes for ordering of results, and we currently cannot "
+                "simultaneously join indices together and match on a value-based index "
+                "for ordering purposes. Either select one table at a time or remove "
+                "the ordering constraint."
+            )
         maybe_documents_to_select = fql.join_collections(from_table)
+
     else:
-        maybe_documents_to_select = q.paginate(
-            fql.define_document_set(from_table), size=fql.MAX_PAGE_SIZE
-        )
+        document_set = fql.define_document_set(from_table)
+        if order_by is None:
+            maybe_documents_to_select = q.paginate(document_set, size=fql.MAX_PAGE_SIZE)
+        elif len(order_by.columns) > 1:
+            raise exceptions.NotSupportedError(
+                "Ordering by multiple columns is not yet supported."
+            )
+        else:
+            ordered_result = q.join(
+                document_set,
+                q.index(
+                    common.index_name(
+                        from_table.name,
+                        column_name=order_by.columns[0].name,
+                        index_type=common.IndexType.SORT,
+                    )
+                ),
+            )
+            if order_by.direction == models.OrderDirection.DESC:
+                ordered_result = q.reverse(ordered_result)
+
+            maybe_documents_to_select = q.map_(
+                q.lambda_(["_", "ref"], q.var("ref")),
+                q.paginate(ordered_result, size=fql.MAX_PAGE_SIZE),
+            )
 
     initial_field_alias_map: typing.Dict[str, typing.Dict[str, str]] = {}
-    field_alias_map = functools.reduce(
+    field_alias_map: typing.Dict[str, typing.Dict[str, str]] = functools.reduce(
         lambda alias_map, column: {
             **alias_map,
-            column.table_name: {
-                **alias_map.get(column.table_name, {}),
+            str(column.table_name): {
+                **alias_map.get(str(column.table_name), {}),
                 **column.alias_map,
             },
         },

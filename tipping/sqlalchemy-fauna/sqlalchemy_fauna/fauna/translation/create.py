@@ -389,14 +389,27 @@ def _translate_create_table(
 
         index_by_field = partial(index_by_collection, field_name)
 
-        index_queries.append(
-            q.create_index(
-                {
-                    "name": index_by_field(common.IndexType.VALUE),
-                    "source": q.collection(table_name),
-                    "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
-                }
-            )
+        index_queries.extend(
+            [
+                q.create_index(
+                    {
+                        "name": index_by_field(common.IndexType.VALUE),
+                        "source": q.collection(table_name),
+                        "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
+                    }
+                ),
+                # Sorting index, so we can support ORDER BY clauses in SQL queries.
+                # This will allow us to order a set of refs by a value while still
+                # keeping that same set of refs.
+                q.create_index(
+                    {
+                        "name": index_by_field(common.IndexType.SORT),
+                        "source": q.collection(table_name),
+                        "terms": [{"field": ["ref"]}],
+                        "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
+                    }
+                ),
+            ]
         )
 
         # We need a separate index for unique fields, because the values-based indices

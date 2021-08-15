@@ -45,6 +45,7 @@ class IndexType(enum.Enum):
     REF = "ref"
     TERM = "term"
     VALUE = "value"
+    SORT = "sort"
 
 
 def _parse_date_value(value):

@@ -144,18 +144,43 @@ def _build_merge(*table_names: str):
     return functools.reduce(merge, table_names, q.merge({}, {}))
 
 
-def _build_page_query(
-    table: models.Table,
-    merge_func: typing.Callable[[str], QueryExpression],
-):
-    build_base_page = lambda inner_query: q.select(
+def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=None):
+    if order_by is None:
+        return q.select(
+            "data",
+            q.map_(
+                q.lambda_(f"{table_name}_ref", inner_query),
+                q.paginate(q.var(f"joined_{table_name}"), size=MAX_PAGE_SIZE),
+            ),
+        )
+
+    ordered_result = q.join(
+        q.var(f"joined_{table_name}"),
+        q.index(
+            common.index_name(
+                table_name,
+                column_name=order_by.columns[0].name,
+                index_type=common.IndexType.SORT,
+            )
+        ),
+    )
+    if order_by.direction == models.OrderDirection.DESC:
+        ordered_result = q.reverse(ordered_result)
+
+    return q.select(
         "data",
         q.map_(
-            q.lambda_(f"{table.name}_ref", inner_query),
-            q.paginate(q.var(f"joined_{table.name}"), size=MAX_PAGE_SIZE),
+            q.lambda_(["_", f"{table_name}_ref"], inner_query),
+            q.paginate(ordered_result, size=MAX_PAGE_SIZE),
         ),
     )
 
+
+def _build_page_query(
+    table: models.Table,
+    merge_func: typing.Callable[[str], QueryExpression],
+    order_by: typing.Optional[models.OrderBy] = None,
+):
     partial_merge_func = functools.partial(merge_func, table.name)
     right_table = table.right_join_table
     left_table = table.left_join_table
@@ -178,10 +203,14 @@ def _build_page_query(
             },
             partial_merge_func(),
         )
-        page = build_base_page(inner_query)
+        page = _build_base_page(table.name, inner_query, order_by=order_by)
     else:
         page = q.union(
-            build_base_page(_build_page_query(right_table, partial_merge_func))
+            _build_base_page(
+                table.name,
+                _build_page_query(right_table, partial_merge_func),
+                order_by=order_by,
+            )
         )
 
     if left_table is None:
@@ -194,7 +223,7 @@ def _build_page_query(
 
     left_join_key = table.left_join_key
 
-    if left_join_key == "id":
+    if left_join_key is not None and left_join_key.name == "ref":
         left_foreign_key = left_table.right_join_key
         assert left_foreign_key is not None
         return q.let(
@@ -227,7 +256,13 @@ def _build_page_query(
             table.name: define_document_set(table),
             f"joined_{table.name}": q.intersection(
                 q.match(
-                    q.index(f"{table.name}_by_{left_foreign_key.name}_ref"),
+                    q.index(
+                        common.index_name(
+                            table.name,
+                            column_name=left_foreign_key.name,
+                            index_type=common.IndexType.REF,
+                        )
+                    ),
                     q.var(f"{left_table.name}_ref"),
                 ),
                 q.var(table.name),
@@ -237,7 +272,9 @@ def _build_page_query(
     )
 
 
-def join_collections(left_most_table: models.Table) -> QueryExpression:
+def join_collections(
+    left_most_table: models.Table, order_by: typing.Optional[models.OrderBy] = None
+) -> QueryExpression:
     """Join together multiple collections to return their documents in the response.
 
     Params:
@@ -246,4 +283,4 @@ def join_collections(left_most_table: models.Table) -> QueryExpression:
 
     """
     assert left_most_table.left_join_table is None
-    return _build_page_query(left_most_table, _build_merge)
+    return _build_page_query(left_most_table, _build_merge, order_by=order_by)

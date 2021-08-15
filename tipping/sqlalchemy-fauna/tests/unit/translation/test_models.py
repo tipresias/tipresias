@@ -216,11 +216,22 @@ def test_sql_query_from_statement_distinct(distinct):
     statement = sqlparse.parse(sql_string)[0]
 
     sql_query = models.SQLQuery.from_statement(statement)
-    table = sql_query.tables[0]
-    column = table.columns[0]
-    assert table.name == table_name
-    assert column.name == column_name
+
     assert sql_query.distinct == bool(distinct)
+
+
+def test_sql_query_from_statement_order_by():
+    table_name = "users"
+    column_names = ["name", "age"]
+    order_by = "ORDER BY " + ", ".join(column_names)
+
+    sql_string = f"SELECT users.name, users.age FROM {table_name} {order_by} DESC"
+    statement = sqlparse.parse(sql_string)[0]
+
+    sql_query = models.SQLQuery.from_statement(statement)
+
+    for idx, column in enumerate(sql_query.order_by.columns):
+        assert column.name == column_names[idx]
 
 
 @pytest.mark.parametrize(
@@ -389,3 +400,63 @@ def test_filter_from_where_group(sql_string):
     where_filters = models.Filter.from_where_group(where_group)
     for where_filter in where_filters:
         assert isinstance(where_filter, models.Filter)
+
+
+@pytest.mark.parametrize(
+    ["direction", "expected_direction"],
+    [
+        (models.OrderDirection.DESC, models.OrderDirection.DESC),
+        (None, models.OrderDirection.ASC),
+    ],
+)
+def test_order_by(direction, expected_direction):
+    columns = [models.Column(name=Fake.word(), alias=Fake.word())]
+    order_by = models.OrderBy(columns=columns, direction=direction)
+
+    assert order_by.columns == columns
+    assert order_by.direction == expected_direction
+
+
+@pytest.mark.parametrize(
+    ["sql_string", "expected_type", "expected_columns", "expected_direction"],
+    [
+        (
+            "SELECT * FROM users ORDER BY users.name",
+            models.OrderBy,
+            ["name"],
+            models.OrderDirection.ASC,
+        ),
+        (
+            "SELECT * FROM users ORDER BY users.name DESC",
+            models.OrderBy,
+            ["name"],
+            models.OrderDirection.DESC,
+        ),
+        (
+            "SELECT * FROM users ORDER BY users.name, users.age",
+            models.OrderBy,
+            ["name", "age"],
+            models.OrderDirection.ASC,
+        ),
+        (
+            "SELECT * FROM users ORDER BY users.name, users.age ASC",
+            models.OrderBy,
+            ["name", "age"],
+            models.OrderDirection.ASC,
+        ),
+        ("SELECT * FROM users", None, None, None),
+    ],
+)
+def test_order_by_from_statement(
+    sql_string, expected_type, expected_columns, expected_direction
+):
+    statement = sqlparse.parse(sql_string)[0]
+    order_by = models.OrderBy.from_statement(statement)
+
+    if expected_type:
+        assert isinstance(order_by, expected_type)
+        column_names = [column.name for column in order_by.columns]
+        assert column_names == expected_columns
+        assert order_by.direction == expected_direction
+    else:
+        assert order_by is None

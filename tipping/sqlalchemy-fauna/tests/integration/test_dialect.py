@@ -1,6 +1,7 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 from functools import reduce
+import itertools
 
 import pytest
 from sqlalchemy.ext.declarative import declarative_base
@@ -79,13 +80,22 @@ def test_get_indexes(user_model, fauna_engine):
     with fauna_engine.connect() as connection:
         queried_indexes = fauna_dialect.get_indexes(connection, "users")
         index_names = {index["name"] for index in queried_indexes}
-        expected_index_names = [
-            common.index_name("users", col, common.IndexType.VALUE)
-            for col in users_columns
-            if col != "id"
-        ] + ["users_all", "users_ref", "users_by_name_term"]
+        expected_value_indices = list(
+            itertools.chain.from_iterable(
+                [
+                    [
+                        common.index_name("users", col, common.IndexType.VALUE),
+                        common.index_name("users", col, common.IndexType.SORT),
+                    ]
+                    for col in users_columns
+                    if col != "id"
+                ]
+            )
+        )
+        expected_misc_indices = ["users_all", "users_ref", "users_by_name_term"]
+        expected_indices = expected_value_indices + expected_misc_indices
 
-        assert index_names == set(expected_index_names)
+        assert index_names == set(expected_indices)
 
         index_columns = reduce(
             lambda acc, curr: set(curr["column_names"]) | acc, queried_indexes, set([])

@@ -18,7 +18,14 @@ partial_select_info_schema_constraints = (
 )
 select_sum = "SELECT sum(users.id) AS sum_1 from users"
 select_avg = "SELECT avg(users.id) AS avg_1 from users"
-
+select_join_order_by = (
+    "SELECT users.name, accounts.number FROM users "
+    "JOIN accounts ON users.id = accounts.user_id "
+    "ORDER BY accounts.number"
+)
+select_order_multiple = (
+    "SELECT users.name, users.age FROM users ORDER BY users.name, users.age"
+)
 # These are meant to be examples of SQL queries that are not currently supported,
 # but that are valid SQL and so should be supported eventually.
 # Regarding some of the more esoteric queries (e.g. INFORMATION_SCHEMA), I'm not certain
@@ -57,6 +64,11 @@ select_avg = "SELECT avg(users.id) AS avg_1 from users"
             "SELECT COUNT(users.id) FROM users JOIN accounts ON users.id = accounts.user_id",
             "SQL functions across multiple tables are not yet supported",
         ),
+        (
+            select_join_order_by,
+            "we currently can only sort the principal table",
+        ),
+        (select_order_multiple, "Ordering by multiple columns is not yet supported"),
     ],
 )
 def test_translating_unsupported_select(sql_query, error_message):
@@ -83,6 +95,15 @@ select_join = (
     "SELECT users.name, accounts.number FROM users "
     "JOIN accounts ON users.id = accounts.user_id"
 )
+select_order_by = "SELECT users.name, users.age FROM users ORDER BY users.name"
+select_order_by_desc = (
+    "SELECT users.name, users.age FROM users ORDER BY users.name DESC"
+)
+select_join_order_by_principal = (
+    "SELECT users.name, accounts.number FROM users "
+    "JOIN accounts ON users.id = accounts.user_id "
+    "ORDER BY users.name"
+)
 
 
 @pytest.mark.parametrize(
@@ -96,6 +117,9 @@ select_join = (
         select_where_equals,
         select_count,
         select_join,
+        select_order_by,
+        select_order_by_desc,
+        select_join_order_by_principal,
     ],
 )
 def test_translate_select(sql_string):

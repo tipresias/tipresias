@@ -25,6 +25,5 @@ A Fauna dialect for SQLAlchemy
 
 For keeping track of next steps for extending SQL support. Not meant to be comprehensive.
 
-- Support `LIMIT`
 - Support `ON DELETE` strategies for foreign keys (currently is just `SET NULL` I suppose since the ref no longer exists)
 - Support `GROUP BY`

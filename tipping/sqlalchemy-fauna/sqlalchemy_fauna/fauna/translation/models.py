@@ -590,6 +590,7 @@ class SQLQuery:
         columns: typing.List[Column] = None,
         distinct: bool = False,
         order_by: typing.Optional[OrderBy] = None,
+        limit: typing.Optional[int] = None,
     ):
         self.distinct = distinct
         tables = tables or []
@@ -597,6 +598,7 @@ class SQLQuery:
         columns = columns or []
         self._columns = columns
         self._order_by = order_by
+        self.limit = limit
 
     @classmethod
     def from_statement(cls, statement: token_groups.Statement) -> SQLQuery:
@@ -721,10 +723,18 @@ class SQLQuery:
 
         _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
 
+        idx, _ = statement.token_next_by(m=(token_types.Keyword, "LIMIT"))
+        _, limit = statement.token_next(skip_cm=True, skip_ws=True, idx=idx)
+        limit_value = None if limit is None else int(limit.value)
+
         order_by = OrderBy.from_statement(statement)
 
         return cls(
-            tables=tables, columns=columns, distinct=bool(distinct), order_by=order_by
+            tables=tables,
+            columns=columns,
+            distinct=bool(distinct),
+            order_by=order_by,
+            limit=limit_value,
         )
 
     @classmethod

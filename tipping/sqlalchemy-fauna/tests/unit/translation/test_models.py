@@ -234,6 +234,17 @@ def test_sql_query_from_statement_order_by():
         assert column.name == column_names[idx]
 
 
+def test_sql_query_from_statement_limit():
+    table_name = "users"
+
+    sql_string = f"SELECT users.name, users.age FROM {table_name} LIMIT 1"
+    statement = sqlparse.parse(sql_string)[0]
+
+    sql_query = models.SQLQuery.from_statement(statement)
+
+    assert sql_query.limit == 1
+
+
 @pytest.mark.parametrize(
     ["sql_string", "expected_table_names", "expected_column_names"],
     [

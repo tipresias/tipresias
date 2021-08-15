@@ -216,6 +216,9 @@ def _translate_select_without_functions(sql_query: models.SQLQuery, distinct=Fal
                 q.paginate(ordered_result, size=fql.MAX_PAGE_SIZE),
             )
 
+    if sql_query.limit is not None:
+        maybe_documents_to_select = q.take(sql_query.limit, maybe_documents_to_select)
+
     initial_field_alias_map: typing.Dict[str, typing.Dict[str, str]] = {}
     field_alias_map: typing.Dict[str, typing.Dict[str, str]] = functools.reduce(
         lambda alias_map, column: {

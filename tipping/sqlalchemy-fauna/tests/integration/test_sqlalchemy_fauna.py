@@ -26,7 +26,7 @@ import numpy as np
 from sqlalchemy_fauna import dialect
 
 
-FAKE = Faker()
+Fake = Faker()
 
 
 @pytest.fixture()
@@ -138,9 +138,9 @@ def test_insert_record(fauna_session, user_model):
     fauna_engine = fauna_session.get_bind()
     Base.metadata.create_all(fauna_engine)
 
-    account_credit = FAKE.pyfloat()
+    account_credit = Fake.pyfloat()
     age = 30
-    date_joined = FAKE.date_time_this_year(tzinfo=timezone.utc)
+    date_joined = Fake.date_time_this_year(tzinfo=timezone.utc)
 
     user = User(
         name="Bob", date_joined=date_joined, age=age, account_credit=account_credit
@@ -587,3 +587,22 @@ def test_join_order_by(fauna_session, parent_child):
         lambda agg_names, curr_names: agg_names + curr_names[1], parents, []
     )
     assert [child.name for child in children] == sorted(child_names)
+
+
+def test_limit(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    limit = 2
+    user_names = [Fake.first_name() for _ in range(5)]
+
+    for name in user_names:
+        fauna_session.add(User(name=name))
+
+    fauna_session.commit()
+
+    users = fauna_session.execute(select(User).limit(limit)).scalars().all()
+    queried_user_names = [user.name for user in users]
+
+    assert queried_user_names == user_names[:limit]

@@ -106,6 +106,9 @@ def test_from_future_fixtures_with_skipped_round(fauna_session):
             Match.from_future_fixtures(
                 fauna_session, fixture_matches, upcoming_round_number
             )
+            # Logging to catch cause of flaky test
+            print(first_match)
+            print(next_match)
 
 
 def test_played_without_results(fauna_session):

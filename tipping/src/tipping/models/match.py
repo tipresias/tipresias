@@ -208,6 +208,16 @@ class Match(Base):
             .distinct()
         )
 
+    @classmethod
+    def earliest_without_results(cls) -> Select:
+        """
+        Get the earliest start_date_time of played matches without results.
+        Returns:
+        --------
+        Date-time for the first past match without scores.
+        """
+        return cls.played_without_results().order_by(Match.start_date_time).limit(1)
+
     @validates("round_number")
     def validate_at_least_min_round(self, _key, round_number):
         """Validate that the round number is >= 1."""

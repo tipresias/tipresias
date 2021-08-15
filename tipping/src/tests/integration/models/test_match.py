@@ -149,3 +149,34 @@ def test_played_without_results(fauna_session):
     assert len(queried_matches) == 2
     for queried_match in queried_matches:
         assert queried_match in resultless_matches
+
+
+def test_earliest_without_results(fauna_session):
+    right_now = datetime.now(tz=timezone.utc)
+    two_teams = fauna_session.execute(select(Team).limit(2)).scalars().all()
+
+    played_without_results = Match(
+        start_date_time=right_now - timedelta(days=1),
+        venue=FAKE.company(),
+        round_number=2,
+    )
+    for team in two_teams:
+        played_without_results.team_matches.append(TeamMatch(team=team, score=None))
+
+    earliest_date = right_now - timedelta(days=2)
+    earliest_without_results = Match(
+        start_date_time=earliest_date,
+        venue=FAKE.company(),
+        round_number=1,
+    )
+    for team in two_teams:
+        earliest_without_results.team_matches.append(TeamMatch(team=team, score=None))
+
+    fauna_session.add(played_without_results)
+    fauna_session.add(earliest_without_results)
+    fauna_session.commit()
+
+    query = Match.earliest_without_results()
+    queried_matches = fauna_session.execute(query).scalars().all()
+    assert len(queried_matches) == 1
+    assert queried_matches[0] == earliest_without_results

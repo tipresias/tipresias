@@ -16,28 +16,12 @@ FAKE = Faker()
 
 MATCH_RESULTS_COLS = [
     "date",
-    "tz",
-    "updated",
-    "round",
-    "roundname",
     "year",
-    "hbehinds",
-    "hgoals",
-    "hscore",
-    "hteam",
-    "hteamid",
-    "abehinds",
-    "agoals",
-    "ascore",
-    "ateam",
-    "ateamid",
-    "winner",
-    "winnerteamid",
-    "is_grand_final",
-    "complete",
-    "is_final",
-    "id",
-    "venue",
+    "round_number",
+    "home_score",
+    "home_team",
+    "away_score",
+    "away_team",
 ]
 
 TEAM_TYPES = ("home", "away")
@@ -126,43 +110,9 @@ def fake_match_results_data(
         len(match_results["year"].drop_duplicates()) == 1
     ), "Match results data is fetched one season at a time."
 
-    return (
-        match_results.query("round_number == @round_number")
-        .assign(
-            updated=lambda df: pd.to_datetime(df["date"]) + timedelta(hours=3),
-            tz="+10:00",
-            # AFLTables match_results already have a 'round' column,
-            # so we have to replace rather than rename.
-            round=lambda df: df["round_number"],
-            roundname=lambda df: "Round " + df["round_number"].astype(str),
-            hteam=lambda df: df["home_team"].map(
-                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
-            ),
-            ateam=lambda df: df["away_team"].map(
-                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
-            ),
-            hteamid=lambda df: df["hteam"].map(settings.TEAM_NAMES.index),
-            ateamid=lambda df: df["ateam"].map(settings.TEAM_NAMES.index),
-            winner=lambda df: np.where(df["margin"] >= 0, df["hteam"], df["ateam"]),
-            winnerteamid=lambda df: df["winner"].map(settings.TEAM_NAMES.index),
-            is_grand_final=0,
-            complete=100,
-            is_final=0,
-        )
-        .astype({"updated": str})
-        .reset_index(drop=False)
-        .rename(
-            columns={
-                "index": "id",
-                "home_behinds": "hbehinds",
-                "home_goals": "hgoals",
-                "away_behinds": "abehinds",
-                "away_goals": "agoals",
-                "home_score": "hscore",
-                "away_score": "ascore",
-            }
-        )
-    ).loc[:, MATCH_RESULTS_COLS]
+    return (match_results.query("round_number == @round_number")).loc[
+        :, MATCH_RESULTS_COLS
+    ]
 
 
 def _build_team_matches(match_data: pd.DataFrame, team_type: str) -> pd.DataFrame:

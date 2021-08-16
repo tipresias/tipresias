@@ -225,10 +225,6 @@ class Match(models.Model):
     def has_been_played(self):
         """Return whether a match has been played yet."""
         match_end_time = self.start_date_time + timedelta(hours=GAME_LENGTH_HRS)
-
-        # We need to check the scores in case the data hasn't been updated since the
-        # match was played, because as far as the data is concerned it hasn't, even though
-        # the date has passed.
         return match_end_time < timezone.localtime()
 
     @property

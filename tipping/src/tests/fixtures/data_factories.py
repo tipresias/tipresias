@@ -27,6 +27,12 @@ MATCH_RESULTS_COLS = [
 TEAM_TYPES = ("home", "away")
 
 
+def _translate_team_names(team_type):
+    return lambda df: df[f"{team_type}_team"].map(
+        lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
+    )
+
+
 def fake_match_data(
     match_results: Optional[pd.DataFrame] = None,
     seasons: Union[Tuple[int, int], int] = 1,
@@ -75,12 +81,8 @@ def fake_fixture_data(
         .assign(
             date=lambda df: pd.to_datetime(df["date"], utc=True),
             # Team name translations happen in augury's data pipeline
-            home_team=lambda df: df["home_team"].map(
-                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
-            ),
-            away_team=lambda df: df["away_team"].map(
-                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
-            ),
+            home_team=_translate_team_names("home"),
+            away_team=_translate_team_names("away"),
         )
     )
 
@@ -101,18 +103,26 @@ def fake_match_results_data(
     -------
     DataFrame of match results data
     """
-    match_results = fake_match_data() if match_results is None else match_results
-    round_number = round_number or np.random.randint(
-        1, match_results["round_number"].max()
+    filter_by_round = (
+        lambda df: df
+        if round_number is None
+        else df.query("round_number == @round_number")
     )
+    match_results = fake_match_data() if match_results is None else match_results
 
     assert (
         len(match_results["year"].drop_duplicates()) == 1
     ), "Match results data is fetched one season at a time."
 
-    return (match_results.query("round_number == @round_number")).loc[
-        :, MATCH_RESULTS_COLS
-    ]
+    return (
+        match_results.pipe(filter_by_round)
+        .assign(
+            # Team name translations happen in augury's data pipeline
+            home_team=_translate_team_names("home"),
+            away_team=_translate_team_names("away"),
+        )
+        .loc[:, MATCH_RESULTS_COLS]
+    )
 
 
 def _build_team_matches(match_data: pd.DataFrame, team_type: str) -> pd.DataFrame:

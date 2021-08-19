@@ -34,6 +34,30 @@ def test_column_from_identifier(column_sql, expected_table_name, expected_alias)
     assert column.alias == expected_alias
 
 
+def test_column_from_comparison_group():
+    sql_string = "UPDATE users SET users.name = 'Bob'"
+    statement = sqlparse.parse(sql_string)[0]
+    _, comparison_group = statement.token_next_by(i=token_groups.Comparison)
+
+    column = models.Column.from_comparison_group(comparison_group)
+
+    assert column.name == "name"
+    assert column.table_name == "users"
+    assert column.value == "Bob"
+
+
+def test_unsupported_column_from_comparison_group():
+    sql_string = "UPDATE users SET users.name = users.occupation"
+    statement = sqlparse.parse(sql_string)[0]
+    _, comparison_group = statement.token_next_by(i=token_groups.Comparison)
+
+    with pytest.raises(
+        exceptions.NotSupportedError,
+        match="Only updating to literal values is currently supported",
+    ):
+        models.Column.from_comparison_group(comparison_group)
+
+
 def test_column():
     column = models.Column(table_name="users", name="name", alias="alias")
     assert str(column) == "name"
@@ -274,6 +298,11 @@ def test_sql_query_from_statement_limit():
         ),
         ("DELETE FROM users", ["users"], []),
         ("UPDATE users SET users.name = 'Bob'", ["users"], ["name"]),
+        (
+            "UPDATE users SET users.name = 'Bob', users.age = 40",
+            ["users"],
+            ["name", "age"],
+        ),
     ],
 )
 def test_sql_query_from_statement(

@@ -17,6 +17,7 @@ from sqlalchemy import (
     select,
     delete,
     func,
+    sql,
 )
 from sqlalchemy.orm import relationship
 import pytest
@@ -606,3 +607,24 @@ def test_limit(fauna_session, user_model):
     queried_user_names = [user.name for user in users]
 
     assert queried_user_names == user_names[:limit]
+
+
+def test_update(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    user = User(name=Fake.first_name(), age=Fake.pyint())
+    fauna_session.add(user)
+    fauna_session.commit()
+
+    new_name = Fake.first_name()
+    user.name = new_name
+    new_age = Fake.pyint()
+    user.age = new_age
+    fauna_session.commit()
+
+    queried_user = fauna_session.execute(sql.select(User)).scalars().first()
+
+    assert queried_user.name == new_name
+    assert queried_user.age == new_age

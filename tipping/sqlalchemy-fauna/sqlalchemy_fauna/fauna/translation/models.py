@@ -3,9 +3,7 @@
 from __future__ import annotations
 import functools
 import itertools
-
 import typing
-from functools import reduce
 from datetime import datetime
 import enum
 
@@ -53,9 +51,16 @@ class Column:
     identifier: Parsed SQL Identifier for a column name and/or alias.
     """
 
-    def __init__(self, name: str, alias: str, table_name: typing.Optional[str] = None):
+    def __init__(
+        self,
+        name: str,
+        alias: str,
+        table_name: typing.Optional[str] = None,
+        value: typing.Optional[typing.Union[str, int, float, datetime]] = None,
+    ):
         self.name = name
         self.alias = alias
+        self.value = value
         self._table_name = table_name
         self._table: typing.Optional[Table] = None
 
@@ -159,6 +164,36 @@ class Column:
         }
 
         return Column(**column_params)
+
+    @classmethod
+    def from_comparison_group(cls, comparison_group: token_groups.Comparison) -> Column:
+        """Create a column from a Comparison group token.
+
+        Params:
+        -------
+        comparison_group: Token group that contains the column identifier and updated value.
+
+        Returns:
+        --------
+        A column object with the value attribute.
+        """
+        _, column_identifier = comparison_group.token_next_by(i=token_groups.Identifier)
+        idx, _ = comparison_group.token_next_by(m=(token_types.Comparison, "="))
+        _, column_value = comparison_group.token_next(idx, skip_ws=True, skip_cm=True)
+        _, value_literal = comparison_group.token_next_by(t=token_types.Literal)
+        if value_literal is None:
+            raise exceptions.NotSupportedError(
+                "Only updating to literal values is currently supported "
+                "(e.g. can't assign one column's value to another column "
+                "in a single UPDATE query)"
+            )
+
+        column_value = extract_value(value_literal)
+
+        column = cls.from_identifier(column_identifier)
+        column.value = column_value
+
+        return column
 
     @property
     def table(self) -> typing.Optional[Table]:
@@ -463,7 +498,7 @@ class Table:
     def column_alias_map(self) -> typing.Dict[str, str]:
         """Dictionary that maps column names to their aliases in the SQL query."""
         collect_alias_maps = lambda acc, col: {**acc, **col.alias_map}
-        return reduce(collect_alias_maps, self.columns, {})
+        return functools.reduce(collect_alias_maps, self.columns, {})
 
     def __str__(self) -> str:
         return self.name
@@ -742,15 +777,26 @@ class SQLQuery:
         cls, statement: token_groups.Statement, table: Table
     ) -> SQLQuery:
         idx, _ = statement.token_next_by(m=(token_types.Keyword, "SET"))
-        idx, comparison_group = statement.token_next_by(
-            i=token_groups.Comparison, idx=idx
+        # If multiple columns are being updated, the assignment comparisons are grouped
+        # in an IdentifierList. Otherwise, the Comparison token is at the top level of
+        # the statement.
+        _, maybe_comparison_container = statement.token_next_by(
+            i=token_groups.IdentifierList, idx=idx
         )
+        comparison_container = maybe_comparison_container or statement
 
-        _, update_column = comparison_group.token_next_by(i=token_groups.Identifier)
-        column = Column.from_identifier(update_column)
-        table.add_column(column)
+        idx = -1
+        while True:
+            idx, comparison = comparison_container.token_next_by(
+                i=token_groups.Comparison, idx=idx
+            )
+            if comparison is None:
+                break
 
-        return cls(tables=[table], columns=[column])
+            column = Column.from_comparison_group(comparison)
+            table.add_column(column)
+
+        return cls(tables=[table], columns=table.columns)
 
     @classmethod
     def _build_insert_query(

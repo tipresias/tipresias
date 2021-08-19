@@ -12,8 +12,8 @@ from .create import translate_create
 from .drop import translate_drop
 from .insert import translate_insert
 from .delete import translate_delete
-from .update import translate_update
 from .alter import translate_alter
+from . import fql, models
 
 
 def format_sql_query(sql_query: str) -> str:
@@ -29,15 +29,15 @@ def format_sql_query(sql_query: str) -> str:
 
 
 def translate_sql_to_fql(
-    sql_query: str,
+    sql_string: str,
 ) -> typing.List[QueryExpression]:
     """Translate from an SQL string to an FQL query"""
-    sql_statements = sqlparse.parse(sql_query)
+    sql_statements = sqlparse.parse(sql_string)
 
     if len(sql_statements) > 1:
         raise exceptions.NotSupportedError(
             "Only one SQL statement at a time is currently supported. "
-            f"The following query has more than one:\n{sql_query}"
+            f"The following query has more than one:\n{sql_string}"
         )
 
     sql_statement = sql_statements[0]
@@ -58,7 +58,9 @@ def translate_sql_to_fql(
         return translate_delete(sql_statement)
 
     if sql_statement.token_first().match(token_types.DML, "UPDATE"):
-        return translate_update(sql_statement)
+        sql_query = models.SQLQuery.from_statement(sql_statement)
+        table = sql_query.tables[0]
+        return [fql.update_documents(table)]
 
     if sql_statement.token_first().match(token_types.DDL, "ALTER"):
         return translate_alter(sql_statement)

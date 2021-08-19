@@ -284,3 +284,30 @@ def join_collections(
     """
     assert left_most_table.left_join_table is None
     return _build_page_query(left_most_table, _build_merge, order_by=order_by)
+
+
+def update_documents(table: models.Table) -> QueryExpression:
+    """Update document fields with the given values.
+
+    Params:
+    -------
+    table: Table object that contains the parameters for building an update query in FQL.
+
+    Returns:
+    --------
+    An FQL update query for the given collection and documents.
+    """
+    field_updates = {column.name: column.value for column in table.columns}
+    return q.let(
+        {"document_set": define_document_set(table)},
+        q.do(
+            q.update(
+                q.select(
+                    "ref",
+                    q.get(q.var("document_set")),
+                ),
+                {"data": field_updates},
+            ),
+            {"data": [{"count": q.count(q.var("document_set"))}]},
+        ),
+    )

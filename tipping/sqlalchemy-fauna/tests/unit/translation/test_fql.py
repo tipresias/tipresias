@@ -155,3 +155,18 @@ def test_invalid_join_collections():
     )
     with pytest.raises(AssertionError):
         fql.join_collections(from_table)
+
+
+def test_update_documents():
+    table_name = Fake.first_name()
+    columns = [
+        models.Column(
+            name=Fake.first_name(), alias=Fake.first_name(), table_name=table_name
+        )
+        for _ in range(3)
+    ]
+    table = models.Table(name=table_name, columns=columns)
+
+    update_query = fql.update_documents(table)
+
+    assert isinstance(update_query, QueryExpression)

@@ -1,19 +1,17 @@
 """Module for handling generation and saving of tips (i.e. predictions)."""
 
-from datetime import datetime
-from typing import List, Optional, Dict, Tuple, Union, Literal, cast, Any
+from typing import List, Optional, Dict, Union, Literal, cast, Any
 import os
 from warnings import warn
 import re
-import pytz
 
 import pandas as pd
 import mechanicalsoup
 import requests
 
-from tipping import data_import, data_export, settings
-from tipping.helpers import pivot_team_matches_to_matches, convert_to_dict
-from tipping.types import CleanPredictionData, MatchPrediction
+from tipping import settings
+from tipping.helpers import convert_to_dict
+from tipping.types import MatchPrediction
 
 
 PredictionType = Union[
@@ -296,159 +294,3 @@ class FootyTipsSubmitter:
                 "team_translations": settings.TEAM_TRANSLATIONS,
             },
         )
-
-
-class Tipper:
-    """Handles generation and saving of tips (i.e. predictions)."""
-
-    def __init__(  # pylint: disable=dangerous-default-value
-        self,
-        fetch_data: bool = True,
-        data_importer=None,
-        ml_models: Optional[List[str]] = None,
-        tip_submitters: Optional[List[Any]] = None,
-        verbose: int = 1,
-    ) -> None:
-        """
-        Instantiate a Tipping object.
-
-        Params:
-        -------
-        fetch_data: Whether to fetch up-to-date data or load saved data files.
-        data_importer: Module used for importing data from remote sources.
-        ml_models: A list of names of models to use when making tipping predictions.
-        tip_submitters: List of submitter objects that handle submitting tips
-            to competition websites.
-        verbose: How much information to print. 1 prints all messages; 0 prints none.
-        """
-        self.fetch_data = fetch_data
-        self.data_importer: Any = data_importer or data_import.DataImporter()
-        self.ml_models = ml_models
-        self.verbose = verbose
-        self.tip_submitters = tip_submitters or [
-            MonashSubmitter(verbose=self.verbose),
-            # Better to but FootyTipsSubmitter last, because the site has a lot
-            # of javascript, and is more prone to errors. They also send an email,
-            # so we get confirmation of tips submission.
-            FootyTipsSubmitter(verbose=self.verbose),
-        ]
-
-        self._right_now = datetime.now(tz=pytz.UTC)
-
-    def fetch_upcoming_fixture(self) -> None:
-        """Fetch fixture data and send upcoming match data to the Server API."""
-        fixture_data_frame = self._fetch_fixture_data(self._right_now.year)
-        upcoming_round, upcoming_matches = self._select_upcoming_matches(
-            fixture_data_frame
-        )
-
-        if upcoming_round is None or upcoming_matches is None:
-            return None
-
-        data_export.update_fixture_data(upcoming_matches, upcoming_round)
-
-        return None
-
-    def update_match_predictions(self) -> None:
-        """Request prediction data from Augury service for upcoming matches."""
-        right_now = datetime.now(tz=pytz.UTC)
-        end_of_year = datetime(right_now.year, DEC, THIRTY_FIRST, tzinfo=pytz.UTC)
-        upcoming_matches = self.data_importer.fetch_fixture_data(right_now, end_of_year)
-
-        if not upcoming_matches.any().any():
-            if self.verbose == 1:
-                print("There are no upcoming matches to predict.")
-            return None
-
-        next_match = upcoming_matches.sort_values("date").iloc[0, :]
-        upcoming_round = next_match["round_number"]
-        upcoming_season = next_match["year"]
-
-        if self.verbose == 1:
-            print(
-                "Fetching predictions for round "
-                f"{upcoming_round}, {upcoming_season}..."
-            )
-
-        prediction_data = self.data_importer.fetch_prediction_data(
-            (upcoming_season, upcoming_season + 1),
-            round_number=upcoming_round,
-            ml_models=self.ml_models,
-        )
-
-        if self.verbose == 1:
-            print("Predictions received!")
-
-        match_predictions = pivot_team_matches_to_matches(prediction_data)
-        predictions_response = data_export.update_match_predictions(match_predictions)
-
-        if self.verbose == 1:
-            print("Match predictions sent!")
-
-        self._submit_tips(predictions_response)
-
-        return None
-
-    def fetch_match_predictions(
-        self, season_range: Tuple[int, int], round_number: Optional[int] = None
-    ) -> List[CleanPredictionData]:
-        """Fetch match prediction data from the data-science service."""
-
-    def _submit_tips(self, latest_predictions: pd.DataFrame) -> None:
-        if not latest_predictions.any().any():
-            if self.verbose == 1:
-                print(
-                    "No predictions found for the upcoming round. "
-                    "Not submitting any tips."
-                )
-
-            return None
-
-        for submitter in self.tip_submitters:
-            submitter.verbose = self.verbose
-            submitter.submit_tips(latest_predictions)
-
-        return None
-
-    def _fetch_fixture_data(self, year: int) -> pd.DataFrame:
-        if self.verbose == 1:
-            print(f"Fetching fixture for {year}...\n")
-
-        fixture_data_frame = self.data_importer.fetch_fixture_data(
-            start_date=datetime(year, 1, 1, tzinfo=pytz.UTC),
-            end_date=datetime(year, 12, 31, tzinfo=pytz.UTC),
-        )
-
-        return fixture_data_frame
-
-    def _select_upcoming_matches(
-        self, fixture_data_frame: pd.DataFrame
-    ) -> Tuple[Optional[int], Optional[pd.DataFrame]]:
-        if not fixture_data_frame.any().any():
-            warn(
-                "Fixture for the upcoming round haven't been posted yet, "
-                "so there's nothing to tip. Try again later."
-            )
-
-            return None, None
-
-        latest_match_date = fixture_data_frame["date"].max()
-
-        if self._right_now > latest_match_date:
-            warn(
-                f"No matches found after {self._right_now}. The latest match "
-                f"found is at {latest_match_date}\n"
-            )
-
-            return None, None
-
-        upcoming_round = (
-            fixture_data_frame.query("date > @self._right_now")
-            .loc[:, "round_number"]
-            .min()
-        )
-        fixture_for_upcoming_round = fixture_data_frame.query(
-            "round_number == @upcoming_round"
-        )
-
-        return upcoming_round, fixture_for_upcoming_round

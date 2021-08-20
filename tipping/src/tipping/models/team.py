@@ -39,7 +39,7 @@ class TeamName(enum.Enum):
         return name in cls.values()
 
     @classmethod
-    def values(cls) -> List:
+    def values(cls) -> List[str]:
         """Returns all name values in TeamName."""
         return [member.value for member in cls]
 

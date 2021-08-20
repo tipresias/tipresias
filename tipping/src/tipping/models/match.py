@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import typing
 from datetime import datetime, timedelta, timezone
+from warnings import warn
+import functools
 
 from sqlalchemy import (
     Column,
@@ -11,9 +13,8 @@ from sqlalchemy import (
     DateTime,
     String,
     ForeignKey,
-    select,
-    func,
 )
+from sqlalchemy.sql import Select, select, func
 from sqlalchemy.orm import relationship, validates, session as orm_session
 
 import pandas as pd
@@ -29,6 +30,10 @@ MIN_MARGIN = 0
 FIRST_ROUND = 1
 JAN = 1
 FIRST = 1
+WEEK_IN_DAYS = 7
+# Rough estimate, but exactitude isn't necessary here. The AFL fixture tends to separate
+# match start times by just under 3 hrs (2:50 - 2:55 from my small sample).
+GAME_LENGTH_HRS = 3
 
 FixtureData = TypedDict(
     "FixtureData",
@@ -183,6 +188,183 @@ class Match(Base):
             start_date_time=match_date,
             round_number=int(round_number),
             venue=venue,
+        )
+
+    @classmethod
+    def played_without_results(cls) -> Select:
+        """
+        Get all matches that don't have any associated results data.
+        Returns:
+        --------
+        A query set of past matches that haven't been updated with final scores yet.
+        """
+        right_now = datetime.now(tz=timezone.utc)
+        match_duration_ago = right_now - timedelta(hours=GAME_LENGTH_HRS)
+
+        return (
+            select(Match)
+            .where(Match.start_date_time < match_duration_ago)
+            .join(Match.team_matches)
+            .where(TeamMatch.score == None)  # pylint: disable=singleton-comparison
+            # Filtering by teammatch attributes returns duplicate matches
+            # (one for each associated teammatch)
+            .distinct()
+        )
+
+    @classmethod
+    def earliest_without_results(cls) -> Select:
+        """
+        Get the earliest start_date_time of played matches without results.
+        Returns:
+        --------
+        Date-time for the first past match without scores.
+        """
+        return cls.played_without_results().order_by(Match.start_date_time).limit(1)
+
+    @classmethod
+    def update_results(cls, matches: typing.List[Match], match_results: pd.DataFrame):
+        """
+        Fill in match results data for all matches that have been played.
+
+        Params:
+        -------
+        matches: List of match objects without saved results.
+        match_results: Raw match results data.
+        """
+        for match in matches:
+            match_result = match_results.query(
+                "year == @match.year & "
+                "round_number == @match.round_number & "
+                "home_team == @match.team(at_home=True).name & "
+                "away_team == @match.team(at_home=False).name"
+            )
+
+            match.update_result(match_result)
+
+    def update_result(self, match_result: pd.DataFrame):
+        """
+        Fill in match results data for a match that's been played.
+
+        Params:
+        -------
+        match_result: Raw data for a single match.
+        """
+        if not self.has_been_played or not self._validate_results_data_presence(
+            match_result
+        ):
+            return None
+
+        self._validate_one_result_row(match_result)
+
+        for team_match in self.team_matches:
+            team_match.update_score(match_result.iloc[0, :])
+
+        self.margin = self._calculate_margin()
+        self.winner = self._calculate_winner()
+
+        for prediction in self.predictions:
+            prediction.update_correctness()
+
+        return None
+
+    @property
+    def has_been_played(self) -> bool:
+        """Whether a match has been played yet."""
+        match_end_time = self.start_date_time + timedelta(hours=GAME_LENGTH_HRS)
+        return match_end_time < datetime.now(tz=timezone.utc)
+
+    @property
+    def is_draw(self) -> bool:
+        """Indicate whether a match result was a draw."""
+        return self.has_results and functools.reduce(
+            lambda score_x, score_y: score_x == score_y, self._match_scores
+        )
+
+    @property
+    def has_results(self) -> bool:
+        """Whether a match has a final score."""
+        return self.has_been_played and self._has_score
+
+    @property
+    def year(self) -> int:
+        """The year in which the match is played."""
+        return self.start_date_time.year
+
+    def team(self, at_home: typing.Optional[bool] = None) -> Team:
+        """The home or away team for this match."""
+        if at_home is None:
+            raise ValueError("Must pass a boolean value for at_home")
+
+        return next(
+            team_match.team
+            for team_match in self.team_matches
+            if team_match.at_home == at_home
+        )
+
+    @property
+    def _has_score(self) -> bool:
+        return any(score > 0 for score in self._match_scores)
+
+    @property
+    def _match_scores(self):
+        return [team_match.score for team_match in self.team_matches]
+
+    def _calculate_margin(self):
+        if not self.has_been_played:
+            return None
+
+        return functools.reduce(
+            lambda score_x, score_y: abs(score_x - score_y), self._match_scores
+        )
+
+    def _calculate_winner(self):
+        """Return the record for the winning team of the match."""
+        if not self.has_been_played or self.is_draw:
+            return None
+
+        return max(self.team_matches, key=lambda tm: tm.score).team
+
+    def _validate_results_data_presence(self, match_result: pd.DataFrame) -> bool:
+        # AFLTables usually updates match results a few days after the round
+        # is finished. Allowing for the occasional delay, we accept matches without
+        # results data for a week before raising an error.
+        if (
+            self.start_date_time
+            > datetime.now(tz=timezone.utc) - timedelta(days=WEEK_IN_DAYS)
+            and not match_result.size
+        ):
+            warn(
+                f"Unable to update the match between {self.team(at_home=True).name} "
+                f"and {self.team(at_home=False).name} from round {self.round_number}. "
+                "This is likely due to AFLTables not having updated the match results "
+                "yet."
+            )
+
+            return False
+
+        team_match_info = [
+            {"team": team_match.team.name, "at_home": team_match.at_home}
+            for team_match in self.team_matches
+        ]
+        assert match_result.size, (
+            "Didn't find any match data rows that matched match record:\n"
+            "{\n"
+            f"\tstart_date_time: {self.start_date_time},\n"
+            f"\tround_number: {self.round_number},\n"
+            f"\tvenue: {self.venue},\n"
+            f"\tteam_matches: {team_match_info}"
+            "}"
+        )
+
+        return True
+
+    @staticmethod
+    def _validate_one_result_row(match_result: pd.DataFrame):
+        assert len(match_result) == 1, (
+            "Filtering match results by year, round_number and team name "
+            "should result in a single row, but instead the following was "
+            "returned:\n"
+            f"{match_result}"
         )
 
     @validates("round_number")

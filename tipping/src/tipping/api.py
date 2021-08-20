@@ -10,7 +10,7 @@ from tipping import data_import, data_export
 from tipping.helpers import pivot_team_matches_to_matches
 from tipping.tipping import MonashSubmitter
 
-from tipping.models import Match
+from tipping import models
 from tipping import settings
 
 
@@ -107,7 +107,9 @@ def update_fixture_data(verbose: int = 1) -> None:
     data_export.update_fixture_data(future_matches, upcoming_round)
 
     db_session = settings.Session()
-    matches = Match.from_future_fixtures(db_session, future_matches, upcoming_round)
+    matches = models.Match.from_future_fixtures(
+        db_session, future_matches, upcoming_round
+    )
 
     for match in matches:
         db_session.add(match)
@@ -196,6 +198,16 @@ def update_matches(verbose=1) -> None:
 
     data_export.update_matches(match_data)
 
+    db_session = settings.Session()
+    match_query = models.Match.played_without_results()
+    matches_without_results = db_session.execute(match_query).scalars().all()
+
+    if not any(matches_without_results):
+        return None
+
+    models.Match.update_results(matches_without_results, match_data)
+    db_session.commit()
+
     if verbose == 1:
         print("Match data sent!")
 
@@ -220,12 +232,22 @@ def update_match_results(verbose=1) -> None:
         current_round
     )
 
-    if verbose == 1:
-        print("Match results data received!")
+    if match_results_data.empty:
+        return None
 
     data_export.update_match_results(match_results_data)
 
+    db_session = settings.Session()
+    match_query = models.Match.played_without_results()
+    matches_without_results = db_session.execute(match_query).scalars().all()
+
+    if not any(matches_without_results):
+        return None
+
+    models.Match.update_results(matches_without_results, match_results_data)
+    db_session.commit()
+
     if verbose == 1:
-        print("Match data sent!")
+        print("Match data saved!")
 
     return None

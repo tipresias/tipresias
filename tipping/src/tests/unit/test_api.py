@@ -8,9 +8,11 @@ import pytz
 import pandas as pd
 from freezegun import freeze_time
 from candystore import CandyStore
+from faker import Faker
 
 from tests.fixtures import data_factories
 from tipping import api
+from tipping import models
 from tipping.tipping import FootyTipsSubmitter
 
 from tipping.models import Match
@@ -29,6 +31,8 @@ TIP_SEASON_RANGE = (min(MATCH_SEASON_RANGE), max(MATCH_SEASON_RANGE) + 1)
 TIP_DATES = [
     datetime(season, 1, 1, tzinfo=pytz.UTC) for season in range(*TIP_SEASON_RANGE)
 ]
+
+Fake = Faker()
 
 
 class TestApi(TestCase):
@@ -56,7 +60,7 @@ class TestApi(TestCase):
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import.DataImporter")
     @patch("tipping.api.settings.Session")
-    @patch("tipping.api.Match")
+    @patch("tipping.api.models.Match")
     def test_update_fixture_data(
         self, MockMatch, MockSession, MockDataImporter, mock_data_export
     ):
@@ -109,14 +113,41 @@ class TestApi(TestCase):
             self.assertEqual(mock_db_session.add.call_count, len(mock_matches))
             mock_db_session.commit.assert_called()
 
+    @patch("tipping.api.settings.Session")
     @patch("tipping.api.data_export")
-    @patch("tipping.api.data_import.DataImporter._fetch_data")
-    def test_update_matches(self, mock_fetch_data, mock_data_export):
+    @patch("tipping.api.data_import.DataImporter.fetch_match_data")
+    def test_update_matches(self, mock_fetch_match_data, mock_data_export, MockSession):
         matches = data_factories.fake_match_data()
-        matches_response = matches.astype({"date": str}).to_dict(orient="records")
 
-        mock_fetch_data.return_value = matches_response
+        mock_fetch_match_data.return_value = matches
         mock_data_export.update_matches = MagicMock()
+
+        mock_db_session = MagicMock()
+        mock_db_session.add = MagicMock()
+        mock_db_session.commit = MagicMock()
+        mock_scalars = MagicMock()
+        mock_scalars.all = MagicMock(
+            return_value=[
+                models.Match(
+                    start_date_time=data["date"],
+                    round_number=data["round_number"],
+                    venue=Fake.company(),
+                    team_matches=[
+                        models.TeamMatch(
+                            team=models.Team(name=data["home_team"]), at_home=True
+                        ),
+                        models.TeamMatch(
+                            team=models.Team(name=data["away_team"]), at_home=False
+                        ),
+                    ],
+                )
+                for _, data in matches.iterrows()
+            ]
+        )
+        mock_result = MagicMock()
+        mock_result.scalars = MagicMock(return_value=mock_scalars)
+        mock_db_session.execute = MagicMock(return_value=mock_result)
+        MockSession.return_value = mock_db_session
 
         self.api.update_matches(verbose=0)
 
@@ -126,11 +157,22 @@ class TestApi(TestCase):
         data_are_equal = (call_args[0] == matches).all().all()
         self.assertTrue(data_are_equal)
 
+        mock_db_session.commit.assert_called()
+
+    @patch("tipping.api.settings.Session")
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import.DataImporter")
-    def test_update_match_results(self, MockDataImporter, mock_data_export):
+    def test_update_match_results(
+        self, MockDataImporter, mock_data_export, MockSession
+    ):
         season = MATCH_SEASON_RANGE[0]
         seasons = (season, season + 1)
+
+        mock_db_session = MagicMock()
+        mock_db_session.add = MagicMock()
+        mock_db_session.commit = MagicMock()
+        mock_db_session.execute = MagicMock()
+        MockSession.return_value = mock_db_session
         # We want a date roughly in the middle of the season to make sure
         # we get matches before and after in the fixture
         with freeze_time(datetime(season, 7, 1, tzinfo=pytz.UTC)):
@@ -153,6 +195,29 @@ class TestApi(TestCase):
 
             mock_data_export.update_match_results = MagicMock()
 
+            mock_scalars = MagicMock()
+            mock_scalars.all = MagicMock(
+                return_value=[
+                    models.Match(
+                        start_date_time=data["date"],
+                        round_number=data["round_number"],
+                        venue=Fake.company(),
+                        team_matches=[
+                            models.TeamMatch(
+                                team=models.Team(name=data["home_team"]), at_home=True
+                            ),
+                            models.TeamMatch(
+                                team=models.Team(name=data["away_team"]), at_home=False
+                            ),
+                        ],
+                    )
+                    for _, data in match_results.iterrows()
+                ]
+            )
+            mock_result = MagicMock()
+            mock_result.scalars = MagicMock(return_value=mock_scalars)
+            mock_db_session.execute = MagicMock(return_value=mock_result)
+
             self.api.update_match_results(verbose=0)
 
             # It posts data to main app
@@ -161,9 +226,11 @@ class TestApi(TestCase):
             # It posts data for the round from the most-recent match
             call_args = mock_data_export.update_match_results.call_args[0]
             data_are_equal = (
-                (call_args[0]["round"] == last_match_round_number).all().all()
+                (call_args[0]["round_number"] == last_match_round_number).all().all()
             )
             self.assertTrue(data_are_equal)
+
+            mock_db_session.commit.assert_called()
 
     @patch("tipping.api.data_export")
     @patch("tipping.api.data_import.DataImporter")

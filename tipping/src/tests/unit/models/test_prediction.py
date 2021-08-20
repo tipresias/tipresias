@@ -1,13 +1,16 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
+from unittest import mock
+
 import pytest
 from faker import Faker
 import numpy as np
 
 from tipping.models.prediction import Prediction, ValidationError
+from tipping.models.team import Team, TeamName
+from tipping.models import MLModel
 
-
-FAKE = Faker()
+Fake = Faker()
 
 
 @pytest.mark.parametrize(
@@ -48,3 +51,34 @@ def test_prediction_validation(attribute, error_message):
                 **attribute,
             }
         )
+
+
+matching_team_name = TeamName.MELBOURNE.value
+
+
+@pytest.mark.parametrize(
+    ["has_been_played", "is_draw", "winner", "expected_correctness"],
+    [
+        (False, Fake.pybool(), Team(name=TeamName.HAWTHORN.value), None),
+        (True, True, Team(name=TeamName.HAWTHORN.value), True),
+        (True, False, Team(name=matching_team_name), True),
+        (True, False, Team(name=TeamName.HAWTHORN.value), False),
+    ],
+)
+@mock.patch("tipping.models.match.Match")
+def test_update_correctness(
+    MockMatch, has_been_played, is_draw, winner, expected_correctness
+):
+    MockMatch.has_been_played = has_been_played
+    MockMatch.is_draw = is_draw
+    MockMatch.winner = winner
+
+    prediction = Prediction(
+        match=MockMatch,
+        ml_model=MLModel(name=Fake.company(), prediction_type="margin"),
+        predicted_winner=Team(name=matching_team_name),
+    )
+
+    prediction.update_correctness()
+
+    assert prediction.is_correct == expected_correctness

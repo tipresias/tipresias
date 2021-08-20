@@ -1,7 +1,6 @@
 """Module for factory functions that create raw data objects."""
 
 from typing import Tuple, Union, Optional
-from datetime import timedelta
 
 from faker import Faker
 import numpy as np
@@ -16,31 +15,21 @@ FAKE = Faker()
 
 MATCH_RESULTS_COLS = [
     "date",
-    "tz",
-    "updated",
-    "round",
-    "roundname",
     "year",
-    "hbehinds",
-    "hgoals",
-    "hscore",
-    "hteam",
-    "hteamid",
-    "abehinds",
-    "agoals",
-    "ascore",
-    "ateam",
-    "ateamid",
-    "winner",
-    "winnerteamid",
-    "is_grand_final",
-    "complete",
-    "is_final",
-    "id",
-    "venue",
+    "round_number",
+    "home_score",
+    "home_team",
+    "away_score",
+    "away_team",
 ]
 
 TEAM_TYPES = ("home", "away")
+
+
+def _translate_team_names(team_type):
+    return lambda df: df[f"{team_type}_team"].map(
+        lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
+    )
 
 
 def fake_match_data(
@@ -63,7 +52,12 @@ def fake_match_data(
             }
         )
         # Recreates data cleaning performed in data_import
-        .assign(date=lambda df: pd.to_datetime(df["date"], utc=True))
+        .assign(
+            date=lambda df: pd.to_datetime(df["date"], utc=True),
+            # Team name translations happen in augury's data pipeline
+            home_team=_translate_team_names("home"),
+            away_team=_translate_team_names("away"),
+        )
     )
 
 
@@ -91,12 +85,8 @@ def fake_fixture_data(
         .assign(
             date=lambda df: pd.to_datetime(df["date"], utc=True),
             # Team name translations happen in augury's data pipeline
-            home_team=lambda df: df["home_team"].map(
-                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
-            ),
-            away_team=lambda df: df["away_team"].map(
-                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
-            ),
+            home_team=_translate_team_names("home"),
+            away_team=_translate_team_names("away"),
         )
     )
 
@@ -117,52 +107,26 @@ def fake_match_results_data(
     -------
     DataFrame of match results data
     """
-    match_results = fake_match_data() if match_results is None else match_results
-    round_number = round_number or np.random.randint(
-        1, match_results["round_number"].max()
+    filter_by_round = (
+        lambda df: df
+        if round_number is None
+        else df.query("round_number == @round_number")
     )
+    match_results = fake_match_data() if match_results is None else match_results
 
     assert (
         len(match_results["year"].drop_duplicates()) == 1
     ), "Match results data is fetched one season at a time."
 
     return (
-        match_results.query("round_number == @round_number")
+        match_results.pipe(filter_by_round)
         .assign(
-            updated=lambda df: pd.to_datetime(df["date"]) + timedelta(hours=3),
-            tz="+10:00",
-            # AFLTables match_results already have a 'round' column,
-            # so we have to replace rather than rename.
-            round=lambda df: df["round_number"],
-            roundname=lambda df: "Round " + df["round_number"].astype(str),
-            hteam=lambda df: df["home_team"].map(
-                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
-            ),
-            ateam=lambda df: df["away_team"].map(
-                lambda team: settings.TEAM_TRANSLATIONS.get(team, team)
-            ),
-            hteamid=lambda df: df["hteam"].map(settings.TEAM_NAMES.index),
-            ateamid=lambda df: df["ateam"].map(settings.TEAM_NAMES.index),
-            winner=lambda df: np.where(df["margin"] >= 0, df["hteam"], df["ateam"]),
-            winnerteamid=lambda df: df["winner"].map(settings.TEAM_NAMES.index),
-            is_grand_final=0,
-            complete=100,
-            is_final=0,
+            # Team name translations happen in augury's data pipeline
+            home_team=_translate_team_names("home"),
+            away_team=_translate_team_names("away"),
         )
-        .astype({"updated": str})
-        .reset_index(drop=False)
-        .rename(
-            columns={
-                "index": "id",
-                "home_behinds": "hbehinds",
-                "home_goals": "hgoals",
-                "away_behinds": "abehinds",
-                "away_goals": "agoals",
-                "home_score": "hscore",
-                "away_score": "ascore",
-            }
-        )
-    ).loc[:, MATCH_RESULTS_COLS]
+        .loc[:, MATCH_RESULTS_COLS]
+    )
 
 
 def _build_team_matches(match_data: pd.DataFrame, team_type: str) -> pd.DataFrame:

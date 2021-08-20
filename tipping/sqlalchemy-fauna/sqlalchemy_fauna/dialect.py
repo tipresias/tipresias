@@ -55,12 +55,27 @@ else:
         __dialect__ = "fauna"
 
 
+class FaunaExecutionContext(
+    default.DefaultExecutionContext
+):  # pylint: disable=abstract-method
+    """Context for the execution of a query or multiple queries."""
+
+    @property
+    def rowcount(self):
+        """Number of rows returned or changed by a query."""
+        if hasattr(self, "_rowcount"):
+            return self._rowcount
+        else:
+            return self.cursor.rowcount
+
+
 class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
     """SQLAlchemy Dialect for Fauna."""
 
     name = "fauna"
     scheme = os.getenv("FAUNA_SCHEME", "https")
     driver = "rest"
+    execution_ctx_cls = FaunaExecutionContext
 
     # Pylint says this method is hidden by sqlalchemy.engine.default,
     # but all 3rd-party dialects I've looked at define 'dbapi' this way.
@@ -68,6 +83,12 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
     def dbapi(cls):  # pylint: disable=method-hidden
         """Fauna DBAPI for use in SQLAlchemy."""
         return sqlalchemy_fauna
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+        """Execute multiple statements"""
+        rowcount = cursor.executemany(statement, parameters)
+        if context is not None:
+            context._rowcount = rowcount  # pylint: disable=protected-access
 
     def create_connect_args(self, url):
         """Transform the database URL into connection kwargs."""

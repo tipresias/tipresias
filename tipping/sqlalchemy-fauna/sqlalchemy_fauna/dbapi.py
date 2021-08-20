@@ -1,5 +1,6 @@
 """DBAPI for use in the FaunaDialect."""
 
+from __future__ import annotations
 import typing
 from datetime import date, datetime, time
 
@@ -65,7 +66,9 @@ class FaunaQuery:
         """Execute an SQL query as a Fauna query."""
         result = self.client.sql(query)
 
-        data: ResultData = [tuple(document.values()) for document in result]
+        data = typing.cast(
+            ResultData, [tuple(document.values()) for document in result]
+        )
         description: ResultDescription = self._get_description_from_data(
             result
         ) or self._get_description_from_query(query)
@@ -269,10 +272,10 @@ class FaunaCursor:
         self.closed = False
 
         # this is updated only after a query
-        self.description = None
+        self.description: typing.Optional[ResultDescription] = None
 
         # this is set to a list of rows after a successful query
-        self._results = None
+        self._results: typing.Optional[ResultData] = None
 
     # Apparently mypy doesn't play nice with multiple decorators
     @property  # type: ignore
@@ -288,7 +291,7 @@ class FaunaCursor:
         self.closed = True
 
     @check_closed
-    def execute(self, operation, parameters=None):
+    def execute(self, operation, parameters=None) -> FaunaCursor:
         """Execute the query."""
         parameters = parameters or {}
         self.description = None
@@ -298,10 +301,21 @@ class FaunaCursor:
         return self
 
     @check_closed
-    def executemany(self, operation, seq_of_parameters=None):
-        """Execute multiple queries."""
-        raise exceptions.NotSupportedError(
-            "`executemany` is not supported, use `execute` instead"
+    def executemany(self, operation, seq_of_parameters=None) -> int:
+        """Execute multiple queries.
+
+        Params:
+        -------
+        operation: SQLAlchemy operation object representing the SQL query.
+        seq_of_parameters: List of parameters applied to each iteration of the operation.
+
+        Returns:
+        --------
+        Count of all rows affected by the executed operations.
+        """
+        return sum(
+            self.execute(operation, parameters).rowcount
+            for parameters in seq_of_parameters
         )
 
     @check_result

@@ -628,3 +628,29 @@ def test_update(fauna_session, user_model):
 
     assert queried_user.name == new_name
     assert queried_user.age == new_age
+
+
+def test_multiple_update(fauna_session, user_model):
+    User, Base = user_model
+    fauna_engine = fauna_session.get_bind()
+    Base.metadata.create_all(fauna_engine)
+
+    user_count = 5
+    users = [User(name=Fake.first_name(), age=Fake.pyint()) for _ in range(user_count)]
+
+    for user in users:
+        fauna_session.add(user)
+
+    fauna_session.commit()
+
+    new_names = []
+    for user in users:
+        new_name = Fake.first_name()
+        user.name = new_name
+        new_names.append(new_name)
+
+    fauna_session.commit()
+
+    queried_users = fauna_session.execute(sql.select(User)).scalars().all()
+    for user in queried_users:
+        assert user.name in new_names

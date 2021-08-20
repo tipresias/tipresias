@@ -81,24 +81,3 @@ functions:
           # Thurs-Sun, 2am-2pm UTC (next day, 12pm/1pm-12am/1am Melbourne time, depending on DST)
           rate: cron(0 2-14/3 ? * 1,5-7 *)
           enabled: true
-  fetch_match_predictions:
-    handler: handler.fetch_match_predictions
-    timeout: 30
-    events:
-      - http:
-          path: predictions
-          method: get
-  fetch_match_results:
-    handler: handler.fetch_match_results
-    timeout: 30
-    events:
-      - http:
-          path: matches
-          method: get
-  fetch_ml_models:
-    handler: handler.fetch_ml_models
-    timeout: 30
-    events:
-      - http:
-          path: ml_models
-          method: get

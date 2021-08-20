@@ -2,7 +2,7 @@
 
 """Serverless functions for fetching and updating application data."""
 
-from typing import List, Union, TypedDict, cast
+from typing import List, Union, TypedDict
 import json
 import os
 import sys
@@ -17,7 +17,6 @@ if SRC_DIR not in sys.path:
 from tipping import api
 from tipping import settings
 from tipping.types import CleanPredictionData, MatchData, MLModelInfo
-from tipping.helpers import convert_to_dict
 
 
 rollbar_token = os.getenv("ROLLBAR_TOKEN", "missing_api_key")
@@ -116,105 +115,3 @@ def update_match_results(_event, _context, verbose=1):
     api.update_match_results(verbose=verbose)
 
     return _response("Success")
-
-
-@rollbar.lambda_function
-def fetch_match_predictions(event, _context):
-    """
-    Get match predictions from ML models.
-
-    Params:
-    -------
-    event: AWS Lambda event dict with the following params:
-        year_range: Min (inclusive) and max (exclusive) years for which to fetch data.
-            Format is 'yyyy-yyyy'.
-        round_number: Specify a particular round for which to fetch data.
-        ml_models: List of ML model names to use for making predictions.
-        train_models: Whether to train models in between predictions (only applies
-            when predicting across multiple seasons).
-
-    Returns:
-    --------
-    List of prediction data dictionaries in a JSON body.
-    """
-    if not _request_is_authorized(event):
-        return _response("Unauthorized", status_code=401)
-
-    VALID_KWARGS = ["round_number", "ml_models", "train_models"]
-    year_range = event["year_range"]
-
-    year_range_values = year_range.split("-")
-    assert len(set(year_range_values)) == 2, (
-        "year_range param must have two non-equal years. "
-        f"Instead {year_range} was given."
-    )
-    assert year_range_values[0] < year_range_values[1], (
-        f"year_range param must have the minimum year first, maximum year second, "
-        f"but {year_range} was given."
-    )
-
-    kwargs = {
-        key: value
-        for key, value in event.items()
-        if key in VALID_KWARGS and value is not None
-    }
-
-    response_data = cast(
-        List[CleanPredictionData],
-        convert_to_dict(api.fetch_match_predictions(year_range, **kwargs)),
-    )
-
-    return _response(response_data)
-
-
-@rollbar.lambda_function
-def fetch_matches(event, _context) -> Response:
-    """
-    Fetch data for past matches.
-
-    Params:
-    -------
-    event: AWS Lambda event dict with the following params:
-        start_date: Date string that determines the earliest date
-            for which to fetch data. Format is 'yyyy-mm-dd'.
-        end_date: Date string that determines the latest date
-            for which to fetch data. Format is 'yyyy-mm-dd'.
-        fetch_data: Whether to fetch fresh data. Non-fresh data goes up to end
-            of previous season.
-
-    Returns:
-    --------
-    List of match data in a JSON body.
-    """
-    if not _request_is_authorized(event):
-        return _response("Unauthorized", status_code=401)
-
-    kwargs = {}
-    if event.get("fetch_data") is not None:
-        kwargs["fetch_data"] = event["fetch_data"]
-
-    response_data = cast(
-        List[MatchData],
-        convert_to_dict(
-            api.fetch_matches(event["start_date"], event["end_date"], **kwargs)
-        ),
-    )
-
-    return _response(response_data)
-
-
-@rollbar.lambda_function
-def fetch_ml_models(event, _context) -> Response:
-    """
-    Fetch general info about all saved ML models.
-
-    Returns:
-    --------
-    A list of objects with basic info about each ML model in a JSON body.
-    """
-    if not _request_is_authorized(event):
-        return _response("Unauthorized", status_code=401)
-
-    response_data = cast(List[MLModelInfo], convert_to_dict(api.fetch_ml_models()))
-
-    return _response(response_data)

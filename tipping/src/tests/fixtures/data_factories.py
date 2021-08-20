@@ -1,7 +1,6 @@
 """Module for factory functions that create raw data objects."""
 
 from typing import Tuple, Union, Optional
-from datetime import timedelta
 
 from faker import Faker
 import numpy as np
@@ -53,7 +52,12 @@ def fake_match_data(
             }
         )
         # Recreates data cleaning performed in data_import
-        .assign(date=lambda df: pd.to_datetime(df["date"], utc=True))
+        .assign(
+            date=lambda df: pd.to_datetime(df["date"], utc=True),
+            # Team name translations happen in augury's data pipeline
+            home_team=_translate_team_names("home"),
+            away_team=_translate_team_names("away"),
+        )
     )
 
 

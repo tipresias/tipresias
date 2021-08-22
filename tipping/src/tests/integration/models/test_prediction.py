@@ -1,47 +1,18 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-from datetime import timezone
-
 import numpy as np
-from faker import Faker
-import pytest
 
+from tests.fixtures import model_factories
 from tipping.models.prediction import Prediction
-from tipping.models.ml_model import MLModel, PredictionType
-from tipping.models.match import Match
 
 
-FAKE = Faker()
-
-
-@pytest.fixture
-def match():
-    return Match(
-        start_date_time=FAKE.date_time(tzinfo=timezone.utc),
-        round_number=np.random.randint(1, 100),
-        venue=FAKE.company(),
-    )
-
-
-@pytest.fixture
-def ml_model():
-    return MLModel(
-        name=FAKE.job(),
-        description=FAKE.paragraph(),
-        is_principal=False,
-        used_in_competitions=False,
-        prediction_type=np.random.choice(PredictionType.values()),
-    )
-
-
-def test_prediction_creation(fauna_session, match, ml_model):
-    fauna_session.add(match)
-    fauna_session.add(ml_model)
-    fauna_session.commit()
+def test_prediction_creation(fauna_session):
+    match = model_factories.MatchFactory()
+    ml_model = model_factories.MLModelFactory()
 
     prediction = Prediction(
-        match_id=match.id,
-        ml_model_id=ml_model.id,
+        match=match,
+        ml_model=ml_model,
         predicted_margin=np.random.randint(0, 100),
         predicted_win_probability=np.random.random(),
     )

@@ -259,8 +259,7 @@ class Match(Base):
         for team_match in self.team_matches:
             team_match.update_score(match_result.iloc[0, :])
 
-        self.margin = self._calculate_margin()
-        self.winner = self._calculate_winner()
+        self._save_result()
 
         for prediction in self.predictions:
             prediction.update_correctness()
@@ -303,14 +302,18 @@ class Match(Base):
 
     @property
     def _has_score(self) -> bool:
-        return any(score > 0 for score in self._match_scores)
+        return any(score is not None for score in self._match_scores)
 
     @property
     def _match_scores(self):
         return [team_match.score for team_match in self.team_matches]
 
+    def _save_result(self):
+        self.margin = self._calculate_margin()
+        self.winner = self._calculate_winner()
+
     def _calculate_margin(self):
-        if not self.has_been_played:
+        if not any(self._match_scores):
             return None
 
         return functools.reduce(
@@ -319,7 +322,7 @@ class Match(Base):
 
     def _calculate_winner(self):
         """Return the record for the winning team of the match."""
-        if not self.has_been_played or self.is_draw:
+        if not any(self._match_scores) or self.is_draw:
             return None
 
         return max(self.team_matches, key=lambda tm: tm.score).team
@@ -381,7 +384,7 @@ class Match(Base):
     @validates("margin")
     def validate_postive_margin(self, _key, margin):
         """Validate that the margin isn't negative."""
-        if margin >= MIN_MARGIN:
+        if margin is None or margin >= MIN_MARGIN:
             return margin
 
         raise ValidationError(

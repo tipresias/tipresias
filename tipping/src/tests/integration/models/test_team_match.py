@@ -1,43 +1,23 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-from datetime import timezone
-
 import numpy as np
 from faker import Faker
-import pytest
-from sqlalchemy import select
 
-from tests.fixtures import data_factories
-from tipping.models import TeamMatch, Team, Match
-from tipping.models.team import TeamName
+from tests.fixtures import data_factories, model_factories
+from tipping.models import TeamMatch
 
 
-FAKE = Faker()
+Fake = Faker()
 
 
-@pytest.fixture
-def match():
-    return Match(
-        start_date_time=FAKE.date_time(tzinfo=timezone.utc),
-        round_number=np.random.randint(1, 100),
-        venue=FAKE.company(),
-    )
-
-
-def test_team_match_creation(fauna_session, match):
-    team_name = np.random.choice(TeamName.values())
-    team = (
-        fauna_session.execute(select(Team).where(Team.name == team_name))
-        .scalars()
-        .one()
-    )
-    fauna_session.add(match)
-    fauna_session.commit()
+def test_team_match_creation(fauna_session):
+    team = model_factories.TeamFactory()
+    match = model_factories.MatchFactory()
 
     team_match = TeamMatch(
-        team_id=team.id,
-        match_id=match.id,
-        at_home=FAKE.pybool(),
+        team=team,
+        match=match,
+        at_home=Fake.pybool(),
         score=np.random.randint(0, 100),
     )
     fauna_session.add(team_match)

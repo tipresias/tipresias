@@ -13,6 +13,7 @@ from sqlalchemy import sql
 from tipping.models import Team, Prediction, Match, MLModel, TeamMatch
 from tipping.models.ml_model import PredictionType
 from tipping import settings
+from .session import Session
 
 FAKE = Faker()
 TODAY = date.today()
@@ -42,6 +43,7 @@ class TeamFactory(SQLAlchemyModelFactory):
 
         model = Team
         sqlalchemy_get_or_create = ("name",)
+        sqlalchemy_session = Session
 
     name = factory.Sequence(lambda n: settings.TEAM_NAMES[n % len(settings.TEAM_NAMES)])
 
@@ -118,6 +120,7 @@ class MatchFactory(SQLAlchemyModelFactory):
         """Factory attributes for recreating the associated model's attributes."""
 
         model = Match
+        sqlalchemy_session = Session
 
     start_date_time = factory.LazyAttributeSequence(_fake_datetime)
     round_number = factory.Sequence(
@@ -147,6 +150,7 @@ class TeamMatchFactory(SQLAlchemyModelFactory):
         """Factory attributes for recreating the associated model's attributes."""
 
         model = TeamMatch
+        sqlalchemy_session = Session
 
     team = factory.SubFactory(TeamFactory)
     match = factory.SubFactory(MatchFactory)
@@ -172,6 +176,7 @@ class MLModelFactory(SQLAlchemyModelFactory):
         """Factory attributes for recreating the associated model's attributes."""
 
         model = MLModel
+        sqlalchemy_session = Session
 
     name = factory.Faker("company")
     description = factory.Faker("paragraph", nb_sentences=4)
@@ -186,6 +191,7 @@ class PredictionFactory(SQLAlchemyModelFactory):
         """Factory attributes for recreating the associated model's attributes."""
 
         model = Prediction
+        sqlalchemy_session = Session
 
     class Params:
         """

@@ -9,7 +9,8 @@ import subprocess
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.dialects import registry
-from sqlalchemy.orm import sessionmaker
+
+from tests.fixtures import Session
 
 
 CAPTURED_MATCH = 1
@@ -87,9 +88,11 @@ def fauna_session():
     """Set up an SQLAlchemy DB session for use in tests."""
     with _setup_teardown_test_db() as secret_key:
         engine = create_engine(f"fauna://faunadb:8443/?secret={secret_key}")
-        Session = sessionmaker(bind=engine)
+        Session.configure(bind=engine)
 
         with patch("tipping.settings.Session", Session):
             session = Session()
 
             yield session
+
+        Session.remove()

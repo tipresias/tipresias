@@ -8,9 +8,6 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    DateTime,
-    Boolean,
-    Float,
     ForeignKey,
     inspect,
     exc as sqlalchemy_exceptions,
@@ -24,30 +21,10 @@ import pytest
 from faker import Faker
 import numpy as np
 
-from sqlalchemy_fauna import dialect
+from tests.fixtures.models import User
 
 
 Fake = Faker()
-
-
-@pytest.fixture()
-def user_model():
-    table_name = "users"
-    Base = declarative_base()
-
-    class User(Base):  # pylint: disable=unused-variable
-        __tablename__ = table_name
-
-        id = Column(Integer, primary_key=True)
-        name = Column(String, unique=True)
-        date_joined = Column(DateTime, nullable=False)
-        age = Column(Integer)
-        finger_count = Column(Integer, default=10)
-        is_premium_member = Column(Boolean, default=False)
-        account_credit = Column(Float, default=0.0)
-        job = Column(String)
-
-    return User, Base
 
 
 @pytest.fixture()
@@ -72,41 +49,9 @@ def parent_child():
     return {"parent": Parent, "child": Child, "base": Base}
 
 
-def test_create_table(fauna_engine):
-    table_name = "users"
-    Base = declarative_base()
-
-    class User(Base):  # pylint: disable=unused-variable
-        __tablename__ = table_name
-
-        id = Column(Integer, primary_key=True)
-        name = Column(String(250), nullable=False)
-        date_joined = Column(DateTime(), nullable=False)
-        age = Column(Integer())
-
-    Base.metadata.create_all(fauna_engine)
-
-    # It creates the table
-    with fauna_engine.connect() as connection:
-        assert dialect.FaunaDialect().has_table(connection, table_name)
-
-
 def test_create_index(fauna_engine):
-    table_name = "users"
-    Base = declarative_base()
-
-    class User(Base):  # pylint: disable=unused-variable
-        __tablename__ = table_name
-
-        id = Column(Integer, primary_key=True)
-        name = Column(String(250), nullable=False, index=True)
-        date_joined = Column(DateTime(), nullable=False)
-        age = Column(Integer())
-
-    Base.metadata.create_all(fauna_engine)
-
     inspector = inspect(fauna_engine)
-    indexes = inspector.get_indexes(table_name)
+    indexes = inspector.get_indexes("users")
     name_index = None
 
     for index in indexes:
@@ -118,27 +63,18 @@ def test_create_index(fauna_engine):
     assert set(name_index["column_names"]) == set(["name", "date_joined", "age"])
 
 
-def test_drop_table(fauna_engine, user_model):
-    User, Base = user_model
-    table_name = User.__tablename__
-
-    Base.metadata.create_all(fauna_engine)
-
+def test_drop_table(fauna_engine):
     User.__table__.drop(fauna_engine)
     inspector = inspect(fauna_engine)
 
     # It drops the table
     with fauna_engine.connect() as connection:
-        assert not fauna_engine.has_table(connection, table_name)
+        assert not fauna_engine.has_table(connection, "users")
     # It drops all associated indexes
-    assert not any(inspector.get_indexes(table_name))
+    assert not any(inspector.get_indexes("users"))
 
 
-def test_insert_record(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_insert_record(fauna_session):
     account_credit = Fake.pyfloat()
     age = 30
     date_joined = Fake.date_time_this_year(tzinfo=timezone.utc)
@@ -165,20 +101,12 @@ def test_insert_record(fauna_session, user_model):
     assert isinstance(int(created_user.id), int)
 
 
-def test_select_empty_table(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_select_empty_table(fauna_session):
     user_records = fauna_session.execute(select(User.id, User.name)).scalars().all()
     assert len(user_records) == 0
 
 
-def test_select_all_records(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_select_all_records(fauna_session):
     names = ["Bob", "Linda", "Tina"]
     users = [User(name=name, date_joined=datetime.now(), age=30) for name in names]
     for user in users:
@@ -191,11 +119,7 @@ def test_select_all_records(fauna_session, user_model):
     assert len(users) == len(user_records)
 
 
-def test_select_by_field_equality(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_select_by_field_equality(fauna_session):
     filter_name = "Bob"
     names = [filter_name, "Linda", "Tina"]
     users = [User(name=name, date_joined=datetime.now(), age=30) for name in names]
@@ -214,11 +138,7 @@ def test_select_by_field_equality(fauna_session, user_model):
     assert user_records[0].name == filter_name
 
 
-def test_select_by_numeric_field_comparison(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_select_by_numeric_field_comparison(fauna_session):
     names_ages = [
         ("Teddy", 45),
         ("Bob", 40),
@@ -287,11 +207,7 @@ def test_select_by_numeric_field_comparison(fauna_session, user_model):
         assert user_record.age <= filter_age
 
 
-def test_select_with_numpy_numeric_comparison(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_select_with_numpy_numeric_comparison(fauna_session):
     names_ages = [
         ("Teddy", 45),
         ("Bob", 40),
@@ -342,11 +258,7 @@ def test_select_with_numpy_numeric_comparison(fauna_session, user_model):
         assert user_record.age <= filter_age
 
 
-def test_delete_record_conditionally(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_delete_record_conditionally(fauna_session):
     names = ["Bob", "Linda"]
     users = [User(name=name, date_joined=datetime.now(), age=30) for name in names]
     for user in users:
@@ -363,11 +275,7 @@ def test_delete_record_conditionally(fauna_session, user_model):
     assert user_to_delete.name not in user_names
 
 
-def test_unique_constraint(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_unique_constraint(fauna_session):
     fauna_session.add(User(name="Bob", date_joined=datetime.now(), age=30))
     fauna_session.add(User(name="Bob", date_joined=datetime.now(), age=60))
 
@@ -423,11 +331,7 @@ def test_insert_with_null_foreign_key(fauna_session, parent_child):
     assert child.parent_id is None
 
 
-def test_count(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_count(fauna_session):
     assert fauna_session.execute(select(func.count(User.id))).scalar() == 0
 
     names = ["Bob", "Linda", "Louise"]
@@ -440,11 +344,7 @@ def test_count(fauna_session, user_model):
     assert fauna_session.execute(select(func.count(User.id))).scalar() == len(names)
 
 
-def test_count_with_empty_results(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_count_with_empty_results(fauna_session):
     assert fauna_session.execute(select(func.count(User.id))).scalar() == 0
 
     names = ["Bob", "Linda", "Louise"]
@@ -461,11 +361,7 @@ def test_count_with_empty_results(fauna_session, user_model):
     assert user_count == 0
 
 
-def test_select_distinct(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_select_distinct(fauna_session):
     user_attributes = [("Bob", 40), ("Linda", 40), ("Louise", 12)]
 
     for name, age in user_attributes:
@@ -477,11 +373,7 @@ def test_select_distinct(fauna_session, user_model):
     assert set(distinct_ages) == set([40, 12])
 
 
-def test_select_is_null(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_select_is_null(fauna_session):
     user_attributes = [("Bob", "Cook"), ("Linda", "Waitress"), ("Louise", None)]
 
     for name, job in user_attributes:
@@ -533,11 +425,7 @@ def test_join(fauna_session, parent_child):
     assert queried_parent.name == "Bob"
 
 
-def test_order_by(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_order_by(fauna_session):
     names = ["Zoe", "Anne", "Mary", "Diana", "Tina"]
     for name in names:
         fauna_session.add(User(name=name))
@@ -590,11 +478,7 @@ def test_join_order_by(fauna_session, parent_child):
     assert [child.name for child in children] == sorted(child_names)
 
 
-def test_limit(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_limit(fauna_session):
     limit = 2
     user_names = [Fake.first_name() for _ in range(5)]
 
@@ -609,11 +493,7 @@ def test_limit(fauna_session, user_model):
     assert queried_user_names == user_names[:limit]
 
 
-def test_update(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_update(fauna_session):
     user = User(name=Fake.first_name(), age=Fake.pyint())
     fauna_session.add(user)
     fauna_session.commit()
@@ -630,11 +510,7 @@ def test_update(fauna_session, user_model):
     assert queried_user.age == new_age
 
 
-def test_multiple_update(fauna_session, user_model):
-    User, Base = user_model
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
+def test_multiple_update(fauna_session):
     user_count = 5
     users = [User(name=Fake.first_name(), age=Fake.pyint()) for _ in range(user_count)]
 

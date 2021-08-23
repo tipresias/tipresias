@@ -104,7 +104,10 @@ def test_select_by_field_equality(fauna_session):
     assert user_records[0].name == filter_name
 
 
-def test_select_by_numeric_field_comparison(fauna_session):
+# Numpy ints & floats aren't instances of Python's native int or float,
+# so we need to perform extra checks to account for them.
+@pytest.mark.parametrize("filter_age", [40, np.int16(40)])
+def test_select_by_numeric_field_comparison(filter_age, fauna_session):
     names_ages = [
         ("Teddy", 45),
         ("Bob", 40),
@@ -118,8 +121,6 @@ def test_select_by_numeric_field_comparison(fauna_session):
     for user in users:
         fauna_session.add(user)
     fauna_session.commit()
-
-    filter_age = 40
 
     # For '=' comparison
     user_records = (
@@ -164,59 +165,6 @@ def test_select_by_numeric_field_comparison(fauna_session):
     assert len(user_records) == 2
     for user_record in user_records:
         assert user_record.age < filter_age
-
-    # For '<=' comparison
-    user_records = (
-        fauna_session.execute(sql.select(User).where(User.age <= filter_age))
-        .scalars()
-        .all()
-    )
-
-    assert len(user_records) == 4
-    for user_record in user_records:
-        assert user_record.age <= filter_age
-
-
-def test_select_with_numpy_numeric_comparison(fauna_session):
-    names_ages = [
-        ("Teddy", 45),
-        ("Bob", 40),
-        ("Linda", 40),
-        ("Tina", 14),
-        ("Louise", 10),
-    ]
-    users = [
-        User(name=name, date_joined=datetime.now(), age=age) for name, age in names_ages
-    ]
-    for user in users:
-        fauna_session.add(user)
-    fauna_session.commit()
-
-    # Numpy ints & floats aren't instances of Python's native int or float,
-    # so we need to perform extra checks to account for them.
-    filter_age = np.int16(40)
-
-    # For '=' comparison
-    user_records = (
-        fauna_session.execute(sql.select(User).where(User.age == filter_age))
-        .scalars()
-        .all()
-    )
-
-    assert len(user_records) == 2
-    for user_record in user_records:
-        assert user_record.age == filter_age
-
-    # For '>' comparison
-    user_records = (
-        fauna_session.execute(sql.select(User).where(User.age > filter_age))
-        .scalars()
-        .all()
-    )
-
-    assert len(user_records) == 1
-    for user_record in user_records:
-        assert user_record.age > filter_age
 
     # For '<=' comparison
     user_records = (

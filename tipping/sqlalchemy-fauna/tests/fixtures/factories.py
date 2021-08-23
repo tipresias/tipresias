@@ -4,7 +4,7 @@ import factory
 from factory.alchemy import SQLAlchemyModelFactory
 
 from .session import Session
-from .models import User
+from .models import User, Child
 
 
 class UserFactory(SQLAlchemyModelFactory):
@@ -24,3 +24,17 @@ class UserFactory(SQLAlchemyModelFactory):
     is_premium_member = factory.Faker("pybool")
     account_credit = factory.Faker("pyfloat")
     job = factory.Faker("job")
+
+
+class ChildFactory(SQLAlchemyModelFactory):
+    """Factory class for the Child data model."""
+
+    class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
+        model = Child
+        sqlalchemy_get_or_create = ("name",)
+        sqlalchemy_session = Session
+
+    name = factory.Faker("first_name")
+    user = factory.SubFactory(UserFactory)

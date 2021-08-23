@@ -87,7 +87,7 @@ def test_from_future_fixtures_with_skipped_round(fauna_session):
     first_match, next_match = _get_matches_from_different_days(fixture_matches)
 
     patched_date = next_match["date"].to_pydatetime() - timedelta(days=1)
-    upcoming_round_number = int(next_match["round_number"]) + 1
+    upcoming_round_number = int(next_match["round_number"]) + 2
 
     fauna_session.add(
         Match(
@@ -106,9 +106,6 @@ def test_from_future_fixtures_with_skipped_round(fauna_session):
             Match.from_future_fixtures(
                 fauna_session, fixture_matches, upcoming_round_number
             )
-            # Logging to catch cause of flaky test
-            print(first_match)
-            print(next_match)
 
 
 def test_played_without_results(fauna_session):

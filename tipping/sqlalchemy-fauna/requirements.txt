@@ -15,3 +15,4 @@ pytest>=5.0,<7.0
 coverage
 numpy==1.20.2 # just used for random numbers in tests
 faker==8.1.0
+factory_boy

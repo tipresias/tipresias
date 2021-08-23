@@ -8,9 +8,8 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.dialects import registry
-from sqlalchemy.orm import sessionmaker
 
-from tests.fixtures import Session
+from tests.fixtures import Session, Base
 
 
 CAPTURED_MATCH = 1
@@ -63,6 +62,7 @@ def fauna_engine():
     """
     with _setup_teardown_test_db() as secret_key:
         engine = create_engine(f"fauna://faunadb:8443/?secret={secret_key}")
+        Base.metadata.create_all(engine)
 
         yield engine
 
@@ -72,6 +72,7 @@ def fauna_session():
     """Set up an SQLAlchemy DB session for use in tests."""
     with _setup_teardown_test_db() as secret_key:
         engine = create_engine(f"fauna://faunadb:8443/?secret={secret_key}")
+        Base.metadata.create_all(engine)
         Session.configure(bind=engine)
         session = Session()
 

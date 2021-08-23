@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.dialects import registry
 
-from tests.fixtures import Session, Base
+from tests.fixtures import Session, Base, models
 
 
 CAPTURED_MATCH = 1
@@ -79,3 +79,9 @@ def fauna_session():
         yield session
 
         Session.remove()
+
+
+@pytest.fixture
+def user_columns():
+    """Pytest fixture for the column names on the User table."""
+    return models.User.__table__.columns.keys()

@@ -3,53 +3,19 @@
 from datetime import datetime, timezone
 import functools
 
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    ForeignKey,
-    inspect,
-    exc as sqlalchemy_exceptions,
-    select,
-    delete,
-    func,
-    sql,
-)
-from sqlalchemy.orm import relationship
+from sqlalchemy import inspect, exc as sqlalchemy_exceptions, sql
 import pytest
 from faker import Faker
 import numpy as np
 
-from tests.fixtures.models import User
+from tests.fixtures.models import Child, User
 
 
 Fake = Faker()
 
 
-@pytest.fixture()
-def parent_child():
-    Base = declarative_base()
-
-    class Parent(Base):  # pylint: disable=unused-variable
-        __tablename__ = "parents"
-
-        id = Column(Integer, primary_key=True)
-        name = Column(String, unique=True)
-        children = relationship("Child", back_populates="parent")
-
-    class Child(Base):  # pylint: disable=unused-variable
-        __tablename__ = "children"
-
-        id = Column(Integer, primary_key=True)
-        name = Column(String, unique=True)
-        parent_id = Column(Integer, ForeignKey("parents.id"))
-        parent = relationship("Parent", back_populates="children")
-
-    return {"parent": Parent, "child": Child, "base": Base}
-
-
-def test_create_index(fauna_engine):
+def test_create_index(fauna_engine, user_columns):
+    expected_index_columns = [col for col in user_columns if col != "id"]
     inspector = inspect(fauna_engine)
     indexes = inspector.get_indexes("users")
     name_index = None
@@ -60,7 +26,7 @@ def test_create_index(fauna_engine):
             break
 
     assert name_index is not None
-    assert set(name_index["column_names"]) == set(["name", "date_joined", "age"])
+    assert set(name_index["column_names"]) == set(expected_index_columns)
 
 
 def test_drop_table(fauna_engine):
@@ -85,7 +51,7 @@ def test_insert_record(fauna_session):
     fauna_session.add(user)
     fauna_session.commit()
 
-    users = fauna_session.execute(select(User)).scalars().all()
+    users = fauna_session.execute(sql.select(User)).scalars().all()
 
     # It creates the record
     assert len(users) == 1
@@ -102,7 +68,7 @@ def test_insert_record(fauna_session):
 
 
 def test_select_empty_table(fauna_session):
-    user_records = fauna_session.execute(select(User.id, User.name)).scalars().all()
+    user_records = fauna_session.execute(sql.select(User.id, User.name)).scalars().all()
     assert len(user_records) == 0
 
 
@@ -113,7 +79,7 @@ def test_select_all_records(fauna_session):
         fauna_session.add(user)
     fauna_session.commit()
 
-    user_records = fauna_session.execute(select(User)).scalars().all()
+    user_records = fauna_session.execute(sql.select(User)).scalars().all()
 
     # It fetches the records
     assert len(users) == len(user_records)
@@ -128,7 +94,7 @@ def test_select_by_field_equality(fauna_session):
     fauna_session.commit()
 
     user_records = (
-        fauna_session.execute(select(User).where(User.name == filter_name))
+        fauna_session.execute(sql.select(User).where(User.name == filter_name))
         .scalars()
         .all()
     )
@@ -157,7 +123,7 @@ def test_select_by_numeric_field_comparison(fauna_session):
 
     # For '=' comparison
     user_records = (
-        fauna_session.execute(select(User).where(User.age == filter_age))
+        fauna_session.execute(sql.select(User).where(User.age == filter_age))
         .scalars()
         .all()
     )
@@ -168,7 +134,9 @@ def test_select_by_numeric_field_comparison(fauna_session):
 
     # For '>' comparison
     user_records = (
-        fauna_session.execute(select(User).where(User.age > filter_age)).scalars().all()
+        fauna_session.execute(sql.select(User).where(User.age > filter_age))
+        .scalars()
+        .all()
     )
 
     assert len(user_records) == 1
@@ -177,7 +145,7 @@ def test_select_by_numeric_field_comparison(fauna_session):
 
     # For '>=' comparison
     user_records = (
-        fauna_session.execute(select(User).where(User.age >= filter_age))
+        fauna_session.execute(sql.select(User).where(User.age >= filter_age))
         .scalars()
         .all()
     )
@@ -188,7 +156,9 @@ def test_select_by_numeric_field_comparison(fauna_session):
 
     # For '<' comparison
     user_records = (
-        fauna_session.execute(select(User).where(User.age < filter_age)).scalars().all()
+        fauna_session.execute(sql.select(User).where(User.age < filter_age))
+        .scalars()
+        .all()
     )
 
     assert len(user_records) == 2
@@ -197,7 +167,7 @@ def test_select_by_numeric_field_comparison(fauna_session):
 
     # For '<=' comparison
     user_records = (
-        fauna_session.execute(select(User).where(User.age <= filter_age))
+        fauna_session.execute(sql.select(User).where(User.age <= filter_age))
         .scalars()
         .all()
     )
@@ -228,7 +198,7 @@ def test_select_with_numpy_numeric_comparison(fauna_session):
 
     # For '=' comparison
     user_records = (
-        fauna_session.execute(select(User).where(User.age == filter_age))
+        fauna_session.execute(sql.select(User).where(User.age == filter_age))
         .scalars()
         .all()
     )
@@ -239,7 +209,9 @@ def test_select_with_numpy_numeric_comparison(fauna_session):
 
     # For '>' comparison
     user_records = (
-        fauna_session.execute(select(User).where(User.age > filter_age)).scalars().all()
+        fauna_session.execute(sql.select(User).where(User.age > filter_age))
+        .scalars()
+        .all()
     )
 
     assert len(user_records) == 1
@@ -248,7 +220,7 @@ def test_select_with_numpy_numeric_comparison(fauna_session):
 
     # For '<=' comparison
     user_records = (
-        fauna_session.execute(select(User).where(User.age <= filter_age))
+        fauna_session.execute(sql.select(User).where(User.age <= filter_age))
         .scalars()
         .all()
     )
@@ -266,9 +238,9 @@ def test_delete_record_conditionally(fauna_session):
     fauna_session.commit()
 
     user_to_delete = users[0]
-    fauna_session.execute(delete(User).where(User.id == user_to_delete.id))
+    fauna_session.execute(sql.delete(User).where(User.id == user_to_delete.id))
     fauna_session.commit()
-    user_names = fauna_session.execute(select(User.name)).scalars().all()
+    user_names = fauna_session.execute(sql.select(User.name)).scalars().all()
 
     # It deletes the record
     assert "Linda" in user_names
@@ -286,53 +258,40 @@ def test_unique_constraint(fauna_session):
         fauna_session.commit()
 
 
-def test_relationships(fauna_session, parent_child):
-    Base = parent_child["base"]
-    Parent = parent_child["parent"]
-    Child = parent_child["child"]
-
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
-    fauna_session.add(Parent(name="Bob"))
+def test_relationships(fauna_session):
+    fauna_session.add(User(name="Bob"))
     fauna_session.commit()
 
-    parent = (
-        fauna_session.execute(select(Parent).where(Parent.name == "Bob"))
+    user = (
+        fauna_session.execute(sql.select(User).where(User.name == "Bob"))
         .scalars()
         .first()
     )
 
-    fauna_session.add(Child(name="Tina", parent_id=parent.id))
-    fauna_session.add(Child(name="Gene", parent_id=parent.id))
-    fauna_session.add(Child(name="Louise", parent_id=parent.id))
+    fauna_session.add(Child(name="Tina", user_id=user.id))
+    fauna_session.add(Child(name="Gene", user_id=user.id))
+    fauna_session.add(Child(name="Louise", user_id=user.id))
     fauna_session.commit()
 
-    assert len(parent.children) == 3
+    assert len(user.children) == 3
 
 
-def test_insert_with_null_foreign_key(fauna_session, parent_child):
-    Base = parent_child["base"]
-    Child = parent_child["child"]
-
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
-    child_name = "Gene"
-    fauna_session.add(Child(name=child_name))
+def test_insert_with_null_foreign_key(fauna_session):
+    name = Fake.first_name()
+    fauna_session.add(Child(name=name))
     fauna_session.commit()
 
     child = (
-        fauna_session.execute(select(Child).where(Child.name == child_name))
+        fauna_session.execute(sql.select(Child).where(Child.name == name))
         .scalars()
         .first()
     )
     assert child.id is not None
-    assert child.parent_id is None
+    assert child.user_id is None
 
 
 def test_count(fauna_session):
-    assert fauna_session.execute(select(func.count(User.id))).scalar() == 0
+    assert fauna_session.execute(sql.select(sql.func.count(User.id))).scalar() == 0
 
     names = ["Bob", "Linda", "Louise"]
 
@@ -341,11 +300,13 @@ def test_count(fauna_session):
 
     fauna_session.commit()
 
-    assert fauna_session.execute(select(func.count(User.id))).scalar() == len(names)
+    assert fauna_session.execute(sql.select(sql.func.count(User.id))).scalar() == len(
+        names
+    )
 
 
 def test_count_with_empty_results(fauna_session):
-    assert fauna_session.execute(select(func.count(User.id))).scalar() == 0
+    assert fauna_session.execute(sql.select(sql.func.count(User.id))).scalar() == 0
 
     names = ["Bob", "Linda", "Louise"]
 
@@ -355,7 +316,7 @@ def test_count_with_empty_results(fauna_session):
     fauna_session.commit()
 
     user_count = fauna_session.execute(
-        select(func.count(User.id)).where(User.name == "No one")
+        sql.select(sql.func.count(User.id)).where(User.name == "No one")
     ).scalar()
 
     assert user_count == 0
@@ -367,7 +328,9 @@ def test_select_distinct(fauna_session):
     for name, age in user_attributes:
         fauna_session.add(User(name=name, age=age))
 
-    distinct_ages = fauna_session.execute(select(User.age).distinct()).scalars().all()
+    distinct_ages = (
+        fauna_session.execute(sql.select(User.age).distinct()).scalars().all()
+    )
 
     assert len(distinct_ages) == 2
     assert set(distinct_ages) == set([40, 12])
@@ -381,7 +344,9 @@ def test_select_is_null(fauna_session):
 
     queried_users = (
         fauna_session.execute(
-            select(User).where(User.job == None)  # pylint: disable=singleton-comparison
+            sql.select(User).where(
+                User.job == None  # pylint: disable=singleton-comparison
+            )
         )
         .scalars()
         .all()
@@ -391,38 +356,31 @@ def test_select_is_null(fauna_session):
     assert queried_users[0].job is None
 
 
-def test_join(fauna_session, parent_child):
-    Base = parent_child["base"]
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
-    Parent = parent_child["parent"]
-    Child = parent_child["child"]
-
-    parents = [
+def test_join(fauna_session):
+    users = [
         ("Bob", ["Louise", "Tina", "Gene"]),
         ("Jimmy", ["Jimmy Jr.", "Ollie", "Andy"]),
     ]
 
-    for parent_name, child_names in parents:
-        parent = Parent(name=parent_name)
-        fauna_session.add(parent)
+    for user_name, names in users:
+        user = User(name=user_name)
+        fauna_session.add(user)
 
-        for child_name in child_names:
-            child = Child(name=child_name, parent=parent)
+        for name in names:
+            child = Child(name=name, user=user)
             fauna_session.add(child)
 
-    parents = (
+    users = (
         fauna_session.execute(
-            select(Parent, Child).join(Parent.children).where(Child.name == "Louise")
+            sql.select(User, Child).join(User.children).where(Child.name == "Louise")
         )
         .scalars()
         .all()
     )
 
-    assert len(parents) == 1
-    queried_parent = parents[0]
-    assert queried_parent.name == "Bob"
+    assert len(users) == 1
+    queried_user = users[0]
+    assert queried_user.name == "Bob"
 
 
 def test_order_by(fauna_session):
@@ -432,50 +390,45 @@ def test_order_by(fauna_session):
 
     fauna_session.commit()
 
-    users = fauna_session.execute(select(User).order_by(User.name)).scalars().all()
+    users = fauna_session.execute(sql.select(User).order_by(User.name)).scalars().all()
     user_names = [user.name for user in users]
     assert user_names == sorted(names)
 
     users = (
-        fauna_session.execute(select(User).order_by(User.name.desc())).scalars().all()
+        fauna_session.execute(sql.select(User).order_by(User.name.desc()))
+        .scalars()
+        .all()
     )
     user_names = [user.name for user in users]
     assert user_names == list(reversed(sorted(names)))
 
 
-def test_join_order_by(fauna_session, parent_child):
-    Base = parent_child["base"]
-    fauna_engine = fauna_session.get_bind()
-    Base.metadata.create_all(fauna_engine)
-
-    Parent = parent_child["parent"]
-    Child = parent_child["child"]
-
-    parents = [
+def test_join_order_by(fauna_session):
+    users = [
         ("Bob", ["Louise", "Tina", "Gene"]),
         ("Jimmy", ["Jimmy Jr.", "Ollie", "Andy"]),
     ]
 
-    for parent_name, child_names in parents:
-        parent = Parent(name=parent_name)
-        fauna_session.add(parent)
+    for user_name, names in users:
+        user = User(name=user_name)
+        fauna_session.add(user)
 
-        for child_name in child_names:
-            child = Child(name=child_name, parent=parent)
+        for name in names:
+            child = Child(name=name, user=user)
             fauna_session.add(child)
 
     children = (
         fauna_session.execute(
-            select(Child, Parent).join(Child.parent).order_by(Child.name)
+            sql.select(Child, User).join(Child.user).order_by(Child.name)
         )
         .scalars()
         .all()
     )
 
-    child_names = functools.reduce(
-        lambda agg_names, curr_names: agg_names + curr_names[1], parents, []
+    names = functools.reduce(
+        lambda agg_names, curr_names: agg_names + curr_names[1], users, []
     )
-    assert [child.name for child in children] == sorted(child_names)
+    assert [child.name for child in children] == sorted(names)
 
 
 def test_limit(fauna_session):
@@ -487,7 +440,7 @@ def test_limit(fauna_session):
 
     fauna_session.commit()
 
-    users = fauna_session.execute(select(User).limit(limit)).scalars().all()
+    users = fauna_session.execute(sql.select(User).limit(limit)).scalars().all()
     queried_user_names = [user.name for user in users]
 
     assert queried_user_names == user_names[:limit]

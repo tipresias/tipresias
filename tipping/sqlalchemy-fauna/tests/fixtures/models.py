@@ -1,13 +1,13 @@
 """Example model classes for use in integration tests."""
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float
-import pytest
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Float, orm
+from sqlalchemy.sql.schema import ForeignKey
 
 from .session import Base
 
 
 class User(Base):
-    """Fake User class for use in integration tests."""
+    """Fake User model for use in integration tests."""
 
     __tablename__ = "users"
 
@@ -19,9 +19,15 @@ class User(Base):
     is_premium_member = Column(Boolean, default=False)
     account_credit = Column(Float, default=0.0)
     job = Column(String)
+    children = orm.relationship("Child", back_populates="user")
 
 
-@pytest.fixture
-def user_columns():
-    """Pytest fixture for the column names on the User table."""
-    return User.__table__.columns.keys()
+class Child(Base):
+    """Fake Child model for use in integration tests."""
+
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = orm.relationship("User", back_populates="children")
+    name = Column(String, unique=True)

@@ -278,7 +278,7 @@ class FootyTipsSubmitter:
             settings.SRC_DIR, "tipping", "footy_tips_submitter.lua"
         )
 
-        with open(lua_filepath) as lua_file:
+        with open(lua_filepath, "r", encoding="utf-8") as lua_file:
             lua_source = "".join(lua_file.readlines())
 
         return self.browser.post(

@@ -280,7 +280,7 @@ def _collect_db_data(acc, record):
 
 
 def _read_data_dump(filepath):
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         data_dump = json.load(f)
 
     db_data = reduce(_collect_db_data, data_dump, {})

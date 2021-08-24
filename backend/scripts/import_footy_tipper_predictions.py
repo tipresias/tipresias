@@ -19,7 +19,9 @@ from server.models import Prediction  # pylint: disable=wrong-import-position
 def main():
     """One-off script to import Footy Tipper predictions to the DB."""
     with open(
-        os.path.join(PROJECT_PATH, "data/footy_tipper_predictions_2018.json")
+        os.path.join(PROJECT_PATH, "data/footy_tipper_predictions_2018.json"),
+        "r",
+        encoding="utf-8",
     ) as file:
         predictions = json.load(file)
 

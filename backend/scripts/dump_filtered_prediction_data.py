@@ -74,10 +74,13 @@ def main():
         _reshape_record_fields("prediction", record) for record in prediction_records
     ]
     dump_filepath = os.path.join(
-        settings.BASE_DIR, APP_NAME, "fixtures", f"{date.today()}-prediction-dump.json",
+        settings.BASE_DIR,
+        APP_NAME,
+        "fixtures",
+        f"{date.today()}-prediction-dump.json",
     )
 
-    with open(dump_filepath, "w") as file:
+    with open(dump_filepath, "w", encoding="utf-8") as file:
         json.dump(prediction_dump, file, indent=2)
 
 

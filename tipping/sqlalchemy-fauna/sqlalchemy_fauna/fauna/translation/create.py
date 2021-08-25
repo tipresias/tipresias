@@ -25,8 +25,8 @@ FieldMetadata = TypedDict(
         "references": typing.Dict[str, str],
     },
 )
-FieldsMetadata = typing.Dict[str, FieldMetadata]
-CollectionMetadata = TypedDict("CollectionMetadata", {"fields": FieldsMetadata})
+AllFieldMetadata = typing.Dict[str, FieldMetadata]
+CollectionMetadata = TypedDict("CollectionMetadata", {"fields": FieldMetadata})
 
 
 EMPTY_DICT: typing.Dict[str, typing.Any] = {}
@@ -89,9 +89,9 @@ def _contains_column_name(
 
 
 def _define_primary_key(
-    metadata: FieldsMetadata,
+    metadata: AllFieldMetadata,
     column_definition_group: token_groups.TokenList,
-) -> typing.Optional[FieldsMetadata]:
+) -> typing.Optional[AllFieldMetadata]:
     idx, constraint_keyword = column_definition_group.token_next_by(
         m=(token_types.Keyword, "CONSTRAINT")
     )
@@ -114,7 +114,7 @@ def _define_primary_key(
     if not _contains_column_name(column_definition_group, idx):
         return None
 
-    new_metadata: FieldsMetadata = deepcopy(metadata)
+    new_metadata: AllFieldMetadata = deepcopy(metadata)
 
     while True:
         idx, primary_key_column = column_definition_group.token_next_by(
@@ -139,9 +139,9 @@ def _define_primary_key(
 
 
 def _define_unique_constraint(
-    metadata: FieldsMetadata,
+    metadata: AllFieldMetadata,
     column_definition_group: token_groups.TokenList,
-) -> typing.Optional[FieldsMetadata]:
+) -> typing.Optional[AllFieldMetadata]:
     idx, unique_keyword = column_definition_group.token_next_by(
         m=(token_types.Keyword, "UNIQUE")
     )
@@ -178,8 +178,8 @@ def _define_unique_constraint(
 
 
 def _define_foreign_key_constraint(
-    metadata: FieldsMetadata, column_definition_group: token_groups.TokenList
-) -> typing.Optional[FieldsMetadata]:
+    metadata: AllFieldMetadata, column_definition_group: token_groups.TokenList
+) -> typing.Optional[AllFieldMetadata]:
     idx, foreign_keyword = column_definition_group.token_next_by(
         m=(token_types.Keyword, "FOREIGN")
     )
@@ -225,9 +225,9 @@ def _define_foreign_key_constraint(
 
 
 def _define_column(
-    metadata: FieldsMetadata,
+    metadata: AllFieldMetadata,
     column_definition_group: token_groups.TokenList,
-) -> FieldsMetadata:
+) -> AllFieldMetadata:
     idx, column = column_definition_group.token_next_by(t=token_types.Name)
     column_name = column.value
 
@@ -291,9 +291,9 @@ def _define_column(
 
 
 def _build_fields_metadata(
-    metadata: FieldsMetadata,
+    metadata: AllFieldMetadata,
     column_definition_group: token_groups.TokenList,
-) -> FieldsMetadata:
+) -> AllFieldMetadata:
     return (
         _define_primary_key(metadata, column_definition_group)
         or _define_foreign_key_constraint(metadata, column_definition_group)
@@ -335,7 +335,7 @@ def _split_column_identifiers_by_comma(
 
 def _extract_column_definitions(
     column_identifiers: token_groups.IdentifierList,
-) -> FieldsMetadata:
+) -> AllFieldMetadata:
     # sqlparse doesn't group column info correctly within the Parenthesis,
     # sometimes grouping keywords/identifiers across a comma and breaking them up
     # within the same sub-clause, so we have to do some manual processing
@@ -345,22 +345,9 @@ def _extract_column_definitions(
     return reduce(_build_fields_metadata, column_definition_groups, {})
 
 
-def _translate_create_table(
-    statement: token_groups.Statement, table_token_idx: int
-) -> typing.List[QueryExpression]:
-    idx, table_identifier = statement.token_next_by(
-        i=token_groups.Identifier, idx=table_token_idx
-    )
-    table_name = table_identifier.value
-
-    idx, column_identifiers = statement.token_next_by(
-        i=token_groups.Parenthesis, idx=idx
-    )
-
-    field_metadata = _extract_column_definitions(column_identifiers)
-    create_collection = q.create_collection(
-        {"name": table_name, "data": {"metadata": {"fields": field_metadata}}}
-    )
+def _create_table_indices(
+    table_name: str, field_metadata: AllFieldMetadata
+) -> QueryExpression:
     index_by_collection = partial(common.index_name, table_name)
 
     index_queries = [
@@ -460,16 +447,39 @@ def _translate_create_table(
                     )
                 )
 
-    index_queries.append(
-        q.let(
-            {"collection": q.collection(table_name)},
-            {"data": [{"id": q.var("collection")}]},
-        )
+    return index_queries
+
+
+def _translate_create_table(
+    statement: token_groups.Statement, table_token_idx: int
+) -> typing.List[QueryExpression]:
+    idx, table_identifier = statement.token_next_by(
+        i=token_groups.Identifier, idx=table_token_idx
     )
+    table_name = table_identifier.value
+
+    idx, column_identifiers = statement.token_next_by(
+        i=token_groups.Parenthesis, idx=idx
+    )
+
+    field_metadata = _extract_column_definitions(column_identifiers)
+    index_queries = _create_table_indices(table_name, field_metadata)
+
     # Fauna creates resources asynchronously, so we cannot create and use a collection
     # in the same transaction, so we have to run the expressions that create
     # the collection and the indices that depend on it separately
-    return [create_collection, q.do(*index_queries)]
+    return [
+        q.create_collection(
+            {"name": table_name, "data": {"metadata": {"fields": field_metadata}}}
+        ),
+        q.do(
+            *index_queries,
+            q.let(
+                {"collection": q.collection(table_name)},
+                {"data": [{"id": q.var("collection")}]},
+            )
+        ),
+    ]
 
 
 def _translate_create_index(

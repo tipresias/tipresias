@@ -2,9 +2,13 @@
 
 import factory
 from factory.alchemy import SQLAlchemyModelFactory
+from faker import Faker
 
 from .session import Session
 from .models import User, Child
+
+
+Fake = Faker()
 
 
 class UserFactory(SQLAlchemyModelFactory):
@@ -14,10 +18,9 @@ class UserFactory(SQLAlchemyModelFactory):
         """Factory attributes for recreating the associated model's attributes."""
 
         model = User
-        sqlalchemy_get_or_create = ("name",)
         sqlalchemy_session = Session
 
-    name = factory.Faker("first_name")
+    name = factory.Sequence(lambda n: f"{Fake.first_name()} {n}")
     date_joined = factory.Faker("date_this_decade")
     age = factory.Faker("pyint")
     finger_count = factory.Faker("pyint")
@@ -33,8 +36,7 @@ class ChildFactory(SQLAlchemyModelFactory):
         """Factory attributes for recreating the associated model's attributes."""
 
         model = Child
-        sqlalchemy_get_or_create = ("name",)
         sqlalchemy_session = Session
 
-    name = factory.Faker("first_name")
+    name = factory.Sequence(lambda n: f"{Fake.first_name()} {n}")
     user = factory.SubFactory(UserFactory)

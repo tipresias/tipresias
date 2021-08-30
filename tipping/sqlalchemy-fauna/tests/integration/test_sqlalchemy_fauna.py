@@ -1,6 +1,6 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-from datetime import datetime, timezone
+from datetime import timezone
 import functools
 
 from sqlalchemy import inspect, exc as sqlalchemy_exceptions, sql
@@ -192,8 +192,9 @@ def test_select_by_numeric_field_comparison(filter_age, fauna_session):
 def test_delete_record_conditionally(fauna_session):
     names = ["Bob", "Linda"]
     users = [factories.UserFactory(name=name) for name in names]
-    user_to_delete, user_to_keep = users
+    fauna_session.commit()
 
+    user_to_delete, user_to_keep = users
     fauna_session.execute(
         sql.delete(models.User).where(models.User.id == user_to_delete.id)
     )

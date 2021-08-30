@@ -6,13 +6,13 @@ import typing
 from time import sleep
 import logging
 from datetime import datetime
+import re
 
 from faunadb import client, errors as fauna_errors
 from faunadb.objects import FaunaTime, Ref, _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
 from . import translation
-
 
 SQLResult = typing.List[typing.Dict[str, typing.Any]]
 
@@ -57,16 +57,29 @@ class FaunaClient:
             for fql_query in fql_queries:
                 result = self._execute_with_retries(fql_query)
         except fauna_errors.BadRequest as err:
+            error_message = str(err)
             # The response from Fauna contains more information about where to find
             # the bug in the FQL, but it gets lost in the default error message.
             fauna_response = err.request_result.response_content
 
-            if "document is not unique" in str(err):
+            if "document is not unique" in error_message:
                 # TODO: this isn't a terribly helpful error message, but executing the queries
                 # to make a better one is a little tricky, so leaving it as-is for now.
                 raise exceptions.ProgrammingError(
                     "Tried to create a document with duplicate value for a unique field."
                 ) from err
+
+            # Sometimes SQLAlchemy wants to check schema info before we've had a chance
+            # to create anything. Rather than raise an error, we return an empty response.
+            if (
+                re.match(
+                    r"Ref refers to undefined index 'information_schema_"
+                    r"(?:tables|columns|indexes)_",
+                    error_message,
+                )
+                is not None
+            ):
+                return []
 
             raise exceptions.InternalError(fauna_response) from err
 

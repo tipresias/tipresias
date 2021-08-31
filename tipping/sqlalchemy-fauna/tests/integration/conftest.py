@@ -36,8 +36,6 @@ def _setup_teardown_test_db():
     )
 
     with patch.dict(os.environ, {**os.environ, "FAUNA_SECRET": secret_key}):
-        os.system("alembic upgrade head")
-
         try:
             yield secret_key
         finally:

@@ -113,16 +113,17 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
         self, connection: FaunaConnection, schema=None, **_kwargs
     ) -> List[str]:
         """Get the names of all Fauna collections"""
-        query = "SELECT * FROM INFORMATION_SCHEMA.TABLES;"
+        column = "name_"
+        query = f"SELECT {column} FROM information_schema_tables_"
         result = connection.execute(query)
 
         if result.rowcount == 0:
             return []
 
         result_keys = list(result.keys())
-        id_col_idx = result_keys.index("id")
+        name_col_idx = result_keys.index(column)
 
-        return [row[id_col_idx] for row in result.fetchall()]
+        return [row[name_col_idx] for row in result.fetchall()]
 
     def get_view_names(self, connection, schema=None, **_kwargs) -> List[str]:
         """Get the names of views."""
@@ -142,41 +143,79 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
         self, connection: FaunaConnection, table_name: str, schema=None, **_kwargs
     ) -> List[ColumnName]:
         """Get all columns in the given table."""
+        info_table_name = "information_schema_columns_"
         query = f"""
-            SELECT * FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_NAME = '{table_name}';
+            SELECT {info_table_name}.name_,
+                {info_table_name}.type_,
+                {info_table_name}.nullable_,
+                {info_table_name}.default_
+            FROM {info_table_name}
+            WHERE {info_table_name}.table_name_ = '{table_name}'
         """
         result = connection.execute(query)
-
         result_keys = list(result.keys())
 
-        name_col_idx = result_keys.index("name")
-        type_col_idx = result_keys.index("type")
-        not_null_col_idx = result_keys.index("not_null")
+        name_col_idx = result_keys.index("name_")
+        type_col_idx = result_keys.index("type_")
+        nullable_col_idx = result_keys.index("nullable_")
         # Fauna strips out data with 'null' values, so we can't guarantee
         # that 'default', which has a default value of 'None', will be
         # in the result keys.
         default_col_idx = (
-            result_keys.index("default") if "default" in result_keys else None
+            result_keys.index("default_") if "default_" in result_keys else None
         )
 
         return [
             {
                 "name": row[name_col_idx],
                 "type": type_map[row[type_col_idx]],
-                "nullable": not row[not_null_col_idx],
+                "nullable": row[nullable_col_idx],
                 "default": None if default_col_idx is None else row[default_col_idx],
             }
             for row in result.fetchall()
         ]
 
-    def get_pk_constraint(self, _connection, table_name, schema=None, **_kwargs):
+    def get_pk_constraint(self, connection, table_name, schema=None, **_kwargs):
         """Get the pk constraint."""
-        return {"constrained_columns": [], "name": None}
+        # Since Fauna assigns the primary key, it will always be 'id'
+        return {
+            "constrained_columns": ["id"],
+            "name": "PRIMARY KEY",
+        }
 
     def get_foreign_keys(self, connection, table_name, schema=None, **_kwargs):
         """Get all foreign keys."""
-        return []
+        info_table_name = "information_schema_indexes_"
+        query = f"""
+            SELECT {info_table_name}.name_,
+                {info_table_name}.constrained_columns_,
+                {info_table_name}.referred_table_,
+                {info_table_name}.referred_columns_
+            FROM {info_table_name}
+            WHERE {info_table_name}.table_name_ = '{table_name}'
+            AND {info_table_name}.referred_table_ IS NOT NULL
+        """
+
+        result = connection.execute(query)
+        result_keys = list(result.keys())
+
+        if len(result_keys) == 0:
+            return []
+
+        name_col_idx = result_keys.index("name_")
+        constrained_columns_col_idx = result_keys.index("constrained_columns_")
+        referred_columns_col_idx = result_keys.index("referred_columns_")
+
+        return [
+            {
+                "name": row[name_col_idx],
+                "constrained_columns": row[constrained_columns_col_idx].split(","),
+                "referred_schema": None,
+                "referred_table": table_name,
+                "referred_columns": row[referred_columns_col_idx].split(","),
+            }
+            for row in result.fetchall()
+        ]
 
     def get_check_constraints(self, connection, table_name, schema=None, **_kwargs):
         """Get check constraints."""
@@ -188,21 +227,24 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
 
     def get_indexes(self, connection, table_name, schema=None, **_kwargs):
         """Get all indexes from the given table."""
+        info_table_name = "information_schema_indexes_"
         query = f"""
-            SELECT * FROM INFORMATION_SCHEMA.CONSTRAINT_TABLE_USAGE
-            WHERE TABLE_NAME = '{table_name}';
+            SELECT {info_table_name}.name_,
+                {info_table_name}.column_names_,
+                {info_table_name}.unique_
+            FROM {info_table_name}
+            WHERE {info_table_name}.table_name_ = '{table_name}'
         """
 
         result = connection.execute(query)
-
         result_keys = list(result.keys())
 
         if len(result_keys) == 0:
             return []
 
-        name_col_idx = result_keys.index("name")
-        column_names_col_idx = result_keys.index("column_names")
-        unique_col_idx = result_keys.index("unique")
+        name_col_idx = result_keys.index("name_")
+        column_names_col_idx = result_keys.index("column_names_")
+        unique_col_idx = result_keys.index("unique_")
 
         return [
             {
@@ -215,7 +257,26 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
 
     def get_unique_constraints(self, connection, table_name, schema=None, **_kwargs):
         """Get the unique constraints for the given table."""
-        return []
+        info_table_name = "information_schema_indexes_"
+        query = f"SELECT {info_table_name}.name_, {info_table_name}.column_names_ FROM {info_table_name} WHERE {info_table_name}.table_name_ = '{table_name}' AND {info_table_name}.unique_ = TRUE"
+
+        result = connection.execute(query)
+        result_keys = list(result.keys())
+
+        if len(result_keys) == 0:
+            return []
+
+        name_col_idx = result_keys.index("name_")
+        column_names_col_idx = result_keys.index("column_names_")
+
+        return [
+            {
+                "name": "UNIQUE",
+                "column_names": row[column_names_col_idx].split(","),
+                "duplicates_index": row[name_col_idx],
+            }
+            for row in result.fetchall()
+        ]
 
     def get_view_definition(self, connection, view_name, schema=None, **kwargs):
         """Get the view definition."""

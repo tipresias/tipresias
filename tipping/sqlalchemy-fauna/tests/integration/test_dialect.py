@@ -57,3 +57,26 @@ def test_get_indexes(fauna_engine, user_columns):
             lambda acc, curr: set(curr["column_names"]) | acc, queried_indexes, set([])
         )
         assert index_columns == set(user_columns)
+
+
+def test_get_pk_constraint(fauna_engine):
+    fauna_dialect = dialect.FaunaDialect()
+
+    with fauna_engine.connect() as connection:
+        pk_constraint = fauna_dialect.get_pk_constraint(connection, "users")
+
+    assert pk_constraint == {"constrained_columns": ["id"], "name": "PRIMARY KEY"}
+
+
+def test_get_unique_constraints(fauna_engine):
+    fauna_dialect = dialect.FaunaDialect()
+
+    with fauna_engine.connect() as connection:
+        unique_constraints = fauna_dialect.get_unique_constraints(connection, "users")
+
+    for constraint in unique_constraints:
+        assert constraint == {
+            "name": "UNIQUE",
+            "column_names": ["name"],
+            "duplicates_index": "users_by_name_term",
+        }

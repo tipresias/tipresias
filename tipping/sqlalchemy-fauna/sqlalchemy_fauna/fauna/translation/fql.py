@@ -32,7 +32,9 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
     )
 
     get_collection_fields = lambda name: q.select(
-        [common.DATA, "metadata", "fields"], q.get(q.collection(name))
+        [common.DATA, "metadata", "fields"],
+        q.get(q.collection(name)),
+        default={},
     )
 
     index_name_for_field = functools.partial(index_name_for_collection, field_name)

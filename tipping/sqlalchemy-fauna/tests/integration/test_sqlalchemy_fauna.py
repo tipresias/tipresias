@@ -15,8 +15,7 @@ from tests.fixtures import models, factories
 Fake = Faker()
 
 
-def test_create_index(fauna_engine, user_columns):
-    expected_index_columns = [col for col in user_columns if col != "id"]
+def test_create_index(fauna_engine):
     inspector = inspect(fauna_engine)
     indexes = inspector.get_indexes("users")
     name_index = None
@@ -27,7 +26,7 @@ def test_create_index(fauna_engine, user_columns):
             break
 
     assert name_index is not None
-    assert set(name_index["column_names"]) == set(expected_index_columns)
+    assert set(name_index["column_names"]) == set(["name", "id"])
 
 
 def test_drop_table(fauna_engine):
@@ -39,6 +38,7 @@ def test_drop_table(fauna_engine):
         assert not fauna_engine.has_table(connection, "users")
     # It drops all associated indexes
     assert not any(inspector.get_indexes("users"))
+    assert not any(inspector.get_columns("users"))
 
 
 def test_insert_record(fauna_session):

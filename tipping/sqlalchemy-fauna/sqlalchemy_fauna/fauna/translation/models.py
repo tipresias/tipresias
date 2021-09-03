@@ -231,7 +231,7 @@ class Filter:
     value: The raw value being compared for the filter.
     """
 
-    SUPPORTED_COMPARISON_OPERATORS = ["=", GREATER_THAN, ">=", "<", "<="]
+    SUPPORTED_COMPARISON_OPERATORS = ["=", GREATER_THAN, ">=", "<", "<=", "IS"]
 
     def __init__(
         self,
@@ -283,11 +283,19 @@ class Filter:
             if comparison is None:
                 break
 
-            if isinstance(comparison, token_groups.Identifier):
-                where_filter = cls._parse_is_null(where_group, idx=idx)
-            else:
-                where_filter = cls._parse_comparison(comparison)
+            next_comparison_idx, _ = where_group.token_next_by(
+                m=(token_types.Keyword, "AND"), idx=idx
+            )
 
+            # I'm not sure what the exact cause is, but sometimes sqlparse has trouble
+            # with grouping tokens into Comparison groups (seems to mostly be an issue
+            # after the AND keyword, but not always).
+            if isinstance(comparison, token_groups.Identifier):
+                comparison = token_groups.Comparison(
+                    where_group.tokens[idx:next_comparison_idx]
+                )
+
+            where_filter = cls._parse_comparison(comparison)
             where_filters.append(where_filter)
 
             idx, _ = where_group.token_next_by(m=(token_types.Keyword, "AND"), idx=idx)
@@ -295,22 +303,6 @@ class Filter:
                 break
 
         return where_filters
-
-    @classmethod
-    def _parse_is_null(cls, where_group: token_groups.Where, idx) -> Filter:
-        idx, identifier = where_group.token_next(idx - 1)
-
-        idx, is_kw = where_group.token_next(idx, skip_cm=True, skip_ws=True)
-        assert is_kw and is_kw.match(token_types.Keyword, "IS")
-
-        _, null_kw = where_group.token_next(idx, skip_ws=True, skip_cm=True)
-        assert null_kw and null_kw.match(token_types.Keyword, "NULL")
-
-        columns = Column.from_identifier_group(identifier)
-        assert len(columns) == 1
-        column = columns[0]
-
-        return cls(column=column, operator="=", value=None)
 
     @classmethod
     def _parse_comparison(cls, comparison_group: token_groups.Comparison) -> Filter:
@@ -322,7 +314,7 @@ class Filter:
         column = columns[0]
 
         _, comparison_operator = comparison_group.token_next_by(
-            t=token_types.Comparison
+            t=token_types.Comparison, m=(token_types.Keyword, "IS")
         )
 
         if comparison_operator.value not in cls.SUPPORTED_COMPARISON_OPERATORS:
@@ -332,7 +324,12 @@ class Filter:
             )
 
         value_idx, comparison_value_literal = comparison_group.token_next_by(
-            t=token_types.Literal
+            t=token_types.Literal,
+            m=[
+                (token_types.Keyword, "NULL"),
+                (token_types.Keyword, "TRUE"),
+                (token_types.Keyword, "FALSE"),
+            ],
         )
         comparison_value = extract_value(comparison_value_literal)
         operator_value = cls._extract_operator_value(
@@ -345,6 +342,9 @@ class Filter:
     def _extract_operator_value(
         cls, operator_value: str, id_idx: int, value_idx: int
     ) -> str:
+        if operator_value == "IS":
+            return "="
+
         # We're enforcing the convention of <column name> <operator> <value> for WHERE
         # clauses here to simplify later query translation.
         # Unfortunately, FQL generation depends on this convention without that dependency

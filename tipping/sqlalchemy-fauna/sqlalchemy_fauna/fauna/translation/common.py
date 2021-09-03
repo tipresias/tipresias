@@ -86,7 +86,7 @@ def extract_value(
     """
     value = token.value
 
-    if value.upper() == "NONE":
+    if value.upper() == "NONE" or value.upper() == "NULL":
         return None
 
     if value.upper() == "TRUE":

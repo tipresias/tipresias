@@ -31,10 +31,24 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
         ),
     )
 
-    get_collection_fields = lambda name: q.select(
-        [common.DATA, "metadata", "fields"],
-        q.get(q.collection(name)),
-        default={},
+    get_info_indexes_with_references = lambda collection_name, field_name: q.map_(
+        q.lambda_("info_index_ref", q.get(q.var("info_index_ref"))),
+        q.paginate(
+            q.match(
+                q.index(
+                    common.index_name(
+                        "information_schema_indexes_",
+                        column_name="name_",
+                        index_type=common.IndexType.TERM,
+                    )
+                ),
+                common.index_name(
+                    collection_name,
+                    column_name=field_name,
+                    index_type=common.IndexType.REF,
+                ),
+            ),
+        ),
     )
 
     index_name_for_field = functools.partial(index_name_for_collection, field_name)
@@ -55,10 +69,8 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
             {
                 "ref_index": q.index(index_name_for_field(common.IndexType.REF)),
                 "term_index": q.index(index_name_for_field(common.IndexType.TERM)),
-                "references": q.select(
-                    [field_name, "references"],
-                    get_collection_fields(query_filter.table_name),
-                    default={},
+                "info_indexes": get_info_indexes_with_references(
+                    query_filter.table_name, field_name
                 ),
                 "comparison_value": comparison_value,
             },
@@ -67,7 +79,14 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
                 q.match(
                     q.var("ref_index"),
                     common.get_foreign_key_ref(
-                        q.var("comparison_value"), q.var("references")
+                        q.var("comparison_value"),
+                        # Assumes that there is only one reference per foreign key
+                        # and that it refers to the associated collection's ID field
+                        # (e.g. {'associated_table': 'id'}).
+                        # This is enforced via NotSupported errors when creating collections.
+                        q.select(
+                            [0, common.DATA, "referred_table_"], q.var("info_indexes")
+                        ),
                     ),
                 ),
                 q.if_(

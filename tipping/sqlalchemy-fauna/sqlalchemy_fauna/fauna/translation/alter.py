@@ -8,31 +8,80 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from .models import Column, Table
+from . import models, common
+
+
+def _fetch_column_info_refs(table_name: str, column_name: str):
+    return q.intersection(
+        q.match(
+            q.index(
+                common.index_name(
+                    "information_schema_columns_",
+                    column_name="table_name_",
+                    index_type=common.IndexType.TERM,
+                )
+            ),
+            table_name,
+        ),
+        q.join(
+            q.range(
+                q.match(
+                    q.index(
+                        common.index_name(
+                            "information_schema_columns_",
+                            column_name="name_",
+                            index_type=common.IndexType.VALUE,
+                        )
+                    ),
+                ),
+                [column_name],
+                [column_name],
+            ),
+            q.lambda_(
+                ["value", "ref"],
+                q.match(
+                    q.index(
+                        common.index_name(
+                            "information_schema_columns_",
+                            index_type=common.IndexType.REF,
+                        )
+                    ),
+                    q.var("ref"),
+                ),
+            ),
+        ),
+    )
 
 
 def _translate_drop_default(table_name: str, column_name: str) -> QueryExpression:
-    drop_default = q.update(
-        q.collection(table_name),
-        {"data": {"metadata": {"fields": {column_name: {"default": None}}}}},
+    drop_default = q.map_(
+        q.lambda_(
+            "column_info_ref",
+            q.update(q.var("column_info_ref"), {"data": {"default_": None}}),
+        ),
+        q.paginate(_fetch_column_info_refs(table_name, column_name)),
     )
-    select_ref = lambda res: q.select("ref", res)
 
     return q.let(
-        {"collection": select_ref(drop_default)},
-        {"data": [{"id": q.var("collection")}]},
+        {
+            "altered_docs": drop_default,
+            # Should only be one document that matches the unique combination
+            # of collection and field name, so we just select the first.
+            "altered_ref": q.select([0, "ref"], q.var("altered_docs")),
+        },
+        {"data": [{"id": q.var("altered_ref")}]},
     )
 
 
 def _translate_alter_column(
     statement: token_groups.Statement,
-    table: Table,
+    table: models.Table,
     starting_idx: int,
 ) -> QueryExpression:
     idx, column_identifier = statement.token_next_by(
         i=token_groups.Identifier, idx=starting_idx
     )
-    column = Column.from_identifier(column_identifier)
+    column = models.Column.from_identifier(column_identifier)
     table.add_column(column)
 
     _, drop = statement.token_next_by(m=(token_types.DDL, "DROP"), idx=idx)
@@ -61,7 +110,7 @@ def translate_alter(statement: token_groups.Statement) -> typing.List[QueryExpre
     assert table_keyword is not None
 
     idx, table_identifier = statement.token_next_by(i=token_groups.Identifier, idx=idx)
-    table = Table.from_identifier(table_identifier)
+    table = models.Table.from_identifier(table_identifier)
 
     _, second_alter = statement.token_next_by(m=(token_types.DDL, "ALTER"), idx=idx)
     _, column_keyword = statement.token_next_by(

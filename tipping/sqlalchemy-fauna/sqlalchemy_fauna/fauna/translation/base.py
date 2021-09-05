@@ -43,7 +43,8 @@ def translate_sql_to_fql(
     sql_statement = sql_statements[0]
 
     if sql_statement.token_first().match(token_types.DML, "SELECT"):
-        return translate_select(sql_statement)
+
+        return [translate_select(sql_statement)]
 
     if sql_statement.token_first().match(token_types.DDL, "CREATE"):
         return translate_create(sql_statement)

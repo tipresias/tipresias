@@ -792,9 +792,7 @@ def _translate_create_table(
     # the collection and the indices that depend on it separately
     return [
         *_make_sure_information_schema_exists(),
-        q.create_collection(
-            {"name": table_name, "data": {"metadata": {"fields": field_metadata}}}
-        ),
+        q.create_collection({"name": table_name}),
         q.do(
             *index_queries,
             information_metadata_query,

@@ -25,7 +25,7 @@ class User(Base):
 class Child(Base):
     """Fake Child model for use in integration tests."""
 
-    __tablename__ = "orders"
+    __tablename__ = "children"
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))

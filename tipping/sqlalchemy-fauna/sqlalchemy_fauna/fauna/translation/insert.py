@@ -71,7 +71,9 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
         q.if_(
             q.equals(q.var("references"), {}),
             q.var("field_value"),
-            common.get_foreign_key_ref(q.var("field_value"), q.var("references")),
+            common.get_foreign_key_ref(
+                q.var("field_value"), q.select([0, 0], q.to_array(q.var("references")))
+            ),
         ),
     )
 

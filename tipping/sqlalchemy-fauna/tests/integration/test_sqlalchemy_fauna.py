@@ -68,6 +68,20 @@ def test_insert_record(fauna_session):
     assert isinstance(int(created_user.id), int)
 
 
+def test_alter_column_drop_default(fauna_session):
+    table_name = "users"
+    column_name = "finger_count"
+    fauna_session.execute(
+        sql.text(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} DROP DEFAULT")
+    )
+
+    result = fauna_session.execute(
+        sql.text(f"SELECT default_ from information_schema_columns_")
+    )
+    column_default = result.scalars().first()
+    assert column_default is None
+
+
 def test_select_empty_table(fauna_session):
     user_records = (
         fauna_session.execute(sql.select(models.User.id, models.User.name))

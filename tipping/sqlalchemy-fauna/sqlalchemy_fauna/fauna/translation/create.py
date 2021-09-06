@@ -25,8 +25,21 @@ FieldMetadata = TypedDict(
         "references": typing.Dict[str, str],
     },
 )
-FieldsMetadata = typing.Dict[str, FieldMetadata]
-CollectionMetadata = TypedDict("CollectionMetadata", {"fields": FieldsMetadata})
+AllFieldMetadata = typing.Dict[str, FieldMetadata]
+IndexMetadata = TypedDict(
+    "IndexMetadata",
+    {
+        "column_names_": str,
+        "unique_": bool,
+        "constrained_columns_": typing.Optional[str],
+        "referred_table_": typing.Optional[str],
+        "referred_columns_": typing.Optional[str],
+    },
+)
+AllIndexMetadata = typing.Dict[str, IndexMetadata]
+CollectionMetadata = TypedDict(
+    "CollectionMetadata", {"fields": AllFieldMetadata, "indexes": AllIndexMetadata}
+)
 
 
 EMPTY_DICT: typing.Dict[str, typing.Any] = {}
@@ -75,6 +88,106 @@ DATA_TYPE_MAP = {
     "TIME": "String",
 }
 
+INFORMATION_SCHEMA_COLLECTIONS: typing.Dict[str, AllFieldMetadata] = {
+    "information_schema_tables_": {
+        "name_": {
+            "unique": True,
+            "not_null": True,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        }
+    },
+    "information_schema_columns_": {
+        "name_": {
+            "unique": False,
+            "not_null": True,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        },
+        "table_name_": {
+            "unique": False,
+            "not_null": True,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        },
+        "type_": {
+            "unique": False,
+            "not_null": True,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        },
+        "nullable_": {
+            "unique": False,
+            "not_null": True,
+            "default": True,
+            "type": "Boolean",
+            "references": EMPTY_DICT,
+        },
+        "default_": {
+            "unique": False,
+            "not_null": False,
+            "default": None,
+            "type": "",
+            "references": EMPTY_DICT,
+        },
+    },
+    "information_schema_indexes_": {
+        "name_": {
+            "unique": True,
+            "not_null": True,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        },
+        "table_name_": {
+            "unique": False,
+            "not_null": True,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        },
+        "column_names_": {
+            "unique": False,
+            "not_null": True,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        },
+        "unique_": {
+            "unique": False,
+            "not_null": True,
+            "default": False,
+            "type": "Boolean",
+            "references": EMPTY_DICT,
+        },
+        "constrained_columns_": {
+            "unique": False,
+            "not_null": False,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        },
+        "referred_table_": {
+            "unique": False,
+            "not_null": False,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        },
+        "referred_columns_": {
+            "unique": False,
+            "not_null": False,
+            "default": None,
+            "type": "String",
+            "references": EMPTY_DICT,
+        },
+    },
+}
+
 
 def _contains_column_name(
     token_group: typing.Union[
@@ -89,9 +202,9 @@ def _contains_column_name(
 
 
 def _define_primary_key(
-    metadata: FieldsMetadata,
+    metadata: AllFieldMetadata,
     column_definition_group: token_groups.TokenList,
-) -> typing.Optional[FieldsMetadata]:
+) -> typing.Optional[AllFieldMetadata]:
     idx, constraint_keyword = column_definition_group.token_next_by(
         m=(token_types.Keyword, "CONSTRAINT")
     )
@@ -114,7 +227,7 @@ def _define_primary_key(
     if not _contains_column_name(column_definition_group, idx):
         return None
 
-    new_metadata: FieldsMetadata = deepcopy(metadata)
+    new_metadata: AllFieldMetadata = deepcopy(metadata)
 
     while True:
         idx, primary_key_column = column_definition_group.token_next_by(
@@ -139,9 +252,9 @@ def _define_primary_key(
 
 
 def _define_unique_constraint(
-    metadata: FieldsMetadata,
+    metadata: AllFieldMetadata,
     column_definition_group: token_groups.TokenList,
-) -> typing.Optional[FieldsMetadata]:
+) -> typing.Optional[AllFieldMetadata]:
     idx, unique_keyword = column_definition_group.token_next_by(
         m=(token_types.Keyword, "UNIQUE")
     )
@@ -178,8 +291,8 @@ def _define_unique_constraint(
 
 
 def _define_foreign_key_constraint(
-    metadata: FieldsMetadata, column_definition_group: token_groups.TokenList
-) -> typing.Optional[FieldsMetadata]:
+    metadata: AllFieldMetadata, column_definition_group: token_groups.TokenList
+) -> typing.Optional[AllFieldMetadata]:
     idx, foreign_keyword = column_definition_group.token_next_by(
         m=(token_types.Keyword, "FOREIGN")
     )
@@ -225,9 +338,9 @@ def _define_foreign_key_constraint(
 
 
 def _define_column(
-    metadata: FieldsMetadata,
+    metadata: AllFieldMetadata,
     column_definition_group: token_groups.TokenList,
-) -> FieldsMetadata:
+) -> AllFieldMetadata:
     idx, column = column_definition_group.token_next_by(t=token_types.Name)
     column_name = column.value
 
@@ -291,9 +404,9 @@ def _define_column(
 
 
 def _build_fields_metadata(
-    metadata: FieldsMetadata,
+    metadata: AllFieldMetadata,
     column_definition_group: token_groups.TokenList,
-) -> FieldsMetadata:
+) -> AllFieldMetadata:
     return (
         _define_primary_key(metadata, column_definition_group)
         or _define_foreign_key_constraint(metadata, column_definition_group)
@@ -335,7 +448,7 @@ def _split_column_identifiers_by_comma(
 
 def _extract_column_definitions(
     column_identifiers: token_groups.IdentifierList,
-) -> FieldsMetadata:
+) -> AllFieldMetadata:
     # sqlparse doesn't group column info correctly within the Parenthesis,
     # sometimes grouping keywords/identifiers across a comma and breaking them up
     # within the same sub-clause, so we have to do some manual processing
@@ -345,22 +458,113 @@ def _extract_column_definitions(
     return reduce(_build_fields_metadata, column_definition_groups, {})
 
 
-def _translate_create_table(
-    statement: token_groups.Statement, table_token_idx: int
-) -> typing.List[QueryExpression]:
-    idx, table_identifier = statement.token_next_by(
-        i=token_groups.Identifier, idx=table_token_idx
-    )
-    table_name = table_identifier.value
+def _create_index_metadata(
+    table_name: str, field_metadata: AllFieldMetadata
+) -> AllIndexMetadata:
+    index_by_collection = partial(common.index_name, table_name)
 
-    idx, column_identifiers = statement.token_next_by(
-        i=token_groups.Parenthesis, idx=idx
-    )
+    indexes: AllIndexMetadata = {
+        index_by_collection(index_type=common.IndexType.REF): {
+            "column_names_": "id",
+            "unique_": False,
+            "constrained_columns_": None,
+            "referred_table_": None,
+            "referred_columns_": None,
+        },
+        index_by_collection(): {
+            "column_names_": "id",
+            "unique_": False,
+            "constrained_columns_": None,
+            "referred_table_": None,
+            "referred_columns_": None,
+        },
+    }
 
-    field_metadata = _extract_column_definitions(column_identifiers)
-    create_collection = q.create_collection(
-        {"name": table_name, "data": {"metadata": {"fields": field_metadata}}}
-    )
+    foreign_references = [
+        (field_name, field_data["references"])
+        for field_name, field_data in field_metadata.items()
+        if any(field_data["references"])
+    ]
+
+    for field_name, field_data in field_metadata.items():
+        # Fauna can query documents by ID by default, so we don't need an index for it
+        if field_name == "id":
+            continue
+
+        index_by_field = partial(index_by_collection, field_name)
+
+        indexes[index_by_field(common.IndexType.VALUE)] = {
+            "column_names_": f"{field_name},id",
+            "unique_": False,
+            "constrained_columns_": None,
+            "referred_table_": None,
+            "referred_columns_": None,
+        }
+        # Sorting index, so we can support ORDER BY clauses in SQL queries.
+        # This will allow us to order a set of refs by a value while still
+        # keeping that same set of refs.
+        indexes[index_by_field(common.IndexType.SORT)] = {
+            "column_names_": f"{field_name},id",
+            "unique_": False,
+            "constrained_columns_": None,
+            "referred_table_": None,
+            "referred_columns_": None,
+        }
+
+        # We need a separate index for unique fields, because the values-based indices
+        # contain the 'ref' field, which will never be duplicated
+        is_unique = field_data["unique"]
+        if is_unique:
+            indexes[index_by_field(common.IndexType.TERM)] = {
+                "column_names_": f"{field_name},id",
+                "unique_": is_unique,
+                "constrained_columns_": None,
+                "referred_table_": None,
+                "referred_columns_": None,
+            }
+
+        # We need a ref-based index for foreign keys to permit JOIN queries via matching
+        # document refs
+        is_foreign_key = any(field_data["references"])
+        if is_foreign_key:
+            reference_items = list(field_data["references"].items())
+            assert len(reference_items) == 1
+            referred_table, referred_column = reference_items[0]
+
+            indexes[index_by_field(common.IndexType.REF)] = {
+                "column_names_": f"{field_name},id",
+                "unique_": False,
+                "constrained_columns_": field_name,
+                "referred_table_": referred_table,
+                "referred_columns_": referred_column,
+            }
+
+            # We create a foreign ref index per foreign ref that exists in the collection,
+            # because this permits us to access any foreign ref we may need to continue
+            # a chain of joins.
+            for reference_name, references in foreign_references:
+                reference_items = list(references.items())
+                assert len(reference_items) == 1
+                referred_table, referred_column = reference_items[0]
+
+                indexes[
+                    index_by_field(
+                        common.IndexType.REF, foreign_key_name=reference_name
+                    )
+                ] = {
+                    "column_names_": ",".join(set([field_name, reference_name, "id"])),
+                    "unique_": False,
+                    "constrained_columns_": field_name,
+                    "referred_table_": referred_table,
+                    "referred_columns_": referred_column,
+                }
+
+    return indexes
+
+
+def _create_table_indices(
+    table_name: str, field_metadata: AllFieldMetadata
+) -> QueryExpression:
     index_by_collection = partial(common.index_name, table_name)
 
     index_queries = [
@@ -460,16 +664,146 @@ def _translate_create_table(
                     )
                 )
 
-    index_queries.append(
-        q.let(
-            {"collection": q.collection(table_name)},
-            {"data": [{"id": q.var("collection")}]},
-        )
+    return index_queries
+
+
+def _update_information_metadata(
+    table_name: str, collection_metadata: CollectionMetadata
+) -> QueryExpression:
+    column_metadata = [
+        {
+            "name_": "id",
+            "table_name_": table_name,
+            "type_": "Integer",
+            "nullable": False,
+            "default_": None,
+        }
+    ]
+
+    column_metadata.extend(
+        [
+            {
+                "name_": name,
+                "table_name_": table_name,
+                "type_": metadata["type"],
+                # A bit awkward, but SQL uses the 'NOT NULL' keyword, while SQLAlchemy
+                # uses 'nullable' when returning metadata
+                "nullable_": not metadata["not_null"],
+                "default_": metadata["default"],
+            }
+            for name, metadata in collection_metadata["fields"].items()
+        ]
     )
+
+    index_metadata = [
+        {
+            "name_": index_name,
+            "table_name_": table_name,
+            **typing.cast(typing.Dict[str, typing.Any], metadata),
+        }
+        for index_name, metadata in collection_metadata["indexes"].items()
+    ]
+
+    return q.if_(
+        # We don't want to update information schema collections with information schema info,
+        # because that would some weird inception-type stuff.
+        q.contains_str_regex(
+            table_name, r"^information_schema_(?:tables|columns|indexes)_$"
+        ),
+        None,
+        q.do(
+            q.create(
+                q.collection("information_schema_tables_"),
+                {"data": {"name_": table_name}},
+            ),
+            q.foreach(
+                q.lambda_(
+                    "column_metadata",
+                    q.create(
+                        q.collection("information_schema_columns_"),
+                        {"data": q.var("column_metadata")},
+                    ),
+                ),
+                column_metadata,
+            ),
+            q.foreach(
+                q.lambda_(
+                    "index_metadata",
+                    q.create(
+                        q.collection("information_schema_indexes_"),
+                        {"data": q.var("index_metadata")},
+                    ),
+                ),
+                index_metadata,
+            ),
+        ),
+    )
+
+
+def _make_sure_information_schema_exists() -> typing.List[QueryExpression]:
+    index_queries = [
+        _create_table_indices(collection_name, field_metadata)
+        for collection_name, field_metadata in INFORMATION_SCHEMA_COLLECTIONS.items()
+    ]
+    return [
+        q.if_(
+            q.exists(q.collection("information_schema_tables_")),
+            None,
+            q.do(
+                *[
+                    q.create_collection({"name": collection_name})
+                    for collection_name in INFORMATION_SCHEMA_COLLECTIONS
+                ]
+            ),
+        ),
+        q.if_(
+            q.exists(q.index(common.index_name("information_schema_tables_"))),
+            None,
+            q.do(*index_queries),
+        ),
+    ]
+
+
+def _translate_create_table(
+    statement: token_groups.Statement, table_token_idx: int
+) -> typing.List[QueryExpression]:
+    idx, table_identifier = statement.token_next_by(
+        i=token_groups.Identifier, idx=table_token_idx
+    )
+    table_name = table_identifier.value
+
+    idx, column_identifiers = statement.token_next_by(
+        i=token_groups.Parenthesis, idx=idx
+    )
+
+    field_metadata = _extract_column_definitions(column_identifiers)
+    index_queries = _create_table_indices(table_name, field_metadata)
+
+    collection_metadata: CollectionMetadata = {
+        "fields": field_metadata,
+        "indexes": _create_index_metadata(table_name, field_metadata),
+    }
+    information_metadata_query = _update_information_metadata(
+        table_name, collection_metadata
+    )
+
     # Fauna creates resources asynchronously, so we cannot create and use a collection
     # in the same transaction, so we have to run the expressions that create
     # the collection and the indices that depend on it separately
-    return [create_collection, q.do(*index_queries)]
+    return [
+        *_make_sure_information_schema_exists(),
+        q.create_collection(
+            {"name": table_name, "data": {"metadata": {"fields": field_metadata}}}
+        ),
+        q.do(
+            *index_queries,
+            information_metadata_query,
+            q.let(
+                {"collection": q.collection(table_name)},
+                {"data": [{"id": q.var("collection")}]},
+            ),
+        ),
+    ]
 
 
 def _translate_create_index(

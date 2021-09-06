@@ -168,7 +168,7 @@ def _build_merge(*table_names: str):
 def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=None):
     if order_by is None:
         return q.select(
-            "data",
+            common.DATA,
             q.map_(
                 q.lambda_(f"{table_name}_ref", inner_query),
                 q.paginate(q.var(f"joined_{table_name}"), size=MAX_PAGE_SIZE),
@@ -218,7 +218,7 @@ def _build_page_query(
             {
                 f"{table.name}_doc": q.get(q.var(f"{table.name}_ref")),
                 f"{table.name}_data": q.merge(
-                    q.select("data", q.var(f"{table.name}_doc")),
+                    q.select(common.DATA, q.var(f"{table.name}_doc")),
                     {"ref": q.select("ref", q.var(f"{table.name}_doc"))},
                 ),
             },
@@ -251,7 +251,7 @@ def _build_page_query(
             {
                 f"{left_table.name}_doc": q.get(q.var(f"{left_table.name}_ref")),
                 f"{left_table.name}_data": q.merge(
-                    q.select("data", q.var(f"{left_table.name}_doc")),
+                    q.select(common.DATA, q.var(f"{left_table.name}_doc")),
                     {"ref": q.select("ref", q.var(f"{left_table.name}_doc"))},
                 ),
                 f"{table.name}_ref": q.select(
@@ -271,7 +271,7 @@ def _build_page_query(
         {
             f"{left_table.name}_doc": q.get(q.var(f"{left_table.name}_ref")),
             f"{left_table.name}_data": q.merge(
-                q.select("data", q.var(f"{left_table.name}_doc")),
+                q.select(common.DATA, q.var(f"{left_table.name}_doc")),
                 {"ref": q.select("ref", q.var(f"{left_table.name}_doc"))},
             ),
             table.name: define_document_set(table),

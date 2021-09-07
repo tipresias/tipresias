@@ -76,7 +76,7 @@ def test_alter_column_drop_default(fauna_session):
     )
 
     result = fauna_session.execute(
-        sql.text(f"SELECT default_ from information_schema_columns_")
+        sql.text("SELECT default_ from information_schema_columns_")
     )
     column_default = result.scalars().first()
     assert column_default is None

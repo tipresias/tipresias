@@ -809,17 +809,36 @@ class SQLQuery:
                 "INSERT INTO statements without column names are not currently supported."
             )
 
-        _, column_group = function_group.token_next_by(i=token_groups.Parenthesis)
-        _, column_identifiers = column_group.token_next_by(
+        _, column_name_group = function_group.token_next_by(i=token_groups.Parenthesis)
+        _, column_name_identifiers = column_name_group.token_next_by(
             i=(token_groups.IdentifierList, token_groups.Identifier)
         )
-        columns = []
 
-        for column in Column.from_identifier_group(column_identifiers):
-            columns.append(column)
+        _, value_group = statement.token_next_by(i=token_groups.Values)
+        _, column_value_group = value_group.token_next_by(i=token_groups.Parenthesis)
+        _, column_value_identifiers = column_value_group.token_next_by(
+            i=(token_groups.IdentifierList, token_groups.Identifier),
+        )
+        # If there's just one value in the VALUES clause, it doesn't get wrapped in an Identifer
+        column_value_identifiers = column_value_identifiers or column_value_group
+
+        idx = -1
+
+        for column in Column.from_identifier_group(column_name_identifiers):
+            idx, column_value = column_value_identifiers.token_next_by(
+                t=[token_types.Literal, token_types.Keyword], idx=idx
+            )
+
+            if column_value is None:
+                raise exceptions.NotSupportedError(
+                    "Assigning values dynamically is not supported. "
+                    "You must use literal values only in INSERT statements."
+                )
+
+            column.value = extract_value(column_value)
             table.add_column(column)
 
-        return cls(tables=[table], columns=columns)
+        return cls(tables=[table], columns=table.columns)
 
     @classmethod
     def _build_delete_query(cls, table: Table) -> SQLQuery:

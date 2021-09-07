@@ -269,6 +269,35 @@ def test_sql_query_from_statement_limit():
     assert sql_query.limit == 1
 
 
+def test_sql_query_from_statement_insert():
+    table_name = "users"
+    column_names = ["name", "age", "finger_count", "job", "has_mustache"]
+    column_values = ["'Bob'", "30", "10", "NONE", "TRUE"]
+    expected_column_values = ["Bob", 30, 10, None, True]
+    sql_string = (
+        f"INSERT INTO {table_name} ({', '.join(column_names)}) "
+        f"VALUES ({', '.join(column_values)})"
+    )
+    statement = sqlparse.parse(sql_string)[0]
+
+    sql_query = models.SQLQuery.from_statement(statement)
+
+    query_table_names = [table.name for table in sql_query.tables]
+    assert query_table_names == [table_name]
+
+    query_column_names, query_column_values = zip(
+        *[(col.name, col.value) for col in sql_query.columns]
+    )
+    table_column_names = functools.reduce(
+        lambda col_names, table: col_names + [col.name for col in table.columns],
+        sql_query.tables,
+        [],
+    )
+    assert set(query_column_names) == set(table_column_names)
+    assert list(query_column_names) == column_names
+    assert list(query_column_values) == expected_column_values
+
+
 @pytest.mark.parametrize(
     ["sql_string", "expected_table_names", "expected_column_names"],
     [
@@ -290,11 +319,6 @@ def test_sql_query_from_statement_limit():
             "JOIN accounts ON users.id = accounts.user_id",
             ["users", "accounts"],
             ["number", "name"],
-        ),
-        (
-            "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)",
-            ["users"],
-            ["name", "age", "finger_count"],
         ),
         ("DELETE FROM users", ["users"], []),
         ("UPDATE users SET users.name = 'Bob'", ["users"], ["name"]),

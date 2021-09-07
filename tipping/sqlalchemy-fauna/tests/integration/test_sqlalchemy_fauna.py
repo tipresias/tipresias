@@ -15,8 +15,7 @@ from tests.fixtures import models, factories
 Fake = Faker()
 
 
-def test_create_index(fauna_engine, user_columns):
-    expected_index_columns = [col for col in user_columns if col != "id"]
+def test_create_index(fauna_engine):
     inspector = inspect(fauna_engine)
     indexes = inspector.get_indexes("users")
     name_index = None
@@ -27,7 +26,7 @@ def test_create_index(fauna_engine, user_columns):
             break
 
     assert name_index is not None
-    assert set(name_index["column_names"]) == set(expected_index_columns)
+    assert set(name_index["column_names"]) == set(["name", "id"])
 
 
 def test_drop_table(fauna_engine):
@@ -39,6 +38,7 @@ def test_drop_table(fauna_engine):
         assert not fauna_engine.has_table(connection, "users")
     # It drops all associated indexes
     assert not any(inspector.get_indexes("users"))
+    assert not any(inspector.get_columns("users"))
 
 
 def test_insert_record(fauna_session):
@@ -66,6 +66,20 @@ def test_insert_record(fauna_session):
     assert created_user.job is None
     assert isinstance(created_user.id, str)
     assert isinstance(int(created_user.id), int)
+
+
+def test_alter_column_drop_default(fauna_session):
+    table_name = "users"
+    column_name = "finger_count"
+    fauna_session.execute(
+        sql.text(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} DROP DEFAULT")
+    )
+
+    result = fauna_session.execute(
+        sql.text("SELECT default_ from information_schema_columns_")
+    )
+    column_default = result.scalars().first()
+    assert column_default is None
 
 
 def test_select_empty_table(fauna_session):

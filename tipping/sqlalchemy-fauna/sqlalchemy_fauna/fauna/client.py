@@ -6,7 +6,6 @@ import typing
 from time import sleep
 import logging
 from datetime import datetime
-import re
 
 from faunadb import client, errors as fauna_errors
 from faunadb.objects import FaunaTime, Ref, _Expr as QueryExpression
@@ -72,12 +71,13 @@ class FaunaClient:
             # Sometimes SQLAlchemy wants to check schema info before we've had a chance
             # to create anything. Rather than raise an error, we return an empty response.
             if (
-                re.match(
-                    r"Ref refers to undefined index 'information_schema_"
-                    r"(?:tables|columns|indexes)_",
-                    error_message,
+                all(
+                    [
+                        error["code"] == "invalid ref"
+                        for error in fauna_response["errors"]
+                    ]
                 )
-                is not None
+                and "FROM information_schema_tables_" in sql_query
             ):
                 return []
 

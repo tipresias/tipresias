@@ -33,6 +33,9 @@ REFERENCES = [
 ]
 REFERENCE_MAP = {ref: ref + "_id" for ref in REFERENCES}
 NON_FAUNA_FIELDS = ["created_at", "updated_at"]
+# Based on a bit of trial and error, with higher limits occasionally trigger timeout errors
+BATCH_LIMIT = 250
+TIMEOUT_LIMIT = 60000
 
 FAUNA_SECRET = os.getenv("FAUNA_SECRET", "")
 DATABASE_HOST = os.getenv("DATABASE_HOST", "")
@@ -52,7 +55,7 @@ def _execute_with_retries(query, retries=0):
     # creating/deleting collections in quick succession, so might not matter
     # in production where that happens less frequently.
     try:
-        return client.query(query)
+        return client.query(query, timeout_millis=TIMEOUT_LIMIT)
     except fauna_errors.BadRequest as err:
         if "document data is not valid" not in str(err) or retries >= 5:
             raise err
@@ -77,21 +80,33 @@ def _assign_ref(ref_collection, ref_map, record_id):
 
 
 def _create_documents(let_params, records, build_document):
-    return _execute_with_retries(
-        q.let(
-            let_params,
-            q.map_(
-                q.lambda_(
-                    "document",
-                    q.create(
-                        q.var("collection"),
-                        {"data": build_document(q.var("document"))},
+    results = []
+    idx = 0
+
+    while True:
+        if idx > len(records):
+            break
+
+        end_idx = idx + BATCH_LIMIT
+        batch = _execute_with_retries(
+            q.let(
+                let_params,
+                q.map_(
+                    q.lambda_(
+                        "document",
+                        q.create(
+                            q.var("collection"),
+                            {"data": build_document(q.var("document"))},
+                        ),
                     ),
+                    records[idx:end_idx],
                 ),
-                records,
-            ),
+            )
         )
-    )
+        results.extend(batch)
+        idx = end_idx
+
+    return results
 
 
 def _load_predictions(data):

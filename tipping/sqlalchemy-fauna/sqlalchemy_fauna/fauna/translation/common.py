@@ -119,7 +119,7 @@ def extract_value(
 
 def get_foreign_key_ref(
     foreign_value: QueryExpression,
-    references: QueryExpression,
+    reference_collection_name: QueryExpression,
 ) -> QueryExpression:
     """Get the Ref to a document associated with a foreign key value.
 
@@ -135,22 +135,16 @@ def get_foreign_key_ref(
     """
     return q.let(
         {
-            # Assumes that there is only one reference per foreign key
-            # and that it refers to the associated collection's ID field
-            # (e.g. {'associated_table': 'id'}).
-            # This is enforced via NotSupported errors when creating collections.
-            "references": q.union(q.to_array(references)),
-            "reference_collection": q.select(0, q.var("references"), default=NULL),
             "is_blank_reference": q.or_(
                 q.is_null(foreign_value),
                 q.equals(foreign_value, NULL),
-                q.equals(q.var("reference_collection"), NULL),
+                q.equals(reference_collection_name, NULL),
             ),
         },
         q.if_(
             q.var("is_blank_reference"),
             None,
-            q.ref(q.collection(q.var("reference_collection")), foreign_value),
+            q.ref(q.collection(reference_collection_name), foreign_value),
         ),
     )
 

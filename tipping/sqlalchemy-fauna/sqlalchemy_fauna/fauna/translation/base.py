@@ -42,28 +42,29 @@ def translate_sql_to_fql(
 
     sql_statement = sql_statements[0]
 
-    if sql_statement.token_first().match(token_types.DML, "SELECT"):
-        return [translate_select(sql_statement)]
-
     if sql_statement.token_first().match(token_types.DDL, "CREATE"):
         return translate_create(sql_statement)
 
     if sql_statement.token_first().match(token_types.DDL, "DROP"):
         return translate_drop(sql_statement)
 
+    if sql_statement.token_first().match(token_types.DDL, "ALTER"):
+        return translate_alter(sql_statement)
+
+    if sql_statement.token_first().match(token_types.DML, "SELECT"):
+        return [translate_select(sql_statement)]
+
     if sql_statement.token_first().match(token_types.DML, "INSERT"):
         sql_query = models.SQLQuery.from_statement(sql_statement)
         return [translate_insert(sql_query)]
 
     if sql_statement.token_first().match(token_types.DML, "DELETE"):
-        return translate_delete(sql_statement)
+        sql_query = models.SQLQuery.from_statement(sql_statement)
+        return [translate_delete(sql_query)]
 
     if sql_statement.token_first().match(token_types.DML, "UPDATE"):
         sql_query = models.SQLQuery.from_statement(sql_statement)
         table = sql_query.tables[0]
         return [fql.update_documents(table)]
-
-    if sql_statement.token_first().match(token_types.DDL, "ALTER"):
-        return translate_alter(sql_statement)
 
     raise exceptions.NotSupportedError()

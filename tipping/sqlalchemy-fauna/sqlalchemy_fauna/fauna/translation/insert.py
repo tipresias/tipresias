@@ -13,7 +13,7 @@ def translate_insert(sql_query: models.SQLQuery) -> typing.List[QueryExpression]
 
     Params:
     -------
-    statement: An SQL statement returned by sqlparse.
+    sql_query: An SQLQuery instance.
 
     Returns:
     --------

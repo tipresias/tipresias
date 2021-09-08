@@ -270,6 +270,44 @@ def test_sql_query_from_statement_limit():
 
 
 @pytest.mark.parametrize(
+    ["column_names", "column_values", "expected_values"],
+    [
+        (
+            ["name", "age", "finger_count", "job", "has_mustache"],
+            ["'Bob'", "30", "10", "NONE", "TRUE"],
+            ["Bob", 30, 10, None, True],
+        ),
+        (["name"], ["'Bob'"], ["Bob"]),
+    ],
+)
+def test_sql_query_from_statement_insert(column_names, column_values, expected_values):
+    table_name = "users"
+
+    sql_string = (
+        f"INSERT INTO {table_name} ({', '.join(column_names)}) "
+        f"VALUES ({', '.join(column_values)})"
+    )
+    statement = sqlparse.parse(sql_string)[0]
+
+    sql_query = models.SQLQuery.from_statement(statement)
+
+    query_table_names = [table.name for table in sql_query.tables]
+    assert query_table_names == [table_name]
+
+    query_column_names, query_column_values = zip(
+        *[(col.name, col.value) for col in sql_query.columns]
+    )
+    table_column_names = functools.reduce(
+        lambda col_names, table: col_names + [col.name for col in table.columns],
+        sql_query.tables,
+        [],
+    )
+    assert set(query_column_names) == set(table_column_names)
+    assert list(query_column_names) == column_names
+    assert list(query_column_values) == expected_values
+
+
+@pytest.mark.parametrize(
     ["sql_string", "expected_table_names", "expected_column_names"],
     [
         (
@@ -290,11 +328,6 @@ def test_sql_query_from_statement_limit():
             "JOIN accounts ON users.id = accounts.user_id",
             ["users", "accounts"],
             ["number", "name"],
-        ),
-        (
-            "INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)",
-            ["users"],
-            ["name", "age", "finger_count"],
         ),
         ("DELETE FROM users", ["users"], []),
         ("UPDATE users SET users.name = 'Bob'", ["users"], ["name"]),
@@ -338,6 +371,14 @@ def test_sql_query_from_statement(
             "SELECT users.name, accounts.number FROM users "
             "JOIN accounts ON users.name = accounts.user_name",
             "Table joins are only permitted on IDs and foreign keys that refer to IDs",
+        ),
+        (
+            "INSERT INTO users VALUES ('Bob', 30, 10)",
+            "INSERT INTO statements without column names are not currently supported",
+        ),
+        (
+            "INSERT INTO users (name, age) VALUES ('Bob', 45), ('Linda', 45), ('Tina', 14)",
+            "INSERT for multiple rows is not supported yet",
         ),
     ],
 )

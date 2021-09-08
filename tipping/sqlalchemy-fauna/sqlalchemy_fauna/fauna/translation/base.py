@@ -43,7 +43,6 @@ def translate_sql_to_fql(
     sql_statement = sql_statements[0]
 
     if sql_statement.token_first().match(token_types.DML, "SELECT"):
-
         return [translate_select(sql_statement)]
 
     if sql_statement.token_first().match(token_types.DDL, "CREATE"):
@@ -53,7 +52,8 @@ def translate_sql_to_fql(
         return translate_drop(sql_statement)
 
     if sql_statement.token_first().match(token_types.DML, "INSERT"):
-        return translate_insert(sql_statement)
+        sql_query = models.SQLQuery.from_statement(sql_statement)
+        return [translate_insert(sql_query)]
 
     if sql_statement.token_first().match(token_types.DML, "DELETE"):
         return translate_delete(sql_statement)

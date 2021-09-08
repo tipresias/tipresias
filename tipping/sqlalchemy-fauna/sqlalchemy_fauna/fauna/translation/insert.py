@@ -1,47 +1,14 @@
 """Translate a INSERT SQL query into an equivalent FQL query."""
 
 import typing
-from datetime import datetime
 
-from sqlparse import sql as token_groups
-from sqlparse import tokens as token_types
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
-from sqlalchemy_fauna import exceptions
 from . import common, models
 
 
-def _build_document(
-    table: models.Table,
-    value_group: token_groups.Values,
-) -> typing.Dict[str, typing.Union[str, int, float, datetime, None, bool]]:
-    val_idx, parenthesis_group = value_group.token_next_by(i=token_groups.Parenthesis)
-    value_identifiers = parenthesis_group.flatten()
-
-    _, additional_parenthesis_group = value_group.token_next_by(
-        i=token_groups.Parenthesis, idx=val_idx
-    )
-    if additional_parenthesis_group is not None:
-        raise exceptions.NotSupportedError(
-            "INSERT for multiple rows is not supported yet."
-        )
-
-    values = [
-        value
-        for value in value_identifiers
-        if not value.ttype == token_types.Punctuation and not value.is_whitespace
-    ]
-    column_names = list(map(str, table.columns))
-
-    assert len(column_names) == len(
-        values
-    ), f"Lengths didn't match:\ncolumns: {column_names}\nvalues: {values}"
-
-    return {col: common.extract_value(val) for col, val in zip(column_names, values)}
-
-
-def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpression]:
+def translate_insert(sql_query: models.SQLQuery) -> typing.List[QueryExpression]:
     """Translate a INSERT SQL query into an equivalent FQL query.
 
     Params:
@@ -52,11 +19,9 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
     --------
     An FQL query expression.
     """
-    sql_query = models.SQLQuery.from_statement(statement)
     table = sql_query.tables[0]
 
-    _, value_group = statement.token_next_by(i=token_groups.Values)
-    document_to_insert = _build_document(table, value_group)
+    document_to_insert = {col.name: col.value for col in table.columns}
 
     # Fauna's Select doesn't play nice with null values, so we have to wrap it in an
     # if/else if the underlying value & default are null
@@ -291,22 +256,18 @@ def translate_insert(statement: token_groups.Statement) -> typing.List[QueryExpr
         )
     )
 
-    return [
-        q.let(
-            {
-                "column_info": fetch_column_info(table.name),
-                "created_doc": q.create(
-                    q.collection(table.name),
-                    {"data": build_document(q.var("column_info"))},
-                ),
-                "flattened_doc": flatten_response_fields(q.var("created_doc")),
-            },
-            {
-                "data": [
-                    build_document_response(
-                        q.var("flattened_doc"), q.var("column_info")
-                    )
-                ],
-            },
-        )
-    ]
+    return q.let(
+        {
+            "column_info": fetch_column_info(table.name),
+            "created_doc": q.create(
+                q.collection(table.name),
+                {"data": build_document(q.var("column_info"))},
+            ),
+            "flattened_doc": flatten_response_fields(q.var("created_doc")),
+        },
+        {
+            "data": [
+                build_document_response(q.var("flattened_doc"), q.var("column_info"))
+            ],
+        },
+    )

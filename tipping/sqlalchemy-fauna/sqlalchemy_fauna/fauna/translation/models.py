@@ -815,7 +815,18 @@ class SQLQuery:
         )
 
         _, value_group = statement.token_next_by(i=token_groups.Values)
-        _, column_value_group = value_group.token_next_by(i=token_groups.Parenthesis)
+        val_idx, column_value_group = value_group.token_next_by(
+            i=token_groups.Parenthesis
+        )
+
+        _, additional_parenthesis_group = value_group.token_next_by(
+            i=token_groups.Parenthesis, idx=val_idx
+        )
+        if additional_parenthesis_group is not None:
+            raise exceptions.NotSupportedError(
+                "INSERT for multiple rows is not supported yet."
+            )
+
         _, column_value_identifiers = column_value_group.token_next_by(
             i=(token_groups.IdentifierList, token_groups.Identifier),
         )

@@ -269,11 +269,20 @@ def test_sql_query_from_statement_limit():
     assert sql_query.limit == 1
 
 
-def test_sql_query_from_statement_insert():
+@pytest.mark.parametrize(
+    ["column_names", "column_values", "expected_values"],
+    [
+        (
+            ["name", "age", "finger_count", "job", "has_mustache"],
+            ["'Bob'", "30", "10", "NONE", "TRUE"],
+            ["Bob", 30, 10, None, True],
+        ),
+        (["name"], ["'Bob'"], ["Bob"]),
+    ],
+)
+def test_sql_query_from_statement_insert(column_names, column_values, expected_values):
     table_name = "users"
-    column_names = ["name", "age", "finger_count", "job", "has_mustache"]
-    column_values = ["'Bob'", "30", "10", "NONE", "TRUE"]
-    expected_column_values = ["Bob", 30, 10, None, True]
+
     sql_string = (
         f"INSERT INTO {table_name} ({', '.join(column_names)}) "
         f"VALUES ({', '.join(column_values)})"
@@ -295,7 +304,7 @@ def test_sql_query_from_statement_insert():
     )
     assert set(query_column_names) == set(table_column_names)
     assert list(query_column_names) == column_names
-    assert list(query_column_values) == expected_column_values
+    assert list(query_column_values) == expected_values
 
 
 @pytest.mark.parametrize(
@@ -362,6 +371,14 @@ def test_sql_query_from_statement(
             "SELECT users.name, accounts.number FROM users "
             "JOIN accounts ON users.name = accounts.user_name",
             "Table joins are only permitted on IDs and foreign keys that refer to IDs",
+        ),
+        (
+            "INSERT INTO users VALUES ('Bob', 30, 10)",
+            "INSERT INTO statements without column names are not currently supported",
+        ),
+        (
+            "INSERT INTO users (name, age) VALUES ('Bob', 45), ('Linda', 45), ('Tina', 14)",
+            "INSERT for multiple rows is not supported yet",
         ),
     ],
 )

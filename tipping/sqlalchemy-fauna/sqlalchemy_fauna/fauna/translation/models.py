@@ -6,6 +6,7 @@ import itertools
 import typing
 from datetime import datetime
 import enum
+import re
 
 from sqlparse import sql as token_groups, tokens as token_types
 from mypy_extensions import TypedDict
@@ -42,6 +43,8 @@ REVERSE_JOIN = {
     JoinDirection.LEFT: JoinDirection.RIGHT,
     JoinDirection.RIGHT: JoinDirection.LEFT,
 }
+
+NOT_SUPPORTED_FUNCTION_REGEX = re.compile(r"^(?:MIN|MAX|AVG|SUM)\(.+\)$", re.IGNORECASE)
 
 
 class Column:
@@ -156,6 +159,11 @@ class Column:
                 i=token_groups.Identifier, idx=idx
             )
             alias = alias_identifier.value
+
+        if re.match(NOT_SUPPORTED_FUNCTION_REGEX, name):
+            raise exceptions.NotSupportedError(
+                "MIN, MAX, AVG, and SUM functions are not yet supported."
+            )
 
         column_params: ColumnParams = {
             "table_name": table_name,

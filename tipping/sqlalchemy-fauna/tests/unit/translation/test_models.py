@@ -34,6 +34,19 @@ def test_column_from_identifier(column_sql, expected_table_name, expected_alias)
     assert column.alias == expected_alias
 
 
+@pytest.mark.parametrize(
+    ["column_sql_string", "error_message"],
+    [("SUM(users.id) AS sum_1", "SUM"), ("AVG(users.id) AS avg_1", "AVG")],
+)
+def test_unsupported_column_from_identifier(column_sql_string, error_message):
+    sql_string = f"SELECT {column_sql_string} FROM users"
+    statement = sqlparse.parse(sql_string)[0]
+    _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
+
+    with pytest.raises(exceptions.NotSupportedError, match=error_message):
+        models.Column.from_identifier(column_identifier)
+
+
 def test_column_from_comparison_group():
     sql_string = "UPDATE users SET users.name = 'Bob'"
     statement = sqlparse.parse(sql_string)[0]

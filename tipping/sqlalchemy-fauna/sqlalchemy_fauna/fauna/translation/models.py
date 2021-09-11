@@ -15,11 +15,6 @@ from sqlalchemy_fauna import exceptions
 from .common import extract_value
 
 
-ColumnParams = TypedDict(
-    "ColumnParams", {"table_name": typing.Optional[str], "name": str, "alias": str}
-)
-
-
 class JoinDirection(enum.Enum):
     """Enum for table join directions."""
 
@@ -34,6 +29,23 @@ class OrderDirection(enum.Enum):
     DESC = "DESC"
 
 
+class Function(enum.Enum):
+    """Enum for identifying SQL functions."""
+
+    COUNT = "COUNT"
+
+
+ColumnParams = TypedDict(
+    "ColumnParams",
+    {
+        "table_name": typing.Optional[str],
+        "name": str,
+        "alias": str,
+        "function_name": typing.Optional[Function],
+    },
+)
+
+
 # Probably not a complete list, but covers the basics
 FUNCTION_NAMES = {"min", "max", "count", "avg", "sum"}
 GREATER_THAN = ">"
@@ -45,6 +57,7 @@ REVERSE_JOIN = {
 }
 
 NOT_SUPPORTED_FUNCTION_REGEX = re.compile(r"^(?:MIN|MAX|AVG|SUM)\(.+\)$", re.IGNORECASE)
+COUNT_REGEX = re.compile(r"^COUNT\(.+\)$", re.IGNORECASE)
 
 
 class Column:
@@ -60,10 +73,12 @@ class Column:
         alias: str,
         table_name: typing.Optional[str] = None,
         value: typing.Optional[typing.Union[str, int, float, datetime]] = None,
+        function_name: typing.Optional[Function] = None,
     ):
         self.name = name
         self.alias = alias
         self.value = value
+        self.function_name = function_name
         self._table_name = table_name
         self._table: typing.Optional[Table] = None
 
@@ -160,7 +175,10 @@ class Column:
             )
             alias = alias_identifier.value
 
-        if re.match(NOT_SUPPORTED_FUNCTION_REGEX, name):
+        function_name: typing.Optional[Function] = None
+        if re.match(COUNT_REGEX, name):
+            function_name = Function.COUNT
+        elif re.match(NOT_SUPPORTED_FUNCTION_REGEX, name):
             raise exceptions.NotSupportedError(
                 "MIN, MAX, AVG, and SUM functions are not yet supported."
             )
@@ -169,6 +187,7 @@ class Column:
             "table_name": table_name,
             "name": name,
             "alias": alias,
+            "function_name": function_name,
         }
 
         return Column(**column_params)

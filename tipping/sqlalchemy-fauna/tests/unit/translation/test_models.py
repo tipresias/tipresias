@@ -35,6 +35,27 @@ def test_column_from_identifier(column_sql, expected_table_name, expected_alias)
 
 
 @pytest.mark.parametrize(
+    ["column_sql", "expected_name", "expected_function"],
+    [
+        (
+            f"count(users.{column_name})",
+            f"count(users.{column_name})",
+            models.Function.COUNT,
+        ),
+    ],
+)
+def test_column_from_function_identifier(column_sql, expected_name, expected_function):
+    sql_string = f"SELECT {column_sql} FROM users"
+    statement = sqlparse.parse(sql_string)[0]
+    _, column_function = statement.token_next_by(i=(token_groups.Function))
+
+    column = models.Column.from_identifier(token_groups.Identifier([column_function]))
+
+    assert column.name == expected_name
+    assert column.function_name == expected_function
+
+
+@pytest.mark.parametrize(
     ["column_sql_string", "error_message"],
     [("SUM(users.id) AS sum_1", "SUM"), ("AVG(users.id) AS avg_1", "AVG")],
 )

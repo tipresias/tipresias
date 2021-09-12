@@ -3,7 +3,6 @@
 import functools
 import typing
 
-from sqlparse import sql as token_groups
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
@@ -11,14 +10,54 @@ from sqlalchemy_fauna import exceptions
 from . import common, models, fql
 
 
-CalculationFunction = typing.Callable[[QueryExpression], QueryExpression]
-FunctionMap = typing.Dict[str, CalculationFunction]
-TableFunctionMap = typing.Dict[str, FunctionMap]
-
-
-def _translate_select(sql_query: models.SQLQuery, distinct=False):
+def _define_single_collection_pages(sql_query: models.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
+    order_by = sql_query.order_by
     from_table = tables[0]
+
+    document_set = fql.define_document_set(from_table)
+
+    if order_by is None:
+        return q.paginate(document_set, size=fql.MAX_PAGE_SIZE)
+
+    ordered_result = q.join(
+        document_set,
+        q.index(
+            common.index_name(
+                from_table.name,
+                column_name=order_by.columns[0].name,
+                index_type=common.IndexType.SORT,
+            )
+        ),
+    )
+    if order_by.direction == models.OrderDirection.DESC:
+        ordered_result = q.reverse(ordered_result)
+
+    return q.map_(
+        q.lambda_(["_", "ref"], q.var("ref")),
+        q.paginate(ordered_result, size=fql.MAX_PAGE_SIZE),
+    )
+
+
+def _define_multi_collection_pages(sql_query: models.SQLQuery) -> QueryExpression:
+    tables = sql_query.tables
+    order_by = sql_query.order_by
+    from_table = tables[0]
+
+    if order_by is not None and order_by.columns[0].table_name != from_table.name:
+        raise exceptions.NotSupportedError(
+            "Fauna uses indexes for both joining and ordering of results, "
+            "and we currently can only sort the principal table "
+            "(i.e. the one after 'FROM') in the query. You can sort on a column "
+            "from the principal table, query one table at a time, or remove "
+            "the ordering constraint."
+        )
+
+    return fql.join_collections(from_table, order_by)
+
+
+def _define_document_pages(sql_query: models.SQLQuery) -> QueryExpression:
+    tables = sql_query.tables
     order_by = sql_query.order_by
 
     if order_by is not None and len(order_by.columns) > 1:
@@ -27,45 +66,23 @@ def _translate_select(sql_query: models.SQLQuery, distinct=False):
         )
 
     if len(tables) > 1:
-        if order_by is not None and order_by.columns[0].table_name != from_table.name:
-            raise exceptions.NotSupportedError(
-                "Fauna uses indexes for both joining and ordering of results, "
-                "and we currently can only sort the principal table "
-                "(i.e. the one after 'FROM') in the query. You can sort on a column "
-                "from the principal table, query one table at a time, or remove "
-                "the ordering constraint."
-            )
-        maybe_documents_to_select = fql.join_collections(from_table, order_by)
+        ordered_document_set = _define_multi_collection_pages(sql_query)
     else:
-        document_set = fql.define_document_set(from_table)
-        if order_by is None:
-            maybe_documents_to_select = q.paginate(document_set, size=fql.MAX_PAGE_SIZE)
-        else:
-            ordered_result = q.join(
-                document_set,
-                q.index(
-                    common.index_name(
-                        from_table.name,
-                        column_name=order_by.columns[0].name,
-                        index_type=common.IndexType.SORT,
-                    )
-                ),
-            )
-            if order_by.direction == models.OrderDirection.DESC:
-                ordered_result = q.reverse(ordered_result)
-
-            maybe_documents_to_select = q.map_(
-                q.lambda_(["_", "ref"], q.var("ref")),
-                q.paginate(ordered_result, size=fql.MAX_PAGE_SIZE),
-            )
+        ordered_document_set = _define_single_collection_pages(sql_query)
 
     # Don't want to apply limit to queries with functions, because we want the calculation
     # for the entire document set, and functions only return the first row anyway
-    if sql_query.limit is not None and not sql_query.has_functions:
-        maybe_documents_to_select = q.take(sql_query.limit, maybe_documents_to_select)
+    if sql_query.limit is None or sql_query.has_functions:
+        return ordered_document_set
 
-    initial_field_alias_map: typing.Dict[str, typing.Dict[str, str]] = {}
-    field_alias_map: typing.Dict[str, typing.Dict[str, str]] = functools.reduce(
+    return q.take(sql_query.limit, ordered_document_set)
+
+
+def _define_field_alias_map(
+    columns: typing.List[models.Column],
+) -> common.TableFieldMap:
+    initial_field_alias_map: common.TableFieldMap = {}
+    field_alias_map: common.TableFieldMap = functools.reduce(
         lambda alias_map, column: {
             **alias_map,
             str(column.table_name): {
@@ -73,9 +90,21 @@ def _translate_select(sql_query: models.SQLQuery, distinct=False):
                 **column.alias_map,
             },
         },
-        sql_query.columns,
+        columns,
         initial_field_alias_map,
     )
+
+    return field_alias_map
+
+
+def _translate_select(
+    sql_query: models.SQLQuery,
+    document_pages: QueryExpression,
+    field_alias_map,
+    distinct=False,
+):
+    tables = sql_query.tables
+    from_table = tables[0]
 
     get_field_value = lambda function_value, raw_value: q.if_(
         q.equals(function_value, common.NULL),
@@ -185,7 +214,7 @@ def _translate_select(sql_query: models.SQLQuery, distinct=False):
 
     return q.let(
         {
-            "maybe_documents": maybe_documents_to_select,
+            "maybe_documents": document_pages,
             "translated_documents": translate_document_fields(q.var("maybe_documents")),
             "result": q.distinct(q.var("translated_documents"))
             if distinct
@@ -201,17 +230,20 @@ def _translate_select(sql_query: models.SQLQuery, distinct=False):
     )
 
 
-def translate_select(sql_statement: token_groups.Statement) -> QueryExpression:
+def translate_select(sql_query: models.SQLQuery) -> QueryExpression:
     """Translate a SELECT SQL query into an equivalent FQL query.
 
     Params:
     -------
-    statement: An SQL statement returned by sqlparse.
+    sql_query: An SQLQuery instance.
 
     Returns:
     --------
-    A tuple of FQL query expression, selected column  names, and their aliases.
+    An FQL query expression based on the SQL query.
     """
-    sql_query = models.SQLQuery.from_statement(sql_statement)
+    document_pages = _define_document_pages(sql_query)
+    field_alias_map = _define_field_alias_map(sql_query.columns)
 
-    return _translate_select(sql_query, distinct=sql_query.distinct)
+    return _translate_select(
+        sql_query, document_pages, field_alias_map, distinct=sql_query.distinct
+    )

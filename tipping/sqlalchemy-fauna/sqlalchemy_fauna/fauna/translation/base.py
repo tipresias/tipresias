@@ -52,7 +52,8 @@ def translate_sql_to_fql(
         return translate_alter(sql_statement)
 
     if sql_statement.token_first().match(token_types.DML, "SELECT"):
-        return [translate_select(sql_statement)]
+        sql_query = models.SQLQuery.from_statement(sql_statement)
+        return [translate_select(sql_query)]
 
     if sql_statement.token_first().match(token_types.DML, "INSERT"):
         sql_query = models.SQLQuery.from_statement(sql_statement)

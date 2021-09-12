@@ -78,7 +78,7 @@ class Column:
         self.name = name
         self.alias = alias
         self.value = value
-        self.function_name = function_name
+        self._function_name = function_name
         self._table_name = table_name
         self._table: typing.Optional[Table] = None
 
@@ -243,6 +243,16 @@ class Column:
     def alias_map(self) -> typing.Dict[str, str]:
         """Dictionary that maps the column name to its alias in the SQL query."""
         return {self.name: self.alias}
+
+    @property
+    def function_name(self) -> typing.Optional[str]:
+        """Name of a function to be applied to the query results."""
+        return None if self._function_name is None else self._function_name.value
+
+    @property
+    def is_function(self) -> bool:
+        """Whether the column represents the result of an SQL function."""
+        return self._function_name is not None
 
     def __str__(self) -> str:
         return self.name
@@ -896,6 +906,11 @@ class SQLQuery:
     def order_by(self) -> typing.Optional[OrderBy]:
         """How the results of the query should be ordered."""
         return self._order_by
+
+    @property
+    def has_functions(self) -> bool:
+        """"Whether the SQL query has any functions in its selected columns."""
+        return any(col.is_function for col in self.columns)
 
     def add_filter_to_table(self, sql_filter: Filter):
         """Associates the given Filter with the Table that it applies to.

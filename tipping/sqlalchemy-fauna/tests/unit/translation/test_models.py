@@ -52,7 +52,7 @@ def test_column_from_function_identifier(column_sql, expected_name, expected_fun
     column = models.Column.from_identifier(token_groups.Identifier([column_function]))
 
     assert column.name == expected_name
-    assert column.function_name == expected_function
+    assert column.function_name == expected_function.value
 
 
 @pytest.mark.parametrize(

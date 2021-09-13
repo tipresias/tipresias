@@ -84,7 +84,7 @@ def _translate_select(
     get_field_value = lambda function_value, raw_value: q.if_(
         q.equals(function_value, common.NULL),
         q.if_(q.equals(raw_value, common.NULL), None, raw_value),
-        q.select(["data", 0], function_value),
+        q.select([common.DATA, 0], function_value),
     )
 
     calculate_function_value = lambda document_set, function_name: q.if_(
@@ -100,13 +100,8 @@ def _translate_select(
     # With aggregation functions, standard behaviour is to include the first value
     # if any column selections are part of the query, at least until we add support
     # for GROUP BY
-    get_first_document = lambda documents: q.let(
-        {"maybe_first_document": q.select(0, documents, default=common.NULL)},
-        q.if_(
-            q.equals(q.var("maybe_first_document"), common.NULL),
-            [{}],
-            [q.get(q.var("maybe_first_document"))],
-        ),
+    get_first_document = lambda documents: q.if_(
+        q.is_empty(documents), [{}], q.take(1, documents)
     )
 
     translate_document_fields = lambda maybe_documents: q.let(
@@ -193,13 +188,10 @@ def _translate_select(
             if distinct
             else q.var("translated_documents"),
         },
-        # Need to nest the results in a 'data' object if they're in the form of an array,
-        # if they're paginated results, Fauna does this automatically
-        q.if_(
-            q.is_array(q.var("result")),
-            {"data": q.var("result")},
-            q.var("result"),
-        ),
+        # Paginated sets hold an array of results in a 'data' field, so we try to flatten it
+        # in case we're dealing with pages instead of an array of results which doesn't
+        # have such nesting
+        {common.DATA: q.select(common.DATA, q.var("result"), q.var("result"))},
     )
 
 

@@ -1,8 +1,5 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
-import functools
-import typing
-
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
@@ -78,30 +75,8 @@ def _define_document_pages(sql_query: models.SQLQuery) -> QueryExpression:
     return q.take(sql_query.limit, ordered_document_set)
 
 
-def _define_field_alias_map(
-    columns: typing.List[models.Column],
-) -> common.TableFieldMap:
-    initial_field_alias_map: common.TableFieldMap = {}
-    field_alias_map: common.TableFieldMap = functools.reduce(
-        lambda alias_map, column: {
-            **alias_map,
-            str(column.table_name): {
-                **alias_map.get(str(column.table_name), {}),
-                **column.alias_map,
-            },
-        },
-        columns,
-        initial_field_alias_map,
-    )
-
-    return field_alias_map
-
-
 def _translate_select(
-    sql_query: models.SQLQuery,
-    document_pages: QueryExpression,
-    field_alias_map,
-    distinct=False,
+    sql_query: models.SQLQuery, document_pages: QueryExpression, distinct=False
 ):
     tables = sql_query.tables
     from_table = tables[0]
@@ -120,12 +95,6 @@ def _translate_select(
             q.count(document_set),
             common.NULL,
         ),
-    )
-
-    translate_fields_to_aliases = lambda collection_name, field_name: q.select(
-        [collection_name, field_name],
-        field_alias_map,
-        default=q.var("field_name"),
     )
 
     # With aggregation functions, standard behaviour is to include the first value
@@ -155,6 +124,7 @@ def _translate_select(
                 get_first_document(maybe_documents),
                 maybe_documents,
             ),
+            "field_alias_map": sql_query.alias_map,
         },
         q.map_(
             q.lambda_(
@@ -193,9 +163,12 @@ def _translate_select(
                                         ),
                                     },
                                     [
-                                        translate_fields_to_aliases(
-                                            q.var("collection_name"),
-                                            q.var("field_name"),
+                                        q.select(
+                                            [
+                                                q.var("collection_name"),
+                                                q.var("field_name"),
+                                            ],
+                                            q.var("field_alias_map"),
                                         ),
                                         get_field_value(
                                             q.var("function_value"), q.var("raw_value")
@@ -242,8 +215,5 @@ def translate_select(sql_query: models.SQLQuery) -> QueryExpression:
     An FQL query expression based on the SQL query.
     """
     document_pages = _define_document_pages(sql_query)
-    field_alias_map = _define_field_alias_map(sql_query.columns)
 
-    return _translate_select(
-        sql_query, document_pages, field_alias_map, distinct=sql_query.distinct
-    )
+    return _translate_select(sql_query, document_pages, distinct=sql_query.distinct)

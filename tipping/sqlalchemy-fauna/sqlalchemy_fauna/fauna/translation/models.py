@@ -15,6 +15,10 @@ from sqlalchemy_fauna import exceptions
 from .common import extract_value
 
 
+ColumnAliasMap = typing.Dict[str, str]
+TableAliasMap = typing.Dict[typing.Optional[str], ColumnAliasMap]
+
+
 class JoinDirection(enum.Enum):
     """Enum for table join directions."""
 
@@ -240,7 +244,7 @@ class Column:
         return self._table_name
 
     @property
-    def alias_map(self) -> typing.Dict[str, str]:
+    def alias_map(self) -> ColumnAliasMap:
         """Dictionary that maps the column name to its alias in the SQL query."""
         return {self.name: self.alias}
 
@@ -532,9 +536,12 @@ class Table:
         )
 
     @property
-    def column_alias_map(self) -> typing.Dict[str, str]:
+    def alias_map(self) -> TableAliasMap:
         """Dictionary that maps column names to their aliases in the SQL query."""
-        collect_alias_maps = lambda acc, col: {**acc, **col.alias_map}
+        collect_alias_maps = lambda acc, col: {
+            **acc,
+            col.table_name: {**acc.get(col.table_name, {}), **col.alias_map},
+        }
         return functools.reduce(collect_alias_maps, self.columns, {})
 
     def __str__(self) -> str:
@@ -911,6 +918,12 @@ class SQLQuery:
     def has_functions(self) -> bool:
         """"Whether the SQL query has any functions in its selected columns."""
         return any(col.is_function for col in self.columns)
+
+    @property
+    def alias_map(self) -> TableAliasMap:
+        """Nested dictionaries for all columna/alias mapping in the SQL query."""
+        collect_alias_maps = lambda acc, table: {**acc, **table.alias_map}
+        return functools.reduce(collect_alias_maps, self.tables, {})
 
     def add_filter_to_table(self, sql_filter: Filter):
         """Associates the given Filter with the Table that it applies to.

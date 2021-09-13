@@ -155,7 +155,7 @@ def test_table():
 
     assert len(table.columns) == 1
     assert table.columns[0].name == column.name
-    assert table.column_alias_map == {column.name: column.alias}
+    assert table.alias_map == {column.name: column.alias}
 
     assert len(table.filters) == 1
     assert table.filters[0].value == sql_filters[0].value
@@ -245,14 +245,17 @@ def test_invalid_add_join():
 def test_sql_query():
     table_name = Fake.word()
     column_name = Fake.word()
+    column_alias = Fake.word()
     sql_query = models.SQLQuery(
         tables=[models.Table(name=table_name)],
-        columns=[models.Column(name=column_name, alias=Fake.word())],
+        columns=[models.Column(name=column_name, alias=column_alias)],
     )
     assert len(sql_query.tables) == 1
     assert sql_query.tables[0].name == table_name
     assert len(sql_query.columns) == 1
     assert sql_query.columns[0].name == column_name
+
+    assert sql_query.alias_map == {table_name: {column_name: column_alias}}
 
 
 def test_sql_add_filter_to_table():

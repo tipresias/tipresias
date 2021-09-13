@@ -1,11 +1,12 @@
 """Translate a INSERT SQL query into an equivalent FQL query."""
 
+import functools
 import typing
 
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
-from . import common, models
+from . import common, models, fql
 
 
 def translate_insert(sql_query: models.SQLQuery) -> typing.List[QueryExpression]:
@@ -20,8 +21,10 @@ def translate_insert(sql_query: models.SQLQuery) -> typing.List[QueryExpression]
     An FQL query expression.
     """
     table = sql_query.tables[0]
-
     document_to_insert = {col.name: col.value for col in table.columns}
+    convert_to_collection_ref_set = functools.partial(
+        fql.convert_to_ref_set, "information_schema_indexes_"
+    )
 
     # Fauna's Select doesn't play nice with null values, so we have to wrap it in an
     # if/else if the underlying value & default are null
@@ -82,36 +85,8 @@ def translate_insert(sql_query: models.SQLQuery) -> typing.List[QueryExpression]
                 ["id"],
             ),
             "table_reference_info": q.intersection(
-                q.join(
-                    q.var("table_index_info"),
-                    q.lambda_(
-                        ["value", "ref"],
-                        q.match(
-                            q.index(
-                                common.index_name(
-                                    "information_schema_indexes_",
-                                    index_type=common.IndexType.REF,
-                                )
-                            ),
-                            q.var("ref"),
-                        ),
-                    ),
-                ),
-                q.join(
-                    q.var("reference_info"),
-                    q.lambda_(
-                        ["value", "ref"],
-                        q.match(
-                            q.index(
-                                common.index_name(
-                                    "information_schema_indexes_",
-                                    index_type=common.IndexType.REF,
-                                )
-                            ),
-                            q.var("ref"),
-                        ),
-                    ),
-                ),
+                convert_to_collection_ref_set(q.var("table_index_info")),
+                convert_to_collection_ref_set(q.var("reference_info")),
             ),
             "table_references": q.to_object(
                 q.select(

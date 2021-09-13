@@ -13,22 +13,39 @@ from . import models, common
 MAX_PAGE_SIZE = 100000
 
 
+def convert_to_ref_set(
+    collection_name: str, index_match: QueryExpression
+) -> QueryExpression:
+    """Convert value-based match set to set of refs.
+
+    Params:
+    -------
+    collection_name: Name of the source collection for the index.
+    index_match: Match set of the index. Index must have values attribute of the form
+        [{"field": ["data", <field>]}, {"field": ["ref"}]}]
+    """
+    return q.join(
+        index_match,
+        q.lambda_(
+            ["value", "ref"],
+            q.match(
+                q.index(
+                    common.index_name(collection_name, index_type=common.IndexType.REF)
+                ),
+                q.var("ref"),
+            ),
+        ),
+    )
+
+
 def _define_match_set(query_filter: models.Filter) -> QueryExpression:
     field_name = query_filter.column.name
     comparison_value = query_filter.value
     index_name_for_collection = functools.partial(
         common.index_name, query_filter.table_name
     )
-
-    convert_to_ref_set = lambda index_match: q.join(
-        index_match,
-        q.lambda_(
-            ["value", "ref"],
-            q.match(
-                q.index(index_name_for_collection(index_type=common.IndexType.REF)),
-                q.var("ref"),
-            ),
-        ),
+    convert_to_collection_ref_set = functools.partial(
+        convert_to_ref_set, query_filter.table_name
     )
 
     get_info_indexes_with_references = lambda collection_name, field_name: q.map_(
@@ -95,7 +112,7 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
                         q.var("term_index"),
                         q.var("comparison_value"),
                     ),
-                    convert_to_ref_set(equality_range),
+                    convert_to_collection_ref_set(equality_range),
                 ),
             ),
         )
@@ -113,9 +130,9 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
         )
 
         if query_filter.operator == ">=":
-            return convert_to_ref_set(inclusive_comparison_range)
+            return convert_to_collection_ref_set(inclusive_comparison_range)
 
-        return convert_to_ref_set(
+        return convert_to_collection_ref_set(
             q.difference(inclusive_comparison_range, equality_range)
         )
 
@@ -127,9 +144,9 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
         )
 
         if query_filter.operator == "<=":
-            return convert_to_ref_set(inclusive_comparison_range)
+            return convert_to_collection_ref_set(inclusive_comparison_range)
 
-        return convert_to_ref_set(
+        return convert_to_collection_ref_set(
             q.difference(inclusive_comparison_range, equality_range)
         )
 

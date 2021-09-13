@@ -6,17 +6,13 @@ import itertools
 import typing
 from datetime import datetime
 import enum
+import re
 
 from sqlparse import sql as token_groups, tokens as token_types
 from mypy_extensions import TypedDict
 
 from sqlalchemy_fauna import exceptions
 from .common import extract_value
-
-
-ColumnParams = TypedDict(
-    "ColumnParams", {"table_name": typing.Optional[str], "name": str, "alias": str}
-)
 
 
 class JoinDirection(enum.Enum):
@@ -33,6 +29,23 @@ class OrderDirection(enum.Enum):
     DESC = "DESC"
 
 
+class Function(enum.Enum):
+    """Enum for identifying SQL functions."""
+
+    COUNT = "COUNT"
+
+
+ColumnParams = TypedDict(
+    "ColumnParams",
+    {
+        "table_name": typing.Optional[str],
+        "name": str,
+        "alias": str,
+        "function_name": typing.Optional[Function],
+    },
+)
+
+
 # Probably not a complete list, but covers the basics
 FUNCTION_NAMES = {"min", "max", "count", "avg", "sum"}
 GREATER_THAN = ">"
@@ -42,6 +55,9 @@ REVERSE_JOIN = {
     JoinDirection.LEFT: JoinDirection.RIGHT,
     JoinDirection.RIGHT: JoinDirection.LEFT,
 }
+
+NOT_SUPPORTED_FUNCTION_REGEX = re.compile(r"^(?:MIN|MAX|AVG|SUM)\(.+\)$", re.IGNORECASE)
+COUNT_REGEX = re.compile(r"^COUNT\(.+\)$", re.IGNORECASE)
 
 
 class Column:
@@ -57,10 +73,12 @@ class Column:
         alias: str,
         table_name: typing.Optional[str] = None,
         value: typing.Optional[typing.Union[str, int, float, datetime]] = None,
+        function_name: typing.Optional[Function] = None,
     ):
         self.name = name
         self.alias = alias
         self.value = value
+        self._function_name = function_name
         self._table_name = table_name
         self._table: typing.Optional[Table] = None
 
@@ -157,10 +175,19 @@ class Column:
             )
             alias = alias_identifier.value
 
+        function_name: typing.Optional[Function] = None
+        if re.match(COUNT_REGEX, name):
+            function_name = Function.COUNT
+        elif re.match(NOT_SUPPORTED_FUNCTION_REGEX, name):
+            raise exceptions.NotSupportedError(
+                "MIN, MAX, AVG, and SUM functions are not yet supported."
+            )
+
         column_params: ColumnParams = {
             "table_name": table_name,
             "name": name,
             "alias": alias,
+            "function_name": function_name,
         }
 
         return Column(**column_params)
@@ -216,6 +243,16 @@ class Column:
     def alias_map(self) -> typing.Dict[str, str]:
         """Dictionary that maps the column name to its alias in the SQL query."""
         return {self.name: self.alias}
+
+    @property
+    def function_name(self) -> typing.Optional[str]:
+        """Name of a function to be applied to the query results."""
+        return None if self._function_name is None else self._function_name.value
+
+    @property
+    def is_function(self) -> bool:
+        """Whether the column represents the result of an SQL function."""
+        return self._function_name is not None
 
     def __str__(self) -> str:
         return self.name
@@ -869,6 +906,11 @@ class SQLQuery:
     def order_by(self) -> typing.Optional[OrderBy]:
         """How the results of the query should be ordered."""
         return self._order_by
+
+    @property
+    def has_functions(self) -> bool:
+        """"Whether the SQL query has any functions in its selected columns."""
+        return any(col.is_function for col in self.columns)
 
     def add_filter_to_table(self, sql_filter: Filter):
         """Associates the given Filter with the Table that it applies to.

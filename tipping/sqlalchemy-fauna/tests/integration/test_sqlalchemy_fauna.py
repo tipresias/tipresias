@@ -404,7 +404,7 @@ def test_join_order_by(fauna_session):
 
 def test_limit(fauna_session):
     limit = 2
-    user_names = [Fake.first_name() for _ in range(limit * 2)]
+    user_names = [f"{Fake.first_name()} {n}" for n in range(limit * 2)]
 
     for name in user_names:
         factories.UserFactory(name=name)
@@ -415,6 +415,25 @@ def test_limit(fauna_session):
     queried_user_names = [user.name for user in queried_users]
 
     assert queried_user_names == user_names[:limit]
+
+
+def test_multi_table_limit(fauna_session):
+    limit = 2
+    children_names = [f"{Fake.first_name()} {n}" for n in range(limit * 2)]
+
+    for name in children_names:
+        factories.ChildFactory(name=name)
+
+    queried_children = (
+        fauna_session.execute(
+            sql.select(models.Child, models.User).join(models.Child.user).limit(limit)
+        )
+        .scalars()
+        .all()
+    )
+    queried_children_names = [child.name for child in queried_children]
+
+    assert queried_children_names == children_names[:limit]
 
 
 def test_update(fauna_session):

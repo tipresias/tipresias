@@ -4,7 +4,7 @@ import pytest
 from faunadb.objects import _Expr as QueryExpression
 import sqlparse
 
-from sqlalchemy_fauna.fauna.translation import select
+from sqlalchemy_fauna.fauna.translation import models, select
 from sqlalchemy_fauna import exceptions
 
 select_values = (
@@ -25,14 +25,10 @@ select_order_multiple = (
 # These are meant to be examples of SQL queries that are not currently supported,
 # but that are valid SQL and so should be supported eventually.
 @pytest.mark.parametrize(
-    ["sql_query", "error_message"],
+    ["sql_string", "error_message"],
     [
         (select_sum, "SUM"),
         (select_avg, "AVG"),
-        (
-            "SELECT COUNT(users.id) FROM users JOIN accounts ON users.id = accounts.user_id",
-            "SQL functions across multiple tables are not yet supported",
-        ),
         (
             select_join_order_by,
             "we currently can only sort the principal table",
@@ -40,9 +36,11 @@ select_order_multiple = (
         (select_order_multiple, "Ordering by multiple columns is not yet supported"),
     ],
 )
-def test_translating_unsupported_select(sql_query, error_message):
+def test_translating_unsupported_select(sql_string, error_message):
     with pytest.raises(exceptions.NotSupportedError, match=error_message):
-        select.translate_select(sqlparse.parse(sql_query)[0])
+        sql_statement = sqlparse.parse(sql_string)[0]
+        sql_query = models.SQLQuery.from_statement(sql_statement)
+        select.translate_select(sql_query)
 
 
 select_aliases = (
@@ -79,9 +77,12 @@ select_join_order_by_principal = (
         select_order_by,
         select_order_by_desc,
         select_join_order_by_principal,
+        "SELECT COUNT(users.id) FROM users JOIN accounts ON users.id = accounts.user_id",
     ],
 )
 def test_translate_select(sql_string):
-    fql_query = select.translate_select(sqlparse.parse(sql_string)[0])
+    sql_statement = sqlparse.parse(sql_string)[0]
+    sql_query = models.SQLQuery.from_statement(sql_statement)
+    fql_query = select.translate_select(sql_query)
 
     assert isinstance(fql_query, QueryExpression)

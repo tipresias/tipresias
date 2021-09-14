@@ -7,7 +7,7 @@ from sqlparse import tokens as token_types
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
-from . import common, fql
+from .. import fql
 
 
 def translate_drop(statement: token_groups.Statement) -> typing.List[QueryExpression]:
@@ -34,10 +34,10 @@ def translate_drop(statement: token_groups.Statement) -> typing.List[QueryExpres
                     q.union(
                         q.match(
                             q.index(
-                                common.index_name(
+                                fql.index_name(
                                     "information_schema_tables_",
                                     column_name="name_",
-                                    index_type=common.IndexType.TERM,
+                                    index_type=fql.IndexType.TERM,
                                 )
                             )
                         ),
@@ -46,10 +46,10 @@ def translate_drop(statement: token_groups.Statement) -> typing.List[QueryExpres
                             q.range(
                                 q.match(
                                     q.index(
-                                        common.index_name(
+                                        fql.index_name(
                                             "information_schema_columns_",
                                             column_name="table_name_",
-                                            index_type=common.IndexType.VALUE,
+                                            index_type=fql.IndexType.VALUE,
                                         )
                                     )
                                 ),
@@ -62,10 +62,10 @@ def translate_drop(statement: token_groups.Statement) -> typing.List[QueryExpres
                             q.range(
                                 q.match(
                                     q.index(
-                                        common.index_name(
+                                        fql.index_name(
                                             "information_schema_indexes_",
                                             column_name="table_name_",
-                                            index_type=common.IndexType.VALUE,
+                                            index_type=fql.IndexType.VALUE,
                                         )
                                     )
                                 ),

@@ -9,7 +9,7 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions, sql
-from . import common, fql
+from .. import fql
 
 
 def _fetch_column_info_refs(table_name: str, column_name: str):
@@ -22,10 +22,10 @@ def _fetch_column_info_refs(table_name: str, column_name: str):
             q.range(
                 q.match(
                     q.index(
-                        common.index_name(
+                        fql.index_name(
                             "information_schema_columns_",
                             column_name="table_name_",
-                            index_type=common.IndexType.VALUE,
+                            index_type=fql.IndexType.VALUE,
                         )
                     )
                 ),
@@ -37,10 +37,10 @@ def _fetch_column_info_refs(table_name: str, column_name: str):
             q.range(
                 q.match(
                     q.index(
-                        common.index_name(
+                        fql.index_name(
                             "information_schema_columns_",
                             column_name="name_",
-                            index_type=common.IndexType.VALUE,
+                            index_type=fql.IndexType.VALUE,
                         )
                     ),
                 ),

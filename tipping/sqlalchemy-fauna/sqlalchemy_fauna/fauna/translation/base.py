@@ -6,14 +6,11 @@ import sqlparse
 from sqlparse import tokens as token_types
 from faunadb.objects import _Expr as QueryExpression
 
-from sqlalchemy_fauna import exceptions
-from .select import translate_select
+from sqlalchemy_fauna import exceptions, sql
+from .. import fql
 from .create import translate_create
 from .drop import translate_drop
-from .insert import translate_insert
-from .delete import translate_delete
 from .alter import translate_alter
-from . import fql, models
 
 
 def format_sql_query(sql_query: str) -> str:
@@ -52,19 +49,19 @@ def translate_sql_to_fql(
         return translate_alter(sql_statement)
 
     if sql_statement.token_first().match(token_types.DML, "SELECT"):
-        sql_query = models.SQLQuery.from_statement(sql_statement)
-        return [translate_select(sql_query)]
+        sql_query = sql.SQLQuery.from_statement(sql_statement)
+        return [fql.translate_select(sql_query)]
 
     if sql_statement.token_first().match(token_types.DML, "INSERT"):
-        sql_query = models.SQLQuery.from_statement(sql_statement)
-        return [translate_insert(sql_query)]
+        sql_query = sql.SQLQuery.from_statement(sql_statement)
+        return [fql.translate_insert(sql_query)]
 
     if sql_statement.token_first().match(token_types.DML, "DELETE"):
-        sql_query = models.SQLQuery.from_statement(sql_statement)
-        return [translate_delete(sql_query)]
+        sql_query = sql.SQLQuery.from_statement(sql_statement)
+        return [fql.translate_delete(sql_query)]
 
     if sql_statement.token_first().match(token_types.DML, "UPDATE"):
-        sql_query = models.SQLQuery.from_statement(sql_statement)
+        sql_query = sql.SQLQuery.from_statement(sql_statement)
         table = sql_query.tables[0]
         return [fql.update_documents(table)]
 

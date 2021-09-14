@@ -4,7 +4,7 @@ import pytest
 from faunadb.objects import _Expr as QueryExpression
 import sqlparse
 
-from sqlalchemy_fauna.fauna.translation import select
+from sqlalchemy_fauna.fauna.fql import select
 from sqlalchemy_fauna import exceptions, sql
 
 select_values = (

@@ -6,7 +6,7 @@ from sqlparse import sql as token_groups, tokens as token_types
 import pytest
 from faker import Faker
 
-from sqlalchemy_fauna import sql
+from sqlalchemy_fauna.sql import common
 
 
 Fake = Faker()
@@ -44,5 +44,5 @@ naive_datetime = Fake.date_time_this_year()
 )
 def test_extract_value(_label, token_value, expected):
     token = token_groups.Token(token_types.Literal, token_value)
-    value = sql.extract_value(token)
+    value = common.extract_value(token)
     assert value == expected

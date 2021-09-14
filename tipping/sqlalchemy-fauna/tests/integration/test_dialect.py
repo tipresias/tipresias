@@ -4,7 +4,7 @@ from functools import reduce
 import itertools
 
 from sqlalchemy_fauna import dialect
-from sqlalchemy_fauna.fauna.translation import common
+from sqlalchemy_fauna.fauna.fql import common
 
 
 def test_has_table(fauna_engine):

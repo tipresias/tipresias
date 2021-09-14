@@ -3,19 +3,19 @@
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
-from sqlalchemy_fauna import exceptions
-from . import common, models, fql
+from sqlalchemy_fauna import exceptions, sql
+from . import common
 
 
-def _define_single_collection_pages(sql_query: models.SQLQuery) -> QueryExpression:
+def _define_single_collection_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
     order_by = sql_query.order_by
     from_table = tables[0]
 
-    document_set = fql.define_document_set(from_table)
+    document_set = common.define_document_set(from_table)
 
     if order_by is None:
-        return q.paginate(document_set, size=fql.MAX_PAGE_SIZE)
+        return q.paginate(document_set, size=common.MAX_PAGE_SIZE)
 
     ordered_result = q.join(
         document_set,
@@ -27,16 +27,16 @@ def _define_single_collection_pages(sql_query: models.SQLQuery) -> QueryExpressi
             )
         ),
     )
-    if order_by.direction == models.OrderDirection.DESC:
+    if order_by.direction == sql.OrderDirection.DESC:
         ordered_result = q.reverse(ordered_result)
 
     return q.map_(
         q.lambda_(["_", "ref"], q.var("ref")),
-        q.paginate(ordered_result, size=fql.MAX_PAGE_SIZE),
+        q.paginate(ordered_result, size=common.MAX_PAGE_SIZE),
     )
 
 
-def _define_multi_collection_pages(sql_query: models.SQLQuery) -> QueryExpression:
+def _define_multi_collection_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
     order_by = sql_query.order_by
     from_table = tables[0]
@@ -50,10 +50,10 @@ def _define_multi_collection_pages(sql_query: models.SQLQuery) -> QueryExpressio
             "the ordering constraint."
         )
 
-    return fql.join_collections(from_table, order_by)
+    return common.join_collections(from_table, order_by)
 
 
-def _define_document_pages(sql_query: models.SQLQuery) -> QueryExpression:
+def _define_document_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
     order_by = sql_query.order_by
 
@@ -76,7 +76,7 @@ def _define_document_pages(sql_query: models.SQLQuery) -> QueryExpression:
 
 
 def _translate_select(
-    sql_query: models.SQLQuery, document_pages: QueryExpression, distinct=False
+    sql_query: sql.SQLQuery, document_pages: QueryExpression, distinct=False
 ):
     tables = sql_query.tables
     from_table = tables[0]
@@ -91,7 +91,7 @@ def _translate_select(
         q.is_null(function_name),
         common.NULL,
         q.if_(
-            q.equals(function_name, models.Function.COUNT.value),
+            q.equals(function_name, sql.Function.COUNT.value),
             q.count(document_set),
             common.NULL,
         ),
@@ -195,7 +195,7 @@ def _translate_select(
     )
 
 
-def translate_select(sql_query: models.SQLQuery) -> QueryExpression:
+def translate_select(sql_query: sql.SQLQuery) -> QueryExpression:
     """Translate a SELECT SQL query into an equivalent FQL query.
 
     Params:

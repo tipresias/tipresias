@@ -6,8 +6,8 @@ import functools
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
 
-from sqlalchemy_fauna import exceptions
-from . import models, common
+from sqlalchemy_fauna import exceptions, sql
+from . import common
 
 
 MAX_PAGE_SIZE = 100000
@@ -38,7 +38,7 @@ def convert_to_ref_set(
     )
 
 
-def _define_match_set(query_filter: models.Filter) -> QueryExpression:
+def _define_match_set(query_filter: sql.Filter) -> QueryExpression:
     field_name = query_filter.column.name
     comparison_value = query_filter.value
     index_name_for_collection = functools.partial(
@@ -155,7 +155,7 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
     )
 
 
-def define_document_set(table: models.Table) -> QueryExpression:
+def define_document_set(table: sql.Table) -> QueryExpression:
     """Build FQL match query based on filtering rules from the SQL query.
 
     Params:
@@ -202,7 +202,7 @@ def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=Non
             )
         ),
     )
-    if order_by.direction == models.OrderDirection.DESC:
+    if order_by.direction == sql.OrderDirection.DESC:
         ordered_result = q.reverse(ordered_result)
 
     return q.select(
@@ -215,9 +215,9 @@ def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=Non
 
 
 def _build_page_query(
-    table: models.Table,
+    table: sql.Table,
     merge_func: typing.Callable[[str], QueryExpression],
-    order_by: typing.Optional[models.OrderBy] = None,
+    order_by: typing.Optional[sql.OrderBy] = None,
 ):
     partial_merge_func = functools.partial(merge_func, table.name)
     right_table = table.right_join_table
@@ -311,7 +311,7 @@ def _build_page_query(
 
 
 def join_collections(
-    left_most_table: models.Table, order_by: typing.Optional[models.OrderBy] = None
+    left_most_table: sql.Table, order_by: typing.Optional[sql.OrderBy] = None
 ) -> QueryExpression:
     """Join together multiple collections to return their documents in the response.
 
@@ -324,7 +324,7 @@ def join_collections(
     return _build_page_query(left_most_table, _build_merge, order_by=order_by)
 
 
-def update_documents(table: models.Table) -> QueryExpression:
+def update_documents(table: sql.Table) -> QueryExpression:
     """Update document fields with the given values.
 
     Params:

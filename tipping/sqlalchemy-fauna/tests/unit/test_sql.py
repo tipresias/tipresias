@@ -1,17 +1,54 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 import functools
+from datetime import timezone
+
 import sqlparse
 from sqlparse import sql as token_groups, tokens as token_types
 import pytest
 from faker import Faker
 
-from sqlalchemy_fauna.fauna.translation import models
+from sqlalchemy_fauna import sql
 from sqlalchemy_fauna import exceptions
 
 
 Fake = Faker()
 column_name = "name"
+
+word = Fake.word()
+integer = Fake.pyint()
+float_number = Fake.pyfloat()
+fake_datetime = Fake.date_time_this_year(tzinfo=timezone.utc)
+naive_datetime = Fake.date_time_this_year()
+
+
+@pytest.mark.parametrize(
+    ["_label", "token_value", "expected"],
+    [
+        ("none", "NONE", None),
+        ("true", "TRUE", True),
+        ("false", "FALSE", False),
+        ("string", word, word),
+        ("quoted string", f"'{word}'", word),
+        ("string with apostrophe", f"'{word} ' {word}'", f"{word} ' {word}"),
+        ("int string", str(integer), integer),
+        ("quoted int string", f"'{integer}'", str(integer)),
+        ("float string", str(float_number), float_number),
+        ("quoted float string", f"'{float_number}'", str(float_number)),
+        ("iso datetime", fake_datetime.isoformat(), fake_datetime),
+        ("string datetime", str(fake_datetime), fake_datetime),
+        ("quoted iso datetime", f"'{fake_datetime.isoformat()}'", fake_datetime),
+        (
+            "naive datetime",
+            naive_datetime.isoformat(),
+            naive_datetime.replace(tzinfo=timezone.utc),
+        ),
+    ],
+)
+def test_extract_value(_label, token_value, expected):
+    token = token_groups.Token(token_types.Literal, token_value)
+    value = sql.extract_value(token)
+    assert value == expected
 
 
 @pytest.mark.parametrize(
@@ -27,7 +64,7 @@ def test_column_from_identifier(column_sql, expected_table_name, expected_alias)
     statement = sqlparse.parse(sql_query)[0]
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
-    column = models.Column.from_identifier(column_identifier)
+    column = sql.Column.from_identifier(column_identifier)
 
     assert column.name == column_name
     assert column.table_name == expected_table_name
@@ -41,7 +78,7 @@ def test_column_from_identifier(column_sql, expected_table_name, expected_alias)
         (
             f"count(users.{column_name})",
             f"count(users.{column_name})",
-            models.Function.COUNT,
+            sql.Function.COUNT,
         ),
     ],
 )
@@ -50,9 +87,7 @@ def test_column_from_function_identifier(column_sql, expected_name, expected_fun
     statement = sqlparse.parse(sql_string)[0]
     _, column_function = statement.token_next_by(i=(token_groups.Function))
 
-    column = models.Column.from_identifier(
-        token_groups.Identifier([column_function]), 0
-    )
+    column = sql.Column.from_identifier(token_groups.Identifier([column_function]), 0)
 
     assert column.name == expected_name
     assert column.function_name == expected_function.value
@@ -69,7 +104,7 @@ def test_unsupported_column_from_identifier(column_sql_string, error_message):
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
     with pytest.raises(exceptions.NotSupportedError, match=error_message):
-        models.Column.from_identifier(column_identifier)
+        sql.Column.from_identifier(column_identifier)
 
 
 def test_column_from_comparison_group():
@@ -77,7 +112,7 @@ def test_column_from_comparison_group():
     statement = sqlparse.parse(sql_string)[0]
     _, comparison_group = statement.token_next_by(i=token_groups.Comparison)
 
-    column = models.Column.from_comparison_group(comparison_group)
+    column = sql.Column.from_comparison_group(comparison_group)
 
     assert column.name == "name"
     assert column.table_name == "users"
@@ -94,15 +129,15 @@ def test_unsupported_column_from_comparison_group():
         exceptions.NotSupportedError,
         match="Only updating to literal values is currently supported",
     ):
-        models.Column.from_comparison_group(comparison_group)
+        sql.Column.from_comparison_group(comparison_group)
 
 
 def test_column():
-    column = models.Column(position=0, table_name="users", name="name", alias="alias")
+    column = sql.Column(position=0, table_name="users", name="name", alias="alias")
     assert str(column) == "name"
     assert column.alias_map == {column.name: column.alias}
 
-    table = models.Table(name="users", columns=[column])
+    table = sql.Table(name="users", columns=[column])
     column.table = table
     assert column.table_name == table.name
 
@@ -138,7 +173,7 @@ def test_from_identifier_group(sql_query, expected_columns, expected_aliases):
         i=(token_groups.Identifier, token_groups.IdentifierList, token_groups.Function)
     )
 
-    columns = models.Column.from_identifier_group(identifiers)
+    columns = sql.Column.from_identifier_group(identifiers)
 
     for column in columns:
         assert column.name in expected_columns
@@ -152,9 +187,9 @@ def test_table():
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
-    column = models.Column.from_identifier(column_identifier)
-    sql_filters = models.Filter.from_where_group(where_group)
-    table = models.Table(name=table_name, columns=[column], filters=sql_filters)
+    column = sql.Column.from_identifier(column_identifier)
+    sql_filters = sql.Filter.from_where_group(where_group)
+    table = sql.Table(name=table_name, columns=[column], filters=sql_filters)
     assert table.name == table_name
     assert str(table) == table_name
 
@@ -173,7 +208,7 @@ def test_table_from_identifier():
     idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
     _, table_identifier = statement.token_next_by(i=(token_groups.Identifier), idx=idx)
 
-    table = models.Table.from_identifier(table_identifier)
+    table = sql.Table.from_identifier(table_identifier)
     assert table.name == table_name
 
 
@@ -183,8 +218,8 @@ def test_add_column():
     statement = sqlparse.parse(sql_query)[0]
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
-    column = models.Column.from_identifier(column_identifier)
-    table = models.Table(name=table_name)
+    column = sql.Column.from_identifier(column_identifier)
+    table = sql.Table(name=table_name)
 
     table.add_column(column)
 
@@ -197,8 +232,8 @@ def test_add_filter():
     statement = sqlparse.parse(sql_query)[0]
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
-    sql_filters = models.Filter.from_where_group(where_group)
-    table = models.Table(name=table_name)
+    sql_filters = sql.Filter.from_where_group(where_group)
+    table = sql.Table(name=table_name)
 
     table.add_filter(sql_filters[0])
 
@@ -216,10 +251,10 @@ def test_add_join():
     statement = sqlparse.parse(sql_query)[0]
     _, comparison_group = statement.token_next_by(i=(token_groups.Comparison))
 
-    table = models.Table(name=table_name)
-    foreign_table = models.Table(name=foreign_table_name)
+    table = sql.Table(name=table_name)
+    foreign_table = sql.Table(name=foreign_table_name)
 
-    table.add_join(foreign_table, comparison_group, models.JoinDirection.RIGHT)
+    table.add_join(foreign_table, comparison_group, sql.JoinDirection.RIGHT)
 
     assert table.right_join_table == foreign_table
     assert table.right_join_key.name == "ref"
@@ -238,26 +273,24 @@ def test_invalid_add_join():
     statement = sqlparse.parse(sql_query)[0]
     _, comparison_group = statement.token_next_by(i=(token_groups.Comparison))
 
-    table = models.Table(name=table_name)
-    foreign_table = models.Table(name=foreign_table_name)
+    table = sql.Table(name=table_name)
+    foreign_table = sql.Table(name=foreign_table_name)
 
     with pytest.raises(
         exceptions.NotSupportedError, match="Table joins are only permitted on IDs"
     ):
-        table.add_join(foreign_table, comparison_group, models.JoinDirection.RIGHT)
+        table.add_join(foreign_table, comparison_group, sql.JoinDirection.RIGHT)
 
 
 def test_sql_query():
     table_name = Fake.word()
     column_name = Fake.word()
     column_alias = Fake.word()
-    sql_query = models.SQLQuery(
+    sql_query = sql.SQLQuery(
         tables=[
-            models.Table(
+            sql.Table(
                 name=table_name,
-                columns=[
-                    models.Column(name=column_name, alias=column_alias, position=0)
-                ],
+                columns=[sql.Column(name=column_name, alias=column_alias, position=0)],
             )
         ],
     )
@@ -271,13 +304,13 @@ def test_sql_query():
 
 def test_sql_query_validation():
     with pytest.raises(AssertionError, match="must have unique position values"):
-        models.SQLQuery(
+        sql.SQLQuery(
             tables=[
-                models.Table(
+                sql.Table(
                     name=Fake.word(),
                     columns=[
-                        models.Column(name=Fake.word(), alias=Fake.word(), position=0),
-                        models.Column(name=Fake.word(), alias=Fake.word(), position=0),
+                        sql.Column(name=Fake.word(), alias=Fake.word(), position=0),
+                        sql.Column(name=Fake.word(), alias=Fake.word(), position=0),
                     ],
                 )
             ],
@@ -285,10 +318,10 @@ def test_sql_query_validation():
 
 
 def test_sql_add_filter_to_table():
-    column = models.Column(table_name="users", name="name", alias="name", position=0)
-    table = models.Table(name="users", columns=[column])
-    sql_query = models.SQLQuery(tables=[table])
-    sql_filter = models.Filter(column=column, operator="=", value="Bob")
+    column = sql.Column(table_name="users", name="name", alias="name", position=0)
+    table = sql.Table(name="users", columns=[column])
+    sql_query = sql.SQLQuery(tables=[table])
+    sql_filter = sql.Filter(column=column, operator="=", value="Bob")
 
     sql_query.add_filter_to_table(sql_filter)
 
@@ -302,7 +335,7 @@ def test_sql_query_from_statement_distinct(distinct):
     sql_string = f"SELECT {distinct} users.{column_name} FROM {table_name}"
     statement = sqlparse.parse(sql_string)[0]
 
-    sql_query = models.SQLQuery.from_statement(statement)
+    sql_query = sql.SQLQuery.from_statement(statement)
 
     assert sql_query.distinct == bool(distinct)
 
@@ -315,7 +348,7 @@ def test_sql_query_from_statement_order_by():
     sql_string = f"SELECT users.name, users.age FROM {table_name} {order_by} DESC"
     statement = sqlparse.parse(sql_string)[0]
 
-    sql_query = models.SQLQuery.from_statement(statement)
+    sql_query = sql.SQLQuery.from_statement(statement)
 
     for idx, column in enumerate(sql_query.order_by.columns):
         assert column.name == column_names[idx]
@@ -327,7 +360,7 @@ def test_sql_query_from_statement_limit():
     sql_string = f"SELECT users.name, users.age FROM {table_name} LIMIT 1"
     statement = sqlparse.parse(sql_string)[0]
 
-    sql_query = models.SQLQuery.from_statement(statement)
+    sql_query = sql.SQLQuery.from_statement(statement)
 
     assert sql_query.limit == 1
 
@@ -352,7 +385,7 @@ def test_sql_query_from_statement_insert(column_names, column_values, expected_v
     )
     statement = sqlparse.parse(sql_string)[0]
 
-    sql_query = models.SQLQuery.from_statement(statement)
+    sql_query = sql.SQLQuery.from_statement(statement)
 
     query_table_names = [table.name for table in sql_query.tables]
     assert query_table_names == [table_name]
@@ -405,7 +438,7 @@ def test_sql_query_from_statement(
     sql_string, expected_table_names, expected_column_names
 ):
     statement = sqlparse.parse(sql_string)[0]
-    sql_query = models.SQLQuery.from_statement(statement)
+    sql_query = sql.SQLQuery.from_statement(statement)
 
     query_table_names = [table.name for table in sql_query.tables]
     assert query_table_names == expected_table_names
@@ -449,14 +482,14 @@ def test_unsupported_sql_query_statements(sql_string, error_message):
     statement = sqlparse.parse(sql_string)[0]
 
     with pytest.raises(exceptions.NotSupportedError, match=error_message):
-        models.SQLQuery.from_statement(statement)
+        sql.SQLQuery.from_statement(statement)
 
 
 def test_filter():
-    column = models.Column(name="name", alias="name", table_name="users", position=0)
+    column = sql.Column(name="name", alias="name", table_name="users", position=0)
     operator = "="
     value = "Bob"
-    where_filter = models.Filter(column=column, operator=operator, value=value)
+    where_filter = sql.Filter(column=column, operator=operator, value=value)
 
     assert where_filter.column == column
     assert where_filter.operator == operator
@@ -505,7 +538,7 @@ def test_unsupported_filter_from_where_group(sql_query, error_message):
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
     with pytest.raises(exceptions.NotSupportedError, match=error_message):
-        models.Filter.from_where_group(where_group)
+        sql.Filter.from_where_group(where_group)
 
 
 where_id = select_values + f" WHERE users.id = '{Fake.credit_card_number}'"
@@ -541,21 +574,21 @@ def test_filter_from_where_group(sql_string):
     statement = sqlparse.parse(sql_string)[0]
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
-    where_filters = models.Filter.from_where_group(where_group)
+    where_filters = sql.Filter.from_where_group(where_group)
     for where_filter in where_filters:
-        assert isinstance(where_filter, models.Filter)
+        assert isinstance(where_filter, sql.Filter)
 
 
 @pytest.mark.parametrize(
     ["direction", "expected_direction"],
     [
-        (models.OrderDirection.DESC, models.OrderDirection.DESC),
-        (None, models.OrderDirection.ASC),
+        (sql.OrderDirection.DESC, sql.OrderDirection.DESC),
+        (None, sql.OrderDirection.ASC),
     ],
 )
 def test_order_by(direction, expected_direction):
-    columns = [models.Column(name=Fake.word(), alias=Fake.word(), position=0)]
-    order_by = models.OrderBy(columns=columns, direction=direction)
+    columns = [sql.Column(name=Fake.word(), alias=Fake.word(), position=0)]
+    order_by = sql.OrderBy(columns=columns, direction=direction)
 
     assert order_by.columns == columns
     assert order_by.direction == expected_direction
@@ -566,27 +599,27 @@ def test_order_by(direction, expected_direction):
     [
         (
             "SELECT * FROM users ORDER BY users.name",
-            models.OrderBy,
+            sql.OrderBy,
             ["name"],
-            models.OrderDirection.ASC,
+            sql.OrderDirection.ASC,
         ),
         (
             "SELECT * FROM users ORDER BY users.name DESC",
-            models.OrderBy,
+            sql.OrderBy,
             ["name"],
-            models.OrderDirection.DESC,
+            sql.OrderDirection.DESC,
         ),
         (
             "SELECT * FROM users ORDER BY users.name, users.age",
-            models.OrderBy,
+            sql.OrderBy,
             ["name", "age"],
-            models.OrderDirection.ASC,
+            sql.OrderDirection.ASC,
         ),
         (
             "SELECT * FROM users ORDER BY users.name, users.age ASC",
-            models.OrderBy,
+            sql.OrderBy,
             ["name", "age"],
-            models.OrderDirection.ASC,
+            sql.OrderDirection.ASC,
         ),
         ("SELECT * FROM users", None, None, None),
     ],
@@ -595,7 +628,7 @@ def test_order_by_from_statement(
     sql_string, expected_type, expected_columns, expected_direction
 ):
     statement = sqlparse.parse(sql_string)[0]
-    order_by = models.OrderBy.from_statement(statement)
+    order_by = sql.OrderBy.from_statement(statement)
 
     if expected_type:
         assert isinstance(order_by, expected_type)

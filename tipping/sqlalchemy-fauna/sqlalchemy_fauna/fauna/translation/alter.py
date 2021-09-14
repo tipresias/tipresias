@@ -8,8 +8,8 @@ from sqlparse import tokens as token_types
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
-from sqlalchemy_fauna import exceptions
-from . import models, common, fql
+from sqlalchemy_fauna import exceptions, sql
+from . import common, fql
 
 
 def _fetch_column_info_refs(table_name: str, column_name: str):
@@ -73,13 +73,13 @@ def _translate_drop_default(table_name: str, column_name: str) -> QueryExpressio
 
 def _translate_alter_column(
     statement: token_groups.Statement,
-    table: models.Table,
+    table: sql.Table,
     starting_idx: int,
 ) -> QueryExpression:
     idx, column_identifier = statement.token_next_by(
         i=token_groups.Identifier, idx=starting_idx
     )
-    column = models.Column.from_identifier(column_identifier)
+    column = sql.Column.from_identifier(column_identifier)
     table.add_column(column)
 
     _, drop = statement.token_next_by(m=(token_types.DDL, "DROP"), idx=idx)
@@ -108,7 +108,7 @@ def translate_alter(statement: token_groups.Statement) -> typing.List[QueryExpre
     assert table_keyword is not None
 
     idx, table_identifier = statement.token_next_by(i=token_groups.Identifier, idx=idx)
-    table = models.Table.from_identifier(table_identifier)
+    table = sql.Table.from_identifier(table_identifier)
 
     _, second_alter = statement.token_next_by(m=(token_types.DDL, "ALTER"), idx=idx)
     _, column_keyword = statement.token_next_by(

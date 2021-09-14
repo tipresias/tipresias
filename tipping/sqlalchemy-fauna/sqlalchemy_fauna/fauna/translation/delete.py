@@ -5,10 +5,11 @@ import typing
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
-from . import models, fql
+from sqlalchemy_fauna import sql
+from . import fql
 
 
-def translate_delete(sql_query: models.SQLQuery) -> typing.List[QueryExpression]:
+def translate_delete(sql_query: sql.SQLQuery) -> typing.List[QueryExpression]:
     """Translate a DELETE SQL query into an equivalent FQL query.
 
     Params:

@@ -46,6 +46,7 @@ ColumnParams = TypedDict(
         "name": str,
         "alias": str,
         "function_name": typing.Optional[Function],
+        "position": int,
     },
 )
 
@@ -75,12 +76,14 @@ class Column:
         self,
         name: str,
         alias: str,
+        position: int,
         table_name: typing.Optional[str] = None,
         value: typing.Optional[typing.Union[str, int, float, datetime]] = None,
         function_name: typing.Optional[Function] = None,
     ):
         self.name = name
         self.alias = alias
+        self.position = position
         self.value = value
         self._function_name = function_name
         self._table_name = table_name
@@ -109,18 +112,24 @@ class Column:
         if isinstance(
             identifiers, (token_groups.IdentifierList, token_groups.Comparison)
         ):
-            return [
-                Column.from_identifier(id)
-                for id in identifiers
-                if isinstance(id, token_groups.Identifier)
-            ]
+            columns = []
+            idx = 0
+
+            for identifier in identifiers:
+                if isinstance(identifier, token_groups.Identifier):
+                    continue
+
+                columns.append(Column.from_identifier(identifier, idx))
+                idx = idx + 1
 
         if isinstance(identifiers, token_groups.Function):
             _, identifier = identifiers.token_next_by(i=token_groups.Identifier)
             _, name = identifier.token_next_by(t=token_types.Name)
 
             if name.value.lower() in FUNCTION_NAMES:
-                return [Column.from_identifier(token_groups.Identifier([identifiers]))]
+                return [
+                    Column.from_identifier(token_groups.Identifier([identifiers]), 0)
+                ]
 
             _, parenthesis = identifiers.token_next_by(i=token_groups.Parenthesis)
             _, column_id_list = parenthesis.token_next_by(i=token_groups.IdentifierList)
@@ -131,14 +140,16 @@ class Column:
             return columns
 
         if isinstance(identifiers, token_groups.Identifier):
-            return [Column.from_identifier(identifiers)]
+            return [Column.from_identifier(identifiers, 0)]
 
         raise exceptions.InternalError(
             f"Tried to create a column from unsupported SQL token type {type(identifiers)}"
         )
 
     @classmethod
-    def from_identifier(cls, identifier: token_groups.Identifier) -> Column:
+    def from_identifier(
+        cls, identifier: token_groups.Identifier, position: int
+    ) -> Column:
         """Create a column from an SQL identifier token.
 
         Params:
@@ -192,12 +203,15 @@ class Column:
             "name": name,
             "alias": alias,
             "function_name": function_name,
+            "position": position,
         }
 
         return Column(**column_params)
 
     @classmethod
-    def from_comparison_group(cls, comparison_group: token_groups.Comparison) -> Column:
+    def from_comparison_group(
+        cls, comparison_group: token_groups.Comparison, position: int
+    ) -> Column:
         """Create a column from a Comparison group token.
 
         Params:
@@ -221,7 +235,7 @@ class Column:
 
         column_value = extract_value(value_literal)
 
-        column = cls.from_identifier(column_identifier)
+        column = cls.from_identifier(column_identifier, position)
         column.value = column_value
 
         return column
@@ -830,6 +844,7 @@ class SQLQuery:
         comparison_container = maybe_comparison_container or statement
 
         idx = -1
+        position = 0
         while True:
             idx, comparison = comparison_container.token_next_by(
                 i=token_groups.Comparison, idx=idx
@@ -837,8 +852,9 @@ class SQLQuery:
             if comparison is None:
                 break
 
-            column = Column.from_comparison_group(comparison)
+            column = Column.from_comparison_group(comparison, position)
             table.add_column(column)
+            position = position + 1
 
         return cls(tables=[table], columns=table.columns)
 

@@ -129,9 +129,7 @@ class Column:
             _, name = identifier.token_next_by(t=token_types.Name)
 
             if name.value.lower() in FUNCTION_NAMES:
-                return [
-                    Column.from_identifier(token_groups.Identifier([identifiers]), 0)
-                ]
+                return [Column.from_identifier(token_groups.Identifier([identifiers]))]
 
             _, parenthesis = identifiers.token_next_by(i=token_groups.Parenthesis)
             _, column_id_list = parenthesis.token_next_by(i=token_groups.IdentifierList)
@@ -142,7 +140,7 @@ class Column:
             return columns
 
         if isinstance(identifiers, token_groups.Identifier):
-            return [Column.from_identifier(identifiers, 0)]
+            return [Column.from_identifier(identifiers)]
 
         raise exceptions.InternalError(
             f"Tried to create a column from unsupported SQL token type {type(identifiers)}"
@@ -150,7 +148,7 @@ class Column:
 
     @classmethod
     def from_identifier(
-        cls, identifier: token_groups.Identifier, position: int
+        cls, identifier: token_groups.Identifier, position: int = 0
     ) -> Column:
         """Create a column from an SQL identifier token.
 
@@ -212,7 +210,7 @@ class Column:
 
     @classmethod
     def from_comparison_group(
-        cls, comparison_group: token_groups.Comparison, position: int
+        cls, comparison_group: token_groups.Comparison, position: int = 0
     ) -> Column:
         """Create a column from a Comparison group token.
 
@@ -691,6 +689,11 @@ class SQLQuery:
         self._tables = tables
         self._order_by = order_by
         self.limit = limit
+
+        assert len({col.position for col in self.columns}) == len(self.columns), (
+            "All columns in an SQLQuery must have unique position values to avoid "
+            "ambiguity"
+        )
 
     @classmethod
     def from_statement(cls, statement: token_groups.Statement) -> SQLQuery:

@@ -79,7 +79,7 @@ def _translate_alter_column(
     idx, column_identifier = statement.token_next_by(
         i=token_groups.Identifier, idx=starting_idx
     )
-    column = models.Column.from_identifier(column_identifier, 0)
+    column = models.Column.from_identifier(column_identifier)
     table.add_column(column)
 
     _, drop = statement.token_next_by(m=(token_types.DDL, "DROP"), idx=idx)

@@ -27,7 +27,7 @@ def test_column_from_identifier(column_sql, expected_table_name, expected_alias)
     statement = sqlparse.parse(sql_query)[0]
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
-    column = models.Column.from_identifier(column_identifier, 0)
+    column = models.Column.from_identifier(column_identifier)
 
     assert column.name == column_name
     assert column.table_name == expected_table_name
@@ -69,7 +69,7 @@ def test_unsupported_column_from_identifier(column_sql_string, error_message):
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
     with pytest.raises(exceptions.NotSupportedError, match=error_message):
-        models.Column.from_identifier(column_identifier, 0)
+        models.Column.from_identifier(column_identifier)
 
 
 def test_column_from_comparison_group():
@@ -77,7 +77,7 @@ def test_column_from_comparison_group():
     statement = sqlparse.parse(sql_string)[0]
     _, comparison_group = statement.token_next_by(i=token_groups.Comparison)
 
-    column = models.Column.from_comparison_group(comparison_group, 0)
+    column = models.Column.from_comparison_group(comparison_group)
 
     assert column.name == "name"
     assert column.table_name == "users"
@@ -94,7 +94,7 @@ def test_unsupported_column_from_comparison_group():
         exceptions.NotSupportedError,
         match="Only updating to literal values is currently supported",
     ):
-        models.Column.from_comparison_group(comparison_group, 0)
+        models.Column.from_comparison_group(comparison_group)
 
 
 def test_column():
@@ -152,7 +152,7 @@ def test_table():
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
     _, where_group = statement.token_next_by(i=(token_groups.Where))
 
-    column = models.Column.from_identifier(column_identifier, 0)
+    column = models.Column.from_identifier(column_identifier)
     sql_filters = models.Filter.from_where_group(where_group)
     table = models.Table(name=table_name, columns=[column], filters=sql_filters)
     assert table.name == table_name
@@ -183,7 +183,7 @@ def test_add_column():
     statement = sqlparse.parse(sql_query)[0]
     _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
 
-    column = models.Column.from_identifier(column_identifier, 0)
+    column = models.Column.from_identifier(column_identifier)
     table = models.Table(name=table_name)
 
     table.add_column(column)
@@ -267,6 +267,21 @@ def test_sql_query():
     assert sql_query.columns[0].name == column_name
 
     assert sql_query.alias_map == {table_name: {column_name: column_alias}}
+
+
+def test_sql_query_validation():
+    with pytest.raises(AssertionError, match="must have unique position values"):
+        models.SQLQuery(
+            tables=[
+                models.Table(
+                    name=Fake.word(),
+                    columns=[
+                        models.Column(name=Fake.word(), alias=Fake.word(), position=0),
+                        models.Column(name=Fake.word(), alias=Fake.word(), position=0),
+                    ],
+                )
+            ],
+        )
 
 
 def test_sql_add_filter_to_table():

@@ -154,7 +154,7 @@ class FaunaQuery:
                 None,  # [scale]
                 True,  # [null_ok]
             )
-            for column_name, alias_name in table.column_alias_map.items()
+            for column_name, alias_name in table.alias_map[table.name].items()
         ]
 
     @staticmethod

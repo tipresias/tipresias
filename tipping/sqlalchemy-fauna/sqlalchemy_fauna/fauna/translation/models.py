@@ -15,6 +15,10 @@ from sqlalchemy_fauna import exceptions
 from .common import extract_value
 
 
+ColumnAliasMap = typing.Dict[str, str]
+TableAliasMap = typing.Dict[typing.Optional[str], ColumnAliasMap]
+
+
 class JoinDirection(enum.Enum):
     """Enum for table join directions."""
 
@@ -42,6 +46,7 @@ ColumnParams = TypedDict(
         "name": str,
         "alias": str,
         "function_name": typing.Optional[Function],
+        "position": int,
     },
 )
 
@@ -71,12 +76,14 @@ class Column:
         self,
         name: str,
         alias: str,
+        position: int,
         table_name: typing.Optional[str] = None,
         value: typing.Optional[typing.Union[str, int, float, datetime]] = None,
         function_name: typing.Optional[Function] = None,
     ):
         self.name = name
         self.alias = alias
+        self.position = position
         self.value = value
         self._function_name = function_name
         self._table_name = table_name
@@ -105,11 +112,17 @@ class Column:
         if isinstance(
             identifiers, (token_groups.IdentifierList, token_groups.Comparison)
         ):
-            return [
-                Column.from_identifier(id)
-                for id in identifiers
-                if isinstance(id, token_groups.Identifier)
-            ]
+            columns = []
+            idx = 0
+
+            for identifier in identifiers:
+                if not isinstance(identifier, token_groups.Identifier):
+                    continue
+
+                columns.append(Column.from_identifier(identifier, idx))
+                idx = idx + 1
+
+            return columns
 
         if isinstance(identifiers, token_groups.Function):
             _, identifier = identifiers.token_next_by(i=token_groups.Identifier)
@@ -134,7 +147,9 @@ class Column:
         )
 
     @classmethod
-    def from_identifier(cls, identifier: token_groups.Identifier) -> Column:
+    def from_identifier(
+        cls, identifier: token_groups.Identifier, position: int = 0
+    ) -> Column:
         """Create a column from an SQL identifier token.
 
         Params:
@@ -188,12 +203,15 @@ class Column:
             "name": name,
             "alias": alias,
             "function_name": function_name,
+            "position": position,
         }
 
         return Column(**column_params)
 
     @classmethod
-    def from_comparison_group(cls, comparison_group: token_groups.Comparison) -> Column:
+    def from_comparison_group(
+        cls, comparison_group: token_groups.Comparison, position: int = 0
+    ) -> Column:
         """Create a column from a Comparison group token.
 
         Params:
@@ -217,7 +235,7 @@ class Column:
 
         column_value = extract_value(value_literal)
 
-        column = cls.from_identifier(column_identifier)
+        column = cls.from_identifier(column_identifier, position)
         column.value = column_value
 
         return column
@@ -240,7 +258,7 @@ class Column:
         return self._table_name
 
     @property
-    def alias_map(self) -> typing.Dict[str, str]:
+    def alias_map(self) -> ColumnAliasMap:
         """Dictionary that maps the column name to its alias in the SQL query."""
         return {self.name: self.alias}
 
@@ -532,9 +550,12 @@ class Table:
         )
 
     @property
-    def column_alias_map(self) -> typing.Dict[str, str]:
+    def alias_map(self) -> TableAliasMap:
         """Dictionary that maps column names to their aliases in the SQL query."""
-        collect_alias_maps = lambda acc, col: {**acc, **col.alias_map}
+        collect_alias_maps = lambda acc, col: {
+            **acc,
+            col.table_name: {**acc.get(col.table_name, {}), **col.alias_map},
+        }
         return functools.reduce(collect_alias_maps, self.columns, {})
 
     def __str__(self) -> str:
@@ -659,7 +680,6 @@ class SQLQuery:
     def __init__(
         self,
         tables: typing.List[Table] = None,
-        columns: typing.List[Column] = None,
         distinct: bool = False,
         order_by: typing.Optional[OrderBy] = None,
         limit: typing.Optional[int] = None,
@@ -667,10 +687,13 @@ class SQLQuery:
         self.distinct = distinct
         tables = tables or []
         self._tables = tables
-        columns = columns or []
-        self._columns = columns
         self._order_by = order_by
         self.limit = limit
+
+        assert len({col.position for col in self.columns}) == len(self.columns), (
+            "All columns in an SQLQuery must have unique position values to avoid "
+            "ambiguity"
+        )
 
     @classmethod
     def from_statement(cls, statement: token_groups.Statement) -> SQLQuery:
@@ -780,7 +803,6 @@ class SQLQuery:
                 token_groups.Function,
             )
         )
-        columns = []
 
         for column in Column.from_identifier_group(identifiers):
             try:
@@ -790,7 +812,6 @@ class SQLQuery:
             except StopIteration:
                 table = tables[0]
 
-            columns.append(column)
             table.add_column(column)
 
         _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
@@ -803,7 +824,6 @@ class SQLQuery:
 
         return cls(
             tables=tables,
-            columns=columns,
             distinct=bool(distinct),
             order_by=order_by,
             limit=limit_value,
@@ -823,6 +843,7 @@ class SQLQuery:
         comparison_container = maybe_comparison_container or statement
 
         idx = -1
+        position = 0
         while True:
             idx, comparison = comparison_container.token_next_by(
                 i=token_groups.Comparison, idx=idx
@@ -830,10 +851,11 @@ class SQLQuery:
             if comparison is None:
                 break
 
-            column = Column.from_comparison_group(comparison)
+            column = Column.from_comparison_group(comparison, position)
             table.add_column(column)
+            position = position + 1
 
-        return cls(tables=[table], columns=table.columns)
+        return cls(tables=[table])
 
     @classmethod
     def _build_insert_query(
@@ -886,7 +908,7 @@ class SQLQuery:
             column.value = extract_value(column_value)
             table.add_column(column)
 
-        return cls(tables=[table], columns=table.columns)
+        return cls(tables=[table])
 
     @classmethod
     def _build_delete_query(cls, table: Table) -> SQLQuery:
@@ -900,7 +922,13 @@ class SQLQuery:
     @property
     def columns(self) -> typing.List[Column]:
         """List of columns referenced in the SQL query in the order that they appear."""
-        return self._columns
+        column_list: typing.List[Column] = []
+        return sorted(
+            functools.reduce(
+                lambda acc, table: list(acc) + table.columns, self.tables, column_list
+            ),
+            key=lambda column: column.position,
+        )
 
     @property
     def order_by(self) -> typing.Optional[OrderBy]:
@@ -911,6 +939,12 @@ class SQLQuery:
     def has_functions(self) -> bool:
         """"Whether the SQL query has any functions in its selected columns."""
         return any(col.is_function for col in self.columns)
+
+    @property
+    def alias_map(self) -> TableAliasMap:
+        """Nested dictionaries for all columna/alias mapping in the SQL query."""
+        collect_alias_maps = lambda acc, table: {**acc, **table.alias_map}
+        return functools.reduce(collect_alias_maps, self.tables, {})
 
     def add_filter_to_table(self, sql_filter: Filter):
         """Associates the given Filter with the Table that it applies to.

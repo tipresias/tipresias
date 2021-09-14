@@ -1,5 +1,6 @@
 """Translate a ALTER SQL query into an equivalent FQL query."""
 
+import functools
 import typing
 
 from sqlparse import sql as token_groups
@@ -8,12 +9,16 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
 from sqlalchemy_fauna import exceptions
-from . import models, common
+from . import models, common, fql
 
 
 def _fetch_column_info_refs(table_name: str, column_name: str):
+    convert_to_collection_ref_set = functools.partial(
+        fql.convert_to_ref_set, "information_schema_columns_"
+    )
+
     return q.intersection(
-        q.join(
+        convert_to_collection_ref_set(
             q.range(
                 q.match(
                     q.index(
@@ -27,20 +32,8 @@ def _fetch_column_info_refs(table_name: str, column_name: str):
                 table_name,
                 table_name,
             ),
-            q.lambda_(
-                ["value", "ref"],
-                q.match(
-                    q.index(
-                        common.index_name(
-                            "information_schema_columns_",
-                            index_type=common.IndexType.REF,
-                        )
-                    ),
-                    q.var("ref"),
-                ),
-            ),
         ),
-        q.join(
+        convert_to_collection_ref_set(
             q.range(
                 q.match(
                     q.index(
@@ -53,18 +46,6 @@ def _fetch_column_info_refs(table_name: str, column_name: str):
                 ),
                 column_name,
                 column_name,
-            ),
-            q.lambda_(
-                ["value", "ref"],
-                q.match(
-                    q.index(
-                        common.index_name(
-                            "information_schema_columns_",
-                            index_type=common.IndexType.REF,
-                        )
-                    ),
-                    q.var("ref"),
-                ),
             ),
         ),
     )

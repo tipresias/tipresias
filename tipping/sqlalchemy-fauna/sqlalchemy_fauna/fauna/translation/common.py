@@ -8,26 +8,8 @@ from warnings import warn
 from dateutil import parser
 
 from sqlparse import sql as token_groups
-from mypy_extensions import TypedDict
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
-
-TableNames = typing.Sequence[typing.Optional[str]]
-ColumnNames = typing.Sequence[str]
-Aliases = typing.Sequence[typing.Optional[str]]
-IdentifierValues = typing.Tuple[TableNames, ColumnNames, Aliases]
-
-IndexComparison = typing.Tuple[str, typing.Union[int, float, str, None, bool, datetime]]
-Comparisons = TypedDict(
-    "Comparisons",
-    {
-        "by_id": typing.Optional[typing.Union[int, str]],
-        "by_index": typing.List[IndexComparison],
-    },
-)
-
-FieldAliasMap = typing.Dict[str, str]
-TableFieldMap = typing.Dict[typing.Optional[str], FieldAliasMap]
 
 
 NULL = "NULL"

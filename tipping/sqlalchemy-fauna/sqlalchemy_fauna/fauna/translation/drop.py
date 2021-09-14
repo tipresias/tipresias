@@ -7,7 +7,7 @@ from sqlparse import tokens as token_types
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
-from . import common
+from . import common, fql
 
 
 def translate_drop(statement: token_groups.Statement) -> typing.List[QueryExpression]:
@@ -41,7 +41,8 @@ def translate_drop(statement: token_groups.Statement) -> typing.List[QueryExpres
                                 )
                             )
                         ),
-                        q.join(
+                        fql.convert_to_ref_set(
+                            "information_schema_columns_",
                             q.range(
                                 q.match(
                                     q.index(
@@ -55,18 +56,9 @@ def translate_drop(statement: token_groups.Statement) -> typing.List[QueryExpres
                                 [table_name],
                                 [table_name],
                             ),
-                            q.lambda_(
-                                ["value", "ref"],
-                                q.match(
-                                    common.index_name(
-                                        "information_schema_columns_",
-                                        index_type=common.IndexType.REF,
-                                    ),
-                                    q.var("ref"),
-                                ),
-                            ),
                         ),
-                        q.join(
+                        fql.convert_to_ref_set(
+                            "information_schema_indexes_",
                             q.range(
                                 q.match(
                                     q.index(
@@ -79,16 +71,6 @@ def translate_drop(statement: token_groups.Statement) -> typing.List[QueryExpres
                                 ),
                                 [table_name],
                                 [table_name],
-                            ),
-                            q.lambda_(
-                                ["value", "ref"],
-                                q.match(
-                                    common.index_name(
-                                        "information_schema_indexes_",
-                                        index_type=common.IndexType.REF,
-                                    ),
-                                    q.var("ref"),
-                                ),
                             ),
                         ),
                     ),

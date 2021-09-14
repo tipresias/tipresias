@@ -37,6 +37,7 @@ def test_unsupported_define_document_set(filter_params):
         "name": Fake.word(),
         "alias": Fake.word(),
         "table_name": table_name,
+        "position": 0,
     }
     column = models.Column(**column_params)
 
@@ -71,6 +72,7 @@ def test_define_document_set(filter_params, column_params):
         "name": Fake.word(),
         "alias": Fake.word(),
         "table_name": table_name,
+        "position": 0,
     }
     column = models.Column(**{**base_column_params, **column_params})
 
@@ -93,11 +95,14 @@ def test_join_collections():
     first_child_table = models.Table(name=Fake.word())
     from_table.right_join_table = first_child_table
     from_table.right_join_key = models.Column(
-        name="ref", table_name=from_table.name, alias=Fake.word()
+        name="ref", table_name=from_table.name, alias=Fake.word(), position=0
     )
     first_child_table.left_join_table = from_table
     first_child_table.left_join_key = models.Column(
-        name=Fake.word(), table_name=first_child_table.name, alias=Fake.word()
+        name=Fake.word(),
+        table_name=first_child_table.name,
+        alias=Fake.word(),
+        position=1,
     )
 
     join_query = fql.join_collections(from_table)
@@ -106,11 +111,14 @@ def test_join_collections():
     second_child_table = models.Table(name=Fake.word())
     first_child_table.right_join_table = second_child_table
     first_child_table.right_join_key = models.Column(
-        name="ref", table_name=first_child_table.name, alias=Fake.word()
+        name="ref", table_name=first_child_table.name, alias=Fake.word(), position=2
     )
     second_child_table.left_join_table = first_child_table
     second_child_table.left_join_key = models.Column(
-        name=Fake.word(), table_name=second_child_table.name, alias=Fake.word()
+        name=Fake.word(),
+        table_name=second_child_table.name,
+        alias=Fake.word(),
+        position=3,
     )
 
     join_query = fql.join_collections(from_table)
@@ -119,11 +127,14 @@ def test_join_collections():
     first_parent_table = models.Table(name=Fake.word())
     second_child_table.right_join_table = first_parent_table
     second_child_table.right_join_key = models.Column(
-        name=Fake.word(), table_name=second_child_table.name, alias=Fake.word()
+        name=Fake.word(),
+        table_name=second_child_table.name,
+        alias=Fake.word(),
+        position=4,
     )
     first_parent_table.left_join_table = second_child_table
     first_parent_table.left_join_key = models.Column(
-        name="ref", table_name=first_parent_table.name, alias=Fake.word()
+        name="ref", table_name=first_parent_table.name, alias=Fake.word(), position=5
     )
 
     join_query = fql.join_collections(from_table)
@@ -132,11 +143,14 @@ def test_join_collections():
     second_parent_table = models.Table(name=Fake.word())
     first_parent_table.right_join_table = second_parent_table
     first_parent_table.right_join_key = models.Column(
-        name=Fake.word(), table_name=first_parent_table.name, alias=Fake.word()
+        name=Fake.word(),
+        table_name=first_parent_table.name,
+        alias=Fake.word(),
+        position=6,
     )
     second_parent_table.left_join_table = first_parent_table
     second_parent_table.left_join_key = models.Column(
-        name="ref", table_name=second_parent_table.name, alias=Fake.word()
+        name="ref", table_name=second_parent_table.name, alias=Fake.word(), position=7
     )
 
     join_query = fql.join_collections(from_table)
@@ -151,7 +165,10 @@ def test_invalid_join_collections():
     further_left_table = models.Table(name=Fake.word())
     from_table.left_join_table = further_left_table
     from_table.left_join_key = models.Column(
-        name=Fake.word(), table_name=further_left_table.name, alias=Fake.word()
+        name=Fake.word(),
+        table_name=further_left_table.name,
+        alias=Fake.word(),
+        position=0,
     )
     with pytest.raises(AssertionError):
         fql.join_collections(from_table)
@@ -161,7 +178,10 @@ def test_update_documents():
     table_name = Fake.first_name()
     columns = [
         models.Column(
-            name=Fake.first_name(), alias=Fake.first_name(), table_name=table_name
+            name=Fake.first_name(),
+            alias=Fake.first_name(),
+            table_name=table_name,
+            position=1,
         )
         for _ in range(3)
     ]

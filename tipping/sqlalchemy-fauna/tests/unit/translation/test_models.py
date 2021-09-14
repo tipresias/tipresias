@@ -32,6 +32,7 @@ def test_column_from_identifier(column_sql, expected_table_name, expected_alias)
     assert column.name == column_name
     assert column.table_name == expected_table_name
     assert column.alias == expected_alias
+    assert column.position == 0
 
 
 @pytest.mark.parametrize(
@@ -49,10 +50,13 @@ def test_column_from_function_identifier(column_sql, expected_name, expected_fun
     statement = sqlparse.parse(sql_string)[0]
     _, column_function = statement.token_next_by(i=(token_groups.Function))
 
-    column = models.Column.from_identifier(token_groups.Identifier([column_function]))
+    column = models.Column.from_identifier(
+        token_groups.Identifier([column_function]), 0
+    )
 
     assert column.name == expected_name
     assert column.function_name == expected_function.value
+    assert column.position == 0
 
 
 @pytest.mark.parametrize(
@@ -78,6 +82,7 @@ def test_column_from_comparison_group():
     assert column.name == "name"
     assert column.table_name == "users"
     assert column.value == "Bob"
+    assert column.position == 0
 
 
 def test_unsupported_column_from_comparison_group():
@@ -93,7 +98,7 @@ def test_unsupported_column_from_comparison_group():
 
 
 def test_column():
-    column = models.Column(table_name="users", name="name", alias="alias")
+    column = models.Column(position=0, table_name="users", name="name", alias="alias")
     assert str(column) == "name"
     assert column.alias_map == {column.name: column.alias}
 
@@ -155,7 +160,7 @@ def test_table():
 
     assert len(table.columns) == 1
     assert table.columns[0].name == column.name
-    assert table.column_alias_map == {column.name: column.alias}
+    assert table.alias_map == {table.name: {column.name: column.alias}}
 
     assert len(table.filters) == 1
     assert table.filters[0].value == sql_filters[0].value
@@ -245,18 +250,42 @@ def test_invalid_add_join():
 def test_sql_query():
     table_name = Fake.word()
     column_name = Fake.word()
+    column_alias = Fake.word()
     sql_query = models.SQLQuery(
-        tables=[models.Table(name=table_name)],
-        columns=[models.Column(name=column_name, alias=Fake.word())],
+        tables=[
+            models.Table(
+                name=table_name,
+                columns=[
+                    models.Column(name=column_name, alias=column_alias, position=0)
+                ],
+            )
+        ],
     )
     assert len(sql_query.tables) == 1
     assert sql_query.tables[0].name == table_name
     assert len(sql_query.columns) == 1
     assert sql_query.columns[0].name == column_name
 
+    assert sql_query.alias_map == {table_name: {column_name: column_alias}}
+
+
+def test_sql_query_validation():
+    with pytest.raises(AssertionError, match="must have unique position values"):
+        models.SQLQuery(
+            tables=[
+                models.Table(
+                    name=Fake.word(),
+                    columns=[
+                        models.Column(name=Fake.word(), alias=Fake.word(), position=0),
+                        models.Column(name=Fake.word(), alias=Fake.word(), position=0),
+                    ],
+                )
+            ],
+        )
+
 
 def test_sql_add_filter_to_table():
-    column = models.Column(table_name="users", name="name", alias="name")
+    column = models.Column(table_name="users", name="name", alias="name", position=0)
     table = models.Table(name="users", columns=[column])
     sql_query = models.SQLQuery(tables=[table])
     sql_filter = models.Filter(column=column, operator="=", value="Bob")
@@ -424,7 +453,7 @@ def test_unsupported_sql_query_statements(sql_string, error_message):
 
 
 def test_filter():
-    column = models.Column(name="name", alias="name", table_name="users")
+    column = models.Column(name="name", alias="name", table_name="users", position=0)
     operator = "="
     value = "Bob"
     where_filter = models.Filter(column=column, operator=operator, value=value)
@@ -525,7 +554,7 @@ def test_filter_from_where_group(sql_string):
     ],
 )
 def test_order_by(direction, expected_direction):
-    columns = [models.Column(name=Fake.word(), alias=Fake.word())]
+    columns = [models.Column(name=Fake.word(), alias=Fake.word(), position=0)]
     order_by = models.OrderBy(columns=columns, direction=direction)
 
     assert order_by.columns == columns

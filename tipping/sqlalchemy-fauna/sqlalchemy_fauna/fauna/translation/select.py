@@ -1,8 +1,5 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
-import functools
-import typing
-
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
@@ -78,30 +75,8 @@ def _define_document_pages(sql_query: models.SQLQuery) -> QueryExpression:
     return q.take(sql_query.limit, ordered_document_set)
 
 
-def _define_field_alias_map(
-    columns: typing.List[models.Column],
-) -> common.TableFieldMap:
-    initial_field_alias_map: common.TableFieldMap = {}
-    field_alias_map: common.TableFieldMap = functools.reduce(
-        lambda alias_map, column: {
-            **alias_map,
-            str(column.table_name): {
-                **alias_map.get(str(column.table_name), {}),
-                **column.alias_map,
-            },
-        },
-        columns,
-        initial_field_alias_map,
-    )
-
-    return field_alias_map
-
-
 def _translate_select(
-    sql_query: models.SQLQuery,
-    document_pages: QueryExpression,
-    field_alias_map,
-    distinct=False,
+    sql_query: models.SQLQuery, document_pages: QueryExpression, distinct=False
 ):
     tables = sql_query.tables
     from_table = tables[0]
@@ -109,7 +84,7 @@ def _translate_select(
     get_field_value = lambda function_value, raw_value: q.if_(
         q.equals(function_value, common.NULL),
         q.if_(q.equals(raw_value, common.NULL), None, raw_value),
-        q.select(["data", 0], function_value),
+        q.select([common.DATA, 0], function_value),
     )
 
     calculate_function_value = lambda document_set, function_name: q.if_(
@@ -122,22 +97,11 @@ def _translate_select(
         ),
     )
 
-    translate_fields_to_aliases = lambda collection_name, field_name: q.select(
-        [collection_name, field_name],
-        field_alias_map,
-        default=q.var("field_name"),
-    )
-
     # With aggregation functions, standard behaviour is to include the first value
     # if any column selections are part of the query, at least until we add support
     # for GROUP BY
-    get_first_document = lambda documents: q.let(
-        {"maybe_first_document": q.select(0, documents, default=common.NULL)},
-        q.if_(
-            q.equals(q.var("maybe_first_document"), common.NULL),
-            [{}],
-            [q.get(q.var("maybe_first_document"))],
-        ),
+    get_first_document = lambda documents: q.if_(
+        q.is_empty(documents), [{}], q.take(1, documents)
     )
 
     translate_document_fields = lambda maybe_documents: q.let(
@@ -155,6 +119,7 @@ def _translate_select(
                 get_first_document(maybe_documents),
                 maybe_documents,
             ),
+            "field_alias_map": sql_query.alias_map,
         },
         q.map_(
             q.lambda_(
@@ -193,9 +158,12 @@ def _translate_select(
                                         ),
                                     },
                                     [
-                                        translate_fields_to_aliases(
-                                            q.var("collection_name"),
-                                            q.var("field_name"),
+                                        q.select(
+                                            [
+                                                q.var("collection_name"),
+                                                q.var("field_name"),
+                                            ],
+                                            q.var("field_alias_map"),
                                         ),
                                         get_field_value(
                                             q.var("function_value"), q.var("raw_value")
@@ -220,13 +188,10 @@ def _translate_select(
             if distinct
             else q.var("translated_documents"),
         },
-        # Need to nest the results in a 'data' object if they're in the form of an array,
-        # if they're paginated results, Fauna does this automatically
-        q.if_(
-            q.is_array(q.var("result")),
-            {"data": q.var("result")},
-            q.var("result"),
-        ),
+        # Paginated sets hold an array of results in a 'data' field, so we try to flatten it
+        # in case we're dealing with pages instead of an array of results which doesn't
+        # have such nesting
+        {common.DATA: q.select(common.DATA, q.var("result"), q.var("result"))},
     )
 
 
@@ -242,8 +207,5 @@ def translate_select(sql_query: models.SQLQuery) -> QueryExpression:
     An FQL query expression based on the SQL query.
     """
     document_pages = _define_document_pages(sql_query)
-    field_alias_map = _define_field_alias_map(sql_query.columns)
 
-    return _translate_select(
-        sql_query, document_pages, field_alias_map, distinct=sql_query.distinct
-    )
+    return _translate_select(sql_query, document_pages, distinct=sql_query.distinct)

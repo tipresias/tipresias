@@ -252,8 +252,14 @@ def test_sql_query():
     column_name = Fake.word()
     column_alias = Fake.word()
     sql_query = models.SQLQuery(
-        tables=[models.Table(name=table_name)],
-        columns=[models.Column(name=column_name, alias=column_alias, position=0)],
+        tables=[
+            models.Table(
+                name=table_name,
+                columns=[
+                    models.Column(name=column_name, alias=column_alias, position=0)
+                ],
+            )
+        ],
     )
     assert len(sql_query.tables) == 1
     assert sql_query.tables[0].name == table_name

@@ -116,11 +116,13 @@ class Column:
             idx = 0
 
             for identifier in identifiers:
-                if isinstance(identifier, token_groups.Identifier):
+                if not isinstance(identifier, token_groups.Identifier):
                     continue
 
                 columns.append(Column.from_identifier(identifier, idx))
                 idx = idx + 1
+
+            return columns
 
         if isinstance(identifiers, token_groups.Function):
             _, identifier = identifiers.token_next_by(i=token_groups.Identifier)
@@ -680,7 +682,6 @@ class SQLQuery:
     def __init__(
         self,
         tables: typing.List[Table] = None,
-        columns: typing.List[Column] = None,
         distinct: bool = False,
         order_by: typing.Optional[OrderBy] = None,
         limit: typing.Optional[int] = None,
@@ -688,8 +689,6 @@ class SQLQuery:
         self.distinct = distinct
         tables = tables or []
         self._tables = tables
-        columns = columns or []
-        self._columns = columns
         self._order_by = order_by
         self.limit = limit
 
@@ -801,7 +800,6 @@ class SQLQuery:
                 token_groups.Function,
             )
         )
-        columns = []
 
         for column in Column.from_identifier_group(identifiers):
             try:
@@ -811,7 +809,6 @@ class SQLQuery:
             except StopIteration:
                 table = tables[0]
 
-            columns.append(column)
             table.add_column(column)
 
         _, distinct = statement.token_next_by(m=(token_types.Keyword, "DISTINCT"))
@@ -824,7 +821,6 @@ class SQLQuery:
 
         return cls(
             tables=tables,
-            columns=columns,
             distinct=bool(distinct),
             order_by=order_by,
             limit=limit_value,
@@ -856,7 +852,7 @@ class SQLQuery:
             table.add_column(column)
             position = position + 1
 
-        return cls(tables=[table], columns=table.columns)
+        return cls(tables=[table])
 
     @classmethod
     def _build_insert_query(
@@ -909,7 +905,7 @@ class SQLQuery:
             column.value = extract_value(column_value)
             table.add_column(column)
 
-        return cls(tables=[table], columns=table.columns)
+        return cls(tables=[table])
 
     @classmethod
     def _build_delete_query(cls, table: Table) -> SQLQuery:
@@ -923,7 +919,13 @@ class SQLQuery:
     @property
     def columns(self) -> typing.List[Column]:
         """List of columns referenced in the SQL query in the order that they appear."""
-        return self._columns
+        column_list: typing.List[Column] = []
+        return sorted(
+            functools.reduce(
+                lambda acc, table: list(acc) + table.columns, self.tables, column_list
+            ),
+            key=lambda column: column.position,
+        )
 
     @property
     def order_by(self) -> typing.Optional[OrderBy]:

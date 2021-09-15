@@ -6,10 +6,11 @@ import typing
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
-from . import common, models, fql
+from sqlalchemy_fauna import sql
+from . import common
 
 
-def translate_insert(sql_query: models.SQLQuery) -> typing.List[QueryExpression]:
+def translate_insert(sql_query: sql.SQLQuery) -> typing.List[QueryExpression]:
     """Translate a INSERT SQL query into an equivalent FQL query.
 
     Params:
@@ -23,7 +24,7 @@ def translate_insert(sql_query: models.SQLQuery) -> typing.List[QueryExpression]
     table = sql_query.tables[0]
     document_to_insert = {col.name: col.value for col in table.columns}
     convert_to_collection_ref_set = functools.partial(
-        fql.convert_to_ref_set, "information_schema_indexes_"
+        common.convert_to_ref_set, "information_schema_indexes_"
     )
 
     # Fauna's Select doesn't play nice with null values, so we have to wrap it in an

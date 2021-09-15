@@ -9,9 +9,8 @@ import sqlparse
 from sqlparse import tokens as token_types
 from sqlparse import sql as token_groups
 
-from . import exceptions
+from . import exceptions, sql
 from .fauna import FaunaClient
-from .fauna.translation import models
 
 
 PopulatedResultDescription = typing.Tuple[
@@ -131,7 +130,7 @@ class FaunaQuery:
             i=(token_groups.Identifier), idx=idx
         )
 
-        table = models.Table.from_identifier(table_identifier)
+        table = sql.Table.from_identifier(table_identifier)
 
         _, column_identifiers = sql_statement.token_next_by(
             i=(
@@ -141,7 +140,7 @@ class FaunaQuery:
             )
         )
 
-        for column in models.Column.from_identifier_group(column_identifiers):
+        for column in sql.Column.from_identifier_group(column_identifiers):
             table.add_column(column)
 
         return [

@@ -4,8 +4,8 @@ import pytest
 from faunadb.objects import _Expr as QueryExpression
 import sqlparse
 
-from sqlalchemy_fauna.fauna.translation import models, select
-from sqlalchemy_fauna import exceptions
+from sqlalchemy_fauna.fauna.fql import select
+from sqlalchemy_fauna import exceptions, sql
 
 select_values = (
     "SELECT users.id, users.name, users.date_joined, users.age, users.finger_count "
@@ -39,7 +39,7 @@ select_order_multiple = (
 def test_translating_unsupported_select(sql_string, error_message):
     with pytest.raises(exceptions.NotSupportedError, match=error_message):
         sql_statement = sqlparse.parse(sql_string)[0]
-        sql_query = models.SQLQuery.from_statement(sql_statement)
+        sql_query = sql.SQLQuery.from_statement(sql_statement)
         select.translate_select(sql_query)
 
 
@@ -82,7 +82,7 @@ select_join_order_by_principal = (
 )
 def test_translate_select(sql_string):
     sql_statement = sqlparse.parse(sql_string)[0]
-    sql_query = models.SQLQuery.from_statement(sql_statement)
+    sql_query = sql.SQLQuery.from_statement(sql_statement)
     fql_query = select.translate_select(sql_query)
 
     assert isinstance(fql_query, QueryExpression)

@@ -11,8 +11,8 @@ from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 from mypy_extensions import TypedDict
 
-from sqlalchemy_fauna import exceptions
-from . import common
+from sqlalchemy_fauna import exceptions, sql
+from .. import fql
 
 
 FieldMetadata = TypedDict(
@@ -387,7 +387,7 @@ def _define_column(
     default_value = (
         default_keyword
         if default_keyword is None
-        else common.extract_value(default_keyword.value)
+        else sql.extract_value(default_keyword.value)
     )
 
     return {
@@ -461,10 +461,10 @@ def _extract_column_definitions(
 def _create_index_metadata(
     table_name: str, field_metadata: AllFieldMetadata
 ) -> AllIndexMetadata:
-    index_by_collection = partial(common.index_name, table_name)
+    index_by_collection = partial(fql.index_name, table_name)
 
     indexes: AllIndexMetadata = {
-        index_by_collection(index_type=common.IndexType.REF): {
+        index_by_collection(index_type=fql.IndexType.REF): {
             "column_names_": "id",
             "unique_": False,
             "constrained_columns_": None,
@@ -493,7 +493,7 @@ def _create_index_metadata(
 
         index_by_field = partial(index_by_collection, field_name)
 
-        indexes[index_by_field(common.IndexType.VALUE)] = {
+        indexes[index_by_field(fql.IndexType.VALUE)] = {
             "column_names_": f"{field_name},id",
             "unique_": False,
             "constrained_columns_": None,
@@ -503,7 +503,7 @@ def _create_index_metadata(
         # Sorting index, so we can support ORDER BY clauses in SQL queries.
         # This will allow us to order a set of refs by a value while still
         # keeping that same set of refs.
-        indexes[index_by_field(common.IndexType.SORT)] = {
+        indexes[index_by_field(fql.IndexType.SORT)] = {
             "column_names_": f"{field_name},id",
             "unique_": False,
             "constrained_columns_": None,
@@ -515,7 +515,7 @@ def _create_index_metadata(
         # contain the 'ref' field, which will never be duplicated
         is_unique = field_data["unique"]
         if is_unique:
-            indexes[index_by_field(common.IndexType.TERM)] = {
+            indexes[index_by_field(fql.IndexType.TERM)] = {
                 "column_names_": f"{field_name},id",
                 "unique_": is_unique,
                 "constrained_columns_": None,
@@ -531,7 +531,7 @@ def _create_index_metadata(
             assert len(reference_items) == 1
             referred_table, referred_column = reference_items[0]
 
-            indexes[index_by_field(common.IndexType.REF)] = {
+            indexes[index_by_field(fql.IndexType.REF)] = {
                 "column_names_": f"{field_name},id",
                 "unique_": False,
                 "constrained_columns_": field_name,
@@ -548,9 +548,7 @@ def _create_index_metadata(
                 referred_table, referred_column = reference_items[0]
 
                 indexes[
-                    index_by_field(
-                        common.IndexType.REF, foreign_key_name=reference_name
-                    )
+                    index_by_field(fql.IndexType.REF, foreign_key_name=reference_name)
                 ] = {
                     "column_names_": ",".join(set([field_name, reference_name, "id"])),
                     "unique_": False,
@@ -565,12 +563,12 @@ def _create_index_metadata(
 def _create_table_indices(
     table_name: str, field_metadata: AllFieldMetadata
 ) -> QueryExpression:
-    index_by_collection = partial(common.index_name, table_name)
+    index_by_collection = partial(fql.index_name, table_name)
 
     index_queries = [
         q.create_index(
             {
-                "name": index_by_collection(index_type=common.IndexType.REF),
+                "name": index_by_collection(index_type=fql.IndexType.REF),
                 "source": q.collection(table_name),
                 "terms": [{"field": ["ref"]}],
             }
@@ -597,7 +595,7 @@ def _create_table_indices(
             [
                 q.create_index(
                     {
-                        "name": index_by_field(common.IndexType.VALUE),
+                        "name": index_by_field(fql.IndexType.VALUE),
                         "source": q.collection(table_name),
                         "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
                     }
@@ -607,7 +605,7 @@ def _create_table_indices(
                 # keeping that same set of refs.
                 q.create_index(
                     {
-                        "name": index_by_field(common.IndexType.SORT),
+                        "name": index_by_field(fql.IndexType.SORT),
                         "source": q.collection(table_name),
                         "terms": [{"field": ["ref"]}],
                         "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
@@ -623,7 +621,7 @@ def _create_table_indices(
             index_queries.append(
                 q.create_index(
                     {
-                        "name": index_by_field(common.IndexType.TERM),
+                        "name": index_by_field(fql.IndexType.TERM),
                         "source": q.collection(table_name),
                         "terms": [{"field": ["data", field_name]}],
                         "unique": is_unique,
@@ -638,7 +636,7 @@ def _create_table_indices(
             index_queries.append(
                 q.create_index(
                     {
-                        "name": index_by_field(common.IndexType.REF),
+                        "name": index_by_field(fql.IndexType.REF),
                         "source": q.collection(table_name),
                         "terms": [{"field": ["data", field_name]}],
                     }
@@ -652,7 +650,7 @@ def _create_table_indices(
                     q.create_index(
                         {
                             "name": index_by_field(
-                                common.IndexType.REF, foreign_key_name=foreign_reference
+                                fql.IndexType.REF, foreign_key_name=foreign_reference
                             ),
                             "source": q.collection(table_name),
                             "terms": [{"field": ["data", field_name]}],
@@ -757,7 +755,7 @@ def _make_sure_information_schema_exists() -> typing.List[QueryExpression]:
             ),
         ),
         q.if_(
-            q.exists(q.index(common.index_name("information_schema_tables_"))),
+            q.exists(q.index(fql.index_name("information_schema_tables_"))),
             None,
             q.do(*index_queries),
         ),
@@ -830,8 +828,8 @@ def _translate_create_index(
         )
 
     index_terms = [{"field": ["data", index_field]} for index_field in index_fields]
-    index_name = common.index_name(
-        table_name, column_name=index_fields[0], index_type=common.IndexType.TERM
+    index_name = fql.index_name(
+        table_name, column_name=index_fields[0], index_type=fql.IndexType.TERM
     )
 
     return [

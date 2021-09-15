@@ -1,16 +1,95 @@
-"""Parse WHERE clauses to generate comparable FQL queries."""
+"""Shared SQL translations and utilities for various statement types."""
 
 import typing
+import enum
 import functools
 
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
 
-from sqlalchemy_fauna import exceptions
-from . import models, common
+from sqlalchemy_fauna import exceptions, sql
 
 
+NULL = "NULL"
+DATA = "data"
 MAX_PAGE_SIZE = 100000
+
+
+class IndexType(enum.Enum):
+    """Enum for the different types of Fauna indices used."""
+
+    ALL = "all"
+    REF = "ref"
+    TERM = "term"
+    VALUE = "value"
+    SORT = "sort"
+
+
+def get_foreign_key_ref(
+    foreign_value: QueryExpression,
+    reference_collection_name: QueryExpression,
+) -> QueryExpression:
+    """Get the Ref to a document associated with a foreign key value.
+
+    Params:
+    -------
+    foreign_value: The value to look up, usually an ID.
+    references: Field metadata dict that defines the collection (key) and field name (value)
+        that the foreign key refers to.
+
+    Returns:
+    --------
+    Fauna query expression that returns an array of Refs for the associated document(s).
+    """
+    return q.let(
+        {
+            "is_blank_reference": q.or_(
+                q.is_null(foreign_value),
+                q.equals(foreign_value, NULL),
+                q.equals(reference_collection_name, NULL),
+            ),
+        },
+        q.if_(
+            q.var("is_blank_reference"),
+            None,
+            q.ref(q.collection(reference_collection_name), foreign_value),
+        ),
+    )
+
+
+def index_name(
+    table_name: str,
+    column_name: typing.Optional[str] = None,
+    index_type: IndexType = IndexType.ALL,
+    foreign_key_name: typing.Optional[str] = None,
+) -> str:
+    """Get index name based on its configuration and internal conventions.
+
+    Params:
+    -------
+    table_name: Name of the index's source collection as represented by the SQL table.
+    column_name: Name of the column whose values are used to match index terms or values.
+    index_type: Internal convention that determines how the index matches documents
+        and what values are returned.
+    """
+    is_valid_column_name = (
+        column_name is not None and index_type != IndexType.ALL
+    ) or (column_name is None and index_type in [IndexType.ALL, IndexType.REF])
+    assert is_valid_column_name
+
+    is_valid_foreign_key_name = foreign_key_name is None or (
+        foreign_key_name is not None
+        and column_name is not None
+        and index_type == IndexType.REF
+    )
+    assert is_valid_foreign_key_name
+
+    column_substring = "" if column_name is None else f"_by_{column_name}"
+    index_type_substring = f"_{index_type.value}"
+    foreign_key_substring = (
+        "" if foreign_key_name is None else f"_to_{foreign_key_name}"
+    )
+    return table_name + column_substring + index_type_substring + foreign_key_substring
 
 
 def convert_to_ref_set(
@@ -29,21 +108,17 @@ def convert_to_ref_set(
         q.lambda_(
             ["value", "ref"],
             q.match(
-                q.index(
-                    common.index_name(collection_name, index_type=common.IndexType.REF)
-                ),
+                q.index(index_name(collection_name, index_type=IndexType.REF)),
                 q.var("ref"),
             ),
         ),
     )
 
 
-def _define_match_set(query_filter: models.Filter) -> QueryExpression:
+def _define_match_set(query_filter: sql.Filter) -> QueryExpression:
     field_name = query_filter.column.name
     comparison_value = query_filter.value
-    index_name_for_collection = functools.partial(
-        common.index_name, query_filter.table_name
-    )
+    index_name_for_collection = functools.partial(index_name, query_filter.table_name)
     convert_to_collection_ref_set = functools.partial(
         convert_to_ref_set, query_filter.table_name
     )
@@ -53,16 +128,16 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
         q.paginate(
             q.match(
                 q.index(
-                    common.index_name(
+                    index_name(
                         "information_schema_indexes_",
                         column_name="name_",
-                        index_type=common.IndexType.TERM,
+                        index_type=IndexType.TERM,
                     )
                 ),
-                common.index_name(
+                index_name(
                     collection_name,
                     column_name=field_name,
-                    index_type=common.IndexType.REF,
+                    index_type=IndexType.REF,
                 ),
             ),
         ),
@@ -70,7 +145,7 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
 
     index_name_for_field = functools.partial(index_name_for_collection, field_name)
     equality_range = q.range(
-        q.match(q.index(index_name_for_field(common.IndexType.VALUE))),
+        q.match(q.index(index_name_for_field(IndexType.VALUE))),
         [comparison_value],
         [comparison_value],
     )
@@ -84,8 +159,8 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
 
         return q.let(
             {
-                "ref_index": q.index(index_name_for_field(common.IndexType.REF)),
-                "term_index": q.index(index_name_for_field(common.IndexType.TERM)),
+                "ref_index": q.index(index_name_for_field(IndexType.REF)),
+                "term_index": q.index(index_name_for_field(IndexType.TERM)),
                 "info_indexes": get_info_indexes_with_references(
                     query_filter.table_name, field_name
                 ),
@@ -95,15 +170,13 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
                 q.exists(q.var("ref_index")),
                 q.match(
                     q.var("ref_index"),
-                    common.get_foreign_key_ref(
+                    get_foreign_key_ref(
                         q.var("comparison_value"),
                         # Assumes that there is only one reference per foreign key
                         # and that it refers to the associated collection's ID field
                         # (e.g. {'associated_table': 'id'}).
                         # This is enforced via NotSupported errors when creating collections.
-                        q.select(
-                            [0, common.DATA, "referred_table_"], q.var("info_indexes")
-                        ),
+                        q.select([0, DATA, "referred_table_"], q.var("info_indexes")),
                     ),
                 ),
                 q.if_(
@@ -124,7 +197,7 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
     # all query translation, so I'm leaving this note as a warning.
     if query_filter.operator in [">=", ">"]:
         inclusive_comparison_range = q.range(
-            q.match(q.index(index_name_for_field(common.IndexType.VALUE))),
+            q.match(q.index(index_name_for_field(IndexType.VALUE))),
             [comparison_value],
             [],
         )
@@ -138,7 +211,7 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
 
     if query_filter.operator in ["<=", "<"]:
         inclusive_comparison_range = q.range(
-            q.match(q.index(index_name_for_field(common.IndexType.VALUE))),
+            q.match(q.index(index_name_for_field(IndexType.VALUE))),
             [],
             [comparison_value],
         )
@@ -155,7 +228,7 @@ def _define_match_set(query_filter: models.Filter) -> QueryExpression:
     )
 
 
-def define_document_set(table: models.Table) -> QueryExpression:
+def define_document_set(table: sql.Table) -> QueryExpression:
     """Build FQL match query based on filtering rules from the SQL query.
 
     Params:
@@ -169,7 +242,7 @@ def define_document_set(table: models.Table) -> QueryExpression:
     filters = table.filters
 
     if not any(filters):
-        return q.intersection(q.match(q.index(common.index_name(table.name))))
+        return q.intersection(q.match(q.index(index_name(table.name))))
 
     document_sets = [_define_match_set(query_filter) for query_filter in filters]
     return q.intersection(*document_sets)
@@ -185,7 +258,7 @@ def _build_merge(*table_names: str):
 def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=None):
     if order_by is None:
         return q.select(
-            common.DATA,
+            DATA,
             q.map_(
                 q.lambda_(f"{table_name}_ref", inner_query),
                 q.paginate(q.var(f"joined_{table_name}"), size=MAX_PAGE_SIZE),
@@ -195,14 +268,14 @@ def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=Non
     ordered_result = q.join(
         q.var(f"joined_{table_name}"),
         q.index(
-            common.index_name(
+            index_name(
                 table_name,
                 column_name=order_by.columns[0].name,
-                index_type=common.IndexType.SORT,
+                index_type=IndexType.SORT,
             )
         ),
     )
-    if order_by.direction == models.OrderDirection.DESC:
+    if order_by.direction == sql.OrderDirection.DESC:
         ordered_result = q.reverse(ordered_result)
 
     return q.select(
@@ -215,9 +288,9 @@ def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=Non
 
 
 def _build_page_query(
-    table: models.Table,
+    table: sql.Table,
     merge_func: typing.Callable[[str], QueryExpression],
-    order_by: typing.Optional[models.OrderBy] = None,
+    order_by: typing.Optional[sql.OrderBy] = None,
 ):
     partial_merge_func = functools.partial(merge_func, table.name)
     right_table = table.right_join_table
@@ -235,7 +308,7 @@ def _build_page_query(
             {
                 f"{table.name}_doc": q.get(q.var(f"{table.name}_ref")),
                 f"{table.name}_data": q.merge(
-                    q.select(common.DATA, q.var(f"{table.name}_doc")),
+                    q.select(DATA, q.var(f"{table.name}_doc")),
                     {"ref": q.select("ref", q.var(f"{table.name}_doc"))},
                 ),
             },
@@ -268,7 +341,7 @@ def _build_page_query(
             {
                 f"{left_table.name}_doc": q.get(q.var(f"{left_table.name}_ref")),
                 f"{left_table.name}_data": q.merge(
-                    q.select(common.DATA, q.var(f"{left_table.name}_doc")),
+                    q.select(DATA, q.var(f"{left_table.name}_doc")),
                     {"ref": q.select("ref", q.var(f"{left_table.name}_doc"))},
                 ),
                 f"{table.name}_ref": q.select(
@@ -288,17 +361,17 @@ def _build_page_query(
         {
             f"{left_table.name}_doc": q.get(q.var(f"{left_table.name}_ref")),
             f"{left_table.name}_data": q.merge(
-                q.select(common.DATA, q.var(f"{left_table.name}_doc")),
+                q.select(DATA, q.var(f"{left_table.name}_doc")),
                 {"ref": q.select("ref", q.var(f"{left_table.name}_doc"))},
             ),
             table.name: define_document_set(table),
             f"joined_{table.name}": q.intersection(
                 q.match(
                     q.index(
-                        common.index_name(
+                        index_name(
                             table.name,
                             column_name=left_foreign_key.name,
-                            index_type=common.IndexType.REF,
+                            index_type=IndexType.REF,
                         )
                     ),
                     q.var(f"{left_table.name}_ref"),
@@ -311,7 +384,7 @@ def _build_page_query(
 
 
 def join_collections(
-    left_most_table: models.Table, order_by: typing.Optional[models.OrderBy] = None
+    left_most_table: sql.Table, order_by: typing.Optional[sql.OrderBy] = None
 ) -> QueryExpression:
     """Join together multiple collections to return their documents in the response.
 
@@ -324,7 +397,7 @@ def join_collections(
     return _build_page_query(left_most_table, _build_merge, order_by=order_by)
 
 
-def update_documents(table: models.Table) -> QueryExpression:
+def update_documents(table: sql.Table) -> QueryExpression:
     """Update document fields with the given values.
 
     Params:

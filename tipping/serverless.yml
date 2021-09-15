@@ -37,12 +37,11 @@ custom:
     number: 3
 
 package:
-  include:
+  patterns:
+    - "!**"
     - handler.py
     - src/tipping/**
     - sqlalchemy-fauna/**
-  exclude:
-    - "**"
 
 functions:
   update_fixture_data:

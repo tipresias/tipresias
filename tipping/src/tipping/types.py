@@ -1,6 +1,6 @@
 """Collection of TypedDicts for static typing."""
 
-from typing import Union, Literal
+import typing
 from datetime import datetime
 
 from mypy_extensions import TypedDict
@@ -34,7 +34,7 @@ CleanPredictionData = TypedDict(
 MatchData = TypedDict(
     "MatchData",
     {
-        "date": Union[datetime, Timestamp],
+        "date": typing.Union[datetime, Timestamp],
         "year": int,
         "round": str,
         "round_number": int,
@@ -52,17 +52,21 @@ MLModelInfo = TypedDict(
     "MLModelInfo",
     {
         "name": str,
-        "prediction_type": Union[Literal["margin"], Literal["win_probability"]],
+        "prediction_type": typing.Union[
+            typing.Literal["margin"], typing.Literal["win_probability"]
+        ],
         "trained_to": int,
-        "data_set": Union[Literal["legacy_model_data"], Literal["model_data"]],
-        "label_col": Union[Literal["margin"], Literal["result"]],
+        "data_set": typing.Union[
+            typing.Literal["legacy_model_data"], typing.Literal["model_data"]
+        ],
+        "label_col": typing.Union[typing.Literal["margin"], typing.Literal["result"]],
     },
 )
 
 FixtureData = TypedDict(
     "FixtureData",
     {
-        "date": Union[datetime],
+        "date": typing.Union[datetime],
         "year": int,
         "round_number": int,
         "home_team": str,

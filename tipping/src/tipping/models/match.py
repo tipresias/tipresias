@@ -129,7 +129,7 @@ class Match(Base):
         matches = []
 
         for fixture_datum in future_matches.to_dict("records"):
-            match = Match.get_or_new(
+            match = Match.get_or_build(
                 session,
                 start_date_time=fixture_datum["date"],
                 round_number=fixture_datum["round_number"],
@@ -146,7 +146,7 @@ class Match(Base):
         return matches
 
     @classmethod
-    def get_or_new(
+    def get_or_build(
         cls,
         session: orm_session.Session,
         start_date_time=None,

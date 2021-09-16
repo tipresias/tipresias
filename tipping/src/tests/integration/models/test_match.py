@@ -193,3 +193,35 @@ def test_update_results(fauna_session):
 
         for prediction in match.predictions:
             assert prediction.is_correct is not None
+
+
+def test_get_or_build(fauna_session):
+    # Need to turn off autoflush to keep SQLA from saving records before we're ready
+    fauna_session.autoflush = False
+
+    match_data = data_factories.fake_fixture_data().iloc[0, :]
+    built_match = Match.get_or_build(
+        fauna_session,
+        venue=match_data["venue"],
+        start_date_time=match_data["date"],
+        round_number=match_data["round_number"],
+    )
+
+    assert match_data["venue"] == built_match.venue
+    assert match_data["date"] == built_match.start_date_time
+    assert match_data["round_number"] == built_match.round_number
+
+    match_count = fauna_session.execute(select(func.count(Match.id))).scalar()
+    assert match_count == 0
+
+    fauna_session.add(built_match)
+    fauna_session.commit()
+
+    gotten_match = Match.get_or_build(
+        fauna_session,
+        venue=built_match.venue,
+        start_date_time=built_match.start_date_time,
+        round_number=built_match.round_number,
+    )
+
+    assert gotten_match == built_match

@@ -129,10 +129,19 @@ class Match(Base):
         matches = []
 
         for fixture_datum in future_matches.to_dict("records"):
+            raw_date: typing.Optional[datetime] = (
+                fixture_datum["date"].to_pydatetime()
+                if isinstance(fixture_datum["date"], pd.Timestamp)
+                else fixture_datum["date"]
+            )
+            match_date = (
+                raw_date if raw_date is None else raw_date.astimezone(timezone.utc)
+            )
+            round_number = int(fixture_datum["round_number"])
             match = Match.get_or_build(
                 session,
-                start_date_time=fixture_datum["date"],
-                round_number=fixture_datum["round_number"],
+                start_date_time=match_date,
+                round_number=round_number,
                 venue=fixture_datum["venue"],
             )
 
@@ -149,10 +158,10 @@ class Match(Base):
     def get_by(
         cls,
         session: orm_session.Session,
-        start_date_time: typing.Optional[typing.Union[datetime, pd.Timestamp]] = None,
+        start_date_time: typing.Optional[datetime] = None,
         round_number: typing.Optional[int] = None,
         venue: typing.Optional[str] = None,
-    ) -> Match:
+    ) -> typing.Optional[Match]:
         """Get a match object from the DB that matches the given attributes.
 
         Params:
@@ -163,32 +172,25 @@ class Match(Base):
 
         Returns:
         --------
-        Match instance
+        Match instance or None if no record matches the params.
         """
-        raw_date: typing.Optional[datetime] = (
-            start_date_time.to_pydatetime()
-            if isinstance(start_date_time, pd.Timestamp)
-            else start_date_time
-        )
-        match_date = raw_date if raw_date is None else raw_date.astimezone(timezone.utc)
-
         conditions = []
-        if match_date is not None:
-            conditions.append(Match.start_date_time == match_date)
+        if start_date_time is not None:
+            conditions.append(cls.start_date_time == start_date_time)
         if round_number is not None:
-            conditions.append(Match.round_number == round_number)
+            conditions.append(cls.round_number == round_number)
         if venue is not None:
-            conditions.append(Match.venue == venue)
+            conditions.append(cls.venue == venue)
 
-        return session.execute(select(Match).where(*conditions)).scalar()
+        return session.execute(select(cls).where(*conditions)).scalar()
 
     @classmethod
     def get_or_build(
         cls,
         session: orm_session.Session,
-        start_date_time=None,
-        round_number=None,
-        venue=None,
+        start_date_time: typing.Optional[datetime] = None,
+        round_number: typing.Optional[int] = None,
+        venue: typing.Optional[str] = None,
     ) -> Match:
         """Get or instantiate a match object.
 
@@ -202,28 +204,19 @@ class Match(Base):
         --------
         A match record.
         """
-        raw_date: datetime = (
-            start_date_time.to_pydatetime()
-            if isinstance(start_date_time, pd.Timestamp)
-            else start_date_time
+        maybe_match = cls.get_by(
+            session,
+            start_date_time=start_date_time,
+            round_number=round_number,
+            venue=venue,
         )
-
-        match_date = raw_date.astimezone(timezone.utc)
-
-        maybe_match = session.execute(
-            select(Match).where(
-                Match.start_date_time == match_date,
-                Match.round_number == int(round_number),
-                Match.venue == venue,
-            )
-        ).scalar()
 
         if maybe_match:
             return maybe_match
 
         return Match(
-            start_date_time=match_date,
-            round_number=int(round_number),
+            start_date_time=start_date_time,
+            round_number=round_number,
             venue=venue,
         )
 

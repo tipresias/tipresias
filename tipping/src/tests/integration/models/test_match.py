@@ -225,3 +225,30 @@ def test_get_or_build(fauna_session):
     )
 
     assert gotten_match == built_match
+
+
+def test_get_by(fauna_session):
+    matches = model_factories.MatchFactory.create_batch(5, venue=Fake.company())
+    match = matches[np.random.randint(1, len(matches) - 1)]
+
+    blank_match = Match.get_by(
+        fauna_session,
+        venue=Fake.company(),
+        start_date_time=Fake.date_time_this_month(tzinfo=timezone.utc),
+        round_number=Fake.pyint(),
+    )
+
+    assert blank_match is None
+
+    gotten_match = Match.get_by(
+        fauna_session,
+        venue=match.venue,
+        start_date_time=match.start_date_time,
+        round_number=match.round_number,
+    )
+
+    assert gotten_match == match
+
+    gotten_match = Match.get_by(fauna_session, venue=match.venue)
+
+    assert gotten_match == matches[0]

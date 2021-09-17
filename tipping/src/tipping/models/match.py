@@ -146,6 +146,43 @@ class Match(Base):
         return matches
 
     @classmethod
+    def get_by(
+        cls,
+        session: orm_session.Session,
+        start_date_time: typing.Optional[typing.Union[datetime, pd.Timestamp]] = None,
+        round_number: typing.Optional[int] = None,
+        venue: typing.Optional[str] = None,
+    ) -> Match:
+        """Get a match object from the DB that matches the given attributes.
+
+        Params:
+        -------
+        start_date_time: When the match starts.
+        round_number: Round in which the match takes place.
+        venue: Stadium where the match is played.
+
+        Returns:
+        --------
+        Match instance
+        """
+        raw_date: typing.Optional[datetime] = (
+            start_date_time.to_pydatetime()
+            if isinstance(start_date_time, pd.Timestamp)
+            else start_date_time
+        )
+        match_date = raw_date if raw_date is None else raw_date.astimezone(timezone.utc)
+
+        conditions = []
+        if match_date is not None:
+            conditions.append(Match.start_date_time == match_date)
+        if round_number is not None:
+            conditions.append(Match.round_number == round_number)
+        if venue is not None:
+            conditions.append(Match.venue == venue)
+
+        return session.execute(select(Match).where(*conditions)).scalar()
+
+    @classmethod
     def get_or_build(
         cls,
         session: orm_session.Session,

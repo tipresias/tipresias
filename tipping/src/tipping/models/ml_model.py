@@ -3,11 +3,13 @@
 # pylint: disable=singleton-comparison
 """Data model for machine-learning models/estimators."""
 
-from typing import List
+from __future__ import annotations
+
+import typing
 import enum
 
 from sqlalchemy import inspect, select, Column, String, Text, Integer, Boolean
-from sqlalchemy.orm import validates, relationship
+from sqlalchemy.orm import validates, relationship, session as orm_session
 
 from tipping.models.base import Base, ValidationError
 from tipping.settings import Session
@@ -29,7 +31,7 @@ class PredictionType(enum.Enum):
         return name in cls.values()
 
     @classmethod
-    def values(cls) -> List:
+    def values(cls) -> typing.List:
         """Returns all name values in TeamName."""
         return [member.value for member in cls]
 
@@ -45,6 +47,8 @@ class MLModel(Base):
     is_principal: Whether the model's predicted winners represent the official
         predicted winners of Tipresias.
     used_in_competitions: Whether the model's predictions are submitted for competitions.
+    prediction_type: The type of result that the model predictions
+        (margin or win probability).
     """
 
     __tablename__ = "ml_models"
@@ -59,6 +63,42 @@ class MLModel(Base):
     prediction_type = Column(String, nullable=False, index=True)
 
     _session = None
+
+    @classmethod
+    def get_by(
+        cls,
+        session: orm_session.Session,
+        name: typing.Optional[str] = None,
+        is_principal: typing.Optional[bool] = None,
+        used_in_competitions: typing.Optional[bool] = None,
+        prediction_type: typing.Optional[PredictionType] = None,
+    ) -> typing.Optional[MLModel]:
+        """Get an MLModel object from the DB that matches the given attributes.
+
+        Params:
+        -------
+        name: Name of the model.
+        is_principal: Whether the model's predicted winners represent the official
+            predicted winners of Tipresias.
+        used_in_competitions: Whether the model's predictions are submitted for competitions.
+        prediction_type: The type of result that the model predictions
+            (margin or win probability).
+
+        Returns:
+        --------
+        MLModel instance or None if no record matches the params.
+        """
+        conditions = []
+        if name is not None:
+            conditions.append(cls.name == name)
+        if is_principal is not None:
+            conditions.append(cls.is_principal == is_principal)
+        if used_in_competitions is not None:
+            conditions.append(cls.used_in_competitions == used_in_competitions)
+        if prediction_type is not None:
+            conditions.append(cls.prediction_type == prediction_type)
+
+        return session.execute(select(cls).where(*conditions)).scalar()
 
     @validates("is_principal", "used_in_competitions", "prediction_type")
     def validate_competition_attributes(self, key, value):

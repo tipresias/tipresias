@@ -164,7 +164,8 @@ class TestTable:
         _, where_group = statement.token_next_by(i=(token_groups.Where))
 
         column = sql_table.Column.from_identifier(column_identifier)
-        sql_filters = sql_table.Filter.from_where_group(where_group)
+        sql_filter_groups = sql_table.FilterGroup.from_where_group(where_group)
+        sql_filters = sql_filter_groups[0].filters
         table = sql_table.Table(name=table_name, columns=[column], filters=sql_filters)
         assert table.name == table_name
         assert str(table) == table_name
@@ -210,7 +211,8 @@ class TestTable:
         statement = sqlparse.parse(sql_query)[0]
         _, where_group = statement.token_next_by(i=(token_groups.Where))
 
-        sql_filters = sql_table.Filter.from_where_group(where_group)
+        sql_filter_groups = sql_table.FilterGroup.from_where_group(where_group)
+        sql_filters = sql_filter_groups[0].filters
         table = sql_table.Table(name=table_name)
 
         table.add_filter(sql_filters[0])
@@ -260,3 +262,218 @@ class TestTable:
             table.add_join(
                 foreign_table, comparison_group, sql_table.JoinDirection.RIGHT
             )
+
+
+class TestFilter:
+    @staticmethod
+    def test_filter():
+        column = sql_table.Column(
+            name="name", alias="name", table_name="users", position=0
+        )
+        operator = "="
+        value = "Bob"
+        where_filter = sql_table.Filter(column=column, operator=operator, value=value)
+
+        assert where_filter.column == column
+        assert where_filter.operator == operator
+        assert where_filter.value == value
+
+    select_values = "SELECT * FROM users"
+    id_value = Fake.credit_card_number()
+    name = Fake.first_name()
+    age = Fake.pyint()
+    finger_count = Fake.pyint()
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        ["sql_string", "expected_attributes"],
+        [
+            # SELECT with non-ID '=' comparison
+            (
+                select_values + f" WHERE users.name = '{name}'",
+                {
+                    "operator": "=",
+                    "value": name,
+                },
+            ),
+            # SELECT with '>' comparison
+            (
+                select_values + f" WHERE users.age > {age}",
+                {
+                    "operator": ">",
+                    "value": age,
+                },
+            ),
+            # SELECT with '>=' comparison
+            (
+                select_values + f" WHERE users.age >= {age}",
+                {
+                    "operator": ">=",
+                    "value": age,
+                },
+            ),
+            # SELECT with '<' comparison
+            (
+                select_values + f" WHERE users.age < {age}",
+                {
+                    "operator": "<",
+                    "value": age,
+                },
+            ),
+            # SELECT with '<=' comparison
+            (
+                select_values + f" WHERE users.age <= {age}",
+                {
+                    "operator": "<=",
+                    "value": age,
+                },
+            ),
+            # SELECT with column and comparison value in reverse order
+            (
+                select_values + " WHERE 'Bob' = users.name",
+                {
+                    "operator": "=",
+                    "value": "Bob",
+                },
+            ),
+        ],
+    )
+    def test_from_comparison_group(sql_string, expected_attributes):
+        statement = sqlparse.parse(sql_string)[0]
+        _, where_group = statement.token_next_by(i=(token_groups.Where))
+        _, comparison = where_group.token_next_by(i=token_groups.Comparison)
+
+        where_filter = sql_table.Filter.from_comparison_group(comparison)
+        assert isinstance(where_filter, sql_table.Filter)
+        for key, value in expected_attributes.items():
+            assert getattr(where_filter, key) == value
+
+    where_not_equal_1 = select_values + f" WHERE users.age <> {Fake.pyint()}"
+    where_not_equal_2 = select_values + f" WHERE users.age != {Fake.pyint()}"
+    where_like = select_values + f" WHERE users.name LIKE '%{Fake.first_name()}%'"
+    where_in = (
+        select_values
+        + f" WHERE users.name IN ('{Fake.first_name()}', '{Fake.first_name()}')"
+    )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        ["sql_query", "error_message"],
+        [
+            (
+                where_not_equal_1,
+                "Only the following comparisons are supported in WHERE clauses",
+            ),
+            (
+                where_not_equal_2,
+                "Only the following comparisons are supported in WHERE clauses",
+            ),
+            (
+                where_like,
+                "Only the following comparisons are supported in WHERE clauses",
+            ),
+            (where_in, "Only the following comparisons are supported in WHERE clauses"),
+        ],
+    )
+    def test_unsupported_from_comparison_group(sql_query, error_message):
+        statement = sqlparse.parse(sql_query)[0]
+        _, where_group = statement.token_next_by(i=(token_groups.Where))
+        _, comparison = where_group.token_next_by(i=token_groups.Comparison)
+
+        with pytest.raises(exceptions.NotSupportedError, match=error_message):
+            sql_table.Filter.from_comparison_group(comparison)
+
+
+class TestFilterGroup:
+    select_values = "SELECT * FROM users"
+
+    id_value = Fake.credit_card_number()
+    name = Fake.first_name()
+    age = Fake.pyint()
+    finger_count = Fake.pyint()
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        ["sql_string", "expected_attributes"],
+        [
+            # SELECT *
+            (
+                select_values,
+                [],
+            ),
+            # SELECT ID
+            (
+                select_values + f" WHERE users.id = '{id_value}'",
+                [
+                    {
+                        "operator": "=",
+                        "value": id_value,
+                    }
+                ],
+            ),
+            # SELECT with multiple ANDs
+            (
+                select_values
+                + f" WHERE users.name = '{name}' AND users.age = {age} "
+                + f"AND users.finger_count = {finger_count}",
+                [
+                    {
+                        "operator": "=",
+                        "value": name,
+                    },
+                    {
+                        "operator": "=",
+                        "value": age,
+                    },
+                    {
+                        "operator": "=",
+                        "value": finger_count,
+                    },
+                ],
+            ),
+            # SELECT with 'IS NULL' comparison
+            (
+                select_values + " WHERE users.job IS NULL",
+                [
+                    {
+                        "operator": "=",
+                        "value": None,
+                    }
+                ],
+            ),
+        ],
+    )
+    def test_from_where_group(sql_string, expected_attributes):
+        statement = sqlparse.parse(sql_string)[0]
+        _, where_group = statement.token_next_by(i=(token_groups.Where))
+
+        filter_groups = sql_table.FilterGroup.from_where_group(where_group)
+        for filter_group in filter_groups:
+            for sql_filter, expected_filter_attributes in zip(
+                filter_group.filters, expected_attributes
+            ):
+                assert isinstance(sql_filter, sql_table.Filter)
+                for key, value in expected_filter_attributes.items():
+                    assert getattr(sql_filter, key) == value
+
+    where_between = (
+        select_values + f" WHERE users.age BETWEEN {Fake.pyint()} AND {Fake.pyint}"
+    )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        ["sql_query", "error_message"],
+        [
+            (where_between, "BETWEEN not yet supported in WHERE clauses"),
+            (
+                select_values + f" WHERE users.name = '{name}' OR users.age = {age}",
+                "OR not yet supported",
+            ),
+        ],
+    )
+    def test_unsupported_from_where_group(sql_query, error_message):
+        statement = sqlparse.parse(sql_query)[0]
+        _, where_group = statement.token_next_by(i=(token_groups.Where))
+
+        with pytest.raises(exceptions.NotSupportedError, match=error_message):
+            sql_table.FilterGroup.from_where_group(where_group)

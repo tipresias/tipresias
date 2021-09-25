@@ -122,6 +122,15 @@ class MatchFactory(SQLAlchemyModelFactory):
         model = Match
         sqlalchemy_session = Session
 
+    class Params:
+        """Params for modifying the factory's default attributes."""
+
+        year = TODAY.year
+        # A lot of functionality depends on future matches for generating predictions
+        future = factory.Trait(
+            start_date_time=factory.LazyAttributeSequence(_fake_future_datetime)
+        )
+
     start_date_time = factory.LazyAttributeSequence(_fake_datetime)
     round_number = factory.Sequence(
         lambda n: math.ceil((n + 1) / TYPICAL_N_MATCHES_PER_ROUND)
@@ -132,15 +141,6 @@ class MatchFactory(SQLAlchemyModelFactory):
             FAKE.pyint(min_value=0, max_value=(len(settings.VENUES) - 1))
         ]
     )
-
-    class Params:
-        """Params for modifying the factory's default attributes."""
-
-        year = TODAY.year
-        # A lot of functionality depends on future matches for generating predictions
-        future = factory.Trait(
-            start_date_time=factory.LazyAttributeSequence(_fake_future_datetime)
-        )
 
 
 class TeamMatchFactory(SQLAlchemyModelFactory):
@@ -202,33 +202,32 @@ class PredictionFactory(SQLAlchemyModelFactory):
         force_correct: A factory trait that, when present, forces the predicted_winner
             to equal the actual match winner. We sometimes need this for tests
             that check prediction metric calculations.
+        force_incorrect: A factory trait that, when present, forces the predicted_winner
+            to equal the actual loser of the match. We sometimes need this for tests
+            that check prediction metric calculations.
         """
 
         force_correct = factory.Trait(
-            predicted_winner=factory.LazyAttribute(
-                lambda pred: max(
-                    pred.match.teammatch_set.all(), key=lambda pred: pred.score
-                ).team
-            )
+            predicted_winner=factory.LazyAttribute(lambda pred: pred.match.winner)
         )
 
         force_incorrect = factory.Trait(
             predicted_winner=factory.LazyAttribute(
                 lambda pred: min(
-                    pred.match.teammatch_set.all(), key=lambda pred: pred.score
+                    pred.match.team_matches, key=lambda pred: pred.score
                 ).team
             )
         )
 
-    match = factory.SubFactory(MatchFactory)
+    match = factory.SubFactory("tests.fixtures.model_factories.FullMatchFactory")
     # Can't use SubFactory for associated MLModel, because it's not realistic to have
-    # one model per prediction, and in cases where there are a lot of predictions,
+    # as many models as we have predictions, and in cases where there are a lot of predictions,
     # we risk duplicate model names, which is invalid
     ml_model = factory.Iterator(sql.select(MLModel))
     # Have to make sure we get a team from the associated match
     # for realistic prediction metrics
     predicted_winner = factory.LazyAttribute(
-        lambda pred: pred.match.teammatch_set.all()[np.random.randint(0, 2)].team
+        lambda pred: pred.match.team_matches[np.random.randint(0, 2)].team
     )
     predicted_margin = factory.LazyAttribute(
         lambda pred: np.random.random() * 50
@@ -248,8 +247,7 @@ class PredictionFactory(SQLAlchemyModelFactory):
         lambda pred: (
             None
             if pred.match.start_date_time > datetime.now(tz=timezone.utc)
-            else pred.match.teammatch_set.order_by("-score").first().team
-            == pred.predicted_winner
+            else pred.match.winner == pred.predicted_winner
         )
     )
 

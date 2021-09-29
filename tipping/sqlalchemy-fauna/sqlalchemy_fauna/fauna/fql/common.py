@@ -383,18 +383,32 @@ def _build_page_query(
     )
 
 
-def join_collections(
-    left_most_table: sql.Table, order_by: typing.Optional[sql.OrderBy] = None
-) -> QueryExpression:
+def join_collections(sql_query: sql.SQLQuery) -> QueryExpression:
     """Join together multiple collections to return their documents in the response.
 
     Params:
     -------
-    left_most_table: The first table in a chain of JOINS
+    sql_query: SQLQuery object with information about the query params.
 
+    Returns:
+    --------
+    An FQL query expression for joined and filtered documents.
     """
-    assert left_most_table.left_join_table is None
-    return _build_page_query(left_most_table, _build_merge, order_by=order_by)
+    tables = sql_query.tables
+    order_by = sql_query.order_by
+    from_table = tables[0]
+
+    if order_by is not None and order_by.columns[0].table_name != from_table.name:
+        raise exceptions.NotSupportedError(
+            "Fauna uses indexes for both joining and ordering of results, "
+            "and we currently can only sort the principal table "
+            "(i.e. the one after 'FROM') in the query. You can sort on a column "
+            "from the principal table, query one table at a time, or remove "
+            "the ordering constraint."
+        )
+
+    assert from_table.left_join_table is None
+    return _build_page_query(from_table, _build_merge, order_by=order_by)
 
 
 def update_documents(table: sql.Table) -> QueryExpression:

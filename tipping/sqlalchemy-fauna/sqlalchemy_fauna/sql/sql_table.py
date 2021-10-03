@@ -384,6 +384,11 @@ class Filter:
         """Name of the associated table in the SQL query."""
         return self._table_name
 
+    @property
+    def name(self) -> str:
+        """Unique name of the filter based on its query parameters."""
+        return f"{self.table_name}_{self.column.name}_{self.operator}_{self.value}"
+
 
 class FilterGroup:
     """Representation of a group of WHERE clauses separated by ANDs.

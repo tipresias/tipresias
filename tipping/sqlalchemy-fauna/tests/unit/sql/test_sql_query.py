@@ -3,7 +3,6 @@
 import functools
 
 import sqlparse
-from sqlparse import sql as token_groups
 import pytest
 from faker import Faker
 

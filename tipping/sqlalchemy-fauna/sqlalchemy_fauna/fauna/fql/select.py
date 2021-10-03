@@ -11,8 +11,11 @@ def _define_single_collection_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
     order_by = sql_query.order_by
     from_table = tables[0]
+    filter_group = (
+        None if not any(sql_query.filter_groups) else sql_query.filter_groups[0]
+    )
 
-    document_set = common.define_document_set(from_table)
+    document_set = common.define_document_set(from_table, filter_group)
 
     if order_by is None:
         return q.paginate(document_set, size=common.MAX_PAGE_SIZE)

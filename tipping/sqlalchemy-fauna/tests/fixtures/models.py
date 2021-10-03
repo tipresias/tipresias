@@ -31,3 +31,4 @@ class Child(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     user = orm.relationship("User", back_populates="children")
     name = Column(String, unique=True)
+    game = Column(String)

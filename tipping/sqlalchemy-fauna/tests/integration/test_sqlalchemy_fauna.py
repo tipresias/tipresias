@@ -7,7 +7,7 @@ from sqlalchemy import inspect, exc as sqlalchemy_exceptions, sql
 import pytest
 from faker import Faker
 import numpy as np
-from tests.fixtures.factories import UserFactory
+from tests.fixtures.factories import ChildFactory, UserFactory
 
 from tests.fixtures import models, factories
 
@@ -374,32 +374,18 @@ def test_order_by(fauna_session):
 
 
 def test_join_order_by(fauna_session):
-    names = [
-        ("Bob", ["Louise", "Tina", "Gene"]),
-        ("Jimmy", ["Jimmy Jr.", "Ollie", "Andy"]),
-    ]
-
-    for user_name, child_names in names:
-
-        user = factories.UserFactory(name=user_name)
-
-        for child_name in child_names:
-            factories.ChildFactory(name=child_name, user=user)
+    children = [ChildFactory() for _ in range(5)]
+    child_games = [child.game for child in children]
 
     queried_children = (
         fauna_session.execute(
-            sql.select(models.Child, models.User)
-            .join(models.Child.user)
-            .order_by(models.Child.name)
+            sql.select(models.Child).join(models.Child.user).order_by(models.Child.game)
         )
         .scalars()
         .all()
     )
 
-    child_names = functools.reduce(
-        lambda agg_names, curr_names: agg_names + curr_names[1], names, []
-    )
-    assert [child.name for child in queried_children] == sorted(child_names)
+    assert [child.game for child in queried_children] == sorted(child_games)
 
 
 def test_limit(fauna_session):

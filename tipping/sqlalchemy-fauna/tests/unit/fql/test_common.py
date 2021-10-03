@@ -5,6 +5,7 @@ from faker import Faker
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
 import numpy as np
+import sqlparse
 
 from sqlalchemy_fauna import exceptions, sql
 from sqlalchemy_fauna.fauna.fql import common
@@ -89,9 +90,10 @@ def test_unsupported_define_document_set(filter_params):
     query_filter = sql.Filter(**filter_params)
 
     table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
+    filter_group = sql.FilterGroup(filters=[query_filter])
 
     with pytest.raises(exceptions.NotSupportedError, match="Unsupported operator"):
-        common.define_document_set(table)
+        common.define_document_set(table, filter_group)
 
 
 @pytest.mark.parametrize(
@@ -123,109 +125,92 @@ def test_define_document_set(filter_params, column_params):
     query_filter = sql.Filter(**{**base_filter_params, **filter_params})
 
     table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
+    filter_group = sql.FilterGroup(filters=[query_filter])
 
-    fql_query = common.define_document_set(table)
+    fql_query = common.define_document_set(table, filter_group)
     assert isinstance(fql_query, QueryExpression)
 
 
 def test_join_collections():
-    from_table = sql.Table(name=Fake.word())
+    from_table = "users"
+    first_child_table = "accounts"
 
-    first_child_table = sql.Table(name=Fake.word())
-    from_table.right_join_table = first_child_table
-    from_table.right_join_key = sql.Column(
-        name="ref", table_name=from_table.name, alias=Fake.word(), position=0
+    select_string = f"SELECT {from_table}.name, {first_child_table}.number "
+    from_string = f"FROM {from_table} "
+    join_string = (
+        f"JOIN {first_child_table} ON {from_table}.id = {first_child_table}.user_id"
     )
-    first_child_table.left_join_table = from_table
-    first_child_table.left_join_key = sql.Column(
-        name=Fake.word(),
-        table_name=first_child_table.name,
-        alias=Fake.word(),
-        position=1,
-    )
+    sql_string = select_string + from_string + join_string
 
-    join_query = common.join_collections(from_table)
+    sql_statement = sqlparse.parse(sql_string)[0]
+    sql_query = sql.SQLQuery.from_statement(sql_statement)
+
+    join_query = common.join_collections(sql_query)
     assert isinstance(join_query, QueryExpression)
 
-    second_child_table = sql.Table(name=Fake.word())
-    first_child_table.right_join_table = second_child_table
-    first_child_table.right_join_key = sql.Column(
-        name="ref", table_name=first_child_table.name, alias=Fake.word(), position=2
+    second_child_table = "transactions"
+    select_string = select_string + f"{second_child_table}.amount "
+    join_string = (
+        join_string
+        + f" JOIN {second_child_table} ON {first_child_table}.id = {second_child_table}.account_id"
     )
-    second_child_table.left_join_table = first_child_table
-    second_child_table.left_join_key = sql.Column(
-        name=Fake.word(),
-        table_name=second_child_table.name,
-        alias=Fake.word(),
-        position=3,
-    )
+    sql_string = select_string + from_string + join_string
 
-    join_query = common.join_collections(from_table)
+    sql_statement = sqlparse.parse(sql_string)[0]
+    sql_query = sql.SQLQuery.from_statement(sql_statement)
+
+    join_query = common.join_collections(sql_query)
     assert isinstance(join_query, QueryExpression)
 
-    first_parent_table = sql.Table(name=Fake.word())
-    second_child_table.right_join_table = first_parent_table
-    second_child_table.right_join_key = sql.Column(
-        name=Fake.word(),
-        table_name=second_child_table.name,
-        alias=Fake.word(),
-        position=4,
+    first_parent_table = "banks"
+    select_string = select_string + f"{first_parent_table}.name "
+    join_string = (
+        join_string
+        + f" JOIN {first_parent_table} ON {first_parent_table}.id = {second_child_table}.bank_id"
     )
-    first_parent_table.left_join_table = second_child_table
-    first_parent_table.left_join_key = sql.Column(
-        name="ref", table_name=first_parent_table.name, alias=Fake.word(), position=5
-    )
+    sql_string = select_string + from_string + join_string
 
-    join_query = common.join_collections(from_table)
+    sql_statement = sqlparse.parse(sql_string)[0]
+    sql_query = sql.SQLQuery.from_statement(sql_statement)
+
+    join_query = common.join_collections(sql_query)
     assert isinstance(join_query, QueryExpression)
 
-    second_parent_table = sql.Table(name=Fake.word())
-    first_parent_table.right_join_table = second_parent_table
-    first_parent_table.right_join_key = sql.Column(
-        name=Fake.word(),
-        table_name=first_parent_table.name,
-        alias=Fake.word(),
-        position=6,
+    second_parent_table = "country"
+    select_string = select_string + f"{second_parent_table}.code "
+    join_string = (
+        join_string + f" JOIN {second_parent_table} "
+        f"ON {first_parent_table}.id = {second_parent_table}.country_id"
     )
-    second_parent_table.left_join_table = first_parent_table
-    second_parent_table.left_join_key = sql.Column(
-        name="ref", table_name=second_parent_table.name, alias=Fake.word(), position=7
-    )
+    sql_string = select_string + from_string + join_string
 
-    join_query = common.join_collections(from_table)
+    sql_statement = sqlparse.parse(sql_string)[0]
+    sql_query = sql.SQLQuery.from_statement(sql_statement)
+
+    join_query = common.join_collections(sql_query)
     assert isinstance(join_query, QueryExpression)
 
 
 def test_invalid_join_collections():
-    from_table = sql.Table(name=Fake.word())
-    with pytest.raises(AssertionError):
-        common.join_collections(from_table)
+    sql_string = "SELECT users.name, users.age FROM users"
+    sql_statement = sqlparse.parse(sql_string)[0]
+    sql_query = sql.SQLQuery.from_statement(sql_statement)
 
-    further_left_table = sql.Table(name=Fake.word())
-    from_table.left_join_table = further_left_table
-    from_table.left_join_key = sql.Column(
-        name=Fake.word(),
-        table_name=further_left_table.name,
-        alias=Fake.word(),
-        position=0,
-    )
     with pytest.raises(AssertionError):
-        common.join_collections(from_table)
+        common.join_collections(sql_query)
 
 
 def test_update_documents():
     table_name = Fake.first_name()
-    columns = [
-        sql.Column(
-            name=Fake.first_name(),
-            alias=Fake.first_name(),
-            table_name=table_name,
-            position=1,
-        )
-        for _ in range(3)
-    ]
-    table = sql.Table(name=table_name, columns=columns)
+    sql_string = (
+        f"UPDATE {table_name} "
+        f"SET {Fake.first_name()} = '{Fake.first_name()}', "
+        f"{Fake.first_name()} = '{Fake.first_name()}', "
+        f"{Fake.first_name()} = {Fake.pyint()}, "
+    )
+    sql_statement = sqlparse.parse(sql_string)[0]
+    sql_query = sql.SQLQuery.from_statement(sql_statement)
 
-    update_query = common.update_documents(table)
+    update_query = common.update_documents(sql_query)
 
     assert isinstance(update_query, QueryExpression)

@@ -228,7 +228,9 @@ def _define_match_set(query_filter: sql.Filter) -> QueryExpression:
     )
 
 
-def define_document_set(table: sql.Table) -> QueryExpression:
+def define_document_set(
+    table: sql.Table, filter_group: typing.Optional[sql.FilterGroup]
+) -> QueryExpression:
     """Build FQL match query based on filtering rules from the SQL query.
 
     Params:
@@ -239,7 +241,13 @@ def define_document_set(table: sql.Table) -> QueryExpression:
     --------
     FQL query expression that matches on the same conditions as the Table's filters.
     """
-    filters = table.filters
+    filter_group_filters = [] if filter_group is None else filter_group.filters
+    group_filter_names = [sql_filter.name for sql_filter in filter_group_filters]
+    filters = [
+        sql_filter
+        for sql_filter in table.filters
+        if sql_filter.name in group_filter_names
+    ]
 
     if not any(filters):
         return q.intersection(q.match(q.index(index_name(table.name))))
@@ -265,24 +273,44 @@ def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=Non
             ),
         )
 
-    ordered_result = q.join(
+    if len({column.table_name for column in order_by.columns}) != len(order_by.columns):
+        raise exceptions.NotSupportedError(
+            "Sorting by multiple columns in a single table is not supported."
+        )
+
+    try:
+        order_column_name = next(
+            column.name
+            for column in order_by.columns
+            if column.table_name == table_name
+        )
+    except StopIteration:
+        return q.select(
+            DATA,
+            q.map_(
+                q.lambda_(f"{table_name}_ref", inner_query),
+                q.paginate(q.var(f"joined_{table_name}"), size=MAX_PAGE_SIZE),
+            ),
+        )
+
+    ref_set = q.join(
         q.var(f"joined_{table_name}"),
         q.index(
             index_name(
                 table_name,
-                column_name=order_by.columns[0].name,
+                column_name=order_column_name,
                 index_type=IndexType.SORT,
             )
         ),
     )
     if order_by.direction == sql.OrderDirection.DESC:
-        ordered_result = q.reverse(ordered_result)
+        ref_set = q.reverse(ref_set)
 
     return q.select(
-        "data",
+        DATA,
         q.map_(
             q.lambda_(["_", f"{table_name}_ref"], inner_query),
-            q.paginate(ordered_result, size=MAX_PAGE_SIZE),
+            q.paginate(ref_set, size=MAX_PAGE_SIZE),
         ),
     )
 
@@ -290,6 +318,7 @@ def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=Non
 def _build_page_query(
     table: sql.Table,
     merge_func: typing.Callable[[str], QueryExpression],
+    filter_group: typing.Optional[sql.FilterGroup] = None,
     order_by: typing.Optional[sql.OrderBy] = None,
 ):
     partial_merge_func = functools.partial(merge_func, table.name)
@@ -319,7 +348,12 @@ def _build_page_query(
         page = q.union(
             _build_base_page(
                 table.name,
-                _build_page_query(right_table, partial_merge_func),
+                _build_page_query(
+                    right_table,
+                    partial_merge_func,
+                    filter_group=filter_group,
+                    order_by=order_by,
+                ),
                 order_by=order_by,
             )
         )
@@ -327,7 +361,7 @@ def _build_page_query(
     if left_table is None:
         return q.let(
             {
-                f"joined_{table.name}": define_document_set(table),
+                f"joined_{table.name}": define_document_set(table, filter_group),
             },
             page,
         )
@@ -347,7 +381,7 @@ def _build_page_query(
                 f"{table.name}_ref": q.select(
                     left_foreign_key.name, q.var(f"{left_table.name}_data")
                 ),
-                table.name: define_document_set(table),
+                table.name: define_document_set(table, filter_group),
                 f"joined_{table.name}": q.intersection(
                     q.singleton(q.var(f"{table.name}_ref")), q.var(table.name)
                 ),
@@ -364,7 +398,7 @@ def _build_page_query(
                 q.select(DATA, q.var(f"{left_table.name}_doc")),
                 {"ref": q.select("ref", q.var(f"{left_table.name}_doc"))},
             ),
-            table.name: define_document_set(table),
+            table.name: define_document_set(table, filter_group),
             f"joined_{table.name}": q.intersection(
                 q.match(
                     q.index(
@@ -408,10 +442,24 @@ def join_collections(sql_query: sql.SQLQuery) -> QueryExpression:
         )
 
     assert from_table.left_join_table is None
+
+    if any(sql_query.filter_groups):
+        return q.union(
+            [
+                _build_page_query(
+                    from_table,
+                    _build_merge,
+                    filter_group=filter_group,
+                    order_by=order_by,
+                )
+                for filter_group in sql_query.filter_groups
+            ]
+        )
+
     return _build_page_query(from_table, _build_merge, order_by=order_by)
 
 
-def update_documents(table: sql.Table) -> QueryExpression:
+def update_documents(sql_query: sql.SQLQuery) -> QueryExpression:
     """Update document fields with the given values.
 
     Params:
@@ -422,9 +470,16 @@ def update_documents(table: sql.Table) -> QueryExpression:
     --------
     An FQL update query for the given collection and documents.
     """
+    assert len(sql_query.tables) == 1
+    table = sql_query.tables[0]
+    assert len(sql_query.filter_groups) <= 1
+    filter_group = (
+        None if not any(sql_query.filter_groups) else sql_query.filter_groups[0]
+    )
+
     field_updates = {column.name: column.value for column in table.columns}
     return q.let(
-        {"document_set": define_document_set(table)},
+        {"document_set": define_document_set(table, filter_group)},
         q.do(
             q.update(
                 q.select(

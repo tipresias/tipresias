@@ -40,3 +40,4 @@ class ChildFactory(SQLAlchemyModelFactory):
 
     name = factory.Sequence(lambda n: f"{Fake.first_name()} {n}")
     user = factory.SubFactory(UserFactory)
+    game = factory.Faker("bs")

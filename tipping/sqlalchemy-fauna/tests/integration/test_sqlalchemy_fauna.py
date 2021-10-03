@@ -338,7 +338,7 @@ def test_join(fauna_session):
 
     users = (
         fauna_session.execute(
-            sql.select(models.User, models.Child)
+            sql.select(models.User)
             .join(models.User.children)
             .where(models.Child.name == "Louise")
         )
@@ -412,7 +412,7 @@ def test_multi_table_limit(fauna_session):
 
     queried_children = (
         fauna_session.execute(
-            sql.select(models.Child, models.User).join(models.Child.user).limit(limit)
+            sql.select(models.Child).join(models.Child.user).limit(limit)
         )
         .scalars()
         .all()
@@ -424,6 +424,7 @@ def test_multi_table_limit(fauna_session):
 
 def test_update(fauna_session):
     user = factories.UserFactory()
+    fauna_session.commit()
 
     new_name = Fake.first_name()
     user.name = new_name

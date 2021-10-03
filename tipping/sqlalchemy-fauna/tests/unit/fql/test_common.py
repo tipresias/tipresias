@@ -135,7 +135,7 @@ def test_join_collections():
     from_table = "users"
     first_child_table = "accounts"
 
-    select_string = f"SELECT {from_table}.name, {first_child_table}.number "
+    select_string = f"SELECT {from_table}.name, {from_table}.age "
     from_string = f"FROM {from_table} "
     join_string = (
         f"JOIN {first_child_table} ON {from_table}.id = {first_child_table}.user_id"

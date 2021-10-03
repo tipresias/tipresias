@@ -154,6 +154,16 @@ class SQLQuery:
             "ambiguity"
         )
 
+        queried_or_modified_tables = [
+            table for table in self.tables if table.has_columns
+        ]
+        if len(queried_or_modified_tables) > 1:
+            raise exceptions.NotSupportedError(
+                "Due to limitations in how Fauna joins document sets, only queries that select "
+                "or modify one table at a time are supported. Cross-table 'where' clauses "
+                "via joins are still supported."
+            )
+
     @classmethod
     def from_statement(cls, statement: token_groups.Statement) -> SQLQuery:
         """Extract an SQLQuery object from an SQL statement token.

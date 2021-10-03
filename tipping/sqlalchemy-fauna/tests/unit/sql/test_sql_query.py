@@ -156,17 +156,17 @@ class TestSQLQuery:
                 ["ref", "name", "date_joined", "age", "finger_count"],
             ),
             (
-                "SELECT users.name, transactions.number, users.age FROM users "
+                "SELECT transactions.amount, transactions.number FROM users "
                 "JOIN accounts ON users.id = accounts.user_id "
                 "JOIN transactions ON accounts.id = transactions.account_id",
                 ["users", "accounts", "transactions"],
-                ["name", "number", "age"],
+                ["amount", "number"],
             ),
             (
-                "SELECT accounts.number, users.name FROM users "
+                "SELECT users.age, users.name FROM users "
                 "JOIN accounts ON users.id = accounts.user_id",
                 ["users", "accounts"],
-                ["number", "name"],
+                ["age", "name"],
             ),
             ("DELETE FROM users", ["users"], []),
             ("UPDATE users SET users.name = 'Bob'", ["users"], ["name"]),
@@ -198,14 +198,19 @@ class TestSQLQuery:
         ["sql_string", "error_message"],
         [
             (
-                "SELECT users.name, accounts.number FROM users, accounts",
+                "SELECT users.name, users.age FROM users, accounts",
                 "must join them together with a JOIN clause",
+            ),
+            (
+                "SELECT users.name, accounts.number FROM users "
+                "JOIN accounts ON users.id = accounts.user_id",
+                "only queries that select or modify one table at a time are supported",
             ),
             # Using regex's "any character" symbol instead of the expected single-quotes,
             # because getting the escapes right through multiple layers of code is super annoying.
             ("SELECT * from users", "Wildcards (.*.) are not yet supported"),
             (
-                "SELECT users.name, accounts.number FROM users "
+                "SELECT users.name, users.age FROM users "
                 "JOIN accounts ON users.name = accounts.user_name",
                 "Table joins are only permitted on IDs and foreign keys that refer to IDs",
             ),

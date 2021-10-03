@@ -595,5 +595,10 @@ class Table:
         }
         return functools.reduce(collect_alias_maps, self.columns, {})
 
+    @property
+    def has_columns(self) -> bool:
+        """Whether this table has columns selected or modified by the query."""
+        return any(self.columns)
+
     def __str__(self) -> str:
         return self.name

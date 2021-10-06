@@ -21,8 +21,11 @@ def translate_delete(sql_query: sql.SQLQuery) -> typing.List[QueryExpression]:
     An FQL query expression.
     """
     table = sql_query.tables[0]
+    filter_group = (
+        None if not any(sql_query.filter_groups) else sql_query.filter_groups[0]
+    )
 
-    records_to_delete = common.define_document_set(table)
+    records_to_delete = common.define_document_set(table, filter_group)
     delete_records = q.delete(q.select("ref", q.get(records_to_delete)))
 
     return q.let(

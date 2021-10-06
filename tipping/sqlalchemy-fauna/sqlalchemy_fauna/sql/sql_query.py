@@ -147,11 +147,22 @@ class SQLQuery:
         self._tables = tables
         self._order_by = order_by
         self.limit = limit
+        self._filter_groups: typing.List[sql_table.FilterGroup] = []
 
         assert len({col.position for col in self.columns}) == len(self.columns), (
             "All columns in an SQLQuery must have unique position values to avoid "
             "ambiguity"
         )
+
+        queried_or_modified_tables = [
+            table for table in self.tables if table.has_columns
+        ]
+        if len(queried_or_modified_tables) > 1:
+            raise exceptions.NotSupportedError(
+                "Due to limitations in how Fauna joins document sets, only queries that select "
+                "or modify one table at a time are supported. Cross-table 'where' clauses "
+                "via joins are still supported."
+            )
 
     @classmethod
     def from_statement(cls, statement: token_groups.Statement) -> SQLQuery:
@@ -190,8 +201,9 @@ class SQLQuery:
             raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
 
         _, where_group = statement.token_next_by(i=(token_groups.Where))
-        for where_filter in sql_table.Filter.from_where_group(where_group):
-            sql_instance.add_filter_to_table(where_filter)
+        filter_groups = sql_table.FilterGroup.from_where_group(where_group)
+        for filter_group in filter_groups:
+            sql_instance.add_filter_group(filter_group)
 
         return sql_instance
 
@@ -406,12 +418,29 @@ class SQLQuery:
         collect_alias_maps = lambda acc, table: {**acc, **table.alias_map}
         return functools.reduce(collect_alias_maps, self.tables, {})
 
+    @property
+    def filter_groups(self):
+        """List of FilterGroup objects contained within this query."""
+        return self._filter_groups
+
+    def add_filter_group(self, filter_group: sql_table.FilterGroup):
+        """Add a FilterGroup to the query and associated filters to their tables.
+
+        Params:
+        -------
+        filter_group: The FilterGroup object to associate with the SQLQuery.
+        """
+        self._filter_groups.append(filter_group)
+
+        for sql_filter in filter_group.filters:
+            self.add_filter_to_table(sql_filter)
+
     def add_filter_to_table(self, sql_filter: sql_table.Filter):
         """Associates the given Filter with the Table that it applies to.
 
         Params:
         -------
-        sql_filter: An instance of table.Filter.
+        sql_filter: An instance of Filter.
         """
         try:
             table = next(

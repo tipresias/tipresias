@@ -11,8 +11,11 @@ def _define_single_collection_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
     order_by = sql_query.order_by
     from_table = tables[0]
+    filter_group = (
+        None if not any(sql_query.filter_groups) else sql_query.filter_groups[0]
+    )
 
-    document_set = common.define_document_set(from_table)
+    document_set = common.define_document_set(from_table, filter_group)
 
     if order_by is None:
         return q.paginate(document_set, size=common.MAX_PAGE_SIZE)
@@ -36,23 +39,6 @@ def _define_single_collection_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     )
 
 
-def _define_multi_collection_pages(sql_query: sql.SQLQuery) -> QueryExpression:
-    tables = sql_query.tables
-    order_by = sql_query.order_by
-    from_table = tables[0]
-
-    if order_by is not None and order_by.columns[0].table_name != from_table.name:
-        raise exceptions.NotSupportedError(
-            "Fauna uses indexes for both joining and ordering of results, "
-            "and we currently can only sort the principal table "
-            "(i.e. the one after 'FROM') in the query. You can sort on a column "
-            "from the principal table, query one table at a time, or remove "
-            "the ordering constraint."
-        )
-
-    return common.join_collections(from_table, order_by)
-
-
 def _define_document_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
     order_by = sql_query.order_by
@@ -63,7 +49,7 @@ def _define_document_pages(sql_query: sql.SQLQuery) -> QueryExpression:
         )
 
     if len(tables) > 1:
-        ordered_document_set = _define_multi_collection_pages(sql_query)
+        ordered_document_set = common.join_collections(sql_query)
     else:
         ordered_document_set = _define_single_collection_pages(sql_query)
 
@@ -75,9 +61,19 @@ def _define_document_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     return q.take(sql_query.limit, ordered_document_set)
 
 
-def _translate_select(
-    sql_query: sql.SQLQuery, document_pages: QueryExpression, distinct=False
-):
+def translate_select(sql_query: sql.SQLQuery) -> QueryExpression:
+    """Translate a SELECT SQL query into an equivalent FQL query.
+
+    Params:
+    -------
+    sql_query: An SQLQuery instance.
+
+    Returns:
+    --------
+    An FQL query expression based on the SQL query.
+    """
+    document_pages = _define_document_pages(sql_query)
+
     tables = sql_query.tables
     from_table = tables[0]
 
@@ -185,7 +181,7 @@ def _translate_select(
             "maybe_documents": document_pages,
             "translated_documents": translate_document_fields(q.var("maybe_documents")),
             "result": q.distinct(q.var("translated_documents"))
-            if distinct
+            if sql_query.distinct
             else q.var("translated_documents"),
         },
         # Paginated sets hold an array of results in a 'data' field, so we try to flatten it
@@ -193,19 +189,3 @@ def _translate_select(
         # have such nesting
         {common.DATA: q.select(common.DATA, q.var("result"), q.var("result"))},
     )
-
-
-def translate_select(sql_query: sql.SQLQuery) -> QueryExpression:
-    """Translate a SELECT SQL query into an equivalent FQL query.
-
-    Params:
-    -------
-    sql_query: An SQLQuery instance.
-
-    Returns:
-    --------
-    An FQL query expression based on the SQL query.
-    """
-    document_pages = _define_document_pages(sql_query)
-
-    return _translate_select(sql_query, document_pages, distinct=sql_query.distinct)

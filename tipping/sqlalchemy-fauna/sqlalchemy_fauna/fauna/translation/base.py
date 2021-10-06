@@ -62,7 +62,6 @@ def translate_sql_to_fql(
 
     if sql_statement.token_first().match(token_types.DML, "UPDATE"):
         sql_query = sql.SQLQuery.from_statement(sql_statement)
-        table = sql_query.tables[0]
-        return [fql.update_documents(table)]
+        return [fql.update_documents(sql_query)]
 
     raise exceptions.NotSupportedError()

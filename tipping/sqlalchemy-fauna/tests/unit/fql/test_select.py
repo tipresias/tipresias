@@ -15,7 +15,7 @@ select_values = (
 select_sum = "SELECT sum(users.id) AS sum_1 from users"
 select_avg = "SELECT avg(users.id) AS avg_1 from users"
 select_join_order_by = (
-    "SELECT users.name, accounts.number FROM users "
+    "SELECT accounts.name, accounts.number FROM users "
     "JOIN accounts ON users.id = accounts.user_id "
     "ORDER BY accounts.number"
 )
@@ -52,7 +52,7 @@ select_aliases = (
 select_where_equals = select_values + " WHERE users.name = 'Bob'"
 select_count = "SELECT count(users.id) AS count_1 FROM users"
 select_join = (
-    "SELECT users.name, accounts.number FROM users "
+    "SELECT users.name, users.age FROM users "
     "JOIN accounts ON users.id = accounts.user_id"
 )
 select_order_by = "SELECT users.name, users.age FROM users ORDER BY users.name"
@@ -60,7 +60,7 @@ select_order_by_desc = (
     "SELECT users.name, users.age FROM users ORDER BY users.name DESC"
 )
 select_join_order_by_principal = (
-    "SELECT users.name, accounts.number FROM users "
+    "SELECT users.name, users.age FROM users "
     "JOIN accounts ON users.id = accounts.user_id "
     "ORDER BY users.name"
 )

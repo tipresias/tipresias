@@ -78,9 +78,7 @@ def index_name(
     assert is_valid_column_name
 
     is_valid_foreign_key_name = foreign_key_name is None or (
-        foreign_key_name is not None
-        and column_name is not None
-        and index_type == IndexType.REF
+        foreign_key_name is not None and index_type == IndexType.REF
     )
     assert is_valid_foreign_key_name
 

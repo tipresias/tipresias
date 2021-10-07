@@ -37,17 +37,24 @@ def test_index_name(params, expected_name):
 
 
 @pytest.mark.parametrize(
-    "params",
+    ["table_name", "kwargs"],
     [
-        ("users", "name"),
-        ("users", None, common.IndexType.VALUE),
-        ("users", None, common.IndexType.REF, "age"),
-        ("users", "name", common.IndexType.VALUE, "age"),
+        ("users", {"column_name": "name"}),
+        ("users", {"index_type": common.IndexType.VALUE}),
+        ("users", {"index_type": common.IndexType.VALUE, "foreign_key_name": "age"}),
+        (
+            "users",
+            {
+                "column_name": "name",
+                "index_type": common.IndexType.VALUE,
+                "foreign_key_name": "age",
+            },
+        ),
     ],
 )
-def test_invalid_index_name(params):
+def test_invalid_index_name(table_name, kwargs):
     with pytest.raises(AssertionError):
-        common.index_name(*params)
+        common.index_name(table_name, **kwargs)
 
 
 select_values = "SELECT * FROM users"

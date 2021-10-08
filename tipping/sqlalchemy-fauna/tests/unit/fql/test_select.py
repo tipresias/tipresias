@@ -17,7 +17,7 @@ select_avg = "SELECT avg(users.id) AS avg_1 from users"
 select_join_order_by = (
     "SELECT accounts.name, accounts.number FROM users "
     "JOIN accounts ON users.id = accounts.user_id "
-    "ORDER BY accounts.number"
+    "ORDER BY users.id"
 )
 select_order_multiple = (
     "SELECT users.name, users.age FROM users ORDER BY users.name, users.age"
@@ -53,7 +53,8 @@ select_where_equals = select_values + " WHERE users.name = 'Bob'"
 select_count = "SELECT count(users.id) AS count_1 FROM users"
 select_join = (
     "SELECT users.name, users.age FROM users "
-    "JOIN accounts ON users.id = accounts.user_id"
+    "JOIN accounts ON users.id = accounts.user_id "
+    "WHERE accounts.amount > 5.0"
 )
 select_order_by = "SELECT users.name, users.age FROM users ORDER BY users.name"
 select_order_by_desc = (
@@ -62,6 +63,7 @@ select_order_by_desc = (
 select_join_order_by_principal = (
     "SELECT users.name, users.age FROM users "
     "JOIN accounts ON users.id = accounts.user_id "
+    "WHERE accounts.amount > 5.0 "
     "ORDER BY users.name"
 )
 
@@ -77,7 +79,10 @@ select_join_order_by_principal = (
         select_order_by,
         select_order_by_desc,
         select_join_order_by_principal,
-        "SELECT COUNT(users.id) FROM users JOIN accounts ON users.id = accounts.user_id",
+        (
+            "SELECT COUNT(users.id) FROM users JOIN accounts ON users.id = accounts.user_id "
+            "WHERE accounts.amount > 5.0"
+        ),
     ],
 )
 def test_translate_select(sql_string):

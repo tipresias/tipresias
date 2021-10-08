@@ -373,21 +373,6 @@ def test_order_by(fauna_session):
     assert user_names == list(reversed(sorted(names)))
 
 
-def test_join_order_by(fauna_session):
-    children = [ChildFactory() for _ in range(5)]
-    child_games = [child.game for child in children]
-
-    queried_children = (
-        fauna_session.execute(
-            sql.select(models.Child).join(models.Child.user).order_by(models.Child.game)
-        )
-        .scalars()
-        .all()
-    )
-
-    assert [child.game for child in queried_children] == sorted(child_games)
-
-
 def test_limit(fauna_session):
     limit = 2
     user_names = [f"{Fake.first_name()} {n}" for n in range(limit * 2)]
@@ -412,7 +397,10 @@ def test_multi_table_limit(fauna_session):
 
     queried_children = (
         fauna_session.execute(
-            sql.select(models.Child).join(models.Child.user).limit(limit)
+            sql.select(models.Child)
+            .join(models.Child.user)
+            .where(models.User.age > -1)
+            .limit(limit)
         )
         .scalars()
         .all()

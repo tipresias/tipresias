@@ -49,7 +49,9 @@ def _define_document_pages(sql_query: sql.SQLQuery) -> QueryExpression:
         )
 
     if len(tables) > 1:
-        ordered_document_set = common.join_collections(sql_query)
+        ordered_document_set = q.paginate(
+            common.join_collections(sql_query), size=common.MAX_PAGE_SIZE
+        )
     else:
         ordered_document_set = _define_single_collection_pages(sql_query)
 

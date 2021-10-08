@@ -399,16 +399,18 @@ class TestFilterGroup:
             # SELECT *
             (
                 select_values,
-                [],
+                [[]],
             ),
             # SELECT ID
             (
                 select_values + f" WHERE users.id = '{id_value}'",
                 [
-                    {
-                        "operator": "=",
-                        "value": id_value,
-                    }
+                    [
+                        {
+                            "operator": "=",
+                            "value": id_value,
+                        }
+                    ]
                 ],
             ),
             # SELECT with multiple ANDs
@@ -417,29 +419,37 @@ class TestFilterGroup:
                 + f" WHERE users.name = '{name}' AND users.age = {age} "
                 + f"AND users.finger_count = {finger_count}",
                 [
-                    {
-                        "operator": "=",
-                        "value": name,
-                    },
-                    {
-                        "operator": "=",
-                        "value": age,
-                    },
-                    {
-                        "operator": "=",
-                        "value": finger_count,
-                    },
+                    [
+                        {
+                            "operator": "=",
+                            "value": name,
+                        },
+                        {
+                            "operator": "=",
+                            "value": age,
+                        },
+                        {
+                            "operator": "=",
+                            "value": finger_count,
+                        },
+                    ]
                 ],
             ),
             # SELECT with 'IS NULL' comparison
             (
                 select_values + " WHERE users.job IS NULL",
                 [
-                    {
-                        "operator": "=",
-                        "value": None,
-                    }
+                    [
+                        {
+                            "operator": "=",
+                            "value": None,
+                        }
+                    ]
                 ],
+            ),
+            (
+                select_values + f" WHERE users.name = '{name}' OR users.age = {age}",
+                [[{"operator": "=", "value": name}], [{"operator": "=", "value": age}]],
             ),
         ],
     )
@@ -448,9 +458,9 @@ class TestFilterGroup:
         _, where_group = statement.token_next_by(i=(token_groups.Where))
 
         filter_groups = sql_table.FilterGroup.from_where_group(where_group)
-        for filter_group in filter_groups:
+        for idx, filter_group in enumerate(filter_groups):
             for sql_filter, expected_filter_attributes in zip(
-                filter_group.filters, expected_attributes
+                filter_group.filters, expected_attributes[idx]
             ):
                 assert isinstance(sql_filter, sql_table.Filter)
                 for key, value in expected_filter_attributes.items():
@@ -465,10 +475,6 @@ class TestFilterGroup:
         ["sql_query", "error_message"],
         [
             (where_between, "BETWEEN not yet supported in WHERE clauses"),
-            (
-                select_values + f" WHERE users.name = '{name}' OR users.age = {age}",
-                "OR not yet supported",
-            ),
         ],
     )
     def test_unsupported_from_where_group(sql_query, error_message):

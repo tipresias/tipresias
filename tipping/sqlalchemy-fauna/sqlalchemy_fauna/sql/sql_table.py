@@ -423,10 +423,6 @@ class FilterGroup:
         if where_group is None:
             return []
 
-        _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
-        if or_keyword is not None:
-            raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
-
         _, between_keyword = where_group.token_next_by(
             m=(token_types.Keyword, "BETWEEN")
         )
@@ -435,7 +431,8 @@ class FilterGroup:
                 "BETWEEN not yet supported in WHERE clauses."
             )
 
-        where_filters = []
+        filter_groups = []
+        where_filters: typing.List[Filter] = []
         idx = 0
 
         while True:
@@ -443,10 +440,11 @@ class FilterGroup:
                 i=(token_groups.Comparison, token_groups.Identifier), idx=idx
             )
             if comparison is None:
+                filter_groups.append(cls(filters=where_filters))
                 break
 
-            next_comparison_idx, _ = where_group.token_next_by(
-                m=(token_types.Keyword, "AND"), idx=idx
+            next_comparison_idx, next_comparison_keyword = where_group.token_next_by(
+                m=[(token_types.Keyword, "AND"), (token_types.Keyword, "OR")], idx=idx
             )
 
             # I'm not sure what the exact cause is, but sometimes sqlparse has trouble
@@ -460,11 +458,17 @@ class FilterGroup:
             where_filter = Filter.from_comparison_group(comparison)
             where_filters.append(where_filter)
 
-            idx, _ = where_group.token_next_by(m=(token_types.Keyword, "AND"), idx=idx)
-            if idx is None:
+            if next_comparison_idx is None:
+                filter_groups.append(cls(filters=where_filters))
                 break
 
-        return [cls(filters=where_filters)]
+            if next_comparison_keyword.match(token_types.Keyword, "OR"):
+                filter_groups.append(cls(filters=where_filters))
+                where_filters = []
+
+            idx = next_comparison_idx
+
+        return filter_groups
 
     @property
     def filters(self) -> typing.List[Filter]:

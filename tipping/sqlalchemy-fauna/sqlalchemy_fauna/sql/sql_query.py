@@ -137,6 +137,7 @@ class SQLQuery:
 
     def __init__(
         self,
+        query_string: str,
         tables: typing.List[sql_table.Table] = None,
         distinct: bool = False,
         order_by: typing.Optional[OrderBy] = None,
@@ -148,6 +149,7 @@ class SQLQuery:
         self._order_by = order_by
         self.limit = limit
         self._filter_groups: typing.List[sql_table.FilterGroup] = []
+        self._query_string = query_string
 
         assert len({col.position for col in self.columns}) == len(self.columns), (
             "All columns in an SQLQuery must have unique position values to avoid "
@@ -195,7 +197,7 @@ class SQLQuery:
         if first_token.match(token_types.DML, "DELETE"):
             assert len(tables) == 1
             table = tables[0]
-            sql_instance = cls._build_delete_query(table)
+            sql_instance = cls._build_delete_query(statement, table)
 
         if sql_instance is None:
             raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
@@ -295,6 +297,7 @@ class SQLQuery:
         order_by = OrderBy.from_statement(statement)
 
         return cls(
+            str(statement),
             tables=tables,
             distinct=bool(distinct),
             order_by=order_by,
@@ -327,7 +330,7 @@ class SQLQuery:
             table.add_column(column)
             position = position + 1
 
-        return cls(tables=[table])
+        return cls(str(statement), tables=[table])
 
     @classmethod
     def _build_insert_query(
@@ -380,11 +383,13 @@ class SQLQuery:
             column.value = common.extract_value(column_value)
             table.add_column(column)
 
-        return cls(tables=[table])
+        return cls(str(statement), tables=[table])
 
     @classmethod
-    def _build_delete_query(cls, table: sql_table.Table) -> SQLQuery:
-        return cls(tables=[table])
+    def _build_delete_query(
+        cls, statement: token_groups.Statement, table: sql_table.Table
+    ) -> SQLQuery:
+        return cls(str(statement), tables=[table])
 
     @property
     def tables(self) -> typing.List[sql_table.Table]:
@@ -452,3 +457,6 @@ class SQLQuery:
             )
 
         table.add_filter(sql_filter)
+
+    def __str__(self):
+        return self._query_string

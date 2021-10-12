@@ -601,6 +601,25 @@ def _create_table_indices(
         for field_name, field_data in field_metadata.items()
         if any(field_data["references"])
     ]
+    # We create a foreign ref index per foreign ref that exists in the collection,
+    # because this permits us to access any foreign ref we may need to continue
+    # a chain of joins.
+    for foreign_reference in foreign_references:
+        index_queries.append(
+            q.create_index(
+                {
+                    "name": index_by_collection(
+                        index_type=fql.IndexType.REF,
+                        foreign_key_name=foreign_reference,
+                    ),
+                    "source": q.collection(table_name),
+                    "terms": [{"field": ["ref"]}],
+                    "values": [
+                        {"field": ["data", foreign_reference]},
+                    ],
+                }
+            )
+        )
 
     for field_name, field_data in field_metadata.items():
         # Fauna can query documents by ID by default, so we don't need an index for it
@@ -668,25 +687,6 @@ def _create_table_indices(
                     }
                 )
             )
-            # We create a foreign ref index per foreign ref that exists in the collection,
-            # because this permits us to access any foreign ref we may need to continue
-            # a chain of joins.
-            for foreign_reference in foreign_references:
-                index_queries.append(
-                    q.create_index(
-                        {
-                            "name": index_by_collection(
-                                index_type=fql.IndexType.REF,
-                                foreign_key_name=foreign_reference,
-                            ),
-                            "source": q.collection(table_name),
-                            "terms": [{"field": ["ref"]}],
-                            "values": [
-                                {"field": ["data", foreign_reference]},
-                            ],
-                        }
-                    )
-                )
 
     return index_queries
 

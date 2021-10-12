@@ -178,10 +178,15 @@ class TestTable:
         assert table.filters[0].value == sql_filters[0].value
 
     @staticmethod
-    def test_table_from_identifier():
-        table_name = "users"
-        sql_query = f"SELECT users.name FROM {table_name}"
-        statement = sqlparse.parse(sql_query)[0]
+    @pytest.mark.parametrize(
+        ["table_name", "sql_string"],
+        [
+            ["users", "SELECT users.name FROM users"],
+            ["users", "SELECT users.name FROM users AS users_1"],
+        ],
+    )
+    def test_table_from_identifier(table_name, sql_string):
+        statement = sqlparse.parse(sql_string)[0]
         idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
         _, table_identifier = statement.token_next_by(
             i=(token_groups.Identifier), idx=idx

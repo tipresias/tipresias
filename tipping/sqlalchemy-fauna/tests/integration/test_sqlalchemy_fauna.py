@@ -325,30 +325,37 @@ def test_select_is_null(fauna_session):
 
 def test_join(fauna_session):
     names = [
-        ("Bob", ["Louise", "Tina", "Gene"]),
-        ("Jimmy", ["Jimmy Jr.", "Ollie", "Andy"]),
+        ("Bob", "burger", ["Louise", "Tina", "Gene"]),
+        ("Jimmy", "pizza", ["Jimmy Jr.", "Ollie", "Andy"]),
     ]
 
-    for user_name, child_names in names:
-
+    for user_name, food_name, child_names in names:
         user = factories.UserFactory(name=user_name)
+        food = factories.FoodFactory(name=food_name)
+        user.favorite_foods.append(food)
 
         for child_name in child_names:
             factories.ChildFactory(name=child_name, user=user)
 
-    users = (
+        fauna_session.add(user)
+
+    children = (
         fauna_session.execute(
-            sql.select(models.User)
-            .join(models.User.children)
+            sql.select(models.Child)
+            .join(models.Child.user)
+            .join(models.User.favorite_foods)
             .where(models.Child.name == "Louise")
+            .where(models.Food.name == "burger")
         )
         .scalars()
         .all()
     )
 
-    assert len(users) == 1
-    queried_user = users[0]
-    assert queried_user.name == "Bob"
+    assert len(children) == 1
+    queried_child = children[0]
+    assert queried_child.name == "Louise"
+    assert queried_child.user.name == "Bob"
+    assert "burger" in [food.name for food in queried_child.user.favorite_foods]
 
 
 def test_order_by(fauna_session):

@@ -357,6 +357,51 @@ def test_join(fauna_session):
     assert queried_child.user.name == "Bob"
     assert "burger" in [food.name for food in queried_child.user.favorite_foods]
 
+    # Selecting from middle table in JOIN chain
+    users = (
+        fauna_session.execute(
+            sql.select(models.User)
+            .select_from(models.Child)
+            .join(models.Child.user)
+            .join(models.User.favorite_foods)
+            .where(models.Child.name == "Louise")
+            .where(models.Food.name == "burger")
+        )
+        .scalars()
+        .all()
+    )
+
+    assert len(users) == 1
+    queried_user = users[0]
+    assert queried_user.name == "Bob"
+    assert "Louise" in [child.name for child in queried_user.children]
+    assert "burger" in [food.name for food in queried_user.favorite_foods]
+
+    # Selecting from last table in JOIN chain
+    foods = (
+        fauna_session.execute(
+            sql.select(models.Food)
+            .select_from(models.Child)
+            .join(models.Child.user)
+            .join(models.User.favorite_foods)
+            .where(models.Child.name == "Louise")
+            .where(models.Food.name == "burger")
+        )
+        .scalars()
+        .all()
+    )
+
+    assert len(foods) == 1
+    queried_food = foods[0]
+    assert queried_food.name == "burger"
+    queried_users = [user for user in queried_food.eaters]
+    assert "Bob" in [user.name for user in queried_users]
+    assert "Louise" in functools.reduce(
+        lambda names, user: names + [child.name for child in user.children],
+        queried_users,
+        [],
+    )
+
 
 def test_order_by(fauna_session):
     names = ["Zoe", "Anne", "Mary", "Diana", "Tina"]

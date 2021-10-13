@@ -75,9 +75,7 @@ def translate_select(sql_query: sql.SQLQuery) -> QueryExpression:
     An FQL query expression based on the SQL query.
     """
     document_pages = _define_document_pages(sql_query)
-
-    tables = sql_query.tables
-    from_table = tables[0]
+    selected_table = next(table for table in sql_query.tables if table.has_columns)
 
     get_field_value = lambda function_value, raw_value: q.if_(
         q.equals(function_value, common.NULL),
@@ -127,12 +125,17 @@ def translate_select(sql_query: sql.SQLQuery) -> QueryExpression:
                         "document": q.if_(
                             q.is_ref(q.var("maybe_document")),
                             {
-                                from_table.name: q.merge(
+                                # We use the selected table name here instead of deriving
+                                # the collection name from the document ref in order to
+                                # save a 'get' call from inside of a map, which could get
+                                # expensive.
+                                selected_table.name: q.merge(
                                     q.select(
-                                        common.DATA, q.get(q.var("maybe_document"))
+                                        common.DATA,
+                                        q.get(q.var("maybe_document")),
                                     ),
                                     {"ref": q.var("maybe_document")},
-                                )
+                                ),
                             },
                             q.var("maybe_document"),
                         ),

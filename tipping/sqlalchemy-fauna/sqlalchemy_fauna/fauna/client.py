@@ -72,10 +72,7 @@ class FaunaClient:
             # to create anything. Rather than raise an error, we return an empty response.
             if (
                 all(
-                    [
-                        error["code"] == "invalid ref"
-                        for error in fauna_response["errors"]
-                    ]
+                    error["code"] == "invalid ref" for error in fauna_response["errors"]
                 )
                 and "FROM information_schema_tables_" in sql_query
             ):

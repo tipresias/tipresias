@@ -37,17 +37,24 @@ def test_index_name(params, expected_name):
 
 
 @pytest.mark.parametrize(
-    "params",
+    ["table_name", "kwargs"],
     [
-        ("users", "name"),
-        ("users", None, common.IndexType.VALUE),
-        ("users", None, common.IndexType.REF, "age"),
-        ("users", "name", common.IndexType.VALUE, "age"),
+        ("users", {"column_name": "name"}),
+        ("users", {"index_type": common.IndexType.VALUE}),
+        ("users", {"index_type": common.IndexType.VALUE, "foreign_key_name": "age"}),
+        (
+            "users",
+            {
+                "column_name": "name",
+                "index_type": common.IndexType.VALUE,
+                "foreign_key_name": "age",
+            },
+        ),
     ],
 )
-def test_invalid_index_name(params):
+def test_invalid_index_name(table_name, kwargs):
     with pytest.raises(AssertionError):
-        common.index_name(*params)
+        common.index_name(table_name, **kwargs)
 
 
 select_values = "SELECT * FROM users"
@@ -138,9 +145,10 @@ def test_join_collections():
     select_string = f"SELECT {from_table}.name, {from_table}.age "
     from_string = f"FROM {from_table} "
     join_string = (
-        f"JOIN {first_child_table} ON {from_table}.id = {first_child_table}.user_id"
+        f"JOIN {first_child_table} ON {from_table}.id = {first_child_table}.user_id "
     )
-    sql_string = select_string + from_string + join_string
+    where_string = f"WHERE {first_child_table}.amount > 5.0"
+    sql_string = select_string + from_string + join_string + where_string
 
     sql_statement = sqlparse.parse(sql_string)[0]
     sql_query = sql.SQLQuery.from_statement(sql_statement)
@@ -149,12 +157,12 @@ def test_join_collections():
     assert isinstance(join_query, QueryExpression)
 
     second_child_table = "transactions"
-    select_string = select_string + f"{second_child_table}.amount "
     join_string = (
         join_string
-        + f" JOIN {second_child_table} ON {first_child_table}.id = {second_child_table}.account_id"
+        + f"JOIN {second_child_table} ON {first_child_table}.id = {second_child_table}.account_id "
     )
-    sql_string = select_string + from_string + join_string
+    where_string = where_string + f" AND {second_child_table}.count < 10"
+    sql_string = select_string + from_string + join_string + where_string
 
     sql_statement = sqlparse.parse(sql_string)[0]
     sql_query = sql.SQLQuery.from_statement(sql_statement)
@@ -163,12 +171,12 @@ def test_join_collections():
     assert isinstance(join_query, QueryExpression)
 
     first_parent_table = "banks"
-    select_string = select_string + f"{first_parent_table}.name "
     join_string = (
         join_string
-        + f" JOIN {first_parent_table} ON {first_parent_table}.id = {second_child_table}.bank_id"
+        + f"JOIN {first_parent_table} ON {first_parent_table}.id = {second_child_table}.bank_id "
     )
-    sql_string = select_string + from_string + join_string
+    where_string = where_string + f" OR {first_parent_table}.id = 'asdf1234'"
+    sql_string = select_string + from_string + join_string + where_string
 
     sql_statement = sqlparse.parse(sql_string)[0]
     sql_query = sql.SQLQuery.from_statement(sql_statement)
@@ -177,12 +185,12 @@ def test_join_collections():
     assert isinstance(join_query, QueryExpression)
 
     second_parent_table = "country"
-    select_string = select_string + f"{second_parent_table}.code "
     join_string = (
-        join_string + f" JOIN {second_parent_table} "
-        f"ON {first_parent_table}.id = {second_parent_table}.country_id"
+        join_string + f"JOIN {second_parent_table} "
+        f"ON {first_parent_table}.id = {second_parent_table}.country_id "
     )
-    sql_string = select_string + from_string + join_string
+    where_string = where_string + f" AND {second_parent_table}.code = 'AU'"
+    sql_string = select_string + from_string + join_string + where_string
 
     sql_statement = sqlparse.parse(sql_string)[0]
     sql_query = sql.SQLQuery.from_statement(sql_statement)
@@ -191,12 +199,25 @@ def test_join_collections():
     assert isinstance(join_query, QueryExpression)
 
 
-def test_invalid_join_collections():
-    sql_string = "SELECT users.name, users.age FROM users"
+@pytest.mark.parametrize(
+    ["sql_string", "error_message"],
+    [
+        (
+            "SELECT users.name, users.age FROM users",
+            "Joining tables without cross-table filters via the WHERE clause is not supported",
+        ),
+        (
+            "SELECT users.name, users.age FROM users JOIN transactions "
+            "ON users.id = transactions.user_id ORDER BY transactions.id",
+            "we currently can only sort the principal table",
+        ),
+    ],
+)
+def test_invalid_join_collections(sql_string, error_message):
     sql_statement = sqlparse.parse(sql_string)[0]
     sql_query = sql.SQLQuery.from_statement(sql_statement)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(exceptions.NotSupportedError, match=error_message):
         common.join_collections(sql_query)
 
 

@@ -240,7 +240,7 @@ class Column:
 
     @table.setter
     def table(self, table: Table):
-        assert self._table_name is None or self._table_name == table.name
+        assert self.table_name is None or self.belongs_to_table(table)
 
         self._table = table
         self._table_name = table.name
@@ -249,6 +249,10 @@ class Column:
     def table_name(self) -> typing.Optional[str]:
         """Name of the associated table in the SQL query."""
         return self._table_name
+
+    def belongs_to_table(self, table: Table) -> bool:
+        """Whether this column is associated with the given table."""
+        return self.table_name in (table.name, table.alias)
 
     @property
     def alias_map(self) -> ColumnAliasMap:
@@ -367,6 +371,10 @@ class Filter:
 
         return operator_value
 
+    def belongs_to_table(self, table: Table) -> bool:
+        """Whether this column is associated with the given table."""
+        return self.table_name in (table.name, table.alias)
+
     @property
     def table(self) -> typing.Optional[Table]:
         """Table object associated with this column."""
@@ -374,7 +382,7 @@ class Filter:
 
     @table.setter
     def table(self, table: Table):
-        assert self._table_name in (None, table.name)
+        assert self.table_name is None or self.belongs_to_table(table)
 
         self._table = table
         self._table_name = table.name
@@ -423,10 +431,6 @@ class FilterGroup:
         if where_group is None:
             return []
 
-        _, or_keyword = where_group.token_next_by(m=(token_types.Keyword, "OR"))
-        if or_keyword is not None:
-            raise exceptions.NotSupportedError("OR not yet supported in WHERE clauses.")
-
         _, between_keyword = where_group.token_next_by(
             m=(token_types.Keyword, "BETWEEN")
         )
@@ -435,7 +439,8 @@ class FilterGroup:
                 "BETWEEN not yet supported in WHERE clauses."
             )
 
-        where_filters = []
+        filter_groups = []
+        where_filters: typing.List[Filter] = []
         idx = 0
 
         while True:
@@ -443,10 +448,11 @@ class FilterGroup:
                 i=(token_groups.Comparison, token_groups.Identifier), idx=idx
             )
             if comparison is None:
+                filter_groups.append(cls(filters=where_filters))
                 break
 
-            next_comparison_idx, _ = where_group.token_next_by(
-                m=(token_types.Keyword, "AND"), idx=idx
+            next_comparison_idx, next_comparison_keyword = where_group.token_next_by(
+                m=[(token_types.Keyword, "AND"), (token_types.Keyword, "OR")], idx=idx
             )
 
             # I'm not sure what the exact cause is, but sometimes sqlparse has trouble
@@ -460,11 +466,17 @@ class FilterGroup:
             where_filter = Filter.from_comparison_group(comparison)
             where_filters.append(where_filter)
 
-            idx, _ = where_group.token_next_by(m=(token_types.Keyword, "AND"), idx=idx)
-            if idx is None:
+            if next_comparison_idx is None:
+                filter_groups.append(cls(filters=where_filters))
                 break
 
-        return [cls(filters=where_filters)]
+            if next_comparison_keyword.match(token_types.Keyword, "OR"):
+                filter_groups.append(cls(filters=where_filters))
+                where_filters = []
+
+            idx = next_comparison_idx
+
+        return filter_groups
 
     @property
     def filters(self) -> typing.List[Filter]:
@@ -478,6 +490,7 @@ class Table:
     Params:
     -------
     name: Name of the table.
+    alias: Alias of the table.
     columns: Column objects that belong to the given table.
     filters: Filter objects that are applied to the table's query results.
     """
@@ -485,10 +498,12 @@ class Table:
     def __init__(
         self,
         name: str,
+        alias: typing.Optional[str] = None,
         columns: typing.Optional[typing.List[Column]] = None,
         filters: typing.Optional[typing.List[Filter]] = None,
     ):
         self.name = name
+        self.alias = alias
         self._columns: typing.List[Column] = []
         self._filters: typing.List[Filter] = []
         self.left_join_table: typing.Optional[Table] = None
@@ -516,8 +531,18 @@ class Table:
         --------
         A new Table object.
         """
-        name = identifier.value
-        return cls(name=name)
+        idx, name = identifier.token_next_by(t=token_types.Name)
+        assert name is not None
+
+        idx, _ = identifier.token_next_by(m=(token_types.Keyword, "AS"), idx=idx)
+        if idx is None:
+            return cls(name=name.value)
+
+        _, alias = identifier.token_next_by(i=token_groups.Identifier, idx=idx)
+        if alias is None:
+            return cls(name=name.value)
+
+        return cls(name=name.value, alias=alias.value)
 
     @property
     def columns(self) -> typing.List[Column]:
@@ -571,14 +596,14 @@ class Table:
         join_key = next(
             join_column
             for join_column in join_columns
-            if join_column.table_name == self.name
+            if join_column.belongs_to_table(self)
         )
         setattr(self, f"{direction.value}_join_key", join_key)
 
         foreign_join_key = next(
             join_column
             for join_column in join_columns
-            if join_column.table_name == foreign_table.name
+            if join_column.belongs_to_table(foreign_table)
         )
         setattr(
             foreign_table,

@@ -491,9 +491,13 @@ def _create_index_metadata(
         if field_name == "id":
             continue
 
-        index_by_field = partial(index_by_collection, field_name)
+        index_by_field = partial(index_by_collection, column_name=field_name)
 
-        indexes[index_by_field(fql.IndexType.VALUE)] = {
+        indexes[
+            index_by_field(  # pylint: disable=no-value-for-parameter
+                index_type=fql.IndexType.VALUE
+            )
+        ] = {
             "column_names_": f"{field_name},id",
             "unique_": False,
             "constrained_columns_": None,
@@ -503,7 +507,11 @@ def _create_index_metadata(
         # Sorting index, so we can support ORDER BY clauses in SQL queries.
         # This will allow us to order a set of refs by a value while still
         # keeping that same set of refs.
-        indexes[index_by_field(fql.IndexType.SORT)] = {
+        indexes[
+            index_by_field(  # pylint: disable=no-value-for-parameter
+                index_type=fql.IndexType.SORT
+            )
+        ] = {
             "column_names_": f"{field_name},id",
             "unique_": False,
             "constrained_columns_": None,
@@ -515,7 +523,11 @@ def _create_index_metadata(
         # contain the 'ref' field, which will never be duplicated
         is_unique = field_data["unique"]
         if is_unique:
-            indexes[index_by_field(fql.IndexType.TERM)] = {
+            indexes[
+                index_by_field(  # pylint: disable=no-value-for-parameter
+                    index_type=fql.IndexType.TERM
+                )
+            ] = {
                 "column_names_": f"{field_name},id",
                 "unique_": is_unique,
                 "constrained_columns_": None,
@@ -531,7 +543,11 @@ def _create_index_metadata(
             assert len(reference_items) == 1
             referred_table, referred_column = reference_items[0]
 
-            indexes[index_by_field(fql.IndexType.REF)] = {
+            indexes[
+                index_by_field(  # pylint: disable=no-value-for-parameter
+                    index_type=fql.IndexType.REF
+                )
+            ] = {
                 "column_names_": f"{field_name},id",
                 "unique_": False,
                 "constrained_columns_": field_name,
@@ -548,11 +564,13 @@ def _create_index_metadata(
                 referred_table, referred_column = reference_items[0]
 
                 indexes[
-                    index_by_field(fql.IndexType.REF, foreign_key_name=reference_name)
+                    index_by_collection(
+                        index_type=fql.IndexType.REF, foreign_key_name=reference_name
+                    )
                 ] = {
-                    "column_names_": ",".join(set([field_name, reference_name, "id"])),
+                    "column_names_": ",".join(set([reference_name, "id"])),
                     "unique_": False,
-                    "constrained_columns_": field_name,
+                    "constrained_columns_": reference_name,
                     "referred_table_": referred_table,
                     "referred_columns_": referred_column,
                 }
@@ -583,19 +601,40 @@ def _create_table_indices(
         for field_name, field_data in field_metadata.items()
         if any(field_data["references"])
     ]
+    # We create a foreign ref index per foreign ref that exists in the collection,
+    # because this permits us to access any foreign ref we may need to continue
+    # a chain of joins.
+    for foreign_reference in foreign_references:
+        index_queries.append(
+            q.create_index(
+                {
+                    "name": index_by_collection(
+                        index_type=fql.IndexType.REF,
+                        foreign_key_name=foreign_reference,
+                    ),
+                    "source": q.collection(table_name),
+                    "terms": [{"field": ["ref"]}],
+                    "values": [
+                        {"field": ["data", foreign_reference]},
+                    ],
+                }
+            )
+        )
 
     for field_name, field_data in field_metadata.items():
         # Fauna can query documents by ID by default, so we don't need an index for it
         if field_name == "id":
             continue
 
-        index_by_field = partial(index_by_collection, field_name)
+        index_by_field = partial(index_by_collection, column_name=field_name)
 
         index_queries.extend(
             [
                 q.create_index(
                     {
-                        "name": index_by_field(fql.IndexType.VALUE),
+                        "name": index_by_field(  # pylint: disable=no-value-for-parameter
+                            index_type=fql.IndexType.VALUE
+                        ),
                         "source": q.collection(table_name),
                         "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
                     }
@@ -605,7 +644,9 @@ def _create_table_indices(
                 # keeping that same set of refs.
                 q.create_index(
                     {
-                        "name": index_by_field(fql.IndexType.SORT),
+                        "name": index_by_field(  # pylint: disable=no-value-for-parameter
+                            index_type=fql.IndexType.SORT
+                        ),
                         "source": q.collection(table_name),
                         "terms": [{"field": ["ref"]}],
                         "values": [{"field": ["data", field_name]}, {"field": ["ref"]}],
@@ -621,7 +662,9 @@ def _create_table_indices(
             index_queries.append(
                 q.create_index(
                     {
-                        "name": index_by_field(fql.IndexType.TERM),
+                        "name": index_by_field(  # pylint: disable=no-value-for-parameter
+                            index_type=fql.IndexType.TERM
+                        ),
                         "source": q.collection(table_name),
                         "terms": [{"field": ["data", field_name]}],
                         "unique": is_unique,
@@ -636,31 +679,14 @@ def _create_table_indices(
             index_queries.append(
                 q.create_index(
                     {
-                        "name": index_by_field(fql.IndexType.REF),
+                        "name": index_by_field(  # pylint: disable=no-value-for-parameter
+                            index_type=fql.IndexType.REF
+                        ),
                         "source": q.collection(table_name),
                         "terms": [{"field": ["data", field_name]}],
                     }
                 )
             )
-            # We create a foreign ref index per foreign ref that exists in the collection,
-            # because this permits us to access any foreign ref we may need to continue
-            # a chain of joins.
-            for foreign_reference in foreign_references:
-                index_queries.append(
-                    q.create_index(
-                        {
-                            "name": index_by_field(
-                                fql.IndexType.REF, foreign_key_name=foreign_reference
-                            ),
-                            "source": q.collection(table_name),
-                            "terms": [{"field": ["data", field_name]}],
-                            "values": [
-                                {"field": ["data", foreign_reference]},
-                                {"field": ["ref"]},
-                            ],
-                        }
-                    )
-                )
 
     return index_queries
 

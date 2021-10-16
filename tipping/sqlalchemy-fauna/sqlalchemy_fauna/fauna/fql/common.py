@@ -78,9 +78,7 @@ def index_name(
     assert is_valid_column_name
 
     is_valid_foreign_key_name = foreign_key_name is None or (
-        foreign_key_name is not None
-        and column_name is not None
-        and index_type == IndexType.REF
+        foreign_key_name is not None and index_type == IndexType.REF
     )
     assert is_valid_foreign_key_name
 
@@ -256,164 +254,62 @@ def define_document_set(
     return q.intersection(*document_sets)
 
 
-def _build_merge(*table_names: str):
-    merge = lambda agg_merge, table_name: q.merge(
-        agg_merge, {table_name: q.var(f"{table_name}_data")}
-    )
-    return functools.reduce(merge, table_names, q.merge({}, {}))
-
-
-def _build_base_page(table_name: str, inner_query: QueryExpression, order_by=None):
-    if order_by is None:
-        return q.select(
-            DATA,
-            q.map_(
-                q.lambda_(f"{table_name}_ref", inner_query),
-                q.paginate(q.var(f"joined_{table_name}"), size=MAX_PAGE_SIZE),
-            ),
-        )
-
-    if len({column.table_name for column in order_by.columns}) != len(order_by.columns):
-        raise exceptions.NotSupportedError(
-            "Sorting by multiple columns in a single table is not supported."
-        )
-
-    try:
-        order_column_name = next(
-            column.name
-            for column in order_by.columns
-            if column.table_name == table_name
-        )
-    except StopIteration:
-        return q.select(
-            DATA,
-            q.map_(
-                q.lambda_(f"{table_name}_ref", inner_query),
-                q.paginate(q.var(f"joined_{table_name}"), size=MAX_PAGE_SIZE),
-            ),
-        )
-
-    ref_set = q.join(
-        q.var(f"joined_{table_name}"),
-        q.index(
-            index_name(
-                table_name,
-                column_name=order_column_name,
-                index_type=IndexType.SORT,
-            )
-        ),
-    )
-    if order_by.direction == sql.OrderDirection.DESC:
-        ref_set = q.reverse(ref_set)
-
-    return q.select(
-        DATA,
-        q.map_(
-            q.lambda_(["_", f"{table_name}_ref"], inner_query),
-            q.paginate(ref_set, size=MAX_PAGE_SIZE),
-        ),
-    )
-
-
-def _build_page_query(
+def _build_intersecting_query(
+    filter_group: sql.FilterGroup,
+    acc_query: typing.Optional[QueryExpression],
     table: sql.Table,
-    merge_func: typing.Callable[[str], QueryExpression],
-    filter_group: typing.Optional[sql.FilterGroup] = None,
-    order_by: typing.Optional[sql.OrderBy] = None,
-):
-    partial_merge_func = functools.partial(merge_func, table.name)
-    right_table = table.right_join_table
-    left_table = table.left_join_table
+    direction: str,
+) -> QueryExpression:
+    opposite_direction = "left" if direction == "right" else "right"
+    document_set = define_document_set(table, filter_group)
 
-    assert right_table is not None or left_table is not None, (
-        "At least two tables must be included in a join query. "
-        "If only querying one table, use `define_document_set` instead."
-    )
-
-    if right_table is None:
-        # The inner-most page doesn't need a Union, because there aren't nested pages
-        # to flatten
-        inner_query = q.let(
-            {
-                f"{table.name}_doc": q.get(q.var(f"{table.name}_ref")),
-                f"{table.name}_data": q.merge(
-                    q.select(DATA, q.var(f"{table.name}_doc")),
-                    {"ref": q.select("ref", q.var(f"{table.name}_doc"))},
-                ),
-            },
-            partial_merge_func(),
-        )
-        page = _build_base_page(table.name, inner_query, order_by=order_by)
+    if acc_query is None:
+        intersection = document_set
     else:
-        page = q.union(
-            _build_base_page(
-                table.name,
-                _build_page_query(
-                    right_table,
-                    partial_merge_func,
-                    filter_group=filter_group,
-                    order_by=order_by,
-                ),
-                order_by=order_by,
-            )
-        )
+        intersection = q.intersection(acc_query, document_set)
 
-    if left_table is None:
-        return q.let(
-            {
-                f"joined_{table.name}": define_document_set(table, filter_group),
-            },
-            page,
-        )
+    next_table = getattr(table, f"{direction}_join_table")
 
-    left_join_key = table.left_join_key
+    if next_table is None or table.has_columns:
+        return intersection
 
-    if left_join_key is not None and left_join_key.name == "ref":
-        left_foreign_key = left_table.right_join_key
-        assert left_foreign_key is not None
-        return q.let(
-            {
-                f"{left_table.name}_doc": q.get(q.var(f"{left_table.name}_ref")),
-                f"{left_table.name}_data": q.merge(
-                    q.select(DATA, q.var(f"{left_table.name}_doc")),
-                    {"ref": q.select("ref", q.var(f"{left_table.name}_doc"))},
-                ),
-                f"{table.name}_ref": q.select(
-                    left_foreign_key.name, q.var(f"{left_table.name}_data")
-                ),
-                table.name: define_document_set(table, filter_group),
-                f"joined_{table.name}": q.intersection(
-                    q.singleton(q.var(f"{table.name}_ref")), q.var(table.name)
-                ),
-            },
-            page,
-        )
+    next_join_key = getattr(table, f"{direction}_join_key")
+    assert next_join_key is not None
 
-    left_foreign_key = left_join_key
-    assert left_foreign_key is not None
-    return q.let(
-        {
-            f"{left_table.name}_doc": q.get(q.var(f"{left_table.name}_ref")),
-            f"{left_table.name}_data": q.merge(
-                q.select(DATA, q.var(f"{left_table.name}_doc")),
-                {"ref": q.select("ref", q.var(f"{left_table.name}_doc"))},
+    if next_join_key.name == "ref":
+        next_foreign_key = getattr(next_table, f"{opposite_direction}_join_key")
+        assert next_foreign_key is not None
+
+        return _build_intersecting_query(
+            filter_group,
+            q.join(
+                intersection,
+                q.index(
+                    index_name(
+                        next_table.name,
+                        column_name=next_foreign_key.name,
+                        index_type=IndexType.REF,
+                    )
+                ),
             ),
-            table.name: define_document_set(table, filter_group),
-            f"joined_{table.name}": q.intersection(
-                q.match(
-                    q.index(
-                        index_name(
-                            table.name,
-                            column_name=left_foreign_key.name,
-                            index_type=IndexType.REF,
-                        )
-                    ),
-                    q.var(f"{left_table.name}_ref"),
-                ),
-                q.var(table.name),
+            next_table,
+            direction,
+        )
+
+    return _build_intersecting_query(
+        filter_group,
+        q.join(
+            intersection,
+            q.index(
+                index_name(
+                    table.name,
+                    index_type=IndexType.REF,
+                    foreign_key_name=next_join_key.name,
+                )
             ),
-        },
-        page,
+        ),
+        next_table,
+        direction,
     )
 
 
@@ -431,32 +327,44 @@ def join_collections(sql_query: sql.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
     order_by = sql_query.order_by
     from_table = tables[0]
+    to_table = tables[-1]
+    table_with_columns = next(table for table in tables if table.has_columns)
 
-    if order_by is not None and order_by.columns[0].table_name != from_table.name:
+    if (
+        order_by is not None
+        and order_by.columns[0].table_name != table_with_columns.name
+    ):
         raise exceptions.NotSupportedError(
             "Fauna uses indexes for both joining and ordering of results, "
             "and we currently can only sort the principal table "
-            "(i.e. the one after 'FROM') in the query. You can sort on a column "
-            "from the principal table, query one table at a time, or remove "
-            "the ordering constraint."
+            "(i.e. the one whose columns are being selected or modified) in the query. "
+            "You can sort on a column from the principal table, query one table at a time, "
+            "or remove the ordering constraint."
+        )
+
+    if not any(sql_query.filter_groups):
+        raise exceptions.NotSupportedError(
+            "Joining tables without cross-table filters via the WHERE clause is not supported. "
+            "Selecting columns from multiple tables is not supported either, "
+            "so there's no performance gain from joining tables without cross-table conditions "
+            "for filtering query results."
         )
 
     assert from_table.left_join_table is None
 
-    if any(sql_query.filter_groups):
-        return q.union(
-            [
-                _build_page_query(
-                    from_table,
-                    _build_merge,
-                    filter_group=filter_group,
-                    order_by=order_by,
-                )
-                for filter_group in sql_query.filter_groups
+    intersection_queries = []
+
+    for filter_group in sql_query.filter_groups:
+        intersection_query = q.intersection(
+            *[
+                _build_intersecting_query(filter_group, None, table, direction)
+                for table, direction in [(from_table, "right"), (to_table, "left")]
             ]
         )
 
-    return _build_page_query(from_table, _build_merge, order_by=order_by)
+        intersection_queries.append(intersection_query)
+
+    return q.union(*intersection_queries)
 
 
 def update_documents(sql_query: sql.SQLQuery) -> QueryExpression:

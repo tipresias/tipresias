@@ -1,5 +1,6 @@
 """Translate a SELECT SQL query into an equivalent FQL query."""
 
+import typing
 from faunadb import query as q
 from faunadb.objects import _Expr as QueryExpression
 
@@ -9,33 +10,44 @@ from . import common
 
 def _define_single_collection_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
-    order_by = sql_query.order_by
     from_table = tables[0]
     filter_group = (
         None if not any(sql_query.filter_groups) else sql_query.filter_groups[0]
     )
 
-    document_set = common.define_document_set(from_table, filter_group)
+    return common.define_document_set(from_table, filter_group)
 
+
+def _sort_document_set(
+    document_set: QueryExpression, order_by: typing.Optional[sql.OrderBy]
+):
     if order_by is None:
         return q.paginate(document_set, size=common.MAX_PAGE_SIZE)
 
-    ordered_result = q.join(
+    if len(order_by.columns) > 1:
+        raise exceptions.NotSupportedError(
+            "Ordering by multiple columns is not yet supported."
+        )
+
+    ordered_column = order_by.columns[0]
+    assert ordered_column.table_name is not None
+
+    ordered_document_set = q.join(
         document_set,
         q.index(
             common.index_name(
-                from_table.name,
-                column_name=order_by.columns[0].name,
+                ordered_column.table_name,
+                column_name=ordered_column.name,
                 index_type=common.IndexType.SORT,
             )
         ),
     )
     if order_by.direction == sql.OrderDirection.DESC:
-        ordered_result = q.reverse(ordered_result)
+        ordered_document_set = q.reverse(ordered_document_set)
 
     return q.map_(
         q.lambda_(["_", "ref"], q.var("ref")),
-        q.paginate(ordered_result, size=common.MAX_PAGE_SIZE),
+        q.paginate(ordered_document_set, size=common.MAX_PAGE_SIZE),
     )
 
 
@@ -43,16 +55,12 @@ def _define_document_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     tables = sql_query.tables
     order_by = sql_query.order_by
 
-    if order_by is not None and len(order_by.columns) > 1:
-        raise exceptions.NotSupportedError(
-            "Ordering by multiple columns is not yet supported."
-        )
-
     if len(tables) > 1:
-        ordered_document_set = common.join_collections(sql_query)
+        document_set = common.join_collections(sql_query)
     else:
-        ordered_document_set = _define_single_collection_pages(sql_query)
+        document_set = _define_single_collection_pages(sql_query)
 
+    ordered_document_set = _sort_document_set(document_set, order_by)
     # Don't want to apply limit to queries with functions, because we want the calculation
     # for the entire document set, and functions only return the first row anyway
     if sql_query.limit is None or sql_query.has_functions:
@@ -73,9 +81,7 @@ def translate_select(sql_query: sql.SQLQuery) -> QueryExpression:
     An FQL query expression based on the SQL query.
     """
     document_pages = _define_document_pages(sql_query)
-
-    tables = sql_query.tables
-    from_table = tables[0]
+    selected_table = next(table for table in sql_query.tables if table.has_columns)
 
     get_field_value = lambda function_value, raw_value: q.if_(
         q.equals(function_value, common.NULL),
@@ -125,12 +131,17 @@ def translate_select(sql_query: sql.SQLQuery) -> QueryExpression:
                         "document": q.if_(
                             q.is_ref(q.var("maybe_document")),
                             {
-                                from_table.name: q.merge(
+                                # We use the selected table name here instead of deriving
+                                # the collection name from the document ref in order to
+                                # save a 'get' call from inside of a map, which could get
+                                # expensive.
+                                selected_table.name: q.merge(
                                     q.select(
-                                        common.DATA, q.get(q.var("maybe_document"))
+                                        common.DATA,
+                                        q.get(q.var("maybe_document")),
                                     ),
                                     {"ref": q.var("maybe_document")},
-                                )
+                                ),
                             },
                             q.var("maybe_document"),
                         ),

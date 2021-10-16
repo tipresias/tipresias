@@ -20,6 +20,7 @@ class TestSQLQuery:
         column_name = Fake.word()
         column_alias = Fake.word()
         query = sql_query.SQLQuery(
+            "SELECT",
             tables=[
                 sql_table.Table(
                     name=table_name,
@@ -42,6 +43,7 @@ class TestSQLQuery:
     def test_validation():
         with pytest.raises(AssertionError, match="must have unique position values"):
             sql_query.SQLQuery(
+                "SELECT",
                 tables=[
                     sql_table.Table(
                         name=Fake.word(),
@@ -63,7 +65,7 @@ class TestSQLQuery:
             table_name="users", name="name", alias="name", position=0
         )
         table = sql_table.Table(name="users", columns=[column])
-        query = sql_query.SQLQuery(tables=[table])
+        query = sql_query.SQLQuery("SELECT", tables=[table])
         sql_filter = sql_table.Filter(column=column, operator="=", value="Bob")
 
         query.add_filter_to_table(sql_filter)

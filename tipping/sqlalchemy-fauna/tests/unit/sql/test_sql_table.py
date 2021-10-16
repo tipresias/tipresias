@@ -178,10 +178,15 @@ class TestTable:
         assert table.filters[0].value == sql_filters[0].value
 
     @staticmethod
-    def test_table_from_identifier():
-        table_name = "users"
-        sql_query = f"SELECT users.name FROM {table_name}"
-        statement = sqlparse.parse(sql_query)[0]
+    @pytest.mark.parametrize(
+        ["table_name", "sql_string"],
+        [
+            ["users", "SELECT users.name FROM users"],
+            ["users", "SELECT users.name FROM users AS users_1"],
+        ],
+    )
+    def test_table_from_identifier(table_name, sql_string):
+        statement = sqlparse.parse(sql_string)[0]
         idx, _ = statement.token_next_by(m=(token_types.Keyword, "FROM"))
         _, table_identifier = statement.token_next_by(
             i=(token_groups.Identifier), idx=idx
@@ -399,16 +404,18 @@ class TestFilterGroup:
             # SELECT *
             (
                 select_values,
-                [],
+                [[]],
             ),
             # SELECT ID
             (
                 select_values + f" WHERE users.id = '{id_value}'",
                 [
-                    {
-                        "operator": "=",
-                        "value": id_value,
-                    }
+                    [
+                        {
+                            "operator": "=",
+                            "value": id_value,
+                        }
+                    ]
                 ],
             ),
             # SELECT with multiple ANDs
@@ -417,29 +424,37 @@ class TestFilterGroup:
                 + f" WHERE users.name = '{name}' AND users.age = {age} "
                 + f"AND users.finger_count = {finger_count}",
                 [
-                    {
-                        "operator": "=",
-                        "value": name,
-                    },
-                    {
-                        "operator": "=",
-                        "value": age,
-                    },
-                    {
-                        "operator": "=",
-                        "value": finger_count,
-                    },
+                    [
+                        {
+                            "operator": "=",
+                            "value": name,
+                        },
+                        {
+                            "operator": "=",
+                            "value": age,
+                        },
+                        {
+                            "operator": "=",
+                            "value": finger_count,
+                        },
+                    ]
                 ],
             ),
             # SELECT with 'IS NULL' comparison
             (
                 select_values + " WHERE users.job IS NULL",
                 [
-                    {
-                        "operator": "=",
-                        "value": None,
-                    }
+                    [
+                        {
+                            "operator": "=",
+                            "value": None,
+                        }
+                    ]
                 ],
+            ),
+            (
+                select_values + f" WHERE users.name = '{name}' OR users.age = {age}",
+                [[{"operator": "=", "value": name}], [{"operator": "=", "value": age}]],
             ),
         ],
     )
@@ -448,9 +463,9 @@ class TestFilterGroup:
         _, where_group = statement.token_next_by(i=(token_groups.Where))
 
         filter_groups = sql_table.FilterGroup.from_where_group(where_group)
-        for filter_group in filter_groups:
+        for idx, filter_group in enumerate(filter_groups):
             for sql_filter, expected_filter_attributes in zip(
-                filter_group.filters, expected_attributes
+                filter_group.filters, expected_attributes[idx]
             ):
                 assert isinstance(sql_filter, sql_table.Filter)
                 for key, value in expected_filter_attributes.items():
@@ -465,10 +480,6 @@ class TestFilterGroup:
         ["sql_query", "error_message"],
         [
             (where_between, "BETWEEN not yet supported in WHERE clauses"),
-            (
-                select_values + f" WHERE users.name = '{name}' OR users.age = {age}",
-                "OR not yet supported",
-            ),
         ],
     )
     def test_unsupported_from_where_group(sql_query, error_message):

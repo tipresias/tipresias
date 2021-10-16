@@ -8,6 +8,7 @@ import pytest
 from faker import Faker
 import numpy as np
 from tests.fixtures.factories import ChildFactory, UserFactory
+from tests.fixtures.models import UserFood
 
 from tests.fixtures import models, factories
 
@@ -325,22 +326,51 @@ def test_select_is_null(fauna_session):
 
 def test_join(fauna_session):
     names = [
-        ("Bob", ["Louise", "Tina", "Gene"]),
-        ("Jimmy", ["Jimmy Jr.", "Ollie", "Andy"]),
+        ("Bob", "burger", ["Louise", "Tina", "Gene"]),
+        ("Jimmy", "pizza", ["Jimmy Jr.", "Ollie", "Andy"]),
     ]
 
-    for user_name, child_names in names:
-
+    for user_name, food_name, child_names in names:
         user = factories.UserFactory(name=user_name)
+        food = factories.FoodFactory(name=food_name)
+        user.user_foods.append(UserFood(food=food))
 
         for child_name in child_names:
             factories.ChildFactory(name=child_name, user=user)
 
+        fauna_session.add(user)
+
+    children = (
+        fauna_session.execute(
+            sql.select(models.Child)
+            .join(models.Child.user)
+            .join(models.User.user_foods)
+            .join(models.UserFood.food)
+            .where(models.Child.name == "Louise")
+            .where(models.Food.name == "burger")
+        )
+        .scalars()
+        .all()
+    )
+
+    assert len(children) == 1
+    queried_child = children[0]
+    assert queried_child.name == "Louise"
+    assert queried_child.user.name == "Bob"
+    assert "burger" in [
+        user_food.food.name for user_food in queried_child.user.user_foods
+    ]
+
+    # Selecting from middle table in JOIN chain
     users = (
         fauna_session.execute(
             sql.select(models.User)
-            .join(models.User.children)
+            .select_from(models.Child)
+            .join(models.Child.user)
+            .join(models.User.user_foods)
+            .join(models.UserFood.food)
             .where(models.Child.name == "Louise")
+            .where(models.Food.name == "burger")
         )
         .scalars()
         .all()
@@ -349,6 +379,34 @@ def test_join(fauna_session):
     assert len(users) == 1
     queried_user = users[0]
     assert queried_user.name == "Bob"
+    assert "Louise" in [child.name for child in queried_user.children]
+    assert "burger" in [user_food.food.name for user_food in queried_user.user_foods]
+
+    # Selecting from last table in JOIN chain
+    foods = (
+        fauna_session.execute(
+            sql.select(models.Food)
+            .select_from(models.Child)
+            .join(models.Child.user)
+            .join(models.User.user_foods)
+            .join(models.UserFood.food)
+            .where(models.Child.name == "Louise")
+            .where(models.Food.name == "burger")
+        )
+        .scalars()
+        .all()
+    )
+
+    assert len(foods) == 1
+    queried_food = foods[0]
+    assert queried_food.name == "burger"
+    queried_users = [user_food.user for user_food in queried_food.user_foods]
+    assert "Bob" in [user.name for user in queried_users]
+    assert "Louise" in functools.reduce(
+        lambda names, user: names + [child.name for child in user.children],
+        queried_users,
+        [],
+    )
 
 
 def test_order_by(fauna_session):
@@ -371,21 +429,6 @@ def test_order_by(fauna_session):
     )
     user_names = [user.name for user in queried_users]
     assert user_names == list(reversed(sorted(names)))
-
-
-def test_join_order_by(fauna_session):
-    children = [ChildFactory() for _ in range(5)]
-    child_games = [child.game for child in children]
-
-    queried_children = (
-        fauna_session.execute(
-            sql.select(models.Child).join(models.Child.user).order_by(models.Child.game)
-        )
-        .scalars()
-        .all()
-    )
-
-    assert [child.game for child in queried_children] == sorted(child_games)
 
 
 def test_limit(fauna_session):
@@ -412,7 +455,10 @@ def test_multi_table_limit(fauna_session):
 
     queried_children = (
         fauna_session.execute(
-            sql.select(models.Child).join(models.Child.user).limit(limit)
+            sql.select(models.Child)
+            .join(models.Child.user)
+            .where(models.User.age > -1)
+            .limit(limit)
         )
         .scalars()
         .all()

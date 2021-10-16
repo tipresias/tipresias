@@ -5,13 +5,6 @@ from sqlalchemy.sql.schema import ForeignKey, Table
 
 from .session import Base
 
-users_foods_table = Table(
-    "users_foods",
-    Base.metadata,
-    Column("user_id", ForeignKey("users.id")),
-    Column("food_id", ForeignKey("foods.id")),
-)
-
 
 class User(Base):
     """Fake User model for use in integration tests."""
@@ -27,9 +20,7 @@ class User(Base):
     account_credit = Column(Float, default=0.0)
     job = Column(String)
     children = orm.relationship("Child", back_populates="user")
-    favorite_foods = orm.relationship(
-        "Food", secondary=users_foods_table, back_populates="eaters"
-    )
+    user_foods = orm.relationship("UserFood", back_populates="user")
 
 
 class Child(Base):
@@ -52,6 +43,16 @@ class Food(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     flavor = Column(String)
-    eaters = orm.relationship(
-        "User", secondary=users_foods_table, back_populates="favorite_foods"
-    )
+    user_foods = orm.relationship("UserFood", back_populates="food")
+
+
+class UserFood(Base):
+    """Fake model for join table for users and foods."""
+
+    __tablename__ = "users_foods"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = orm.relationship("User", back_populates="user_foods")
+    food_id = Column(Integer, ForeignKey("foods.id"))
+    food = orm.relationship("Food", back_populates="user_foods")

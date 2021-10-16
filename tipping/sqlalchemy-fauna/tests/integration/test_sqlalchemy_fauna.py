@@ -8,6 +8,7 @@ import pytest
 from faker import Faker
 import numpy as np
 from tests.fixtures.factories import ChildFactory, UserFactory
+from tests.fixtures.models import UserFood
 
 from tests.fixtures import models, factories
 
@@ -332,7 +333,7 @@ def test_join(fauna_session):
     for user_name, food_name, child_names in names:
         user = factories.UserFactory(name=user_name)
         food = factories.FoodFactory(name=food_name)
-        user.favorite_foods.append(food)
+        user.user_foods.append(UserFood(food=food))
 
         for child_name in child_names:
             factories.ChildFactory(name=child_name, user=user)
@@ -343,7 +344,8 @@ def test_join(fauna_session):
         fauna_session.execute(
             sql.select(models.Child)
             .join(models.Child.user)
-            .join(models.User.favorite_foods)
+            .join(models.User.user_foods)
+            .join(models.UserFood.food)
             .where(models.Child.name == "Louise")
             .where(models.Food.name == "burger")
         )
@@ -355,7 +357,9 @@ def test_join(fauna_session):
     queried_child = children[0]
     assert queried_child.name == "Louise"
     assert queried_child.user.name == "Bob"
-    assert "burger" in [food.name for food in queried_child.user.favorite_foods]
+    assert "burger" in [
+        user_food.food.name for user_food in queried_child.user.user_foods
+    ]
 
     # Selecting from middle table in JOIN chain
     users = (
@@ -363,7 +367,8 @@ def test_join(fauna_session):
             sql.select(models.User)
             .select_from(models.Child)
             .join(models.Child.user)
-            .join(models.User.favorite_foods)
+            .join(models.User.user_foods)
+            .join(models.UserFood.food)
             .where(models.Child.name == "Louise")
             .where(models.Food.name == "burger")
         )
@@ -375,7 +380,7 @@ def test_join(fauna_session):
     queried_user = users[0]
     assert queried_user.name == "Bob"
     assert "Louise" in [child.name for child in queried_user.children]
-    assert "burger" in [food.name for food in queried_user.favorite_foods]
+    assert "burger" in [user_food.food.name for user_food in queried_user.user_foods]
 
     # Selecting from last table in JOIN chain
     foods = (
@@ -383,7 +388,8 @@ def test_join(fauna_session):
             sql.select(models.Food)
             .select_from(models.Child)
             .join(models.Child.user)
-            .join(models.User.favorite_foods)
+            .join(models.User.user_foods)
+            .join(models.UserFood.food)
             .where(models.Child.name == "Louise")
             .where(models.Food.name == "burger")
         )
@@ -394,7 +400,7 @@ def test_join(fauna_session):
     assert len(foods) == 1
     queried_food = foods[0]
     assert queried_food.name == "burger"
-    queried_users = [user for user in queried_food.eaters]
+    queried_users = [user_food.user for user_food in queried_food.user_foods]
     assert "Bob" in [user.name for user in queried_users]
     assert "Louise" in functools.reduce(
         lambda names, user: names + [child.name for child in user.children],

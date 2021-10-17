@@ -8,16 +8,6 @@ from sqlalchemy_fauna import exceptions, sql
 from . import common
 
 
-def _define_single_collection_pages(sql_query: sql.SQLQuery) -> QueryExpression:
-    tables = sql_query.tables
-    from_table = tables[0]
-    filter_group = (
-        None if not any(sql_query.filter_groups) else sql_query.filter_groups[0]
-    )
-
-    return common.define_document_set(from_table, filter_group)
-
-
 def _sort_document_set(
     document_set: QueryExpression, order_by: typing.Optional[sql.OrderBy]
 ):
@@ -58,7 +48,9 @@ def _define_document_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     if len(tables) > 1:
         document_set = common.join_collections(sql_query)
     else:
-        document_set = _define_single_collection_pages(sql_query)
+        document_set = common.build_document_set_union(
+            tables[0], sql_query.filter_groups
+        )
 
     ordered_document_set = _sort_document_set(document_set, order_by)
     # Don't want to apply limit to queries with functions, because we want the calculation

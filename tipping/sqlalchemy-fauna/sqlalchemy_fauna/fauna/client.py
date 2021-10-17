@@ -104,10 +104,14 @@ class FaunaClient:
             return self._execute_with_retries(query, retries=(retries + 1))
 
     def _fauna_data_to_sqlalchemy_result(
-        self, data: typing.Dict[str, typing.Union[str, bool, int, float, datetime]]
+        self,
+        result: typing.Dict[str, typing.Any],
     ) -> typing.Dict[str, typing.Any]:
+        data = {**result, **result.get("data", {})}
         return {
-            key: self._convert_fauna_to_python(value) for key, value in data.items()
+            key: self._convert_fauna_to_python(value)
+            for key, value in data.items()
+            if key != "data"
         }
 
     @staticmethod

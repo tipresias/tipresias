@@ -7,7 +7,7 @@ from sqlalchemy import inspect, exc as sqlalchemy_exceptions, sql
 import pytest
 from faker import Faker
 import numpy as np
-from tests.fixtures.factories import ChildFactory, UserFactory
+from tests.fixtures.factories import UserFactory
 from tests.fixtures.models import UserFood
 
 from tests.fixtures import models, factories
@@ -202,6 +202,30 @@ def test_select_by_numeric_field_comparison(filter_age, fauna_session):
     assert len(queried_users) == 4
     for user_record in queried_users:
         assert user_record.age <= filter_age
+
+
+def test_select_with_or(fauna_session):
+    filter_name = "Bob Belcher"
+    filter_age = 25
+    names = [Fake.first_name() for _ in range(3)] + [filter_name]
+    ages = [10, 20, 30, 40]
+
+    for name, age in zip(names, ages):
+        factories.UserFactory(name=name, age=age)
+
+    queried_users = (
+        fauna_session.execute(
+            sql.select(models.User).where(
+                sql.or_(models.User.name == filter_name, models.User.age > filter_age)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    assert len(queried_users) == 2
+    assert any(user.name == filter_name for user in queried_users)
+    assert all(user.age > filter_age for user in queried_users)
 
 
 def test_delete_record_conditionally(fauna_session):
@@ -407,6 +431,40 @@ def test_join(fauna_session):
         queried_users,
         [],
     )
+
+
+def test_join_with_or(fauna_session):
+    bob_children = ["Louise", "Tina", "Gene"]
+    names = [
+        ("Bob", "burger", bob_children),
+        ("Jimmy", "pizza", ["Jimmy Jr.", "Ollie", "Andy"]),
+    ]
+
+    for user_name, food_name, child_names in names:
+        user = factories.UserFactory(name=user_name)
+        food = factories.FoodFactory(name=food_name)
+        user.user_foods.append(UserFood(food=food))
+
+        for child_name in child_names:
+            factories.ChildFactory(name=child_name, user=user)
+
+        fauna_session.add(user)
+
+    children = (
+        fauna_session.execute(
+            sql.select(models.Child)
+            .join(models.Child.user)
+            .join(models.User.user_foods)
+            .join(models.UserFood.food)
+            .where(sql.or_(models.Child.name == "Ollie", models.Food.name == "burger"))
+        )
+        .scalars()
+        .all()
+    )
+
+    assert len(children) == 4
+    assert {child.name for child in children} == set(bob_children + ["Ollie"])
+    assert {child.user.name for child in children} == set(["Bob", "Jimmy"])
 
 
 def test_order_by(fauna_session):

@@ -235,3 +235,26 @@ def test_update_documents():
     update_query = common.update_documents(sql_query)
 
     assert isinstance(update_query, QueryExpression)
+
+
+@pytest.mark.parametrize(
+    "sql_string",
+    [
+        (
+            "SELECT users.name, users.age FROM users "
+            "WHERE users.name = 'Bob' "
+            "AND users.age > 30 "
+            "OR users.job = 'cook'"
+        ),
+        "SELECT users.name, users.age FROM users",
+    ],
+)
+def test_build_document_set_union(sql_string):
+    sql_statement = sqlparse.parse(sql_string)[0]
+    sql_query = sql.SQLQuery.from_statement(sql_statement)
+
+    set_union = common.build_document_set_union(
+        sql_query.tables[0], sql_query.filter_groups
+    )
+
+    assert isinstance(set_union, QueryExpression)

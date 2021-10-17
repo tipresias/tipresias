@@ -254,6 +254,30 @@ def define_document_set(
     return q.intersection(*document_sets)
 
 
+def build_document_set_union(
+    table: sql.Table, filter_groups: typing.List[sql.FilterGroup]
+) -> QueryExpression:
+    """Build an FQL match query that joins results from different filter groups.
+
+    Params:
+    -------
+    table: A Table object associated with a Fauna collection.
+    filter_groups: A list of groups of filters representing, each one an intersection
+        of filtered results.
+
+    Returns:
+    --------
+    FQL query expression that is a union of each filter group's intersection of results,
+        all associated with the given table's filters.
+    """
+    if not any(filter_groups):
+        return define_document_set(table, None)
+
+    return q.union(
+        *[define_document_set(table, filter_group) for filter_group in filter_groups]
+    )
+
+
 def _build_intersecting_query(
     filter_group: sql.FilterGroup,
     acc_query: typing.Optional[QueryExpression],

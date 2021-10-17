@@ -78,7 +78,7 @@ where_or = (
     "filter_params",
     [{"operator": "LIKE"}],
 )
-def test_unsupported_define_document_set(filter_params):
+def test_unsupported_build_document_set_intersection(filter_params):
     table_name = Fake.word()
     column_params = {
         "name": Fake.word(),
@@ -100,7 +100,7 @@ def test_unsupported_define_document_set(filter_params):
     filter_group = sql.FilterGroup(filters=[query_filter])
 
     with pytest.raises(exceptions.NotSupportedError, match="Unsupported operator"):
-        common.define_document_set(table, filter_group)
+        common.build_document_set_intersection(table, filter_group)
 
 
 @pytest.mark.parametrize(
@@ -114,7 +114,7 @@ def test_unsupported_define_document_set(filter_params):
         ({"operator": "<", "value": Fake.pyint()}, {}),
     ],
 )
-def test_define_document_set(filter_params, column_params):
+def test_build_document_set_intersection(filter_params, column_params):
     table_name = Fake.word()
     base_column_params = {
         "name": Fake.word(),
@@ -134,7 +134,7 @@ def test_define_document_set(filter_params, column_params):
     table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
     filter_group = sql.FilterGroup(filters=[query_filter])
 
-    fql_query = common.define_document_set(table, filter_group)
+    fql_query = common.build_document_set_intersection(table, filter_group)
     assert isinstance(fql_query, QueryExpression)
 
 

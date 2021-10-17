@@ -226,14 +226,15 @@ def _define_match_set(query_filter: sql.Filter) -> QueryExpression:
     )
 
 
-def define_document_set(
+def build_document_set_intersection(
     table: sql.Table, filter_group: typing.Optional[sql.FilterGroup]
 ) -> QueryExpression:
-    """Build FQL match query based on filtering rules from the SQL query.
+    """Build FQL match query based on intersection of filtered results from given group.
 
     Params:
     -------
     table: A Table object associated with a Fauna collection.
+    filter_group: A group of filters representing an intersection of filtered results.
 
     Returns:
     --------
@@ -271,10 +272,13 @@ def build_document_set_union(
         all associated with the given table's filters.
     """
     if not any(filter_groups):
-        return define_document_set(table, None)
+        return build_document_set_intersection(table, None)
 
     return q.union(
-        *[define_document_set(table, filter_group) for filter_group in filter_groups]
+        *[
+            build_document_set_intersection(table, filter_group)
+            for filter_group in filter_groups
+        ]
     )
 
 
@@ -285,7 +289,7 @@ def _build_intersecting_query(
     direction: str,
 ) -> QueryExpression:
     opposite_direction = "left" if direction == "right" else "right"
-    document_set = define_document_set(table, filter_group)
+    document_set = build_document_set_intersection(table, filter_group)
 
     if acc_query is None:
         intersection = document_set
@@ -411,7 +415,7 @@ def update_documents(sql_query: sql.SQLQuery) -> QueryExpression:
 
     field_updates = {column.name: column.value for column in table.columns}
     return q.let(
-        {"document_set": define_document_set(table, filter_group)},
+        {"document_set": build_document_set_intersection(table, filter_group)},
         q.do(
             q.update(
                 q.select(

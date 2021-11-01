@@ -27,7 +27,7 @@ pydocstyle==6.1.1
 black
 pytest
 pytest-env
-faker==9.3.1
+faker==9.7.1
 mypy==0.910
 freezegun==1.1.0
 factory_boy

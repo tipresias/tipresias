@@ -21,7 +21,7 @@ rollbar==0.16.2
 MechanicalSoup
 
 # Testing/Linting
-pylint==2.11.1
+pylint==2.12.1
 pylint-django
 pydocstyle==6.1.1
 black

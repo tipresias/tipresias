@@ -21,7 +21,7 @@
     "fauna-shell": "^0.13.0",
     "serverless": "^2.70.0",
     "serverless-offline": "^8.3.1",
-    "serverless-prune-plugin": "^1.6.1",
+    "serverless-prune-plugin": "^2.0.0",
     "serverless-python-requirements": "^5.2.0"
   }
 }

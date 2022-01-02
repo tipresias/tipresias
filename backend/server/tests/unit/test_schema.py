@@ -384,7 +384,7 @@ class TestSchema(TestCase):
             draw_prediction = 0.5
 
         predicted_losses = [
-            pred[non_principal_prediction_label] < draw_prediction
+            pred[non_principal_prediction_label] <= draw_prediction
             for pred in data["matchPredictions"]
         ]
 

@@ -207,7 +207,7 @@ def test_select_by_numeric_field_comparison(filter_age, fauna_session):
 def test_select_with_or(fauna_session):
     filter_name = "Bob Belcher"
     filter_age = 25
-    names = [Fake.first_name() for _ in range(3)] + [filter_name]
+    names = [f"{Fake.first_name()}_{n}" for n in range(3)] + [filter_name]
     ages = [10, 20, 30, 40]
 
     for name, age in zip(names, ages):

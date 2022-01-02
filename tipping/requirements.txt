@@ -13,4 +13,3 @@ factory_boy
 coverage
 candystore==0.3.3
 responses
-factory_boy

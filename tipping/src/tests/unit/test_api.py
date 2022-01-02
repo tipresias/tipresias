@@ -3,6 +3,7 @@
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 from datetime import datetime, date
+import warnings
 import pytz
 
 import pandas as pd
@@ -262,9 +263,11 @@ class TestApi(TestCase):
         mock_submitter.submit_tips = MagicMock()
 
         with self.subTest("with no future match records available"):
-            self.api.update_match_predictions(
-                tips_submitters=[mock_submitter, mock_submitter], verbose=0
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=UserWarning)
+                self.api.update_match_predictions(
+                    tips_submitters=[mock_submitter, mock_submitter], verbose=0
+                )
 
             # It doesn't fetch predictions
             mock_data_import.fetch_prediction_data.assert_not_called()

@@ -105,7 +105,7 @@ def test_select_all_records(fauna_session):
 
 def test_select_by_field_equality(fauna_session):
     filter_name = "Bob Belcher"
-    names = [Fake.first_name() for _ in range(3)] + [filter_name]
+    names = [f"{Fake.first_name()} {n}" for n in range(3)] + [filter_name]
 
     for name in names:
         factories.UserFactory(name=name)
@@ -207,7 +207,7 @@ def test_select_by_numeric_field_comparison(filter_age, fauna_session):
 def test_select_with_or(fauna_session):
     filter_name = "Bob Belcher"
     filter_age = 25
-    names = [f"{Fake.first_name()}_{n}" for n in range(3)] + [filter_name]
+    names = [f"{Fake.first_name()} {n}" for n in range(3)] + [filter_name]
     ages = [10, 20, 30, 40]
 
     for name, age in zip(names, ages):
@@ -548,7 +548,7 @@ def test_multiple_update(fauna_session):
 
     new_names = []
     for idx, user in enumerate(users):
-        new_name = f"{Fake.first_name()}{idx}"
+        new_name = f"{Fake.first_name()} {idx}"
         user.name = new_name
         new_names.append(new_name)
 

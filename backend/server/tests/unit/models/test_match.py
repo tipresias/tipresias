@@ -238,7 +238,8 @@ class TestMatch(TestCase):
         # It updates prediction correctness
         self.assertGreaterEqual(match.prediction_set.filter(is_correct=True).count(), 1)
         # It updates match winner and margin
-        self.assertEqual(match.winner, winner)
+        winner_is_correct = match.winner == winner
+        self.assertTrue(winner_is_correct or match.is_draw)
         self.assertEqual(match.margin, max(match_scores) - min(match_scores))
 
     def test_year(self):

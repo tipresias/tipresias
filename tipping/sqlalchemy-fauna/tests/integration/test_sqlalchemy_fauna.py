@@ -1,6 +1,6 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-from datetime import timezone
+from datetime import timezone, tzinfo
 import functools
 
 from sqlalchemy import inspect, exc as sqlalchemy_exceptions, sql
@@ -248,7 +248,9 @@ def test_unique_constraint(fauna_session):
     name = "Bob"
     factories.UserFactory(name=name)
 
-    duplicate_user = models.User(name=name, date_joined=Fake.date_this_decade())
+    duplicate_user = models.User(
+        name=name, date_joined=Fake.date_time_this_decade(tzinfo=timezone.utc)
+    )
     fauna_session.add(duplicate_user)
 
     with pytest.raises(

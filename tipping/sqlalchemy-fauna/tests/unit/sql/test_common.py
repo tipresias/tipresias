@@ -1,6 +1,7 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 from datetime import timezone
+import warnings
 
 from sqlparse import sql as token_groups, tokens as token_types
 import pytest
@@ -44,5 +45,8 @@ naive_datetime = Fake.date_time_this_year()
 )
 def test_extract_value(_label, token_value, expected):
     token = token_groups.Token(token_types.Literal, token_value)
-    value = common.extract_value(token)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        value = common.extract_value(token)
     assert value == expected

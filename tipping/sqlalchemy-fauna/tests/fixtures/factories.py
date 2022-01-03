@@ -1,5 +1,7 @@
 """Factories for example model classes."""
 
+from datetime import timezone
+
 import factory
 from factory.alchemy import SQLAlchemyModelFactory
 from faker import Faker
@@ -21,7 +23,7 @@ class UserFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = Session
 
     name = factory.Sequence(lambda n: f"{Fake.first_name()} {n}")
-    date_joined = factory.Faker("date_this_decade")
+    date_joined = factory.Faker("date_time_this_decade", tzinfo=timezone.utc)
     age = factory.Faker("pyint")
     finger_count = factory.Faker("pyint")
     is_premium_member = factory.Faker("pybool")

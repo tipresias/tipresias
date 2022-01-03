@@ -28,12 +28,12 @@ def _setup_faunadb():
 def _setup_teardown_test_db():
     os.system("npx fauna create-database test --endpoint localhost")
 
-    create_key_output = os.popen(
+    with os.popen(
         "npx fauna create-key test --endpoint=localhost"
-    ).read()
-    secret_key = (
-        re.search("secret: (.+)", create_key_output).group(CAPTURED_MATCH).strip()
-    )
+    ) as create_key_output:
+        output_text = create_key_output.read()
+
+    secret_key = re.search("secret: (.+)", output_text).group(CAPTURED_MATCH).strip()
 
     with patch.dict(os.environ, {**os.environ, "FAUNA_SECRET": secret_key}):
         try:

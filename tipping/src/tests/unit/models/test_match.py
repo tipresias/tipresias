@@ -98,8 +98,9 @@ def test_update_result(start_date_time, expected_winner):
     home_team = models.Team(name=home_team_name)
     home_team_results = match_results.query("home_team == @home_team_name")
     random_row_idx = np.random.randint(0, len(home_team_results))
-    match_result = home_team_results.iloc[random_row_idx : (random_row_idx + 1), :]
-    match_result["home_score"] = match_result["away_score"] * 2
+    match_result = home_team_results.iloc[
+        random_row_idx : (random_row_idx + 1), :
+    ].assign(home_score=lambda df: df["away_score"] * 2)
     match = Match(
         start_date_time=start_date_time,
         venue=Fake.company(),

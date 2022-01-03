@@ -1,6 +1,6 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-from datetime import timezone
+from datetime import timezone, tzinfo
 import functools
 
 from sqlalchemy import inspect, exc as sqlalchemy_exceptions, sql
@@ -35,8 +35,7 @@ def test_drop_table(fauna_engine):
     inspector = inspect(fauna_engine)
 
     # It drops the table
-    with fauna_engine.connect() as connection:
-        assert not fauna_engine.has_table(connection, "users")
+    assert not inspector.has_table("users")
     # It drops all associated indexes
     assert not any(inspector.get_indexes("users"))
     assert not any(inspector.get_columns("users"))
@@ -249,7 +248,9 @@ def test_unique_constraint(fauna_session):
     name = "Bob"
     factories.UserFactory(name=name)
 
-    duplicate_user = models.User(name=name, date_joined=Fake.date_this_decade())
+    duplicate_user = models.User(
+        name=name, date_joined=Fake.date_time_this_decade(tzinfo=timezone.utc)
+    )
     fauna_session.add(duplicate_user)
 
     with pytest.raises(

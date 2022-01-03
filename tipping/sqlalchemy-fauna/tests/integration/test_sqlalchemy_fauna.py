@@ -35,8 +35,7 @@ def test_drop_table(fauna_engine):
     inspector = inspect(fauna_engine)
 
     # It drops the table
-    with fauna_engine.connect() as connection:
-        assert not fauna_engine.has_table(connection, "users")
+    assert not inspector.has_table("users")
     # It drops all associated indexes
     assert not any(inspector.get_indexes("users"))
     assert not any(inspector.get_columns("users"))

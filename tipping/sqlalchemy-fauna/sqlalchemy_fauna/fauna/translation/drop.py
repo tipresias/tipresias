@@ -39,7 +39,8 @@ def translate_drop(statement: token_groups.Statement) -> typing.List[QueryExpres
                                     column_name="name_",
                                     index_type=fql.IndexType.TERM,
                                 )
-                            )
+                            ),
+                            table_name,
                         ),
                         fql.convert_to_ref_set(
                             "information_schema_columns_",

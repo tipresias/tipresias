@@ -32,7 +32,7 @@ mypy==0.930
 freezegun==1.1.0
 factory_boy
 coverage
-candystore==0.3.3
+candystore==0.3.4
 
 # Types
 types-freezegun

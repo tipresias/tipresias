@@ -3,11 +3,11 @@ services:
   app:
     image: cfranklin11/tipresias_backend:latest
     ports:
-      - "80:80"
+      - "443:443"
     stdin_open: true
     tty: true
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=project.settings.production
       - DATABASE_NAME=${DATABASE_NAME}
-    command: gunicorn -b 0.0.0.0:80 -w 3 -t 1200 --access-logfile=- project.wsgi
+    command: gunicorn -b 0.0.0.0:443 -w 3 -t 1200 --certfile /certs/fullchain.pem --keyfile /certs/privkey.pem --access-logfile=- project.wsgi

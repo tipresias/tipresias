@@ -148,7 +148,7 @@ class SQLQuery:
         self._tables = tables
         self._order_by = order_by
         self.limit = limit
-        self._filter_groups: typing.List[sql_table.FilterGroup] = []
+        self._filter_group: typing.Optional[sql_table.FilterGroup] = None
         self._query_string = query_string
 
         assert len({col.position for col in self.columns}) == len(self.columns), (
@@ -203,9 +203,8 @@ class SQLQuery:
             raise exceptions.NotSupportedError(f"Unsupported query type {first_token}")
 
         _, where_group = statement.token_next_by(i=(token_groups.Where))
-        filter_groups = sql_table.FilterGroup.from_where_group(where_group)
-        for filter_group in filter_groups:
-            sql_instance.add_filter_group(filter_group)
+        filter_group = sql_table.FilterGroup.from_where_group(where_group)
+        sql_instance.add_filter_group(filter_group)
 
         return sql_instance
 
@@ -424,9 +423,9 @@ class SQLQuery:
         return functools.reduce(collect_alias_maps, self.tables, {})
 
     @property
-    def filter_groups(self):
-        """List of FilterGroup objects contained within this query."""
-        return self._filter_groups
+    def filter_group(self):
+        """The top-level FilterGroup, containing all filters applied to query results."""
+        return self._filter_group
 
     def add_filter_group(self, filter_group: sql_table.FilterGroup):
         """Add a FilterGroup to the query and associated filters to their tables.
@@ -435,18 +434,28 @@ class SQLQuery:
         -------
         filter_group: The FilterGroup object to associate with the SQLQuery.
         """
-        self._filter_groups.append(filter_group)
+        self._filter_group = filter_group
+        self.add_filters_to_table(filter_group)
 
-        for sql_filter in filter_group.filters:
-            self.add_filter_to_table(sql_filter)
-
-    def add_filter_to_table(self, sql_filter: sql_table.Filter):
-        """Associates the given Filter with the Table that it applies to.
+    def add_filters_to_table(
+        self,
+        sql_filter_or_filter_group: typing.Union[
+            sql_table.Filter, sql_table.FilterGroup
+        ],
+    ):
+        """Associates each available Filter with the Table that it applies to.
 
         Params:
         -------
-        sql_filter: An instance of Filter.
+        sql_filter_or_filter_group: Either a filter applied to query results
+            or a group of filters.
         """
+        if isinstance(sql_filter_or_filter_group, sql_table.FilterGroup):
+            for query_filter in sql_filter_or_filter_group.filters:
+                self.add_filters_to_table(query_filter)
+            return None
+
+        sql_filter = sql_filter_or_filter_group
         try:
             table = next(
                 table for table in self.tables if table.name == sql_filter.table_name

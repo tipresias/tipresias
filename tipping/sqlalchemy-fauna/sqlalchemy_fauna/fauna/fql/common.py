@@ -240,8 +240,21 @@ def build_document_set_intersection(
     --------
     FQL query expression that matches on the same conditions as the Table's filters.
     """
-    filter_group_filters = [] if filter_group is None else filter_group.filters
-    group_filter_names = [sql_filter.name for sql_filter in filter_group_filters]
+    filter_group_filters = (
+        typing.cast(
+            typing.Union[typing.List[sql.Filter], typing.List[sql.FilterGroup]], []
+        )
+        if filter_group is None
+        else filter_group.filters
+    )
+    group_filter_names = []
+    for sql_filter in filter_group_filters:
+        if isinstance(sql_filter, sql.FilterGroup):
+            raise exceptions.NotSupportedError(
+                "Nested WHERE clauses are not yet supported."
+            )
+        group_filter_names.append(sql_filter.name)
+
     filters = [
         sql_filter
         for sql_filter in table.filters
@@ -370,7 +383,7 @@ def join_collections(sql_query: sql.SQLQuery) -> QueryExpression:
             "or remove the ordering constraint."
         )
 
-    if not any(sql_query.filter_groups):
+    if not any(sql_query.filter_group.filters):
         raise exceptions.NotSupportedError(
             "Joining tables without cross-table filters via the WHERE clause is not supported. "
             "Selecting columns from multiple tables is not supported either, "
@@ -382,7 +395,7 @@ def join_collections(sql_query: sql.SQLQuery) -> QueryExpression:
 
     intersection_queries = []
 
-    for filter_group in sql_query.filter_groups:
+    for filter_group in sql_query.filter_group.filters:
         intersection_query = q.intersection(
             *[
                 _build_intersecting_query(filter_group, None, table, direction)
@@ -408,9 +421,11 @@ def update_documents(sql_query: sql.SQLQuery) -> QueryExpression:
     """
     assert len(sql_query.tables) == 1
     table = sql_query.tables[0]
-    assert len(sql_query.filter_groups) <= 1
+    assert len(sql_query.filter_group.filters) <= 1
     filter_group = (
-        None if not any(sql_query.filter_groups) else sql_query.filter_groups[0]
+        None
+        if not any(sql_query.filter_group.filters)
+        else sql_query.filter_group.filters[0]
     )
 
     field_updates = {column.name: column.value for column in table.columns}

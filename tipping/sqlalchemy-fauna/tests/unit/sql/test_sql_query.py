@@ -60,7 +60,7 @@ class TestSQLQuery:
             )
 
     @staticmethod
-    def test_add_filter_to_table():
+    def test_add_filters_to_table():
         column = sql_table.Column(
             table_name="users", name="name", alias="name", position=0
         )
@@ -68,7 +68,7 @@ class TestSQLQuery:
         query = sql_query.SQLQuery("SELECT", tables=[table])
         sql_filter = sql_table.Filter(column=column, operator="=", value="Bob")
 
-        query.add_filter_to_table(sql_filter)
+        query.add_filters_to_table(sql_filter)
 
         assert table.filters[0] == sql_filter
 

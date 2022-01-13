@@ -49,7 +49,7 @@ def _define_document_pages(sql_query: sql.SQLQuery) -> QueryExpression:
         document_set = common.join_collections(sql_query)
     else:
         document_set = common.build_document_set_union(
-            tables[0], sql_query.filter_groups
+            tables[0], sql_query.filter_group.filters
         )
 
     ordered_document_set = _sort_document_set(document_set, order_by)

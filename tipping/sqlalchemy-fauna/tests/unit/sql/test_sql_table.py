@@ -164,8 +164,8 @@ class TestTable:
         _, where_group = statement.token_next_by(i=(token_groups.Where))
 
         column = sql_table.Column.from_identifier(column_identifier)
-        sql_filter_groups = sql_table.FilterGroup.from_where_group(where_group)
-        sql_filters = sql_filter_groups[0].filters
+        sql_filter_group = sql_table.FilterGroup.from_where_group(where_group)
+        sql_filters = sql_filter_group.filters[0].filters
         table = sql_table.Table(name=table_name, columns=[column], filters=sql_filters)
         assert table.name == table_name
         assert str(table) == table_name
@@ -216,8 +216,8 @@ class TestTable:
         statement = sqlparse.parse(sql_query)[0]
         _, where_group = statement.token_next_by(i=(token_groups.Where))
 
-        sql_filter_groups = sql_table.FilterGroup.from_where_group(where_group)
-        sql_filters = sql_filter_groups[0].filters
+        sql_filter_group = sql_table.FilterGroup.from_where_group(where_group)
+        sql_filters = sql_filter_group.filters
         table = sql_table.Table(name=table_name)
 
         table.add_filter(sql_filters[0])
@@ -397,89 +397,144 @@ class TestFilterGroup:
     age = Fake.pyint()
     finger_count = Fake.pyint()
 
-    @staticmethod
     @pytest.mark.parametrize(
         ["sql_string", "expected_attributes"],
         [
             # SELECT *
             (
                 select_values,
-                [[]],
+                {
+                    "set_operation": sql_table.SetOperation.INTERSECTION,
+                    "filters": [
+                        {
+                            "set_operation": sql_table.SetOperation.INTERSECTION,
+                            "filters": [],
+                        }
+                    ],
+                },
             ),
             # SELECT ID
             (
                 select_values + f" WHERE users.id = '{id_value}'",
-                [
-                    [
+                {
+                    "set_operation": sql_table.SetOperation.INTERSECTION,
+                    "filters": [
                         {
-                            "operator": "=",
-                            "value": id_value,
+                            "set_operation": sql_table.SetOperation.INTERSECTION,
+                            "filters": [
+                                {
+                                    "operator": "=",
+                                    "value": id_value,
+                                }
+                            ],
                         }
-                    ]
-                ],
+                    ],
+                },
             ),
             # SELECT with multiple ANDs
             (
                 select_values
                 + f" WHERE users.name = '{name}' AND users.age = {age} "
                 + f"AND users.finger_count = {finger_count}",
-                [
-                    [
+                {
+                    "set_operation": sql_table.SetOperation.INTERSECTION,
+                    "filters": [
                         {
-                            "operator": "=",
-                            "value": name,
-                        },
-                        {
-                            "operator": "=",
-                            "value": age,
-                        },
-                        {
-                            "operator": "=",
-                            "value": finger_count,
-                        },
-                    ]
-                ],
+                            "set_operation": sql_table.SetOperation.INTERSECTION,
+                            "filters": [
+                                {
+                                    "operator": "=",
+                                    "value": name,
+                                },
+                                {
+                                    "operator": "=",
+                                    "value": age,
+                                },
+                                {
+                                    "operator": "=",
+                                    "value": finger_count,
+                                },
+                            ],
+                        }
+                    ],
+                },
             ),
             # SELECT with 'IS NULL' comparison
             (
                 select_values + " WHERE users.job IS NULL",
-                [
-                    [
+                {
+                    "set_operation": sql_table.SetOperation.INTERSECTION,
+                    "filters": [
                         {
-                            "operator": "=",
-                            "value": None,
+                            "set_operation": sql_table.SetOperation.INTERSECTION,
+                            "filters": [
+                                {
+                                    "operator": "=",
+                                    "value": None,
+                                }
+                            ],
                         }
-                    ]
-                ],
+                    ],
+                },
             ),
+            # SELECT with 'OR'
             (
                 select_values + f" WHERE users.name = '{name}' OR users.age = {age}",
-                [[{"operator": "=", "value": name}], [{"operator": "=", "value": age}]],
+                {
+                    "set_operation": sql_table.SetOperation.UNION,
+                    "filters": [
+                        {
+                            "set_operation": sql_table.SetOperation.INTERSECTION,
+                            "filters": [{"operator": "=", "value": name}],
+                        },
+                        {
+                            "set_operation": sql_table.SetOperation.INTERSECTION,
+                            "filters": [{"operator": "=", "value": age}],
+                        },
+                    ],
+                },
+            ),
+            # SELECT with 'AND' & 'OR'
+            (
+                select_values
+                + f" WHERE users.name = '{name}' OR users.age = {age} "
+                + f"AND users.finger_count = {finger_count}",
+                {
+                    "set_operation": sql_table.SetOperation.UNION,
+                    "filters": [
+                        {
+                            "set_operation": sql_table.SetOperation.INTERSECTION,
+                            "filters": [{"operator": "=", "value": name}],
+                        },
+                        {
+                            "set_operation": sql_table.SetOperation.INTERSECTION,
+                            "filters": [
+                                {"operator": "=", "value": age},
+                                {"operator": "=", "value": finger_count},
+                            ],
+                        },
+                    ],
+                },
             ),
         ],
     )
-    def test_from_where_group(sql_string, expected_attributes):
+    def test_from_where_group(self, sql_string, expected_attributes):
         statement = sqlparse.parse(sql_string)[0]
         _, where_group = statement.token_next_by(i=(token_groups.Where))
 
-        filter_groups = sql_table.FilterGroup.from_where_group(where_group)
-        for idx, filter_group in enumerate(filter_groups):
-            for sql_filter, expected_filter_attributes in zip(
-                filter_group.filters, expected_attributes[idx]
-            ):
-                assert isinstance(sql_filter, sql_table.Filter)
-                for key, value in expected_filter_attributes.items():
-                    assert getattr(sql_filter, key) == value
+        filter_group = sql_table.FilterGroup.from_where_group(where_group)
 
-    where_between = (
-        select_values + f" WHERE users.age BETWEEN {Fake.pyint()} AND {Fake.pyint}"
-    )
+        self._assert_matching_attributes(filter_group, expected_attributes)
 
     @staticmethod
     @pytest.mark.parametrize(
         ["sql_query", "error_message"],
         [
-            (where_between, "BETWEEN not yet supported in WHERE clauses"),
+            (
+                select_values
+                + f" WHERE users.age BETWEEN {Fake.pyint()} AND {Fake.pyint}",
+                "BETWEEN not yet supported in WHERE clauses",
+            ),
         ],
     )
     def test_unsupported_from_where_group(sql_query, error_message):
@@ -488,3 +543,18 @@ class TestFilterGroup:
 
         with pytest.raises(exceptions.NotSupportedError, match=error_message):
             sql_table.FilterGroup.from_where_group(where_group)
+
+    def _assert_matching_attributes(self, filter_or_filter_group, expected_attributes):
+        if isinstance(filter_or_filter_group, sql_table.Filter):
+            for key, value in expected_attributes.items():
+                assert getattr(filter_or_filter_group, key) == value
+            return None
+
+        assert (
+            filter_or_filter_group.set_operation == expected_attributes["set_operation"]
+        )
+        for idx, query_filter in enumerate(filter_or_filter_group.filters):
+            self._assert_matching_attributes(
+                query_filter, expected_attributes["filters"][idx]
+            )
+        return None

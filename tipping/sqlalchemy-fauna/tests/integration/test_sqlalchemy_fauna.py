@@ -1,14 +1,12 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-from datetime import timezone, tzinfo
+from datetime import timezone
 import functools
 
 from sqlalchemy import inspect, exc as sqlalchemy_exceptions, sql
 import pytest
 from faker import Faker
 import numpy as np
-from tests.fixtures.factories import UserFactory
-from tests.fixtures.models import UserFood
 
 from tests.fixtures import models, factories
 
@@ -135,7 +133,7 @@ def test_select_by_numeric_field_comparison(filter_age, fauna_session):
     ]
 
     for age in ages:
-        UserFactory(age=age)
+        factories.UserFactory(age=age)
 
     # For '=' comparison
     queried_users = (
@@ -358,7 +356,7 @@ def test_join(fauna_session):
     for user_name, food_name, child_names in names:
         user = factories.UserFactory(name=user_name)
         food = factories.FoodFactory(name=food_name)
-        user.user_foods.append(UserFood(food=food))
+        user.user_foods.append(models.UserFood(food=food))
 
         for child_name in child_names:
             factories.ChildFactory(name=child_name, user=user)
@@ -435,37 +433,63 @@ def test_join(fauna_session):
 
 
 def test_join_with_or(fauna_session):
-    bob_children = ["Louise", "Tina", "Gene"]
-    names = [
-        ("Bob", "burger", bob_children),
-        ("Jimmy", "pizza", ["Jimmy Jr.", "Ollie", "Andy"]),
+    belcher_children_names = ["Louise", "Tina", "Gene"]
+    user_params = [
+        {
+            "name": "Bob",
+            "job": "cook",
+            "foods": [{"name": "burger"}],
+            "children": [{"name": name} for name in belcher_children_names],
+        },
+        {
+            "name": "Linda",
+            "job": "waitress",
+            "foods": [{"name": "burger"}],
+            "children": [{"name": name} for name in belcher_children_names],
+        },
+        {
+            "name": "Jimmy",
+            "job": "cook",
+            "foods": [{"name": "pizza"}],
+            "children": [{"name": "Jimmy Jr."}, {"name": "Ollie"}, {"name": "Andy"}],
+        },
     ]
 
-    for user_name, food_name, child_names in names:
-        user = factories.UserFactory(name=user_name)
-        food = factories.FoodFactory(name=food_name)
-        user.user_foods.append(UserFood(food=food))
+    for user_param in user_params:
+        user = factories.UserFactory(name=user_param["name"])
+        for food_param in user_param["foods"]:
+            food = factories.FoodFactory(name=food_param["name"])
+            user.user_foods.append(models.UserFood(food=food))
 
-        for child_name in child_names:
-            factories.ChildFactory(name=child_name, user=user)
+        for child_param in user_param["children"]:
+            factories.ChildFactory(name=child_param["name"], user=user)
 
-        fauna_session.add(user)
+    fauna_session.commit()
 
-    children = (
-        fauna_session.execute(
-            sql.select(models.Child)
-            .join(models.Child.user)
-            .join(models.User.user_foods)
-            .join(models.UserFood.food)
-            .where(sql.or_(models.Child.name == "Ollie", models.Food.name == "burger"))
+    with pytest.raises(
+        sqlalchemy_exceptions.NotSupportedError,
+        match="Nested WHERE conditions are not supported.",
+    ):
+        children = (
+            fauna_session.execute(
+                sql.select(models.Child)
+                .join(models.Child.user)
+                .join(models.User.user_foods)
+                .join(models.UserFood.food)
+                .where(
+                    models.User.job == "cook",
+                    sql.or_(models.Child.name == "Ollie", models.Food.name == "burger"),
+                )
+            )
+            .scalars()
+            .all()
         )
-        .scalars()
-        .all()
-    )
 
-    assert len(children) == 4
-    assert {child.name for child in children} == set(bob_children + ["Ollie"])
-    assert {child.user.name for child in children} == set(["Bob", "Jimmy"])
+        assert len(children) == 4
+        assert {child.name for child in children} == set(
+            belcher_children_names + ["Ollie"]
+        )
+        assert {child.user.name for child in children} == set(["Bob", "Jimmy", "Linda"])
 
 
 def test_order_by(fauna_session):

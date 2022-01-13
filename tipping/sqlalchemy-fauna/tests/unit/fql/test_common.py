@@ -8,6 +8,7 @@ import numpy as np
 import sqlparse
 
 from sqlalchemy_fauna import exceptions, sql
+from sqlalchemy_fauna.sql.sql_table import SetOperation
 from sqlalchemy_fauna.fauna.fql import common
 
 
@@ -97,7 +98,9 @@ def test_unsupported_build_document_set_intersection(filter_params):
     query_filter = sql.Filter(**filter_params)
 
     table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
-    filter_group = sql.FilterGroup(filters=[query_filter])
+    filter_group = sql.FilterGroup(
+        set_operation=SetOperation.INTERSECTION, filters=[query_filter]
+    )
 
     with pytest.raises(exceptions.NotSupportedError, match="Unsupported operator"):
         common.build_document_set_intersection(table, filter_group)
@@ -132,7 +135,9 @@ def test_build_document_set_intersection(filter_params, column_params):
     query_filter = sql.Filter(**{**base_filter_params, **filter_params})
 
     table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
-    filter_group = sql.FilterGroup(filters=[query_filter])
+    filter_group = sql.FilterGroup(
+        set_operation=SetOperation.INTERSECTION, filters=[query_filter]
+    )
 
     fql_query = common.build_document_set_intersection(table, filter_group)
     assert isinstance(fql_query, QueryExpression)
@@ -254,7 +259,7 @@ def test_build_document_set_union(sql_string):
     sql_query = sql.SQLQuery.from_statement(sql_statement)
 
     set_union = common.build_document_set_union(
-        sql_query.tables[0], sql_query.filter_groups
+        sql_query.tables[0], sql_query.filter_group.filters
     )
 
     assert isinstance(set_union, QueryExpression)

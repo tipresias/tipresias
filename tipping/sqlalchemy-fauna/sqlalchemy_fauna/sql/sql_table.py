@@ -32,6 +32,13 @@ class JoinDirection(enum.Enum):
     RIGHT = "right"
 
 
+class SetOperation(enum.Enum):
+    """Enum for types of operations for joining sets."""
+
+    INTERSECTION = "intersection"
+    UNION = "union"
+
+
 ColumnParams = TypedDict(
     "ColumnParams",
     {
@@ -296,7 +303,6 @@ class Filter:
         self.value = value
         self._table: typing.Optional[Table] = None
         self._table_name = column.table_name
-        self.filter_group: typing.Optional[FilterGroup] = None
 
     @classmethod
     def from_comparison_group(cls, comparison_group: token_groups.Comparison) -> Filter:
@@ -399,25 +405,30 @@ class Filter:
 
 
 class FilterGroup:
-    """Representation of a group of WHERE clauses separated by ANDs.
+    """Representation of a group of WHERE clauses all separated by ANDs or ORs.
 
-    These groups of filters are in turn separated by ORs.
+    Each instance represents an intersection (all ANDs) or union (all ORs) of clauses.
 
     Params:
     -------
+    filters: List of SQL comparisons used for filtering results (e.g. <column> = <value>).
     """
 
-    def __init__(self, filters: typing.List[Filter] = None):
-        self._filters = filters or []
-
-        for sql_filter in self._filters:
-            sql_filter.filter_group = self
+    def __init__(
+        self,
+        set_operation: SetOperation,
+        filters: typing.Union[typing.List[Filter], typing.List[FilterGroup]] = None,
+    ):
+        self.set_operation = set_operation
+        self._filters = filters or typing.cast(
+            typing.Union[typing.List[Filter], typing.List[FilterGroup]], []
+        )
 
     @classmethod
     def from_where_group(
         cls, where_group: typing.Optional[token_groups.Where]
-    ) -> typing.List[FilterGroup]:
-        """Parse a WHERE token to extract all filters groups contained therein.
+    ) -> FilterGroup:
+        """Parse a WHERE token to extract all filter groups contained therein.
 
         Params:
         -------
@@ -425,11 +436,10 @@ class FilterGroup:
 
         Returns:
         --------
-        A list of FilterGroup instances based on all conditions contained
-            within the WHERE clause.
+        A FilterGroup instances based on all conditions contained within the WHERE clause.
         """
         if where_group is None:
-            return []
+            return cls(set_operation=SetOperation.INTERSECTION)
 
         _, between_keyword = where_group.token_next_by(
             m=(token_types.Keyword, "BETWEEN")
@@ -445,11 +455,14 @@ class FilterGroup:
 
         while True:
             idx, comparison = where_group.token_next_by(
-                i=(token_groups.Comparison, token_groups.Identifier), idx=idx
+                i=(token_groups.Comparison, token_groups.Identifier),
+                idx=idx,
             )
+
             if comparison is None:
-                filter_groups.append(cls(filters=where_filters))
-                break
+                raise exceptions.NotSupportedError(
+                    "Nested WHERE conditions are not supported."
+                )
 
             next_comparison_idx, next_comparison_keyword = where_group.token_next_by(
                 m=[(token_types.Keyword, "AND"), (token_types.Keyword, "OR")], idx=idx
@@ -463,23 +476,29 @@ class FilterGroup:
                     where_group.tokens[idx:next_comparison_idx]
                 )
 
-            where_filter = Filter.from_comparison_group(comparison)
-            where_filters.append(where_filter)
+            where_filters.append(Filter.from_comparison_group(comparison))
 
             if next_comparison_idx is None:
-                filter_groups.append(cls(filters=where_filters))
+                filter_groups.append(
+                    cls(set_operation=SetOperation.INTERSECTION, filters=where_filters)
+                )
                 break
 
             if next_comparison_keyword.match(token_types.Keyword, "OR"):
-                filter_groups.append(cls(filters=where_filters))
+                filter_groups.append(
+                    cls(set_operation=SetOperation.INTERSECTION, filters=where_filters)
+                )
                 where_filters = []
 
             idx = next_comparison_idx
 
-        return filter_groups
+        set_operation = (
+            SetOperation.UNION if len(filter_groups) > 1 else SetOperation.INTERSECTION
+        )
+        return cls(set_operation=set_operation, filters=filter_groups)
 
     @property
-    def filters(self) -> typing.List[Filter]:
+    def filters(self) -> typing.Union[typing.List[Filter], typing.List[FilterGroup]]:
         """List of filters contained within this group."""
         return self._filters
 

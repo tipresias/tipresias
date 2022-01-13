@@ -26,7 +26,7 @@ def translate_delete(sql_query: sql.SQLQuery) -> typing.List[QueryExpression]:
         document_set = common.join_collections(sql_query)
     else:
         document_set = common.build_document_set_union(
-            tables[0], sql_query.filter_groups
+            tables[0], sql_query.filter_group.filters
         )
 
     return q.map_(q.lambda_("ref", q.delete(q.var("ref"))), q.paginate(document_set))

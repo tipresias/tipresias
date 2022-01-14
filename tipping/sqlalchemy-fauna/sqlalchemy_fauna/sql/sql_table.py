@@ -453,6 +453,10 @@ class FilterGroup:
         where_filters: typing.List[Filter] = []
         idx = 0
 
+        _, and_keyword = where_group.token_next_by(m=(token_types.Keyword, "AND"))
+        has_and_keyword = and_keyword is not None
+        root_set_operation = SetOperation.INTERSECTION
+
         while True:
             idx, comparison = where_group.token_next_by(
                 i=(token_groups.Comparison, token_groups.Identifier),
@@ -485,17 +489,26 @@ class FilterGroup:
                 break
 
             if next_comparison_keyword.match(token_types.Keyword, "OR"):
-                filter_groups.append(
-                    cls(set_operation=SetOperation.INTERSECTION, filters=where_filters)
-                )
-                where_filters = []
+                root_set_operation = SetOperation.UNION
+
+                # If the root of the WHERE clause is only made up of ORs, we want
+                # the FilterGroup to have the same structure as if it was only ANDs
+                # (e.g. FilterGroup.filters are Filter objects)
+                if has_and_keyword:
+                    filter_groups.append(
+                        cls(
+                            set_operation=SetOperation.INTERSECTION,
+                            filters=where_filters,
+                        )
+                    )
+                    where_filters = []
 
             idx = next_comparison_idx
 
-        set_operation = (
-            SetOperation.UNION if len(filter_groups) > 1 else SetOperation.INTERSECTION
-        )
-        return cls(set_operation=set_operation, filters=filter_groups)
+        if len(filter_groups) > 1:
+            return cls(set_operation=root_set_operation, filters=filter_groups)
+
+        return cls(set_operation=root_set_operation, filters=where_filters)
 
     @property
     def filters(self) -> typing.Union[typing.List[Filter], typing.List[FilterGroup]]:

@@ -1,5 +1,8 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
+import itertools
+import typing
+
 import pytest
 from faker import Faker
 from faunadb.objects import _Expr as QueryExpression
@@ -73,74 +76,6 @@ where_or = (
     select_values
     + f" WHERE users.name = '{Fake.first_name()}' OR users.age = {Fake.pyint()}"
 )
-
-
-@pytest.mark.parametrize(
-    "filter_params",
-    [{"operator": "LIKE"}],
-)
-def test_unsupported_build_document_set_intersection(filter_params):
-    table_name = Fake.word()
-    column_params = {
-        "name": Fake.word(),
-        "alias": Fake.word(),
-        "table_name": table_name,
-        "position": 0,
-    }
-    column = sql.Column(**column_params)
-
-    base_filter_params = {
-        "column": column,
-        "operator": np.random.choice(sql.Filter.SUPPORTED_COMPARISON_OPERATORS),
-        "value": Fake.word(),
-    }
-    filter_params = {**base_filter_params, **filter_params}
-    query_filter = sql.Filter(**filter_params)
-
-    table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
-    filter_group = sql.FilterGroup(
-        set_operation=SetOperation.INTERSECTION, filters=[query_filter]
-    )
-
-    with pytest.raises(exceptions.NotSupportedError, match="Unsupported operator"):
-        common.build_document_set_intersection(table, filter_group)
-
-
-@pytest.mark.parametrize(
-    ["filter_params", "column_params"],
-    [
-        ({"operator": "=", "value": Fake.uuid4()}, {"name": "ref", "alias": "id"}),
-        ({"operator": "="}, {}),
-        ({"operator": ">=", "value": Fake.pyint()}, {}),
-        ({"operator": ">", "value": Fake.pyint()}, {}),
-        ({"operator": "<=", "value": Fake.pyint()}, {}),
-        ({"operator": "<", "value": Fake.pyint()}, {}),
-    ],
-)
-def test_build_document_set_intersection(filter_params, column_params):
-    table_name = Fake.word()
-    base_column_params = {
-        "name": Fake.word(),
-        "alias": Fake.word(),
-        "table_name": table_name,
-        "position": 0,
-    }
-    column = sql.Column(**{**base_column_params, **column_params})
-
-    base_filter_params = {
-        "column": column,
-        "operator": np.random.choice(sql.Filter.SUPPORTED_COMPARISON_OPERATORS),
-        "value": Fake.word(),
-    }
-    query_filter = sql.Filter(**{**base_filter_params, **filter_params})
-
-    table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
-    filter_group = sql.FilterGroup(
-        set_operation=SetOperation.INTERSECTION, filters=[query_filter]
-    )
-
-    fql_query = common.build_document_set_intersection(table, filter_group)
-    assert isinstance(fql_query, QueryExpression)
 
 
 def test_join_collections():
@@ -242,24 +177,69 @@ def test_update_documents():
     assert isinstance(update_query, QueryExpression)
 
 
+select_clause = (
+    "SELECT users.name, users.age, users.job as profession, users.id FROM users"
+)
+
+
 @pytest.mark.parametrize(
     "sql_string",
     [
-        (
-            "SELECT users.name, users.age FROM users "
-            "WHERE users.name = 'Bob' "
-            "AND users.age > 30 "
-            "OR users.job = 'cook'"
-        ),
-        "SELECT users.name, users.age FROM users",
+        select_clause,
+        f"{select_clause} WHERE users.name = 'Bob' OR users.job = 'cook'",
+        f"{select_clause} WHERE users.name = 'Bob' OR users.job = 'cook' "
+        + f"OR users.{Fake.word()} = '{Fake.word()}'",
+        f"{select_clause} WHERE users.name = 'Bob' AND users.job = 'cook'",
+        f"{select_clause} WHERE users.name = 'Bob' AND users.job = 'cook' "
+        + f"AND users.{Fake.word()} = '{Fake.word()}'",
+        f"{select_clause} WHERE users.name = 'Bob' AND users.job = 'cook' "
+        + f"OR users.{Fake.word()} = '{Fake.word()}' "
+        + f"AND users.{Fake.word()} = '{Fake.word()}'",
+        f"{select_clause} WHERE users.id = '{Fake.uuid4()}'",
+        f"{select_clause} WHERE users.{Fake.word()} = '{Fake.word()}'",
+        f"{select_clause} WHERE users.{Fake.word()} >= '{Fake.word()}'",
+        f"{select_clause} WHERE users.{Fake.word()} > '{Fake.word()}'",
+        f"{select_clause} WHERE users.{Fake.word()} <= '{Fake.word()}'",
+        f"{select_clause} WHERE users.{Fake.word()} < '{Fake.word()}'",
     ],
 )
-def test_build_document_set_union(sql_string):
+def test_build_document_set(sql_string):
     sql_statement = sqlparse.parse(sql_string)[0]
     sql_query = sql.SQLQuery.from_statement(sql_statement)
 
-    set_union = common.build_document_set_union(
-        sql_query.tables[0], sql_query.filter_group.filters
+    document_set = common.build_document_set(
+        sql_query.filter_group, sql_query.tables[0]
     )
 
-    assert isinstance(set_union, QueryExpression)
+    assert isinstance(document_set, QueryExpression)
+
+
+@pytest.mark.parametrize(
+    "filter_params",
+    [{"operator": "LIKE"}],
+)
+def test_unsupported_build_document_set(filter_params):
+    table_name = Fake.word()
+    column_params = {
+        "name": Fake.word(),
+        "alias": Fake.word(),
+        "table_name": table_name,
+        "position": 0,
+    }
+    column = sql.Column(**column_params)
+
+    base_filter_params = {
+        "column": column,
+        "operator": np.random.choice(sql.Filter.SUPPORTED_COMPARISON_OPERATORS),
+        "value": Fake.word(),
+    }
+    filter_params = {**base_filter_params, **filter_params}
+    query_filter = sql.Filter(**filter_params)
+
+    table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
+    filter_group = sql.FilterGroup(
+        set_operation=SetOperation.INTERSECTION, filters=[query_filter]
+    )
+
+    with pytest.raises(exceptions.NotSupportedError, match="Unsupported operator"):
+        common.build_document_set(filter_group, table)

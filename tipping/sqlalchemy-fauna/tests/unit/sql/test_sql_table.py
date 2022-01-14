@@ -165,7 +165,7 @@ class TestTable:
 
         column = sql_table.Column.from_identifier(column_identifier)
         sql_filter_group = sql_table.FilterGroup.from_where_group(where_group)
-        sql_filters = sql_filter_group.filters[0].filters
+        sql_filters = sql_filter_group.filters
         table = sql_table.Table(name=table_name, columns=[column], filters=sql_filters)
         assert table.name == table_name
         assert str(table) == table_name
@@ -405,12 +405,7 @@ class TestFilterGroup:
                 select_values,
                 {
                     "set_operation": sql_table.SetOperation.INTERSECTION,
-                    "filters": [
-                        {
-                            "set_operation": sql_table.SetOperation.INTERSECTION,
-                            "filters": [],
-                        }
-                    ],
+                    "filters": [],
                 },
             ),
             # SELECT ID
@@ -420,13 +415,8 @@ class TestFilterGroup:
                     "set_operation": sql_table.SetOperation.INTERSECTION,
                     "filters": [
                         {
-                            "set_operation": sql_table.SetOperation.INTERSECTION,
-                            "filters": [
-                                {
-                                    "operator": "=",
-                                    "value": id_value,
-                                }
-                            ],
+                            "operator": "=",
+                            "value": id_value,
                         }
                     ],
                 },
@@ -440,22 +430,17 @@ class TestFilterGroup:
                     "set_operation": sql_table.SetOperation.INTERSECTION,
                     "filters": [
                         {
-                            "set_operation": sql_table.SetOperation.INTERSECTION,
-                            "filters": [
-                                {
-                                    "operator": "=",
-                                    "value": name,
-                                },
-                                {
-                                    "operator": "=",
-                                    "value": age,
-                                },
-                                {
-                                    "operator": "=",
-                                    "value": finger_count,
-                                },
-                            ],
-                        }
+                            "operator": "=",
+                            "value": name,
+                        },
+                        {
+                            "operator": "=",
+                            "value": age,
+                        },
+                        {
+                            "operator": "=",
+                            "value": finger_count,
+                        },
                     ],
                 },
             ),
@@ -466,13 +451,8 @@ class TestFilterGroup:
                     "set_operation": sql_table.SetOperation.INTERSECTION,
                     "filters": [
                         {
-                            "set_operation": sql_table.SetOperation.INTERSECTION,
-                            "filters": [
-                                {
-                                    "operator": "=",
-                                    "value": None,
-                                }
-                            ],
+                            "operator": "=",
+                            "value": None,
                         }
                     ],
                 },
@@ -483,14 +463,8 @@ class TestFilterGroup:
                 {
                     "set_operation": sql_table.SetOperation.UNION,
                     "filters": [
-                        {
-                            "set_operation": sql_table.SetOperation.INTERSECTION,
-                            "filters": [{"operator": "=", "value": name}],
-                        },
-                        {
-                            "set_operation": sql_table.SetOperation.INTERSECTION,
-                            "filters": [{"operator": "=", "value": age}],
-                        },
+                        {"operator": "=", "value": name},
+                        {"operator": "=", "value": age},
                     ],
                 },
             ),

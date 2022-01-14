@@ -21,6 +21,7 @@ class UserFactory(SQLAlchemyModelFactory):
 
         model = User
         sqlalchemy_session = Session
+        sqlalchemy_get_or_create = ("name",)
 
     name = factory.Sequence(lambda n: f"{Fake.first_name()} {n}")
     date_joined = factory.Faker("date_time_this_decade", tzinfo=timezone.utc)
@@ -39,6 +40,7 @@ class ChildFactory(SQLAlchemyModelFactory):
 
         model = Child
         sqlalchemy_session = Session
+        sqlalchemy_get_or_create = ("name",)
 
     name = factory.Sequence(lambda n: f"{Fake.first_name()} {n}")
     user = factory.SubFactory(UserFactory)
@@ -53,6 +55,7 @@ class FoodFactory(SQLAlchemyModelFactory):
 
         model = Food
         sqlalchemy_session = Session
+        sqlalchemy_get_or_create = ("name",)
 
     name = factory.Sequence(lambda n: f"{Fake.word()} {n}")
     flavor = factory.Faker("bs")

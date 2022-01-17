@@ -451,8 +451,11 @@ class SQLQuery:
             or a group of filters.
         """
         if isinstance(sql_filter_or_filter_group, sql_table.FilterGroup):
-            for query_filter in sql_filter_or_filter_group.filters:
-                self.add_filters_to_table(query_filter)
+            for sql_filter in sql_filter_or_filter_group.filters:
+                self.add_filters_to_table(sql_filter)
+
+            for filter_group in sql_filter_or_filter_group.filter_groups:
+                self.add_filters_to_table(filter_group)
             return None
 
         sql_filter = sql_filter_or_filter_group

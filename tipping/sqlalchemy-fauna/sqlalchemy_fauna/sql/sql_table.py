@@ -417,16 +417,16 @@ class FilterGroup:
     def __init__(
         self,
         set_operation: SetOperation,
-        filters: typing.Union[typing.List[Filter], typing.List[FilterGroup]] = None,
+        filters: typing.List[Filter] = None,
+        filter_groups: typing.List[FilterGroup] = None,
     ):
         self.set_operation = set_operation
-        self._filters = filters or typing.cast(
-            typing.Union[typing.List[Filter], typing.List[FilterGroup]], []
-        )
+        self._filters = filters or typing.cast(typing.List[Filter], [])
+        self._filter_groups = filter_groups or typing.cast(typing.List[FilterGroup], [])
 
     @classmethod
     def from_where_group(
-        cls, where_group: typing.Optional[token_groups.Where]
+        cls, where_group: typing.Optional[token_groups.Where], idx=-1
     ) -> FilterGroup:
         """Parse a WHERE token to extract all filter groups contained therein.
 
@@ -449,71 +449,95 @@ class FilterGroup:
                 "BETWEEN not yet supported in WHERE clauses."
             )
 
-        filter_groups = []
-        where_filters: typing.List[Filter] = []
-        idx = 0
+        _, parenthesis_group = where_group.token_next_by(i=token_groups.Parenthesis)
+        if parenthesis_group is not None:
+            raise exceptions.NotSupportedError(
+                "Nested WHERE conditions are not supported."
+            )
 
-        _, and_keyword = where_group.token_next_by(m=(token_types.Keyword, "AND"))
-        has_and_keyword = and_keyword is not None
         root_set_operation = SetOperation.INTERSECTION
+        token_chunks: typing.List[typing.List[token_types.Token]] = []
+        tokens: typing.List[token_types.Token] = []
+        idx = -1
 
         while True:
-            idx, comparison = where_group.token_next_by(
+            idx, token = where_group.token_next_by(
+                m=(token_types.Keyword, "OR"),
                 i=(token_groups.Comparison, token_groups.Identifier),
                 idx=idx,
             )
-
-            if comparison is None:
-                raise exceptions.NotSupportedError(
-                    "Nested WHERE conditions are not supported."
-                )
-
-            next_comparison_idx, next_comparison_keyword = where_group.token_next_by(
-                m=[(token_types.Keyword, "AND"), (token_types.Keyword, "OR")], idx=idx
-            )
-
-            # I'm not sure what the exact cause is, but sometimes sqlparse has trouble
-            # with grouping tokens into Comparison groups (seems to mostly be an issue
-            # after the AND keyword, but not always).
-            if isinstance(comparison, token_groups.Identifier):
-                comparison = token_groups.Comparison(
-                    where_group.tokens[idx:next_comparison_idx]
-                )
-
-            where_filters.append(Filter.from_comparison_group(comparison))
-
-            if next_comparison_idx is None:
-                filter_groups.append(
-                    cls(set_operation=SetOperation.INTERSECTION, filters=where_filters)
-                )
+            if token is None:
+                token_chunks.append(tokens)
                 break
 
-            if next_comparison_keyword.match(token_types.Keyword, "OR"):
+            if token.match(token_types.Keyword, "OR"):
+                token_chunks.append(tokens)
+                tokens = []
                 root_set_operation = SetOperation.UNION
+                continue
 
-                # If the root of the WHERE clause is only made up of ORs, we want
-                # the FilterGroup to have the same structure as if it was only ANDs
-                # (e.g. FilterGroup.filters are Filter objects)
-                if has_and_keyword:
-                    filter_groups.append(
-                        cls(
-                            set_operation=SetOperation.INTERSECTION,
-                            filters=where_filters,
-                        )
-                    )
-                    where_filters = []
+            if isinstance(token, token_groups.Comparison):
+                tokens.append(token)
+                continue
 
-            idx = next_comparison_idx
+            if isinstance(token, token_groups.Identifier):
+                (next_conjunction, _) = where_group.token_next_by(
+                    m=[(token_types.Keyword, "AND"), (token_types.Keyword, "OR")],
+                    idx=idx,
+                )
+                # I'm not sure what the exact cause is, but sometimes sqlparse has trouble
+                # with grouping tokens into Comparison groups (seems to mostly be an issue
+                # after the AND keyword, but not always).
+                tokens.append(
+                    token_groups.Comparison(where_group.tokens[idx:next_conjunction])
+                )
+                continue
 
-        if len(filter_groups) > 1:
-            return cls(set_operation=root_set_operation, filters=filter_groups)
+            raise exceptions.NotSupportedError(
+                f"SQL token '{str(token)}' not supported as part of a WHERE clause."
+            )
 
-        return cls(set_operation=root_set_operation, filters=where_filters)
+        filter_groups: typing.List[FilterGroup] = []
+        filters: typing.List[Filter] = []
+        idx = 0
+
+        for token_chunk in token_chunks:
+            if len(token_chunks) == 1 or len(token_chunk) == 1:
+                filters.extend(
+                    [Filter.from_comparison_group(token) for token in token_chunk]
+                )
+                continue
+
+            group_filters = [
+                Filter.from_comparison_group(token)
+                for token in token_chunk
+                if isinstance(token, token_groups.Comparison)
+            ]
+            filter_groups.append(
+                cls(set_operation=SetOperation.INTERSECTION, filters=group_filters)
+            )
+
+        return cls(
+            set_operation=root_set_operation,
+            filter_groups=filter_groups,
+            filters=filters,
+        )
 
     @property
-    def filters(self) -> typing.Union[typing.List[Filter], typing.List[FilterGroup]]:
-        """List of filters contained within this group."""
+    def filters(self) -> typing.List[Filter]:
+        """List of filters contained within this group.
+
+        Doesn't include filters contained in nested filter groups.
+        """
         return self._filters
+
+    @property
+    def filter_groups(self) -> typing.List[FilterGroup]:
+        """List of filter groups contained within this group.
+
+        Doesn't include filter groups contained in nested filter groups.
+        """
+        return self._filter_groups
 
 
 class Table:

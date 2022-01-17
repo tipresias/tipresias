@@ -59,18 +59,29 @@ class TestSQLQuery:
                 ],
             )
 
-    @staticmethod
-    def test_add_filters_to_table():
-        column = sql_table.Column(
-            table_name="users", name="name", alias="name", position=0
-        )
-        table = sql_table.Table(name="users", columns=[column])
+    column = sql_table.Column(table_name="users", name="name", alias="name", position=0)
+    sql_filter = sql_table.Filter(column=column, operator="=", value="Bob")
+
+    @pytest.mark.parametrize(
+        ["filter_or_filter_group", "expected_filters"],
+        [
+            (sql_filter, [sql_filter]),
+            (
+                sql_table.FilterGroup(
+                    set_operation=sql_table.SetOperation.INTERSECTION,
+                    filters=[sql_filter],
+                ),
+                [sql_filter],
+            ),
+        ],
+    )
+    def test_add_filters_to_table(self, filter_or_filter_group, expected_filters):
+        table = sql_table.Table(name="users", columns=[self.column])
         query = sql_query.SQLQuery("SELECT", tables=[table])
-        sql_filter = sql_table.Filter(column=column, operator="=", value="Bob")
 
-        query.add_filters_to_table(sql_filter)
+        query.add_filters_to_table(filter_or_filter_group)
 
-        assert table.filters[0] == sql_filter
+        assert table.filters == expected_filters
 
     @staticmethod
     @pytest.mark.parametrize("distinct", ["DISTINCT", ""])

@@ -226,43 +226,9 @@ def _define_match_set(query_filter: sql.Filter) -> QueryExpression:
     )
 
 
-def _build_document_set_intersection(
+def _build_table_document_set(
     table: sql.Table, filters: typing.List[sql.Filter]
-) -> QueryExpression:
-    """Build FQL match query based on intersection of filtered results from given group.
-
-    Params:
-    -------
-    table: A Table object associated with a Fauna collection.
-    filter_group: A group of filters representing an intersection of filtered results.
-
-    Returns:
-    --------
-    FQL query expression that matches on the same conditions as the Table's filters.
-    """
-    group_filter_names = []
-    for sql_filter in filters:
-        group_filter_names.append(sql_filter.name)
-
-    group_table_filters = [
-        sql_filter
-        for sql_filter in table.filters
-        if sql_filter.name in group_filter_names
-    ]
-
-    document_sets = [
-        _define_match_set(sql_filter) for sql_filter in group_table_filters
-    ]
-
-    if not any(document_sets):
-        return q.intersection(q.match(q.index(index_name(table.name))))
-
-    return q.intersection(*document_sets)
-
-
-def _build_document_set_union(
-    table: sql.Table, filters: typing.List[sql.Filter]
-) -> QueryExpression:
+) -> typing.List[QueryExpression]:
     """Build FQL match query based on union of filtered results from given group.
 
     Params:
@@ -272,7 +238,7 @@ def _build_document_set_union(
 
     Returns:
     --------
-    FQL query expression that matches on the same conditions as the Table's filters.
+    List of FQL query expressions that match on the same conditions as the Table's filters.
     """
     group_filter_names = [sql_filter.name for sql_filter in filters]
     group_table_filters = [
@@ -285,10 +251,10 @@ def _build_document_set_union(
         _define_match_set(sql_filter) for sql_filter in group_table_filters
     ]
 
-    if not any(document_sets):
-        return q.union(q.match(q.index(index_name(table.name))))
+    if any(document_sets):
+        return document_sets
 
-    return q.union(*document_sets)
+    return [q.match(q.index(index_name(table.name)))]
 
 
 def _build_intersecting_query(
@@ -297,25 +263,11 @@ def _build_intersecting_query(
     acc_query: typing.Optional[QueryExpression] = None,
     direction: typing.Optional[str] = None,
 ) -> QueryExpression:
-    filter_groups_or_filters = filter_group.filters
-    if any(
-        isinstance(sql_filter, sql.FilterGroup)
-        for sql_filter in filter_groups_or_filters
-    ):
-        filter_groups = typing.cast(
-            typing.List[sql.FilterGroup], filter_groups_or_filters
-        )
-        subqueries = [
-            build_document_set(
-                sub_filter_group, table, acc_query=acc_query, direction=direction
-            )
-            for sub_filter_group in filter_groups
-        ]
-
-        document_set = q.intersection(*subqueries)
-    else:
-        filters = typing.cast(typing.List[sql.Filter], filter_group.filters)
-        document_set = _build_document_set_intersection(table, filters)
+    subqueries = [
+        build_document_set(sub_filter_group, table)
+        for sub_filter_group in filter_group.filter_groups
+    ] + _build_table_document_set(table, filter_group.filters)
+    document_set = q.intersection(*subqueries)
 
     if acc_query is None:
         intersection = document_set
@@ -324,7 +276,7 @@ def _build_intersecting_query(
 
     next_table = getattr(table, f"{direction}_join_table", None)
 
-    if next_table is None or table.has_columns:
+    if direction is None or next_table is None or table.has_columns:
         return intersection
 
     next_join_key = getattr(table, f"{direction}_join_key")
@@ -372,24 +324,11 @@ def _build_union_query(
     acc_query: typing.Optional[QueryExpression] = None,
     direction: typing.Optional[str] = None,
 ) -> QueryExpression:
-    filter_groups_or_filters = filter_group.filters
-    if any(
-        isinstance(sql_filter, sql.FilterGroup)
-        for sql_filter in filter_groups_or_filters
-    ):
-        filter_groups = typing.cast(
-            typing.List[sql.FilterGroup], filter_groups_or_filters
-        )
-        subqueries = [
-            build_document_set(
-                sub_filter_group, table, acc_query=acc_query, direction=direction
-            )
-            for sub_filter_group in filter_groups
-        ]
-        document_set = q.union(*subqueries)
-    else:
-        filters = typing.cast(typing.List[sql.Filter], filter_group.filters)
-        document_set = _build_document_set_union(table, filters)
+    subqueries = [
+        build_document_set(sub_filter_group, table)
+        for sub_filter_group in filter_group.filter_groups
+    ] + _build_table_document_set(table, filter_group.filters)
+    document_set = q.union(*subqueries)
 
     if acc_query is None:
         union = document_set
@@ -398,7 +337,7 @@ def _build_union_query(
 
     next_table = getattr(table, f"{direction}_join_table", None)
 
-    if next_table is None or table.has_columns:
+    if direction is None or next_table is None or table.has_columns:
         return union
 
     next_join_key = getattr(table, f"{direction}_join_key")
@@ -462,7 +401,7 @@ def build_document_set(
     An FQL query expression with all of the FilterGroup's subfilters applied
         to the given collection's documents.
     """
-    if not any(filter_group.filters):
+    if not any(filter_group.filters) and not any(filter_group.filter_groups):
         return q.intersection(q.match(q.index(index_name(table.name))))
 
     if filter_group.set_operation == sql.SetOperation.INTERSECTION:
@@ -504,7 +443,9 @@ def join_collections(sql_query: sql.SQLQuery) -> QueryExpression:
             "or remove the ordering constraint."
         )
 
-    if not any(sql_query.filter_group.filters):
+    if not any(sql_query.filter_group.filters) and not any(
+        sql_query.filter_group.filter_groups
+    ):
         raise exceptions.NotSupportedError(
             "Joining tables without cross-table filters via the WHERE clause is not supported. "
             "Selecting columns from multiple tables is not supported either, "

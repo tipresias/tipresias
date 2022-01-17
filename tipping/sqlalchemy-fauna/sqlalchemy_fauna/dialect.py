@@ -258,7 +258,12 @@ class FaunaDialect(default.DefaultDialect):  # pylint: disable=abstract-method
     def get_unique_constraints(self, connection, table_name, schema=None, **_kwargs):
         """Get the unique constraints for the given table."""
         info_table_name = "information_schema_indexes_"
-        query = f"SELECT {info_table_name}.name_, {info_table_name}.column_names_ FROM {info_table_name} WHERE {info_table_name}.table_name_ = '{table_name}' AND {info_table_name}.unique_ = TRUE"
+        query = (
+            f"SELECT {info_table_name}.name_, {info_table_name}.column_names_ "
+            f"FROM {info_table_name} "
+            f"WHERE {info_table_name}.table_name_ = '{table_name}' "
+            f"AND {info_table_name}.unique_ = TRUE"
+        )
 
         result = connection.execute(query)
         result_keys = list(result.keys())

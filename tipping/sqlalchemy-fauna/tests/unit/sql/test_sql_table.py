@@ -396,6 +396,7 @@ class TestFilterGroup:
     name = Fake.first_name()
     age = Fake.pyint()
     finger_count = Fake.pyint()
+    job = Fake.job()
 
     @pytest.mark.parametrize(
         ["sql_string", "expected_attributes"],
@@ -408,7 +409,7 @@ class TestFilterGroup:
                     "filters": [],
                 },
             ),
-            # SELECT ID
+            # SELECT with one condition
             (
                 select_values + f" WHERE users.id = '{id_value}'",
                 {
@@ -444,6 +445,29 @@ class TestFilterGroup:
                     ],
                 },
             ),
+            # SELECT with multiple ORs
+            (
+                select_values
+                + f" WHERE users.name = '{name}' OR users.age = {age} "
+                + f"OR users.finger_count = {finger_count}",
+                {
+                    "set_operation": sql_table.SetOperation.UNION,
+                    "filters": [
+                        {
+                            "operator": "=",
+                            "value": name,
+                        },
+                        {
+                            "operator": "=",
+                            "value": age,
+                        },
+                        {
+                            "operator": "=",
+                            "value": finger_count,
+                        },
+                    ],
+                },
+            ),
             # SELECT with 'IS NULL' comparison
             (
                 select_values + " WHERE users.job IS NULL",
@@ -457,18 +481,7 @@ class TestFilterGroup:
                     ],
                 },
             ),
-            # SELECT with 'OR'
-            (
-                select_values + f" WHERE users.name = '{name}' OR users.age = {age}",
-                {
-                    "set_operation": sql_table.SetOperation.UNION,
-                    "filters": [
-                        {"operator": "=", "value": name},
-                        {"operator": "=", "value": age},
-                    ],
-                },
-            ),
-            # SELECT with 'AND' & 'OR'
+            # SELECT with '<condition> OR <condition> AND <condition>'
             (
                 select_values
                 + f" WHERE users.name = '{name}' OR users.age = {age} "
@@ -476,10 +489,9 @@ class TestFilterGroup:
                 {
                     "set_operation": sql_table.SetOperation.UNION,
                     "filters": [
-                        {
-                            "set_operation": sql_table.SetOperation.INTERSECTION,
-                            "filters": [{"operator": "=", "value": name}],
-                        },
+                        {"operator": "=", "value": name},
+                    ],
+                    "filter_groups": [
                         {
                             "set_operation": sql_table.SetOperation.INTERSECTION,
                             "filters": [
@@ -487,6 +499,28 @@ class TestFilterGroup:
                                 {"operator": "=", "value": finger_count},
                             ],
                         },
+                    ],
+                },
+            ),
+            # SELECT with '<condition> AND <condition> OR <condition> OR <condition>'
+            (
+                select_values
+                + f" WHERE users.name = '{name}' AND users.age = {age} "
+                + f"OR users.finger_count = {finger_count} OR users.job = '{job}'",
+                {
+                    "set_operation": sql_table.SetOperation.UNION,
+                    "filters": [
+                        {"operator": "=", "value": finger_count},
+                        {"operator": "=", "value": job},
+                    ],
+                    "filter_groups": [
+                        {
+                            "set_operation": sql_table.SetOperation.INTERSECTION,
+                            "filters": [
+                                {"operator": "=", "value": name},
+                                {"operator": "=", "value": age},
+                            ],
+                        }
                     ],
                 },
             ),
@@ -509,6 +543,12 @@ class TestFilterGroup:
                 + f" WHERE users.age BETWEEN {Fake.pyint()} AND {Fake.pyint}",
                 "BETWEEN not yet supported in WHERE clauses",
             ),
+            (
+                select_values
+                + f" WHERE (users.name = '{name}' OR users.age = {age}) "
+                + f"AND users.finger_count = {finger_count}",
+                "Nested WHERE conditions are not supported.",
+            ),
         ],
     )
     def test_unsupported_from_where_group(sql_query, error_message):
@@ -527,8 +567,14 @@ class TestFilterGroup:
         assert (
             filter_or_filter_group.set_operation == expected_attributes["set_operation"]
         )
-        for idx, query_filter in enumerate(filter_or_filter_group.filters):
+        for idx, filter_attributes in enumerate(expected_attributes.get("filters", [])):
             self._assert_matching_attributes(
-                query_filter, expected_attributes["filters"][idx]
+                filter_or_filter_group.filters[idx], filter_attributes
+            )
+        for idx, filter_group_attributes in enumerate(
+            expected_attributes.get("filter_groups", [])
+        ):
+            self._assert_matching_attributes(
+                filter_or_filter_group.filter_groups[idx], filter_group_attributes
             )
         return None

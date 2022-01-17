@@ -456,7 +456,7 @@ def test_join_with_or(fauna_session):
     ]
 
     for user_param in user_params:
-        user = factories.UserFactory(name=user_param["name"])
+        user = factories.UserFactory(name=user_param["name"], job=user_param["job"])
         for food_param in user_param["foods"]:
             food = factories.FoodFactory(name=food_param["name"])
             user.user_foods.append(models.UserFood(food=food))

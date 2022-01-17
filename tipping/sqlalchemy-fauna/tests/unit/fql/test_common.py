@@ -1,8 +1,5 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-import itertools
-import typing
-
 import pytest
 from faker import Faker
 from faunadb.objects import _Expr as QueryExpression

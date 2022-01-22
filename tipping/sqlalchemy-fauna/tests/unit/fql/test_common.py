@@ -10,7 +10,7 @@ import sqlparse
 from sqlalchemy_fauna import exceptions, sql
 from sqlalchemy_fauna.fauna.fql import common
 
-from ...fixtures.factories import ColumnFactory
+from tests.fixtures.factories import ColumnFactory, ComparisonFactory
 
 
 Fake = Faker()
@@ -77,37 +77,61 @@ where_or = (
 
 
 @pytest.mark.parametrize(
-    "filter_params",
-    [{"operator": "LIKE"}],
-)
-def test_unsupported_build_document_set_intersection(filter_params):
-    table_name = Fake.word()
-    column = ColumnFactory(table_name=table_name)
-
-    base_filter_params = {
-        "column": column,
-        "operator": np.random.choice(sql.Filter.SUPPORTED_COMPARISON_OPERATORS),
-        "value": Fake.word(),
-    }
-    filter_params = {**base_filter_params, **filter_params}
-    query_filter = sql.Filter(**filter_params)
-
-    table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
-    filter_group = sql.FilterGroup(filters=[query_filter])
-
-    with pytest.raises(exceptions.NotSupportedError, match="Unsupported operator"):
-        common.build_document_set_intersection(table, filter_group)
-
-
-@pytest.mark.parametrize(
     ["filter_params", "column_params"],
     [
-        ({"operator": "=", "value": Fake.uuid4()}, {"name": "ref", "alias": "id"}),
-        ({"operator": "="}, {}),
-        ({"operator": ">=", "value": Fake.pyint()}, {}),
-        ({"operator": ">", "value": Fake.pyint()}, {}),
-        ({"operator": "<=", "value": Fake.pyint()}, {}),
-        ({"operator": "<", "value": Fake.pyint()}, {}),
+        (
+            {
+                "comparison": ComparisonFactory(
+                    operator=sql.sql_table.ComparisonOperator.EQUAL
+                ),
+                "value": Fake.uuid4(),
+            },
+            {"name": "ref", "alias": "id"},
+        ),
+        (
+            {
+                "comparison": ComparisonFactory(
+                    operator=sql.sql_table.ComparisonOperator.EQUAL
+                )
+            },
+            {},
+        ),
+        (
+            {
+                "comparison": ComparisonFactory(
+                    operator=sql.sql_table.ComparisonOperator.GREATER_THAN_OR_EQUAL
+                ),
+                "value": Fake.pyint(),
+            },
+            {},
+        ),
+        (
+            {
+                "comparison": ComparisonFactory(
+                    operator=sql.sql_table.ComparisonOperator.GREATER_THAN
+                ),
+                "value": Fake.pyint(),
+            },
+            {},
+        ),
+        (
+            {
+                "comparison": ComparisonFactory(
+                    operator=sql.sql_table.ComparisonOperator.LESS_THAN_OR_EQUAL
+                ),
+                "value": Fake.pyint(),
+            },
+            {},
+        ),
+        (
+            {
+                "comparison": ComparisonFactory(
+                    operator=sql.sql_table.ComparisonOperator.LESS_THAN
+                ),
+                "value": Fake.pyint(),
+            },
+            {},
+        ),
     ],
 )
 def test_build_document_set_intersection(filter_params, column_params):
@@ -116,7 +140,7 @@ def test_build_document_set_intersection(filter_params, column_params):
 
     base_filter_params = {
         "column": column,
-        "operator": np.random.choice(sql.Filter.SUPPORTED_COMPARISON_OPERATORS),
+        "comparison": ComparisonFactory(),
         "value": Fake.word(),
     }
     query_filter = sql.Filter(**{**base_filter_params, **filter_params})

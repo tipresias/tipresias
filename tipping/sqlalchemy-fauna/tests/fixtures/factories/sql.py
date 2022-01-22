@@ -6,6 +6,7 @@ from datetime import timezone
 
 import factory
 from faker import Faker
+import numpy as np
 
 from sqlalchemy_fauna import sql
 
@@ -70,3 +71,15 @@ class ColumnFactory(factory.Factory):
             return Fake.date_time(tzinfo=timezone.utc)
 
         raise Exception(f"Unknown DataType, {self.data_type}, for column value.")
+
+
+class ComparisonFactory(factory.Factory):
+    """Factory class for SQL Comparison objects."""
+
+    class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
+        model = sql.Comparison
+        strategy = factory.BUILD_STRATEGY
+
+    operator = np.random.choice(list(sql.Comparison.OPERATOR_MAP.values()))  # type: ignore

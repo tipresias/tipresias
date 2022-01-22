@@ -7,6 +7,7 @@ from faker import Faker
 
 from sqlalchemy_fauna.sql import sql_table
 from sqlalchemy_fauna import exceptions
+from ...fixtures.factories import ColumnFactory
 
 
 Fake = Faker()
@@ -98,7 +99,7 @@ class TestColumn:
 
     @staticmethod
     def test_column():
-        column = sql_table.Column(
+        column = ColumnFactory(
             position=0, table_name="users", name="name", alias="alias"
         )
         assert str(column) == "name"
@@ -272,9 +273,7 @@ class TestTable:
 class TestFilter:
     @staticmethod
     def test_filter():
-        column = sql_table.Column(
-            name="name", alias="name", table_name="users", position=0
-        )
+        column = ColumnFactory()
         operator = "="
         value = "Bob"
         where_filter = sql_table.Filter(column=column, operator=operator, value=value)

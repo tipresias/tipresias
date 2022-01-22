@@ -9,6 +9,8 @@ from faker import Faker
 from sqlalchemy_fauna.sql import sql_query, sql_table
 from sqlalchemy_fauna import exceptions
 
+from ...fixtures.factories import ColumnFactory
+
 
 Fake = Faker()
 
@@ -16,44 +18,36 @@ Fake = Faker()
 class TestSQLQuery:
     @staticmethod
     def test_sql_query():
-        table_name = Fake.word()
-        column_name = Fake.word()
-        column_alias = Fake.word()
+        column = ColumnFactory()
         query = sql_query.SQLQuery(
             "SELECT",
             tables=[
                 sql_table.Table(
-                    name=table_name,
-                    columns=[
-                        sql_table.Column(
-                            name=column_name, alias=column_alias, position=0
-                        )
-                    ],
+                    name=column.table_name,
+                    columns=[column],
                 )
             ],
         )
         assert len(query.tables) == 1
-        assert query.tables[0].name == table_name
+        assert query.tables[0].name == column.table_name
         assert len(query.columns) == 1
-        assert query.columns[0].name == column_name
+        assert query.columns[0].name == column.name
 
-        assert query.alias_map == {table_name: {column_name: column_alias}}
+        assert query.alias_map == {column.table_name: {column.name: column.alias}}
 
     @staticmethod
     def test_validation():
+        table_name = Fake.word()
+
         with pytest.raises(AssertionError, match="must have unique position values"):
             sql_query.SQLQuery(
                 "SELECT",
                 tables=[
                     sql_table.Table(
-                        name=Fake.word(),
+                        name=table_name,
                         columns=[
-                            sql_table.Column(
-                                name=Fake.word(), alias=Fake.word(), position=0
-                            ),
-                            sql_table.Column(
-                                name=Fake.word(), alias=Fake.word(), position=0
-                            ),
+                            ColumnFactory(table_name=table_name, position=0),
+                            ColumnFactory(table_name=table_name, position=0),
                         ],
                     )
                 ],
@@ -61,10 +55,8 @@ class TestSQLQuery:
 
     @staticmethod
     def test_add_filter_to_table():
-        column = sql_table.Column(
-            table_name="users", name="name", alias="name", position=0
-        )
-        table = sql_table.Table(name="users", columns=[column])
+        column = ColumnFactory()
+        table = sql_table.Table(name=column.table_name, columns=[column])
         query = sql_query.SQLQuery("SELECT", tables=[table])
         sql_filter = sql_table.Filter(column=column, operator="=", value="Bob")
 
@@ -243,7 +235,7 @@ class TestOrderBy:
         ],
     )
     def test_order_by(direction, expected_direction):
-        columns = [sql_table.Column(name=Fake.word(), alias=Fake.word(), position=0)]
+        columns = [ColumnFactory()]
         order_by = sql_query.OrderBy(columns=columns, direction=direction)
 
         assert order_by.columns == columns

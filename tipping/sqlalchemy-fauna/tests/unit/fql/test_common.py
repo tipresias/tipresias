@@ -10,6 +10,8 @@ import sqlparse
 from sqlalchemy_fauna import exceptions, sql
 from sqlalchemy_fauna.fauna.fql import common
 
+from ...fixtures.factories import ColumnFactory
+
 
 Fake = Faker()
 
@@ -80,13 +82,7 @@ where_or = (
 )
 def test_unsupported_build_document_set_intersection(filter_params):
     table_name = Fake.word()
-    column_params = {
-        "name": Fake.word(),
-        "alias": Fake.word(),
-        "table_name": table_name,
-        "position": 0,
-    }
-    column = sql.Column(**column_params)
+    column = ColumnFactory(table_name=table_name)
 
     base_filter_params = {
         "column": column,
@@ -116,13 +112,7 @@ def test_unsupported_build_document_set_intersection(filter_params):
 )
 def test_build_document_set_intersection(filter_params, column_params):
     table_name = Fake.word()
-    base_column_params = {
-        "name": Fake.word(),
-        "alias": Fake.word(),
-        "table_name": table_name,
-        "position": 0,
-    }
-    column = sql.Column(**{**base_column_params, **column_params})
+    column = ColumnFactory(table_name=table_name, **column_params)
 
     base_filter_params = {
         "column": column,

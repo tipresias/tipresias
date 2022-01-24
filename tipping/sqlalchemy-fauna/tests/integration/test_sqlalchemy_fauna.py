@@ -466,30 +466,24 @@ def test_join_with_or(fauna_session):
 
     fauna_session.commit()
 
-    with pytest.raises(
-        sqlalchemy_exceptions.NotSupportedError,
-        match="Nested WHERE conditions are not supported.",
-    ):
-        children = (
-            fauna_session.execute(
-                sql.select(models.Child)
-                .join(models.Child.user)
-                .join(models.User.user_foods)
-                .join(models.UserFood.food)
-                .where(
-                    models.User.job == "cook",
-                    sql.or_(models.Child.name == "Ollie", models.Food.name == "burger"),
-                )
+    children = (
+        fauna_session.execute(
+            sql.select(models.Child).join(models.Child.user)
+            # .join(models.User.user_foods)
+            # .join(models.UserFood.food)
+            .where(
+                models.User.job == "cook",
+                sql.or_(models.Child.name == "Ollie", models.User.name == "Bob"),
+                # sql.or_(models.Child.name == "Ollie", models.Food.name == "burger"),
             )
-            .scalars()
-            .all()
         )
+        .scalars()
+        .all()
+    )
 
-        assert len(children) == 4
-        assert {child.name for child in children} == set(
-            belcher_children_names + ["Ollie"]
-        )
-        assert {child.user.name for child in children} == set(["Bob", "Jimmy", "Linda"])
+    assert len(children) == 4
+    assert {child.name for child in children} == set(belcher_children_names + ["Ollie"])
+    assert {child.user.name for child in children} == set(["Bob", "Jimmy", "Linda"])
 
 
 def test_order_by(fauna_session):

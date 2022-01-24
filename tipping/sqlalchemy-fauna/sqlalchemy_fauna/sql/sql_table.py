@@ -449,12 +449,6 @@ class FilterGroup:
                 "BETWEEN not yet supported in WHERE clauses."
             )
 
-        _, parenthesis_group = where_group.token_next_by(i=token_groups.Parenthesis)
-        if parenthesis_group is not None:
-            raise exceptions.NotSupportedError(
-                "Nested WHERE conditions are not supported."
-            )
-
         root_set_operation = SetOperation.INTERSECTION
         token_chunks: typing.List[typing.List[token_types.Token]] = []
         tokens: typing.List[token_types.Token] = []
@@ -463,7 +457,11 @@ class FilterGroup:
         while True:
             idx, token = where_group.token_next_by(
                 m=(token_types.Keyword, "OR"),
-                i=(token_groups.Comparison, token_groups.Identifier),
+                i=(
+                    token_groups.Comparison,
+                    token_groups.Identifier,
+                    token_groups.Parenthesis,
+                ),
                 idx=idx,
             )
             if token is None:
@@ -476,12 +474,12 @@ class FilterGroup:
                 root_set_operation = SetOperation.UNION
                 continue
 
-            if isinstance(token, token_groups.Comparison):
+            if isinstance(token, (token_groups.Comparison, token_groups.Parenthesis)):
                 tokens.append(token)
                 continue
 
             if isinstance(token, token_groups.Identifier):
-                (next_conjunction, _) = where_group.token_next_by(
+                (next_conjunction_idx, _) = where_group.token_next_by(
                     m=[(token_types.Keyword, "AND"), (token_types.Keyword, "OR")],
                     idx=idx,
                 )
@@ -489,7 +487,9 @@ class FilterGroup:
                 # with grouping tokens into Comparison groups (seems to mostly be an issue
                 # after the AND keyword, but not always).
                 tokens.append(
-                    token_groups.Comparison(where_group.tokens[idx:next_conjunction])
+                    token_groups.Comparison(
+                        where_group.tokens[idx:next_conjunction_idx]
+                    )
                 )
                 continue
 
@@ -502,20 +502,23 @@ class FilterGroup:
         idx = 0
 
         for token_chunk in token_chunks:
-            if len(token_chunks) == 1 or len(token_chunk) == 1:
-                filters.extend(
-                    [Filter.from_comparison_group(token) for token in token_chunk]
-                )
-                continue
+            group_filters = []
 
-            group_filters = [
-                Filter.from_comparison_group(token)
-                for token in token_chunk
-                if isinstance(token, token_groups.Comparison)
-            ]
-            filter_groups.append(
-                cls(set_operation=SetOperation.INTERSECTION, filters=group_filters)
-            )
+            for token in token_chunk:
+                if isinstance(token, token_groups.Parenthesis):
+                    filter_groups.append(cls.from_where_group(token))
+                    continue
+
+                if len(token_chunks) == 1 or len(token_chunk) == 1:
+                    filters.append(Filter.from_comparison_group(token))
+                    continue
+
+                group_filters.append(Filter.from_comparison_group(token))
+
+            if any(group_filters):
+                filter_groups.append(
+                    cls(set_operation=SetOperation.INTERSECTION, filters=group_filters)
+                )
 
         return cls(
             set_operation=root_set_operation,

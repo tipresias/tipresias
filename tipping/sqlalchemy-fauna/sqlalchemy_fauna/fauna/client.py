@@ -43,6 +43,9 @@ class FaunaClient:
         """Convert SQL to FQL and execute the query."""
         formatted_query = translation.format_sql_query(query)
 
+        if "JOIN" in formatted_query and "OR" in formatted_query:
+            print(formatted_query)
+
         try:
             return self._execute_sql(formatted_query)
         except Exception as err:

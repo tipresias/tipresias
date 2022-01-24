@@ -6,8 +6,9 @@ import pytest
 from faker import Faker
 import numpy as np
 
-from tipping.models.prediction import Prediction, ValidationError
+from tipping.models.prediction import Prediction
 from tipping.models.team import Team, TeamName
+from tipping.models.base import ValidationError
 from tipping.models import MLModel
 
 Fake = Faker()

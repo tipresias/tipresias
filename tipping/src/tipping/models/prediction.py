@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import typing
+from datetime import date
 
 from mypy_extensions import TypedDict
 from sqlalchemy import Column, Integer, ForeignKey, Boolean, Float, orm, sql
+import pandas as pd
+import numpy as np
 
 from . import base
 from .match import Match
 from .ml_model import MLModel
 from .team import Team
+from .team_match import TeamMatch
 
 PredictionAttributes = TypedDict(
     "PredictionAttributes",
@@ -48,6 +52,85 @@ class Prediction(base.Base):
     predicted_margin = Column(Integer)
     predicted_win_probability = Column(Float)
     is_correct = Column(Boolean)
+
+    @classmethod
+    def update_or_create_from_raw_data(
+        cls, session: orm.session.Session, data: pd.DataFrame
+    ) -> Prediction:
+        """
+        Convert raw prediction data to a Prediction model instance.
+
+        Tries to find and update existing prediction for the given
+        match/model combination, and creates new one if none is found.
+
+        Params:
+        -------
+        session: An SQLAlchemy session.
+        data: Dictionary that include prediction data for two teams
+            that are playing each other in a given match.
+
+        Returns:
+        --------
+        Prediction model instance.
+        """
+        match = session.execute(
+            sql.select(Match)
+            .join(TeamMatch)
+            .join(Team)
+            .where(
+                Match.start_date_time >= date(data["year"], JAN, FIRST),
+                Match.start_date_time < date(data["year"] + 1, JAN, FIRST),
+                Match.round_number == data["round_number"],
+                sql.or_(
+                    Team.name == data["home_team"],
+                    Team.name == data["away_team"],
+                ),
+            )
+            .limit(1)
+        ).scalar()
+
+        assert match is not None, (
+            f"Expected to find a Match record for round {data['round_number']} "
+            f"between home team {data['home_team']} and away team {data['away_team']}."
+        )
+
+        ml_model = session.execute(
+            sql.select(MLModel).where(MLModel.name == data["ml_model"])
+        ).scalar()
+
+        prediction = cls.get_or_build(session, match=match, ml_model=ml_model)
+
+        predicted_margin, predicted_margin_winner_name = cls._calculate_predictions(
+            data, "margin"
+        )
+        (
+            predicted_win_probability,
+            predicted_proba_winner_name,
+        ) = cls._calculate_predictions(data, "win_probability")
+
+        # For now, each estimator predicts margins or win probabilities, but not both.
+        # If we eventually have an estimator that predicts both, we're defaulting
+        # to the predicted winner by margin, but we may want to revisit this
+        predicted_winner_name = (
+            predicted_margin_winner_name or predicted_proba_winner_name
+        )
+
+        assert (
+            predicted_winner_name is not None
+        ), f"Each prediction should have a predicted_winner:\n{data}"
+
+        predicted_winner_id = session.execute(
+            sql.select(Team.id).where(Team.name == predicted_winner_name)
+        ).scalar()
+
+        prediction.predicted_margin = predicted_margin
+        prediction.predicted_win_probability = predicted_win_probability
+        prediction.predicted_winner_id = predicted_winner_id
+        prediction.update_correctness()
+
+        session.commit()
+
+        return prediction
 
     @classmethod
     def get_by(
@@ -132,3 +215,99 @@ class Prediction(base.Base):
             f"predicted_win_probability '{value}' must be between 0 and 1 "
             "(inclusive)."
         )
+
+    @classmethod
+    def _calculate_predictions(
+        cls,
+        prediction_data: pd.DataFrame,
+        prediction_type: typing.Union[
+            typing.Literal["margin"], typing.Literal["win_probability"]
+        ],
+    ) -> typing.Tuple[typing.Optional[np.number], typing.Optional[str]]:
+        home_prediction_key = typing.cast(
+            typing.Union[
+                typing.Literal["home_predicted_margin"],
+                typing.Literal["home_predicted_win_probability"],
+            ],
+            f"home_predicted_{prediction_type}",
+        )
+        away_prediction_key = typing.cast(
+            typing.Union[
+                typing.Literal["away_predicted_margin"],
+                typing.Literal["away_predicted_win_probability"],
+            ],
+            f"away_predicted_{prediction_type}",
+        )
+
+        home_predicted_result = prediction_data[home_prediction_key]
+        away_predicted_result = prediction_data[away_prediction_key]
+
+        if home_predicted_result is None or away_predicted_result is None:
+            return None, None
+
+        # TODO: The win probability model is kind of messed up this year,
+        # so we've gotten a prediction where they're equal, and I don't feel
+        # like revisiting the model, so we'll let it slide this season.
+        assert home_predicted_result != away_predicted_result or (
+            prediction_type == "win_probability" and date.today().year == 2021
+        ), (
+            "Home and away predictions are equal, which is basically impossible, "
+            "so figure out what's going on:\n"
+            f"{prediction_data}"
+        )
+
+        predicted_result = (
+            cls._calculate_predicted_margin(
+                home_predicted_result, away_predicted_result
+            )
+            if prediction_type == "margin"
+            else cls._calculate_predicted_win_probability(
+                home_predicted_result, away_predicted_result
+            )
+        )
+
+        return predicted_result, cls._calculate_predicted_winner(
+            prediction_data, home_predicted_result, away_predicted_result
+        )
+
+    @classmethod
+    def _calculate_predicted_margin(
+        cls, home_margin: np.number, away_margin: np.number
+    ) -> np.number:
+        both_predicted_to_win = home_margin > 0 and away_margin > 0
+        both_predicted_to_lose = home_margin < 0 and away_margin < 0
+
+        # predicted_margin is always positive as it's always associated
+        # with predicted_winner
+        if both_predicted_to_win or both_predicted_to_lose:
+            return abs(home_margin - away_margin)
+
+        return np.mean(np.abs([home_margin, away_margin]))
+
+    @classmethod
+    def _calculate_predicted_win_probability(
+        cls, home_win_probability: np.number, away_win_probability: np.number
+    ) -> np.number:
+        predicted_loser_oppo_win_proba = 1 - np.min(
+            [home_win_probability, away_win_probability]
+        )
+        predicted_winner_win_proba = np.max(
+            [home_win_probability, away_win_probability]
+        )
+        predicted_win_probability = np.mean(
+            [predicted_loser_oppo_win_proba, predicted_winner_win_proba]
+        )
+
+        return predicted_win_probability
+
+    @classmethod
+    def _calculate_predicted_winner(
+        cls, prediction_data, home_predicted_result, away_predicted_result
+    ) -> str:
+        predicted_winner = (
+            "home_team"
+            if home_predicted_result > away_predicted_result
+            else "away_team"
+        )
+
+        return prediction_data[predicted_winner]

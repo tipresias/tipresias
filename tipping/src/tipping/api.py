@@ -154,6 +154,9 @@ def update_match_predictions(
     match_predictions = pivot_team_matches_to_matches(prediction_data)
     updated_prediction_records = data_export.update_match_predictions(match_predictions)
 
+    for _, match_prediction in match_predictions.iterrows():
+        get_by_params = Prediction.build
+
     if verbose == 1:
         print("Match predictions sent!")
 

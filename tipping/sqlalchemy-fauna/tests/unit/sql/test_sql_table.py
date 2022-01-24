@@ -268,6 +268,59 @@ class TestTable:
                 foreign_table, comparison_group, sql_table.JoinDirection.RIGHT
             )
 
+    first_filter = sql_table.Filter(
+        column=sql_table.Column(name=Fake.first_name(), position=0),
+        operator="=",
+        value=Fake.first_name(),
+    )
+    second_filter = sql_table.Filter(
+        column=sql_table.Column(name=Fake.last_name(), position=0),
+        operator="=",
+        value=Fake.first_name(),
+    )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        ["table_filters", "group_filters", "filter_groups", "expected_value"],
+        [
+            ([first_filter], [first_filter], [], True),
+            ([first_filter], [second_filter], [], False),
+            (
+                [first_filter],
+                [],
+                [
+                    sql_table.FilterGroup(
+                        set_operation=sql_table.SetOperation.UNION,
+                        filters=[first_filter],
+                    )
+                ],
+                True,
+            ),
+            (
+                [first_filter],
+                [],
+                [
+                    sql_table.FilterGroup(
+                        set_operation=sql_table.SetOperation.UNION,
+                        filters=[second_filter],
+                    )
+                ],
+                False,
+            ),
+        ],
+    )
+    def test_shares_filters_with(
+        table_filters, group_filters, filter_groups, expected_value
+    ) -> bool:
+        table = sql_table.Table(name=Fake.first_name(), filters=table_filters)
+        filter_group = sql_table.FilterGroup(
+            set_operation=sql_table.SetOperation.INTERSECTION,
+            filters=group_filters,
+            filter_groups=filter_groups,
+        )
+
+        assert table.shares_filters_with(filter_group) == expected_value
+
 
 class TestFilter:
     @staticmethod
@@ -397,6 +450,7 @@ class TestFilterGroup:
     age = Fake.pyint()
     finger_count = Fake.pyint()
     job = Fake.job()
+    child_name = Fake.first_name()
 
     @pytest.mark.parametrize(
         ["sql_string", "expected_attributes"],
@@ -524,6 +578,51 @@ class TestFilterGroup:
                     ],
                 },
             ),
+            # SELECT with nested conditions: '<condition> AND (<condition> OR <condition>) AND <condition>'
+            (
+                select_values
+                + f" WHERE users.name = '{name}' AND "
+                + f"(users.job = '{job}' OR users.age = {age}) "
+                f"AND users.finger_count = {finger_count}",
+                {
+                    "set_operation": sql_table.SetOperation.INTERSECTION,
+                    "filters": [
+                        {"operator": "=", "value": name},
+                        {"operator": "=", "value": finger_count},
+                    ],
+                    "filter_groups": [
+                        {
+                            "set_operation": sql_table.SetOperation.UNION,
+                            "filters": [
+                                {"operator": "=", "value": job},
+                                {"operator": "=", "value": age},
+                            ],
+                        },
+                    ],
+                },
+            ),
+            # SELECT with JOIN and nested conditions
+            (
+                select_values
+                + "JOIN children ON users.id = children.user_id "
+                + f" WHERE users.name = '{name}' "
+                f" AND (children.name = '{child_name}' OR children.age = {age})",
+                {
+                    "set_operation": sql_table.SetOperation.INTERSECTION,
+                    "filters": [
+                        {"operator": "=", "value": name},
+                    ],
+                    "filter_groups": [
+                        {
+                            "set_operation": sql_table.SetOperation.UNION,
+                            "filters": [
+                                {"operator": "=", "value": child_name},
+                                {"operator": "=", "value": age},
+                            ],
+                        }
+                    ],
+                },
+            ),
         ],
     )
     def test_from_where_group(self, sql_string, expected_attributes):
@@ -542,12 +641,6 @@ class TestFilterGroup:
                 select_values
                 + f" WHERE users.age BETWEEN {Fake.pyint()} AND {Fake.pyint}",
                 "BETWEEN not yet supported in WHERE clauses",
-            ),
-            (
-                select_values
-                + f" WHERE (users.name = '{name}' OR users.age = {age}) "
-                + f"AND users.finger_count = {finger_count}",
-                "Nested WHERE conditions are not supported.",
             ),
         ],
     )

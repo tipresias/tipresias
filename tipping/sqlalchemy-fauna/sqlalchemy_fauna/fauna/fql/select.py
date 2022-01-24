@@ -50,6 +50,19 @@ def _define_document_pages(sql_query: sql.SQLQuery) -> QueryExpression:
     else:
         document_set = common.build_document_set(sql_query.filter_group, tables[0])
 
+    if "JOIN" in str(sql_query):
+        from faunadb import client
+        import os
+
+        secret = os.getenv("FAUNA_SECRET")
+        scheme = "http"
+        domain = "faunadb"
+        port = 8443
+        _client = client.FaunaClient(
+            scheme=scheme, domain=domain, port=port, secret=secret
+        )
+        breakpoint()
+
     ordered_document_set = _sort_document_set(document_set, order_by)
     # Don't want to apply limit to queries with functions, because we want the calculation
     # for the entire document set, and functions only return the first row anyway

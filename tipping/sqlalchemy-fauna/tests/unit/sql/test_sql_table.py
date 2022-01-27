@@ -8,7 +8,7 @@ from faker import Faker
 from sqlalchemy_fauna.sql import sql_table
 from sqlalchemy_fauna import exceptions
 
-from ...fixtures.factories import ColumnFactory, ComparisonFactory
+from tests.fixtures.factories import ColumnFactory, ComparisonFactory, FilterFactory
 
 
 Fake = Faker()
@@ -323,8 +323,8 @@ class TestFilter:
     @staticmethod
     def test_filter():
         column = ColumnFactory()
-        comparison = ComparisonFactory
-        value = "Bob"
+        comparison = ComparisonFactory()
+        value = Fake.word()
         where_filter = sql_table.Filter(
             column=column, comparison=comparison, value=value
         )
@@ -455,10 +455,7 @@ class TestFilter:
         "operator", list(sql_table.Comparison.OPERATOR_MAP.values())
     )
     def test_checks_whether_operator_methods(operator):
-        comparison = ComparisonFactory(operator=operator)
-        sql_filter = sql_table.Filter(
-            column=ColumnFactory(), comparison=comparison, value=Fake.word()
-        )
+        sql_filter = FilterFactory(comparison__operator=operator)
 
         for operator_to_compare in list(sql_table.Comparison.OPERATOR_MAP.values()):
             checks_operator = getattr(

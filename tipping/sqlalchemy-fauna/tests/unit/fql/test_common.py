@@ -10,7 +10,7 @@ import sqlparse
 from sqlalchemy_fauna import exceptions, sql
 from sqlalchemy_fauna.fauna.fql import common
 
-from tests.fixtures.factories import ColumnFactory, ComparisonFactory
+from tests.fixtures.factories import ColumnFactory, ComparisonFactory, FilterFactory
 
 
 Fake = Faker()
@@ -135,17 +135,10 @@ where_or = (
     ],
 )
 def test_build_document_set_intersection(filter_params, column_params):
-    table_name = Fake.word()
-    column = ColumnFactory(table_name=table_name, **column_params)
+    column = ColumnFactory(**column_params)
+    query_filter = FilterFactory(**{"column": column, **filter_params})
 
-    base_filter_params = {
-        "column": column,
-        "comparison": ComparisonFactory(),
-        "value": Fake.word(),
-    }
-    query_filter = sql.Filter(**{**base_filter_params, **filter_params})
-
-    table = sql.Table(name=table_name, columns=[column], filters=[query_filter])
+    table = sql.Table(name=column.table_name, columns=[column], filters=[query_filter])
     filter_group = sql.FilterGroup(filters=[query_filter])
 
     fql_query = common.build_document_set_intersection(table, filter_group)

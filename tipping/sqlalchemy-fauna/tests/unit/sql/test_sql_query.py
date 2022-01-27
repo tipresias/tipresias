@@ -8,7 +8,7 @@ from faker import Faker
 
 from sqlalchemy_fauna.sql import sql_query, sql_table
 from sqlalchemy_fauna import exceptions
-from tests.fixtures.factories.sql import ComparisonFactory
+from tests.fixtures.factories.sql import ComparisonFactory, FilterFactory
 
 from ...fixtures.factories import ColumnFactory
 
@@ -59,9 +59,7 @@ class TestSQLQuery:
         column = ColumnFactory()
         table = sql_table.Table(name=column.table_name, columns=[column])
         query = sql_query.SQLQuery("SELECT", tables=[table])
-        sql_filter = sql_table.Filter(
-            column=column, comparison=ComparisonFactory(), value="Bob"
-        )
+        sql_filter = FilterFactory(column=column)
 
         query.add_filter_to_table(sql_filter)
 

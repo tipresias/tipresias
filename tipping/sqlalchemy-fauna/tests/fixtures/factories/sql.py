@@ -96,3 +96,18 @@ class FilterFactory(factory.Factory):
         """Generate a random value based on the associated column's data_type param."""
         data_type = None if self.column.value is None else type(self.column.value)
         return _define_value(data_type)
+
+
+class FilterGroupFactory(factory.Factory):
+    """Factory class for SQL FilterGroup objects."""
+
+    class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
+        model = sql.FilterGroup
+        strategy = factory.BUILD_STRATEGY
+
+    # Arbitrary filter count range to keep the list reasonably small
+    filters = factory.RelatedFactoryList(
+        FilterFactory, size=lambda: np.random.randint(1, 6)
+    )

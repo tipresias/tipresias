@@ -6,11 +6,9 @@ import sqlparse
 import pytest
 from faker import Faker
 
+from tests.fixtures.factories.sql import FilterFactory, ColumnFactory
 from sqlalchemy_fauna.sql import sql_query, sql_table
 from sqlalchemy_fauna import exceptions
-from tests.fixtures.factories.sql import ComparisonFactory, FilterFactory
-
-from ...fixtures.factories import ColumnFactory
 
 
 Fake = Faker()

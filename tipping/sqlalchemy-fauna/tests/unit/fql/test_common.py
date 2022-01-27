@@ -4,13 +4,11 @@ import pytest
 from faker import Faker
 from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
-import numpy as np
 import sqlparse
 
+from tests.fixtures.factories import ColumnFactory, FilterFactory, FilterGroupFactory
 from sqlalchemy_fauna import exceptions, sql
 from sqlalchemy_fauna.fauna.fql import common
-
-from tests.fixtures.factories import ColumnFactory, ComparisonFactory, FilterFactory
 
 
 Fake = Faker()
@@ -77,69 +75,43 @@ where_or = (
 
 
 @pytest.mark.parametrize(
-    ["filter_params", "column_params"],
+    ["operator", "column_params"],
     [
         (
-            {
-                "comparison": ComparisonFactory(
-                    operator=sql.sql_table.ComparisonOperator.EQUAL
-                ),
-                "value": Fake.uuid4(),
-            },
+            sql.sql_table.ComparisonOperator.EQUAL,
             {"name": "ref", "alias": "id"},
         ),
         (
-            {
-                "comparison": ComparisonFactory(
-                    operator=sql.sql_table.ComparisonOperator.EQUAL
-                )
-            },
+            sql.sql_table.ComparisonOperator.EQUAL,
             {},
         ),
         (
-            {
-                "comparison": ComparisonFactory(
-                    operator=sql.sql_table.ComparisonOperator.GREATER_THAN_OR_EQUAL
-                ),
-                "value": Fake.pyint(),
-            },
+            sql.sql_table.ComparisonOperator.GREATER_THAN_OR_EQUAL,
             {},
         ),
         (
-            {
-                "comparison": ComparisonFactory(
-                    operator=sql.sql_table.ComparisonOperator.GREATER_THAN
-                ),
-                "value": Fake.pyint(),
-            },
+            sql.sql_table.ComparisonOperator.GREATER_THAN,
             {},
         ),
         (
-            {
-                "comparison": ComparisonFactory(
-                    operator=sql.sql_table.ComparisonOperator.LESS_THAN_OR_EQUAL
-                ),
-                "value": Fake.pyint(),
-            },
+            sql.sql_table.ComparisonOperator.LESS_THAN_OR_EQUAL,
             {},
         ),
         (
-            {
-                "comparison": ComparisonFactory(
-                    operator=sql.sql_table.ComparisonOperator.LESS_THAN
-                ),
-                "value": Fake.pyint(),
-            },
+            sql.sql_table.ComparisonOperator.LESS_THAN,
             {},
         ),
     ],
 )
-def test_build_document_set_intersection(filter_params, column_params):
+def test_build_document_set_intersection(operator, column_params):
     column = ColumnFactory(**column_params)
-    query_filter = FilterFactory(**{"column": column, **filter_params})
+    filter_group = FilterGroupFactory(
+        filters=[FilterFactory(column=column, comparison__operator=operator)]
+    )
 
-    table = sql.Table(name=column.table_name, columns=[column], filters=[query_filter])
-    filter_group = sql.FilterGroup(filters=[query_filter])
+    table = sql.Table(
+        name=column.table_name, columns=[column], filters=filter_group.filters
+    )
 
     fql_query = common.build_document_set_intersection(table, filter_group)
     assert isinstance(fql_query, QueryExpression)

@@ -5,10 +5,9 @@ from sqlparse import sql as token_groups, tokens as token_types
 import pytest
 from faker import Faker
 
+from tests.fixtures.factories import ColumnFactory, ComparisonFactory, FilterFactory
 from sqlalchemy_fauna.sql import sql_table
 from sqlalchemy_fauna import exceptions
-
-from tests.fixtures.factories import ColumnFactory, ComparisonFactory, FilterFactory
 
 
 Fake = Faker()

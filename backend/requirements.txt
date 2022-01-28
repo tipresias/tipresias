@@ -1,6 +1,6 @@
 # Data packages
 numpy==1.22.1
-pandas==1.3.5
+pandas==1.4.0
 
 # App packages
 django==3.2.10

@@ -7,4 +7,6 @@ from .sql import (
     FilterFactory,
     FilterGroupFactory,
     TableFactory,
+    SQLQueryFactory,
+    OrderByFactory,
 )

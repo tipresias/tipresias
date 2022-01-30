@@ -32,10 +32,12 @@ class OrderBy:
 
     def __init__(
         self,
-        columns: typing.List[sql_table.Column],
+        columns: typing.List[sql_table.Column] = None,
         direction: OrderDirection = OrderDirection.ASC,
     ):
+        columns = columns or []
         assert any(columns)
+
         self._columns = columns
         self._direction = direction or OrderDirection.ASC
 

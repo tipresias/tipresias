@@ -1,13 +1,19 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 import functools
+from sqlalchemy_fauna.sql.sql_table import Table
 
 import sqlparse
 import pytest
 from faker import Faker
 import numpy as np
 
-from tests.fixtures.factories import FilterFactory, ColumnFactory, TableFactory
+from tests.fixtures.factories import (
+    FilterFactory,
+    ColumnFactory,
+    TableFactory,
+    SQLQueryFactory,
+)
 from sqlalchemy_fauna.sql import sql_query
 from sqlalchemy_fauna import exceptions
 
@@ -33,18 +39,14 @@ class TestSQLQuery:
 
     @staticmethod
     def test_validation():
-        table = TableFactory(columns__position=0)
-
+        table = TableFactory(columns__position=0, columns__count=2)
         with pytest.raises(AssertionError, match="must have unique position values"):
-            sql_query.SQLQuery(
-                "SELECT",
-                tables=[table],
-            )
+            sql_query.SQLQuery("SELECT", tables=[table])
 
     @staticmethod
     def test_add_filter_to_table():
-        table = TableFactory()
-        query = sql_query.SQLQuery("SELECT", tables=[table])
+        query = SQLQueryFactory()
+        table = query.tables[0]
         sql_filter = FilterFactory(column=np.random.choice(table.columns))
 
         query.add_filter_to_table(sql_filter)

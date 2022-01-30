@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 from datetime import timezone, datetime
+from random import shuffle
 import typing
+from copy import deepcopy
 
 import factory
 from faker import Faker
 import numpy as np
+import sqlparse
 
 from sqlalchemy_fauna import sql
 
@@ -132,10 +135,13 @@ class TableFactory(factory.Factory):
     def columns(  # pylint: disable=no-self-argument,missing-function-docstring
         table, _create, columns_param, **kwargs
     ):
+        column_count = kwargs.pop(
+            "count", np.random.randint(*ARBITRARY_SUBFACTORY_COUNT_RANGE)
+        )
         columns_to_add = (
             [
                 ColumnFactory(table_name=table.name, **kwargs)
-                for _ in range(np.random.randint(*ARBITRARY_SUBFACTORY_COUNT_RANGE))
+                for _ in range(column_count)
             ]
             if columns_param is None
             else columns_param
@@ -148,10 +154,13 @@ class TableFactory(factory.Factory):
     def filters(  # pylint: disable=no-self-argument,missing-function-docstring
         table, _create, filters_param, **kwargs
     ):
+        filter_count = kwargs.pop(
+            "count", np.random.randint(*ARBITRARY_SUBFACTORY_COUNT_RANGE)
+        )
         filters_to_add = (
             [
                 FilterFactory(column__table_name=table.name, **kwargs)
-                for _ in range(np.random.randint(*ARBITRARY_SUBFACTORY_COUNT_RANGE))
+                for _ in range(filter_count)
             ]
             if filters_param is None
             else filters_param
@@ -159,3 +168,143 @@ class TableFactory(factory.Factory):
 
         for sql_filter in filters_to_add:
             table.add_filter(sql_filter)
+
+
+class OrderByFactory(factory.Factory):
+    """Factory class for OrderBy objects."""
+
+    class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
+        model = sql.OrderBy
+        strategy = factory.BUILD_STRATEGY
+
+    direction = factory.LazyAttribute(
+        lambda _: (np.random.choice(list(sql.sql_query.OrderDirection)))  # type: ignore
+    )
+
+    # Have to make this a LazyAttribute rather than RelatedFactory,
+    # because OrderBy requires a populated columns param on instantiation,
+    # and RelatedFactory creates objects post-instantiation.
+    @factory.lazy_attribute
+    def columns(self):  # pylint: disable=missing-function-docstring,no-self-use
+        # We don't currently support ordering by more than one column per query
+        return [ColumnFactory()]
+
+
+class SQLQueryFactory(factory.Factory):
+    """Factory class for SQLQuery objects."""
+
+    class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
+        model = sql.SQLQuery
+        strategy = factory.BUILD_STRATEGY
+
+    class Params:
+        """
+        Params for modifying the factory's default attributes.
+
+        Params:
+        -------
+        table_count: Number of tables to include in the SQLQuery. Defaults to a random number
+            from 1 to 5 (inclusive).
+        """
+
+        table_count = None
+
+    query_string = "NOT A REAL SQL STRING"
+    distinct = False
+    limit = None
+
+    @factory.lazy_attribute
+    def tables(self):  # pylint: disable=missing-function-docstring,no-self-use
+        table_count = (
+            np.random.randint(*ARBITRARY_SUBFACTORY_COUNT_RANGE)
+            if self.table_count is None
+            else self.table_count
+        )
+        table_with_columns = np.random.randint(0, table_count)
+        tables_to_add = [
+            # We make filters empty in order to add them via FilterGroups
+            # associated with the SQLQuery
+            TableFactory(columns=(None if n == table_with_columns else []), filters=[])
+            for n in range(table_count)
+        ]
+
+        for idx, table in enumerate(tables_to_add):
+            if idx == 0:
+                continue
+
+            last_table_name = tables_to_add[idx - 1].name
+            table_names = [last_table_name, table.name]
+            shuffle(table_names)
+            parent_table, child_table = table_names
+            # Using .parse() to generate the Comparison token gorup object,
+            # because building it manually from sub-tokens is more trouble.
+            statement = sqlparse.parse(
+                f"{parent_table}.id = {child_table}.{parent_table}_id"
+            )[0]
+            comparison = statement.tokens[0]
+
+            table.add_join(
+                tables_to_add[idx - 1],
+                comparison,
+                sql.sql_table.JoinDirection.LEFT,
+            )
+
+        return tables_to_add
+
+    @factory.post_generation
+    def filter_groups(  # pylint: disable=no-self-argument,missing-function-docstring
+        sql_query, _create, filter_groups_param, **kwargs
+    ):
+        filter_group_kwargs = deepcopy(kwargs)
+
+        build_filters = lambda: [
+            # We generate the filters individually to avoid giving them
+            # random table names that have nothing to do with this SQLQuery
+            # or assigning all filters from a given FilterGroup
+            # to the same table via factory params.
+            FilterFactory(column__table_name=np.random.choice(sql_query.tables))
+            for _ in range(np.random.randint(*ARBITRARY_SUBFACTORY_COUNT_RANGE))
+        ]
+
+        filter_groups_to_add = (
+            [
+                FilterGroupFactory(
+                    filters=build_filters(),
+                    **filter_group_kwargs,
+                )
+            ]
+            if filter_groups_param is None
+            else filter_groups_param
+        )
+
+        for filter_group in filter_groups_to_add:
+            sql_query.add_filter_group(filter_group)
+
+    @factory.post_generation
+    def order_by(  # pylint: disable=no-self-argument,missing-function-docstring
+        sql_query, _create, order_by_param, **kwargs
+    ):
+        if order_by_param is not None:
+            sql_query._order_by = (  # pylint: disable=attribute-defined-outside-init
+                order_by_param
+            )
+            return None
+
+        query_columns = deepcopy(sql_query.columns)
+        shuffle(query_columns)
+
+        # We currently only support ordering by one column at a time, so no reason to create
+        # invalid attributes by default.
+        order_by_col_count = np.random.randint(0, 2)
+        order_by_columns = query_columns[:order_by_col_count]
+
+        if len(order_by_columns) > 0:
+            sql_query._order_by = (  # pylint: disable=attribute-defined-outside-init
+                OrderByFactory(columns=order_by_columns, **kwargs)
+            )
+
+        return None

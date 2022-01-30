@@ -6,7 +6,12 @@ from faunadb.objects import _Expr as QueryExpression
 from faunadb import query as q
 import sqlparse
 
-from tests.fixtures.factories import ColumnFactory, FilterFactory, FilterGroupFactory
+from tests.fixtures.factories import (
+    ColumnFactory,
+    FilterGroupFactory,
+    FilterFactory,
+    TableFactory,
+)
 from sqlalchemy_fauna import exceptions, sql
 from sqlalchemy_fauna.fauna.fql import common
 
@@ -109,7 +114,7 @@ def test_build_document_set_intersection(operator, column_params):
         filters=[FilterFactory(column=column, comparison__operator=operator)]
     )
 
-    table = sql.Table(
+    table = TableFactory(
         name=column.table_name, columns=[column], filters=filter_group.filters
     )
 

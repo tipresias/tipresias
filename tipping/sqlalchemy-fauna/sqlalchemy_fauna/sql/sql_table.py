@@ -635,7 +635,11 @@ class Table:
 
     @property
     def columns(self) -> typing.List[Column]:
-        """List of column objects associated with this table."""
+        """List of column objects associated with this table.
+
+        Only includes columns that are being selected or modified, not any columns
+        included in WHERE clause filters.
+        """
         return self._columns
 
     def add_column(self, column: Column):

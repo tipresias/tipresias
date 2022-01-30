@@ -14,6 +14,10 @@ from sqlalchemy_fauna import sql
 Fake = Faker()
 
 
+# Arbitrary filter count range to keep the list reasonably small
+ARBITRARY_SUBFACTORY_COUNT_RANGE = (1, 6)
+
+
 def _define_value(data_type: type):
     if data_type is None:
         return None
@@ -107,7 +111,51 @@ class FilterGroupFactory(factory.Factory):
         model = sql.FilterGroup
         strategy = factory.BUILD_STRATEGY
 
-    # Arbitrary filter count range to keep the list reasonably small
     filters = factory.RelatedFactoryList(
-        FilterFactory, size=lambda: np.random.randint(1, 6)
+        FilterFactory, size=lambda: np.random.randint(*ARBITRARY_SUBFACTORY_COUNT_RANGE)
     )
+
+
+class TableFactory(factory.Factory):
+    """Factory class for SQL Table objects."""
+
+    class Meta:
+        """Factory attributes for recreating the associated model's attributes."""
+
+        model = sql.Table
+        strategy = factory.BUILD_STRATEGY
+
+    name = factory.Faker("word")
+    alias = factory.Faker("word")
+
+    @factory.post_generation
+    def columns(  # pylint: disable=no-self-argument,missing-function-docstring
+        table, _create, columns_param, **kwargs
+    ):
+        columns_to_add = (
+            [
+                ColumnFactory(table_name=table.name, **kwargs)
+                for _ in range(np.random.randint(*ARBITRARY_SUBFACTORY_COUNT_RANGE))
+            ]
+            if columns_param is None
+            else columns_param
+        )
+
+        for column in columns_to_add:
+            table.add_column(column)
+
+    @factory.post_generation
+    def filters(  # pylint: disable=no-self-argument,missing-function-docstring
+        table, _create, filters_param, **kwargs
+    ):
+        filters_to_add = (
+            [
+                FilterFactory(column__table_name=table.name, **kwargs)
+                for _ in range(np.random.randint(*ARBITRARY_SUBFACTORY_COUNT_RANGE))
+            ]
+            if filters_param is None
+            else filters_param
+        )
+
+        for sql_filter in filters_to_add:
+            table.add_filter(sql_filter)

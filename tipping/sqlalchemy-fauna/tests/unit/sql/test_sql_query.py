@@ -5,9 +5,10 @@ import functools
 import sqlparse
 import pytest
 from faker import Faker
+import numpy as np
 
-from tests.fixtures.factories.sql import FilterFactory, ColumnFactory
-from sqlalchemy_fauna.sql import sql_query, sql_table
+from tests.fixtures.factories import FilterFactory, ColumnFactory, TableFactory
+from sqlalchemy_fauna.sql import sql_query
 from sqlalchemy_fauna import exceptions
 
 
@@ -17,51 +18,38 @@ Fake = Faker()
 class TestSQLQuery:
     @staticmethod
     def test_sql_query():
-        column = ColumnFactory()
+        table = TableFactory()
         query = sql_query.SQLQuery(
             "SELECT",
-            tables=[
-                sql_table.Table(
-                    name=column.table_name,
-                    columns=[column],
-                )
-            ],
+            tables=[table],
         )
         assert len(query.tables) == 1
-        assert query.tables[0].name == column.table_name
-        assert len(query.columns) == 1
-        assert query.columns[0].name == column.name
+        assert query.tables[0].name == table.name
+        assert set(query.columns) == set(table.columns)
 
-        assert query.alias_map == {column.table_name: {column.name: column.alias}}
+        assert query.alias_map == {
+            table.name: {column.name: column.alias for column in table.columns}
+        }
 
     @staticmethod
     def test_validation():
-        table_name = Fake.word()
+        table = TableFactory(columns__position=0)
 
         with pytest.raises(AssertionError, match="must have unique position values"):
             sql_query.SQLQuery(
                 "SELECT",
-                tables=[
-                    sql_table.Table(
-                        name=table_name,
-                        columns=[
-                            ColumnFactory(table_name=table_name, position=0),
-                            ColumnFactory(table_name=table_name, position=0),
-                        ],
-                    )
-                ],
+                tables=[table],
             )
 
     @staticmethod
     def test_add_filter_to_table():
-        column = ColumnFactory()
-        table = sql_table.Table(name=column.table_name, columns=[column])
+        table = TableFactory()
         query = sql_query.SQLQuery("SELECT", tables=[table])
-        sql_filter = FilterFactory(column=column)
+        sql_filter = FilterFactory(column=np.random.choice(table.columns))
 
         query.add_filter_to_table(sql_filter)
 
-        assert table.filters[0] == sql_filter
+        assert sql_filter in table.filters
 
     @staticmethod
     @pytest.mark.parametrize("distinct", ["DISTINCT", ""])

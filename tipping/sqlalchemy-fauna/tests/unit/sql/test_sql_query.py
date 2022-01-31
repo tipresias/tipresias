@@ -46,7 +46,7 @@ class TestSQLQuery:
     @staticmethod
     def test_add_filter_to_table():
         query = SQLQueryFactory()
-        table = query.tables[0]
+        table = next(table for table in query.tables if table.has_columns)
         sql_filter = FilterFactory(column=np.random.choice(table.columns))
 
         query.add_filter_to_table(sql_filter)

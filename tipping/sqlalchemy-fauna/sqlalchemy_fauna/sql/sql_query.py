@@ -462,3 +462,6 @@ class SQLQuery:
 
     def __str__(self):
         return self._query_string
+
+    def __repr__(self) -> str:
+        return self._query_string

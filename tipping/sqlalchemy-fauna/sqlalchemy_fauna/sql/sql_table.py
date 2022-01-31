@@ -285,6 +285,13 @@ class Column:
     def __str__(self) -> str:
         return self.name
 
+    def __repr__(self) -> str:
+        return (
+            f"Column(name={self.name}, alias={self.alias}, position={self.position}, "
+            f"table_name={self.table_name}, value={self.value}, "
+            f"function_name={self.function_name})"
+        )
+
 
 class Comparison:
     """Representation of the comparison between column values and filter value.
@@ -485,6 +492,9 @@ class Filter:
     def checks_whether_less_than_or_equal(self) -> bool:
         """Check whether the filter uses '<=' operator to select field values."""
         return self.comparison.operator == ComparisonOperator.LESS_THAN_OR_EQUAL
+
+    def __repr__(self) -> str:
+        return f"Filter(column={self.column}, comparison={self.comparison}, value={self.value})"
 
 
 class FilterGroup:
@@ -720,3 +730,6 @@ class Table:
 
     def __str__(self) -> str:
         return self.name
+
+    def __repr__(self) -> str:
+        return f"Table(name={self.name}, alias={self.alias})"

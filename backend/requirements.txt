@@ -3,7 +3,7 @@ numpy==1.22.2
 pandas==1.4.0
 
 # App packages
-django==3.2.10
+django==4.0.2
 django-cors-headers
 graphene==3.0.0b6
 graphene-django==3.0.0b7

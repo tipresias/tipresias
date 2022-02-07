@@ -1,5 +1,5 @@
 # Data packages
-numpy==1.22.1
+numpy==1.22.2
 pandas==1.4.0
 
 # App packages

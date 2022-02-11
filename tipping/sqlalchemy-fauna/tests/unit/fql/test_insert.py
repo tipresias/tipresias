@@ -4,17 +4,13 @@ import pytest
 import sqlparse
 from faunadb.objects import _Expr as QueryExpression
 
+from tests.fixtures.factories import SQLQueryFactory
 from sqlalchemy_fauna import sql
 from sqlalchemy_fauna.fauna.fql import insert
 
 
-@pytest.mark.parametrize(
-    "sql_string", ["INSERT INTO users (name, age, finger_count) VALUES ('Bob', 30, 10)"]
-)
-def test_translate_insert(sql_string):
-    sql_statement = sqlparse.parse(sql_string)[0]
-    sql_query = sql.SQLQuery.from_statement(sql_statement)
-
+@pytest.mark.parametrize("sql_query", [SQLQueryFactory(table_count=1)])
+def test_translate_insert(sql_query):
     fql_query = insert.translate_insert(sql_query)
 
     assert isinstance(fql_query, QueryExpression)

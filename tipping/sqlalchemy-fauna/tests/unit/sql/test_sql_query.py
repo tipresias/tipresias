@@ -205,6 +205,8 @@ class TestSQLQuery:
                 "INSERT INTO users (name, age) VALUES ('Bob', 45), ('Linda', 45), ('Tina', 14)",
                 "INSERT for multiple rows is not supported yet",
             ),
+            ("SELECT SUM(users.age) FROM users", "SUM"),
+            ("SELECT AVG(users.age) FROM users", "AVG"),
         ],
     )
     def test_unsupported_statement(sql_string, error_message):

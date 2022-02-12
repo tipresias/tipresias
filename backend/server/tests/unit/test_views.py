@@ -144,9 +144,13 @@ class TestViews(TestCase):
                 )
 
             with self.subTest("when some matches have already been played"):
-                second_match_date = pd.to_datetime(
-                    prediction_data.sort_values("date", ascending=True)["date"]
-                ).iloc[1]
+                second_match_date = (
+                    pd.to_datetime(
+                        prediction_data.sort_values("date", ascending=True)["date"]
+                    )
+                    .iloc[1]
+                    .to_pydatetime()
+                )
 
                 with freeze_time(second_match_date):
                     original_predictions = sorted(

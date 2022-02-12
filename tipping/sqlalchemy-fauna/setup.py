@@ -26,6 +26,7 @@ setuptools.setup(
         "mypy>=0.70,<1.0",
         "sqlalchemy>=1.4.0,<1.5.0",
         "packaging",  # We use packaging to check alembic's version and it's not always available
+        "toolz",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -1,11 +1,9 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 import pytest
-import sqlparse
 from faunadb.objects import _Expr as QueryExpression
 
 from tests.fixtures.factories import SQLQueryFactory
-from sqlalchemy_fauna import sql
 from sqlalchemy_fauna.fauna.fql import insert
 
 

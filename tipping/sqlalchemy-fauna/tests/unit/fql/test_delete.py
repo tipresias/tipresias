@@ -1,21 +1,17 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 import pytest
-import sqlparse
 from faunadb.objects import _Expr as QueryExpression
 
-from sqlalchemy_fauna import sql
+from tests.fixtures.factories import SQLQueryFactory
 from sqlalchemy_fauna.fauna.fql import delete
 
 
-base_delete = "DELETE FROM users"
-delete_where = base_delete + " WHERE users.name = 'Bob'"
-
-
-@pytest.mark.parametrize("sql_string", [base_delete, delete_where])
-def test_translate_delete(sql_string):
-    statement = sqlparse.parse(sql_string)[0]
-    sql_query = sql.SQLQuery.from_statement(statement)
+@pytest.mark.parametrize(
+    "sql_query",
+    [SQLQueryFactory(table_count=1, filter_groups=[]), SQLQueryFactory(table_count=1)],
+)
+def test_translate_delete(sql_query):
     fql_query = delete.translate_delete(sql_query)
 
     assert isinstance(fql_query, QueryExpression)

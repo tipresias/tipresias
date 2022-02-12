@@ -148,7 +148,7 @@ def _define_match_set(query_filter: sql.Filter) -> QueryExpression:
         [comparison_value],
     )
 
-    if query_filter.operator == "=":
+    if query_filter.checks_whether_equal:
         if field_name == "ref":
             assert isinstance(comparison_value, str)
             return q.singleton(
@@ -193,36 +193,44 @@ def _define_match_set(query_filter: sql.Filter) -> QueryExpression:
     # assuming that '>' means 'column value greater than literal value'. I can't think
     # of a good way to centralize the knowledge of this convention across
     # all query translation, so I'm leaving this note as a warning.
-    if query_filter.operator in [">=", ">"]:
+    if query_filter.checks_whether_greater_than:
         inclusive_comparison_range = q.range(
             q.match(q.index(index_name_for_field(IndexType.VALUE))),
             [comparison_value],
             [],
         )
-
-        if query_filter.operator == ">=":
-            return convert_to_collection_ref_set(inclusive_comparison_range)
-
         return convert_to_collection_ref_set(
             q.difference(inclusive_comparison_range, equality_range)
         )
 
-    if query_filter.operator in ["<=", "<"]:
+    if query_filter.checks_whether_greater_than_or_equal:
+        inclusive_comparison_range = q.range(
+            q.match(q.index(index_name_for_field(IndexType.VALUE))),
+            [comparison_value],
+            [],
+        )
+        return convert_to_collection_ref_set(inclusive_comparison_range)
+
+    if query_filter.checks_whether_less_than:
         inclusive_comparison_range = q.range(
             q.match(q.index(index_name_for_field(IndexType.VALUE))),
             [],
             [comparison_value],
         )
-
-        if query_filter.operator == "<=":
-            return convert_to_collection_ref_set(inclusive_comparison_range)
-
         return convert_to_collection_ref_set(
             q.difference(inclusive_comparison_range, equality_range)
         )
+
+    if query_filter.checks_whether_less_than_or_equal:
+        inclusive_comparison_range = q.range(
+            q.match(q.index(index_name_for_field(IndexType.VALUE))),
+            [],
+            [comparison_value],
+        )
+        return convert_to_collection_ref_set(inclusive_comparison_range)
 
     raise exceptions.NotSupportedError(
-        f"Unsupported operator {query_filter.operator} was received."
+        f"Unsupported comparison {query_filter.comparison} was received."
     )
 
 

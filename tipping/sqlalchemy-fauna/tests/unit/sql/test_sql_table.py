@@ -5,6 +5,12 @@ from sqlparse import sql as token_groups, tokens as token_types
 import pytest
 from faker import Faker
 
+from tests.fixtures.factories import (
+    ColumnFactory,
+    ComparisonFactory,
+    FilterFactory,
+    TableFactory,
+)
 from sqlalchemy_fauna.sql import sql_table
 from sqlalchemy_fauna import exceptions
 
@@ -98,13 +104,11 @@ class TestColumn:
 
     @staticmethod
     def test_column():
-        column = sql_table.Column(
-            position=0, table_name="users", name="name", alias="alias"
-        )
+        column = ColumnFactory(position=0, name="name", alias="alias", table_name=None)
         assert str(column) == "name"
         assert column.alias_map == {column.name: column.alias}
 
-        table = sql_table.Table(name="users", columns=[column])
+        table = TableFactory(columns=[column])
         column.table = table
         assert column.table_name == table.name
 
@@ -157,25 +161,20 @@ class TestColumn:
 class TestTable:
     @staticmethod
     def test_table():
-        table_name = "users"
-        sql_query = f"SELECT users.name FROM {table_name} WHERE users.name = 'Bob'"
-        statement = sqlparse.parse(sql_query)[0]
-        _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
-        _, where_group = statement.token_next_by(i=(token_groups.Where))
-
-        column = sql_table.Column.from_identifier(column_identifier)
-        sql_filter_groups = sql_table.FilterGroup.from_where_group(where_group)
-        sql_filters = sql_filter_groups[0].filters
-        table = sql_table.Table(name=table_name, columns=[column], filters=sql_filters)
-        assert table.name == table_name
-        assert str(table) == table_name
+        column = ColumnFactory()
+        sql_filter = FilterFactory(column=column)
+        table = sql_table.Table(
+            name=column.table_name, columns=[column], filters=[sql_filter]
+        )
+        assert table.name == column.table_name
+        assert str(table) == table.name
 
         assert len(table.columns) == 1
         assert table.columns[0].name == column.name
         assert table.alias_map == {table.name: {column.name: column.alias}}
 
         assert len(table.filters) == 1
-        assert table.filters[0].value == sql_filters[0].value
+        assert table.filters[0].value == sql_filter.value
 
     @staticmethod
     @pytest.mark.parametrize(
@@ -197,32 +196,24 @@ class TestTable:
 
     @staticmethod
     def test_add_column():
-        table_name = "users"
-        sql_query = f"SELECT users.name FROM {table_name}"
-        statement = sqlparse.parse(sql_query)[0]
-        _, column_identifier = statement.token_next_by(i=(token_groups.Identifier))
-
-        column = sql_table.Column.from_identifier(column_identifier)
-        table = sql_table.Table(name=table_name)
-
+        table = TableFactory(columns=[])
+        column = ColumnFactory(table_name=table.name)
         table.add_column(column)
 
         assert table.columns == [column]
 
     @staticmethod
     def test_add_filter():
-        table_name = "users"
-        sql_query = f"SELECT users.name FROM {table_name} WHERE users.age > 30"
-        statement = sqlparse.parse(sql_query)[0]
-        _, where_group = statement.token_next_by(i=(token_groups.Where))
+        sql_filter = FilterFactory()
+        table = TableFactory(
+            name=sql_filter.column.table_name,
+            columns=[sql_filter.column],
+            filters=[],
+        )
 
-        sql_filter_groups = sql_table.FilterGroup.from_where_group(where_group)
-        sql_filters = sql_filter_groups[0].filters
-        table = sql_table.Table(name=table_name)
+        table.add_filter(sql_filter)
 
-        table.add_filter(sql_filters[0])
-
-        assert table.filters == sql_filters
+        assert table.filters == [sql_filter]
 
     @staticmethod
     def test_add_join():
@@ -269,18 +260,66 @@ class TestTable:
             )
 
 
+class TestComparison:
+    select_values = "SELECT * FROM users"
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        ["sql_string", "expected_operator"],
+        [
+            (
+                select_values + f" WHERE users.{Fake.word()} = '{Fake.word()}'",
+                sql_table.ComparisonOperator.EQUAL,
+            ),
+            (
+                select_values + f" WHERE users.{Fake.word()} > {Fake.pyint()}",
+                sql_table.ComparisonOperator.GREATER_THAN,
+            ),
+            (
+                select_values + f" WHERE {Fake.pyint()} > users.{Fake.word()}",
+                sql_table.ComparisonOperator.LESS_THAN,
+            ),
+        ],
+    )
+    def test_from_comparison_group(sql_string, expected_operator):
+        statement = sqlparse.parse(sql_string)[0]
+        _, where_group = statement.token_next_by(i=(token_groups.Where))
+        _, comparison_group = where_group.token_next_by(i=token_groups.Comparison)
+
+        comparison = sql_table.Comparison.from_comparison_group(comparison_group)
+
+        assert comparison.operator == expected_operator
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "sql_string",
+        [
+            select_values + f" WHERE users.{Fake.word()} IN ({Fake.word()})",
+            select_values + f" WHERE users.{Fake.word()} <> {Fake.pyint()}",
+            select_values + f" WHERE users.{Fake.word()} != {Fake.pyint()}",
+        ],
+    )
+    def test_invalid_from_comparison_group(sql_string):
+        statement = sqlparse.parse(sql_string)[0]
+        _, where_group = statement.token_next_by(i=(token_groups.Where))
+        _, comparison_group = where_group.token_next_by(i=token_groups.Comparison)
+
+        with pytest.raises(exceptions.NotSupportedError):
+            sql_table.Comparison.from_comparison_group(comparison_group)
+
+
 class TestFilter:
     @staticmethod
     def test_filter():
-        column = sql_table.Column(
-            name="name", alias="name", table_name="users", position=0
+        column = ColumnFactory()
+        comparison = ComparisonFactory()
+        value = Fake.word()
+        where_filter = sql_table.Filter(
+            column=column, comparison=comparison, value=value
         )
-        operator = "="
-        value = "Bob"
-        where_filter = sql_table.Filter(column=column, operator=operator, value=value)
 
         assert where_filter.column == column
-        assert where_filter.operator == operator
+        assert where_filter.comparison == comparison
         assert where_filter.value == value
 
     select_values = "SELECT * FROM users"
@@ -297,7 +336,9 @@ class TestFilter:
             (
                 select_values + f" WHERE users.name = '{name}'",
                 {
-                    "operator": "=",
+                    "comparison": ComparisonFactory(
+                        operator=sql_table.ComparisonOperator.EQUAL
+                    ),
                     "value": name,
                 },
             ),
@@ -305,7 +346,9 @@ class TestFilter:
             (
                 select_values + f" WHERE users.age > {age}",
                 {
-                    "operator": ">",
+                    "comparison": ComparisonFactory(
+                        operator=sql_table.ComparisonOperator.GREATER_THAN
+                    ),
                     "value": age,
                 },
             ),
@@ -313,7 +356,9 @@ class TestFilter:
             (
                 select_values + f" WHERE users.age >= {age}",
                 {
-                    "operator": ">=",
+                    "comparison": ComparisonFactory(
+                        operator=sql_table.ComparisonOperator.GREATER_THAN_OR_EQUAL
+                    ),
                     "value": age,
                 },
             ),
@@ -321,7 +366,9 @@ class TestFilter:
             (
                 select_values + f" WHERE users.age < {age}",
                 {
-                    "operator": "<",
+                    "comparison": ComparisonFactory(
+                        operator=sql_table.ComparisonOperator.LESS_THAN
+                    ),
                     "value": age,
                 },
             ),
@@ -329,7 +376,9 @@ class TestFilter:
             (
                 select_values + f" WHERE users.age <= {age}",
                 {
-                    "operator": "<=",
+                    "comparison": ComparisonFactory(
+                        operator=sql_table.ComparisonOperator.LESS_THAN_OR_EQUAL
+                    ),
                     "value": age,
                 },
             ),
@@ -337,7 +386,9 @@ class TestFilter:
             (
                 select_values + " WHERE 'Bob' = users.name",
                 {
-                    "operator": "=",
+                    "comparison": ComparisonFactory(
+                        operator=sql_table.ComparisonOperator.EQUAL
+                    ),
                     "value": "Bob",
                 },
             ),
@@ -388,6 +439,23 @@ class TestFilter:
         with pytest.raises(exceptions.NotSupportedError, match=error_message):
             sql_table.Filter.from_comparison_group(comparison)
 
+    @staticmethod
+    @pytest.mark.parametrize(
+        "operator", list(sql_table.Comparison.OPERATOR_MAP.values())
+    )
+    def test_checks_whether_operator_methods(operator):
+        sql_filter = FilterFactory(comparison__operator=operator)
+
+        for operator_to_compare in list(sql_table.Comparison.OPERATOR_MAP.values()):
+            checks_operator = getattr(
+                sql_filter, f"checks_whether_{operator_to_compare.name.lower()}"
+            )
+
+            if operator_to_compare == operator:
+                assert checks_operator
+            else:
+                assert not checks_operator
+
 
 class TestFilterGroup:
     select_values = "SELECT * FROM users"
@@ -412,7 +480,9 @@ class TestFilterGroup:
                 [
                     [
                         {
-                            "operator": "=",
+                            "comparison": ComparisonFactory(
+                                operator=sql_table.ComparisonOperator.EQUAL
+                            ),
                             "value": id_value,
                         }
                     ]
@@ -426,15 +496,21 @@ class TestFilterGroup:
                 [
                     [
                         {
-                            "operator": "=",
+                            "comparison": ComparisonFactory(
+                                operator=sql_table.ComparisonOperator.EQUAL
+                            ),
                             "value": name,
                         },
                         {
-                            "operator": "=",
+                            "comparison": ComparisonFactory(
+                                operator=sql_table.ComparisonOperator.EQUAL
+                            ),
                             "value": age,
                         },
                         {
-                            "operator": "=",
+                            "comparison": ComparisonFactory(
+                                operator=sql_table.ComparisonOperator.EQUAL
+                            ),
                             "value": finger_count,
                         },
                     ]
@@ -446,7 +522,9 @@ class TestFilterGroup:
                 [
                     [
                         {
-                            "operator": "=",
+                            "comparison": ComparisonFactory(
+                                operator=sql_table.ComparisonOperator.EQUAL
+                            ),
                             "value": None,
                         }
                     ]
@@ -454,7 +532,24 @@ class TestFilterGroup:
             ),
             (
                 select_values + f" WHERE users.name = '{name}' OR users.age = {age}",
-                [[{"operator": "=", "value": name}], [{"operator": "=", "value": age}]],
+                [
+                    [
+                        {
+                            "comparison": ComparisonFactory(
+                                operator=sql_table.ComparisonOperator.EQUAL
+                            ),
+                            "value": name,
+                        }
+                    ],
+                    [
+                        {
+                            "comparison": ComparisonFactory(
+                                operator=sql_table.ComparisonOperator.EQUAL
+                            ),
+                            "value": age,
+                        }
+                    ],
+                ],
             ),
         ],
     )

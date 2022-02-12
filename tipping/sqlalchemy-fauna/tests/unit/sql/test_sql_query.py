@@ -1,12 +1,20 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
 import functools
+from sqlalchemy_fauna.sql.sql_table import Table
 
 import sqlparse
 import pytest
 from faker import Faker
+import numpy as np
 
-from sqlalchemy_fauna.sql import sql_query, sql_table
+from tests.fixtures.factories import (
+    FilterFactory,
+    ColumnFactory,
+    TableFactory,
+    SQLQueryFactory,
+)
+from sqlalchemy_fauna.sql import sql_query
 from sqlalchemy_fauna import exceptions
 
 
@@ -16,61 +24,34 @@ Fake = Faker()
 class TestSQLQuery:
     @staticmethod
     def test_sql_query():
-        table_name = Fake.word()
-        column_name = Fake.word()
-        column_alias = Fake.word()
+        table = TableFactory()
         query = sql_query.SQLQuery(
             "SELECT",
-            tables=[
-                sql_table.Table(
-                    name=table_name,
-                    columns=[
-                        sql_table.Column(
-                            name=column_name, alias=column_alias, position=0
-                        )
-                    ],
-                )
-            ],
+            tables=[table],
         )
         assert len(query.tables) == 1
-        assert query.tables[0].name == table_name
-        assert len(query.columns) == 1
-        assert query.columns[0].name == column_name
+        assert query.tables[0].name == table.name
+        assert set(query.columns) == set(table.columns)
 
-        assert query.alias_map == {table_name: {column_name: column_alias}}
+        assert query.alias_map == {
+            table.name: {column.name: column.alias for column in table.columns}
+        }
 
     @staticmethod
     def test_validation():
+        table = TableFactory(columns__position=0, columns__count=2)
         with pytest.raises(AssertionError, match="must have unique position values"):
-            sql_query.SQLQuery(
-                "SELECT",
-                tables=[
-                    sql_table.Table(
-                        name=Fake.word(),
-                        columns=[
-                            sql_table.Column(
-                                name=Fake.word(), alias=Fake.word(), position=0
-                            ),
-                            sql_table.Column(
-                                name=Fake.word(), alias=Fake.word(), position=0
-                            ),
-                        ],
-                    )
-                ],
-            )
+            sql_query.SQLQuery("SELECT", tables=[table])
 
     @staticmethod
     def test_add_filter_to_table():
-        column = sql_table.Column(
-            table_name="users", name="name", alias="name", position=0
-        )
-        table = sql_table.Table(name="users", columns=[column])
-        query = sql_query.SQLQuery("SELECT", tables=[table])
-        sql_filter = sql_table.Filter(column=column, operator="=", value="Bob")
+        query = SQLQueryFactory()
+        table = next(table for table in query.tables if table.has_columns)
+        sql_filter = FilterFactory(column=np.random.choice(table.columns))
 
         query.add_filter_to_table(sql_filter)
 
-        assert table.filters[0] == sql_filter
+        assert sql_filter in table.filters
 
     @staticmethod
     @pytest.mark.parametrize("distinct", ["DISTINCT", ""])
@@ -224,6 +205,8 @@ class TestSQLQuery:
                 "INSERT INTO users (name, age) VALUES ('Bob', 45), ('Linda', 45), ('Tina', 14)",
                 "INSERT for multiple rows is not supported yet",
             ),
+            ("SELECT SUM(users.age) FROM users", "SUM"),
+            ("SELECT AVG(users.age) FROM users", "AVG"),
         ],
     )
     def test_unsupported_statement(sql_string, error_message):
@@ -243,7 +226,7 @@ class TestOrderBy:
         ],
     )
     def test_order_by(direction, expected_direction):
-        columns = [sql_table.Column(name=Fake.word(), alias=Fake.word(), position=0)]
+        columns = [ColumnFactory()]
         order_by = sql_query.OrderBy(columns=columns, direction=direction)
 
         assert order_by.columns == columns

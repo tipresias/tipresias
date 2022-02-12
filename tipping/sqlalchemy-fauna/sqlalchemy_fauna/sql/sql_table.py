@@ -32,6 +32,21 @@ class JoinDirection(enum.Enum):
     RIGHT = "right"
 
 
+class ComparisonOperator(enum.Enum):
+    """Operators for comparing column values with filter params in WHERE clauses."""
+
+    EQUAL = "="
+    GREATER_THAN = ">"
+    LESS_THAN = "<"
+    GREATER_THAN_OR_EQUAL = ">="
+    LESS_THAN_OR_EQUAL = "<="
+
+    @classmethod
+    def values(cls) -> typing.List[str]:
+        """Returns all operator values in C."""
+        return [member.value for member in cls]
+
+
 ColumnParams = TypedDict(
     "ColumnParams",
     {
@@ -46,8 +61,6 @@ ColumnParams = TypedDict(
 
 # Probably not a complete list, but covers the basics
 FUNCTION_NAMES = {"min", "max", "count", "avg", "sum"}
-GREATER_THAN = ">"
-LESS_THAN = "<"
 
 NOT_SUPPORTED_FUNCTION_REGEX = re.compile(r"^(?:MIN|MAX|AVG|SUM)\(.+\)$", re.IGNORECASE)
 COUNT_REGEX = re.compile(r"^COUNT\(.+\)$", re.IGNORECASE)
@@ -272,6 +285,102 @@ class Column:
     def __str__(self) -> str:
         return self.name
 
+    def __repr__(self) -> str:
+        return (
+            f"Column(name={self.name}, alias={self.alias}, position={self.position}, "
+            f"table_name={self.table_name}, value={self.value}, "
+            f"function_name={self.function_name})"
+        )
+
+
+class Comparison:
+    """Representation of the comparison between column values and filter value.
+
+    Params:
+    -------
+    operator: The ComparisonOperator that defines the requested relationship
+        between the values being compared.
+    """
+
+    OPERATOR_MAP = {
+        "=": ComparisonOperator.EQUAL,
+        ">": ComparisonOperator.GREATER_THAN,
+        "<": ComparisonOperator.LESS_THAN,
+        ">=": ComparisonOperator.GREATER_THAN_OR_EQUAL,
+        "<=": ComparisonOperator.LESS_THAN_OR_EQUAL,
+        "IS": ComparisonOperator.EQUAL,
+    }
+
+    REVERSE_MAP = {
+        ComparisonOperator.GREATER_THAN: ComparisonOperator.LESS_THAN,
+        ComparisonOperator.GREATER_THAN_OR_EQUAL: ComparisonOperator.LESS_THAN_OR_EQUAL,
+        ComparisonOperator.LESS_THAN: ComparisonOperator.GREATER_THAN,
+        ComparisonOperator.LESS_THAN_OR_EQUAL: ComparisonOperator.GREATER_THAN_OR_EQUAL,
+    }
+
+    def __init__(self, operator: ComparisonOperator):
+        self.operator = operator
+
+    @classmethod
+    def from_comparison_group(
+        cls, comparison_group: token_groups.Comparison
+    ) -> Comparison:
+        """Create a Comparison object based on an SQL Comparison token group.
+
+        Params:
+        -------
+        comparison_group: An SQL token group representing a comparison.
+        reverse: Whether to reverse a directional comparison (e.g. change '>' to '<').
+
+        Returns:
+        --------
+        A Comparison object.
+        """
+        _, comparison_token = comparison_group.token_next_by(
+            t=token_types.Comparison, m=(token_types.Keyword, "IS")
+        )
+        assert comparison_token is not None
+
+        comparison_operator = cls.OPERATOR_MAP.get(comparison_token.value)
+
+        if comparison_operator is None:
+            raise exceptions.NotSupportedError(
+                "Only the following comparisons are supported in WHERE clauses: "
+                ", ".join(cls.OPERATOR_MAP.keys())
+            )
+
+        # We're enforcing the convention of <column name> <operator> <value> for WHERE
+        # clauses here to simplify later query translation.
+        # Unfortunately, FQL generation depends on this convention without that dependency
+        # being explicit, which increases the likelihood of future bugs. However, I can't
+        # think of a good way to centralize the knowledge of this convention across all
+        # query translation, so I'm leaving this note as a warning.
+        id_idx, _ = comparison_group.token_next_by(i=token_groups.Identifier)
+        value_idx, _ = comparison_group.token_next_by(
+            t=token_types.Literal,
+            m=[
+                (token_types.Keyword, "NULL"),
+                (token_types.Keyword, "TRUE"),
+                (token_types.Keyword, "FALSE"),
+            ],
+        )
+        identifier_comes_before_value = id_idx < value_idx
+        if identifier_comes_before_value:
+            return cls(operator=comparison_operator)
+
+        return cls(
+            operator=cls.REVERSE_MAP.get(comparison_operator, comparison_operator)
+        )
+
+    def __str__(self):
+        return self.operator.value
+
+    def __eq__(self, other: typing.Any) -> bool:
+        if not isinstance(other, Comparison):
+            raise NotImplementedError()
+
+        return self.operator == other.operator
+
 
 class Filter:
     """Representation of filter applied by WHERE clause in SQL.
@@ -279,20 +388,18 @@ class Filter:
     Params:
     -------
     column: An instance of the Column used in the filter.
-    operator: The comparison operator.
+    comparison: The comparison between column values and the filter value.
     value: The raw value being compared for the filter.
     """
-
-    SUPPORTED_COMPARISON_OPERATORS = ["=", GREATER_THAN, ">=", "<", "<=", "IS"]
 
     def __init__(
         self,
         column: Column,
-        operator: str,
+        comparison: Comparison,
         value: typing.Union[str, int, float, None, bool, datetime],
     ):
         self.column = column
-        self.operator = operator
+        self.comparison = comparison
         self.value = value
         self._table: typing.Optional[Table] = None
         self._table_name = column.table_name
@@ -310,24 +417,16 @@ class Filter:
         --------
         An instance of Filter.
         """
-        id_idx, comparison_identifier = comparison_group.token_next_by(
+        _, comparison_identifier = comparison_group.token_next_by(
             i=token_groups.Identifier
         )
         columns = Column.from_identifier_group(comparison_identifier)
         assert len(columns) == 1
         column = columns[0]
 
-        _, comparison_operator = comparison_group.token_next_by(
-            t=token_types.Comparison, m=(token_types.Keyword, "IS")
-        )
+        comparison = Comparison.from_comparison_group(comparison_group)
 
-        if comparison_operator.value not in cls.SUPPORTED_COMPARISON_OPERATORS:
-            raise exceptions.NotSupportedError(
-                "Only the following comparisons are supported in WHERE clauses: "
-                ", ".join(cls.SUPPORTED_COMPARISON_OPERATORS)
-            )
-
-        value_idx, comparison_value_literal = comparison_group.token_next_by(
+        _, comparison_value_literal = comparison_group.token_next_by(
             t=token_types.Literal,
             m=[
                 (token_types.Keyword, "NULL"),
@@ -336,40 +435,12 @@ class Filter:
             ],
         )
         comparison_value = common.extract_value(comparison_value_literal)
-        operator_value = cls._extract_operator_value(
-            comparison_operator.value, id_idx, value_idx
-        )
 
         return cls(
             column=column,
-            operator=operator_value,
+            comparison=comparison,
             value=comparison_value,
         )
-
-    @classmethod
-    def _extract_operator_value(
-        cls, operator_value: str, id_idx: int, value_idx: int
-    ) -> str:
-        if operator_value == "IS":
-            return "="
-
-        # We're enforcing the convention of <column name> <operator> <value> for WHERE
-        # clauses here to simplify later query translation.
-        # Unfortunately, FQL generation depends on this convention without that dependency
-        # being explicit, which increases the likelihood of future bugs. However, I can't
-        # think of a good way to centralize the knowledge of this convention across all
-        # query translation, so I'm leaving this note as a warning.
-        identifier_comes_before_value = id_idx < value_idx
-        if identifier_comes_before_value:
-            return operator_value
-
-        if GREATER_THAN in operator_value:
-            return operator_value.replace(GREATER_THAN, LESS_THAN)
-
-        if LESS_THAN in operator_value:
-            return operator_value.replace(LESS_THAN, GREATER_THAN)
-
-        return operator_value
 
     def belongs_to_table(self, table: Table) -> bool:
         """Whether this column is associated with the given table."""
@@ -395,7 +466,35 @@ class Filter:
     @property
     def name(self) -> str:
         """Unique name of the filter based on its query parameters."""
-        return f"{self.table_name}_{self.column.name}_{self.operator}_{self.value}"
+        return f"{self.table_name}_{self.column.name}_{self.comparison}_{self.value}"
+
+    @property
+    def checks_whether_equal(self) -> bool:
+        """Check whether the filter uses '=' operator to select field values."""
+        return self.comparison.operator == ComparisonOperator.EQUAL
+
+    @property
+    def checks_whether_greater_than(self) -> bool:
+        """Check whether the filter uses '>' operator to select field values."""
+        return self.comparison.operator == ComparisonOperator.GREATER_THAN
+
+    @property
+    def checks_whether_greater_than_or_equal(self) -> bool:
+        """Check whether the filter uses '>=' operator to select field values."""
+        return self.comparison.operator == ComparisonOperator.GREATER_THAN_OR_EQUAL
+
+    @property
+    def checks_whether_less_than(self) -> bool:
+        """Check whether the filter uses '<' operator to select field values."""
+        return self.comparison.operator == ComparisonOperator.LESS_THAN
+
+    @property
+    def checks_whether_less_than_or_equal(self) -> bool:
+        """Check whether the filter uses '<=' operator to select field values."""
+        return self.comparison.operator == ComparisonOperator.LESS_THAN_OR_EQUAL
+
+    def __repr__(self) -> str:
+        return f"Filter(column={self.column}, comparison={self.comparison}, value={self.value})"
 
 
 class FilterGroup:
@@ -546,7 +645,11 @@ class Table:
 
     @property
     def columns(self) -> typing.List[Column]:
-        """List of column objects associated with this table."""
+        """List of column objects associated with this table.
+
+        Only includes columns that are being selected or modified, not any columns
+        included in WHERE clause filters.
+        """
         return self._columns
 
     def add_column(self, column: Column):
@@ -627,3 +730,6 @@ class Table:
 
     def __str__(self) -> str:
         return self.name
+
+    def __repr__(self) -> str:
+        return f"Table(name={self.name}, alias={self.alias})"

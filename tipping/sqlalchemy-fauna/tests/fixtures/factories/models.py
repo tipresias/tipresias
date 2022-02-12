@@ -6,8 +6,8 @@ import factory
 from factory.alchemy import SQLAlchemyModelFactory
 from faker import Faker
 
-from .session import Session
-from .models import Food, User, Child
+from ..session import Session
+from ..models import Food, User, Child
 
 
 Fake = Faker()

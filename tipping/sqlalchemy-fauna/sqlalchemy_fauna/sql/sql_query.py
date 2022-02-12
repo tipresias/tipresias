@@ -32,10 +32,12 @@ class OrderBy:
 
     def __init__(
         self,
-        columns: typing.List[sql_table.Column],
+        columns: typing.List[sql_table.Column] = None,
         direction: OrderDirection = OrderDirection.ASC,
     ):
+        columns = columns or []
         assert any(columns)
+
         self._columns = columns
         self._direction = direction or OrderDirection.ASC
 
@@ -459,4 +461,7 @@ class SQLQuery:
         table.add_filter(sql_filter)
 
     def __str__(self):
+        return self._query_string
+
+    def __repr__(self) -> str:
         return self._query_string

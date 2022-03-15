@@ -149,7 +149,7 @@ class Column:
             return [Column.from_identifier(identifiers)]
 
         raise exceptions.InternalError(
-            f"Tried to create a column from unsupported SQL token type {type(identifiers)}"
+            f"Tried to create a column from unsupported SQL token type {identifiers}"
         )
 
     @classmethod

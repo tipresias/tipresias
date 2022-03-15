@@ -422,6 +422,14 @@ class TestSchema(TestCase):
                 # It returns predictions from the last round that has them
                 self.assertEqual(data["roundNumber"], max_round_number)
 
+        with self.subTest("without predictions from a non-principal model"):
+            Prediction.objects.filter(ml_model__is_principal=False).delete()
+
+            executed = self.client.execute(query_string)
+            data = executed["data"]["fetchLatestRoundPredictions"]
+
+            self.assertGreater(len(data["matchPredictions"]), 0)
+
     # Keeping this in a separate test, because it requires special setup
     # to properly test metric calculations
     def test_fetch_season_model_metrics_cumulative_metrics(self):

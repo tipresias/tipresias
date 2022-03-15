@@ -24,12 +24,13 @@ CleanPredictionData = TypedDict(
         "round_number": int,
         "away_team": str,
         "ml_model": str,
-        "home_predicted_margin": float,
-        "away_predicted_margin": float,
-        "home_predicted_win_probability": float,
-        "away_predicted_win_probability": float,
+        "home_predicted_margin": typing.Optional[float],
+        "away_predicted_margin": typing.Optional[float],
+        "home_predicted_win_probability": typing.Optional[float],
+        "away_predicted_win_probability": typing.Optional[float],
     },
 )
+
 
 MatchData = TypedDict(
     "MatchData",
@@ -66,7 +67,7 @@ MLModelInfo = TypedDict(
 FixtureData = TypedDict(
     "FixtureData",
     {
-        "date": typing.Union[datetime],
+        "date": datetime,
         "year": int,
         "round_number": int,
         "home_team": str,

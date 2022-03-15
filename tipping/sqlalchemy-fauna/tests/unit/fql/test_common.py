@@ -123,6 +123,7 @@ def test_build_document_set_intersection(operator, column_params):
     assert isinstance(fql_query, QueryExpression)
 
 
+@pytest.skip
 def test_join_collections():
     ENOUGH_TO_PROBABLY_GET_A_VARIETY_OF_JOINS = 6
     query = SQLQueryFactory(table_count=ENOUGH_TO_PROBABLY_GET_A_VARIETY_OF_JOINS)

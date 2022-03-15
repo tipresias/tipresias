@@ -1,6 +1,6 @@
 """Contains custom mypy TypedDicts that are used across the application."""
 
-from typing import Union, Literal
+from typing import Union, Literal, Optional
 from datetime import datetime
 
 from mypy_extensions import TypedDict
@@ -50,8 +50,8 @@ PredictionData = TypedDict(
     },
 )
 
-CleanPredictionData = TypedDict(
-    "CleanPredictionData",
+CleanMarginPredictionData = TypedDict(
+    "CleanMarginPredictionData",
     {
         "home_team": str,
         "year": int,
@@ -60,8 +60,21 @@ CleanPredictionData = TypedDict(
         "ml_model": str,
         "home_predicted_margin": np.number,
         "away_predicted_margin": np.number,
-        "home_predicted_win_probability": np.number,
-        "away_predicted_win_probability": np.number,
+    },
+)
+
+CleanPredictionData = TypedDict(
+    "CleanPredictionData",
+    {
+        "home_team": str,
+        "year": int,
+        "round_number": int,
+        "away_team": str,
+        "ml_model": str,
+        "home_predicted_margin": Optional[np.number],
+        "away_predicted_margin": Optional[np.number],
+        "home_predicted_win_probability": Optional[np.number],
+        "away_predicted_win_probability": Optional[np.number],
     },
 )
 

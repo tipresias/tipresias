@@ -63,7 +63,7 @@ class MatchPredictionType(graphene.ObjectType):
     match__start_date_time = graphene.NonNull(graphene.DateTime, name="startDateTime")
     predicted_winner__name = graphene.NonNull(graphene.String, name="predictedWinner")
     predicted_margin = graphene.NonNull(graphene.Float)
-    predicted_win_probability = graphene.NonNull(graphene.Float)
+    predicted_win_probability = graphene.Float()
     is_correct = graphene.Boolean()
 
 
@@ -142,10 +142,17 @@ class RoundPredictionType(graphene.ObjectType):
         )
 
         competition_predictions = (
-            principal_predictions.fillna(non_principal_predictions)
-            .assign(
+            principal_predictions
+            if not non_principal_predictions.size
+            else principal_predictions.fillna(non_principal_predictions)
+        )
+
+        return (
+            competition_predictions.assign(
                 predictions_agree=lambda df: df["predicted_winner__name"]
                 == non_principal_predictions["predicted_winner__name"]
+                if non_principal_predictions.size
+                else True
             )
             .assign(
                 **{
@@ -157,8 +164,6 @@ class RoundPredictionType(graphene.ObjectType):
             .replace({np.nan: None})
             .to_dict("records")
         )
-
-        return competition_predictions
 
 
 class SeasonPerformanceChartParametersType(graphene.ObjectType):

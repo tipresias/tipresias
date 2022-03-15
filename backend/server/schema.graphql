@@ -11,7 +11,7 @@ type Query {
   fetchSeasonYears: [Int!]!
   fetchSeasonModelMetrics(
     """Filter metrics by season."""
-    season: Int = 2021
+    season: Int = 2022
   ): SeasonType!
 
   """
@@ -196,7 +196,7 @@ type MatchPredictionType {
   startDateTime: DateTime!
   predictedWinner: String!
   predictedMargin: Float!
-  predictedWinProbability: Float!
+  predictedWinProbability: Float
   isCorrect: Boolean
 }
 

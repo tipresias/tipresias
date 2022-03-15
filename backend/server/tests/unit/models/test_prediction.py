@@ -175,16 +175,36 @@ class TestPrediction(TestCase):
                 data["home_team"].iloc[0], prediction.predicted_winner.name
             )
 
-        with self.subTest("when predicting win probability"):
-            proba_data = data_factories.fake_prediction_data(
-                self.match, ml_model_name=self.ml_model.name, predict_margin=False
-            )
+        proba_data = data_factories.fake_prediction_data(
+            self.match, ml_model_name=self.ml_model.name, predict_margin=False
+        )
 
+        with self.subTest("when predicting win probability"):
             Prediction.update_or_create_from_raw_data(proba_data.to_dict("records")[0])
 
             prediction = Prediction.objects.first()
             self.assertIsInstance(prediction.predicted_win_probability, float)
             self.assertIsNone(prediction.predicted_margin)
+
+        with self.subTest("when '*_predicted_win_probability' is missing"):
+            Prediction.update_or_create_from_raw_data(
+                data.drop(
+                    [
+                        "home_predicted_win_probability",
+                        "away_predicted_win_probability",
+                    ],
+                    axis=1,
+                ).to_dict("records")[0]
+            )
+            self.assertIsNotNone(Prediction.objects.first())
+
+        with self.subTest("when '*_predicted_margin' is missing"):
+            Prediction.update_or_create_from_raw_data(
+                proba_data.drop(
+                    ["home_predicted_margin", "away_predicted_margin"], axis=1
+                ).to_dict("records")[0]
+            )
+            self.assertIsNotNone(Prediction.objects.first())
 
     def test_clean(self):
         with self.subTest("when predicted margin and win probability are None"):

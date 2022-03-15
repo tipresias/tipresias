@@ -118,8 +118,8 @@ class Prediction(models.Model):
             f"away_predicted_{prediction_type}",
         )
 
-        home_predicted_result = prediction_data[home_prediction_key]
-        away_predicted_result = prediction_data[away_prediction_key]
+        home_predicted_result = prediction_data.get(home_prediction_key)
+        away_predicted_result = prediction_data.get(away_prediction_key)
 
         if home_predicted_result is None or away_predicted_result is None:
             return None, None

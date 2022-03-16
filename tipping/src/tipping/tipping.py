@@ -64,6 +64,9 @@ class MonashSubmitter:
 
         for comp in self.competitions:
             predicted_winners = self._transform_into_tipping_input(comp, predictions)
+            if not any(predicted_winners):
+                continue
+
             self._submit_competition_tips(comp, predicted_winners)
 
             if self.verbose == 1:

@@ -18,7 +18,7 @@
   "homepage": "https://github.com/tipresias/tipresias#readme",
   "dependencies": {},
   "devDependencies": {
-    "fauna-shell": "^0.13.0",
+    "fauna-shell": "^0.14.0",
     "serverless": "^2.72.2",
     "serverless-offline": "^8.5.0",
     "serverless-prune-plugin": "^2.0.1",

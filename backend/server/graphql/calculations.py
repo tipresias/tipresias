@@ -1,7 +1,9 @@
 """Module for shared logic for calculating model metrics."""
 
-from typing import Optional, List, Dict, Any
+from datetime import datetime
+from typing import Optional, List
 from functools import partial
+from mypy_extensions import TypedDict
 
 import pandas as pd
 import numpy as np
@@ -26,6 +28,24 @@ GROUP_BY_LVL = 0
 # For regressors that might try to predict negative values or 0,
 # we need a slightly positive minimum to not get errors when calculating logarithms
 MIN_LOG_VAL = 1 * 10 ** -10
+
+MetricValues = TypedDict(
+    "MetricValues",
+    {
+        "match__id": int,
+        "match__margin": int,
+        "match__winner__name": str,
+        "match__round_number": int,
+        "match__start_date_time": datetime,
+        "ml_model__is_principal": bool,
+        "ml_model__name": str,
+        "ml_model__used_in_competitions": bool,
+        "predicted_margin": Optional[float],
+        "predicted_winner__name": str,
+        "predicted_win_probability": Optional[float],
+        "is_correct": float,
+    },
+)
 
 
 def _calculate_cumulative_accuracy(data_frame):
@@ -123,7 +143,7 @@ def _calculate_cumulative_margin_difference(data_frame: pd.DataFrame):
 
 
 def calculate_cumulative_metrics(
-    metric_values: List[Dict[str, Any]], round_number: Optional[int]
+    metric_values: List[MetricValues], round_number: Optional[int]
 ) -> pd.DataFrame:
     """Calculate cumulative methods that can't be calculated via the ORM."""
     return (

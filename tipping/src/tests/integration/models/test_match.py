@@ -186,7 +186,7 @@ def test_update_results(fauna_session):
     queried_matches = fauna_session.execute(sql.select(Match)).scalars().all()
     for match in queried_matches:
         assert match.margin is not None
-        assert match.winner_id is not None
+        assert match.winner_id is not None or match.is_draw
 
         for team_match in match.team_matches:
             assert team_match.score is not None

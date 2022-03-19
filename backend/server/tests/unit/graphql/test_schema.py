@@ -697,6 +697,15 @@ class TestSchema(TestCase):
                 self.assertGreater(data["cumulativeMeanAbsoluteError"], 0)
                 self.assertGreater(data["cumulativeMarginDifference"], 0)
 
+        with self.subTest("when predicted_win_probability is all blank"):
+            Prediction.objects.all().update(predicted_win_probability=None)
+            MLModel.objects.filter(is_principal=False).delete()
+
+            executed = self.client.execute(query)
+            data = executed["data"]["fetchLatestRoundMetrics"]
+
+            self.assertEqual(data["cumulativeBits"], 0)
+
     def _assert_correct_prediction_results(self, results, expected_results):
         sorted_results = self._sort_results(results)
         sorted_expected_results = self._sort_results(expected_results)

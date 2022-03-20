@@ -65,7 +65,7 @@ class ColumnFactory(factory.Factory):
     name = factory.Faker("first_name")
     alias = factory.Faker("first_name")
     position = factory.Faker("pyint")
-    table_name = factory.Faker("word")
+    table_name = factory.Faker("first_name")
     function_name = None
 
     @factory.lazy_attribute
@@ -128,8 +128,8 @@ class TableFactory(factory.Factory):
         model = sql.Table
         strategy = factory.BUILD_STRATEGY
 
-    name = factory.Faker("word")
-    alias = factory.Faker("word")
+    name = factory.Faker("first_name")
+    alias = factory.Faker("first_name")
 
     @factory.post_generation
     def columns(  # pylint: disable=no-self-argument,missing-function-docstring
@@ -240,7 +240,7 @@ class SQLQueryFactory(factory.Factory):
             table_names = [last_table_name, table.name]
             shuffle(table_names)
             parent_table, child_table = table_names
-            # Using .parse() to generate the Comparison token gorup object,
+            # Using .parse() to generate the Comparison token group object,
             # because building it manually from sub-tokens is more trouble.
             statement = sqlparse.parse(
                 f"{parent_table}.id = {child_table}.{parent_table}_id"

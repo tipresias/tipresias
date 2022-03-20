@@ -126,7 +126,9 @@ def _consolidate_competition_model_metrics(
         .sort_index()
     )
 
-    consolidated_metrics = principal_data.fillna(non_principal_data).to_dict("records")
+    consolidated_metrics = (
+        principal_data.fillna(non_principal_data).fillna(0).to_dict("records")
+    )
 
     if len(consolidated_metrics) == 0:
         return None

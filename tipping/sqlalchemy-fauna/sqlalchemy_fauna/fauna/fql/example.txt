@@ -1,0 +1,51 @@
+pipe(
+  parse_sql(sql_string) -> list(sql_token),
+  juxt(extract_filters_pipe, extract_collections_pipe) -> (filter_group, list(collection)),
+  filter_document_sets(filter_group, list(collection)) -> list(document_set)
+)
+
+----------------------------------------------------------------------
+
+filter_group = (
+  filters, # basic filters or nested filter groups
+  set_operation, # e.g. intersection or union
+)
+filter = (collection_name, field_name, comparison_operator, comparison_value)
+collection = (
+  is_selected, # i.e. is this the collection whose documents we're returning?
+  left_join,
+  right_join)
+join = (index_name)
+
+extract_filters_pipe = pipe(
+  select_sql_token(list(sql_token), token_name='WHERE') -> where_token,
+  extract_filters(where_token) -> filter_group,
+)
+
+extract_collections_pipe = pipe(
+  select_sql_tokens(list(sql_token), token_name='JOIN) -> list(join_token),
+  extract_collections(list(join_token)) -> list(collection),
+)
+
+filter_document_sets(filter_group, list(collection)) = {
+  # Apply recursively through filter_group, applying subfilters as we go
+  apply_filter(filter_or_filter_group, list(selected_document_set), collections=list(collection)) = {
+    if isinstance(Filter):
+      pipe(
+        match_on_filter(filter) -> filtered_document_set,
+        join_to_selected_collection(filtered_document_set, list(collection)) -> selected_document_set,
+        list(selected_document_set) + selected_document_set
+      )
+    else:
+      list(selected_document_set) + filter_document_sets(filter_group, list(collection))
+  }
+
+  pipe(
+    reduce(
+      apply_filter,
+      filter_group.filters, # sub-filters
+      []
+    ) -> list(document_set),
+    combine_document_sets(list(document_set), filter_group.set_operator) -> document_set
+  )
+}

@@ -116,7 +116,9 @@ class TestViews(TestCase):
                 Prediction.objects.all().values_list("predicted_margin", flat=True)
             )
 
-            self.assertNotEqual(original_predicted_margins, new_predicted_margins)
+            self.assertNotEqual(
+                set(original_predicted_margins), set(new_predicted_margins)
+            )
 
             response = views.predictions(request)
 
@@ -126,7 +128,9 @@ class TestViews(TestCase):
             posted_predicted_margins = list(
                 Prediction.objects.all().values_list("predicted_margin", flat=True)
             )
-            self.assertEqual(original_predicted_margins, posted_predicted_margins)
+            self.assertEqual(
+                set(original_predicted_margins), set(posted_predicted_margins)
+            )
             # It returns a success response
             self.assertEqual(response.status_code, 200)
             # It returns the updated predictions

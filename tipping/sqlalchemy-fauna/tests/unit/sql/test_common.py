@@ -13,7 +13,9 @@ from sqlalchemy_fauna.sql import common
 Fake = Faker()
 column_name = "name"
 
-word = Fake.word()
+# We make a double-word to avoid accidentally generating a special keyword
+# (e.g. 'true', 'none')
+word = Fake.word() + Fake.word()
 integer = Fake.pyint()
 float_number = Fake.pyfloat()
 fake_datetime = Fake.date_time_this_year(tzinfo=timezone.utc)

@@ -29,7 +29,7 @@ black
 pytest
 pytest-env
 faker==13.3.2
-mypy==0.940
+mypy==0.941
 freezegun==1.2.0
 factory_boy
 coverage

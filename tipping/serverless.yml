@@ -22,7 +22,6 @@ provider:
     TIPPING_SERVICE_TOKEN: ${env:TIPPING_SERVICE_TOKEN, ''}
     TIPRESIAS_APP: ${env:TIPRESIAS_APP, ''}
     TIPRESIAS_APP_TOKEN: ${env:TIPRESIAS_APP_TOKEN, ''}
-  lambdaHashingVersion: 20201221
 plugins:
   - serverless-offline
   - serverless-python-requirements

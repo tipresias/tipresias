@@ -30,7 +30,7 @@ pytest
 pytest-env
 faker==13.3.2
 mypy==0.941
-freezegun==1.2.0
+freezegun==1.2.1
 factory_boy
 coverage
 candystore==0.3.4

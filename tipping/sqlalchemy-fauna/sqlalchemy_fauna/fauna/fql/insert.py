@@ -10,7 +10,7 @@ from sqlalchemy_fauna import sql
 from . import common
 
 
-def translate_insert(sql_query: sql.SQLQuery) -> typing.List[QueryExpression]:
+def translate_insert(table: sql.Table) -> typing.List[QueryExpression]:
     """Translate a INSERT SQL query into an equivalent FQL query.
 
     Params:
@@ -21,7 +21,6 @@ def translate_insert(sql_query: sql.SQLQuery) -> typing.List[QueryExpression]:
     --------
     An FQL query expression.
     """
-    table = sql_query.tables[0]
     document_to_insert = {col.name: col.value for col in table.columns}
     convert_to_collection_ref_set = functools.partial(
         common.convert_to_ref_set, "information_schema_indexes_"

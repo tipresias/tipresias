@@ -1,14 +1,12 @@
 # pylint: disable=missing-docstring,redefined-outer-name
 
-import pytest
 from faunadb.objects import _Expr as QueryExpression
 
-from tests.fixtures.factories import SQLQueryFactory
+from tests.fixtures.factories import TableFactory
 from sqlalchemy_fauna.fauna.fql import insert
 
 
-@pytest.mark.parametrize("sql_query", [SQLQueryFactory(table_count=1)])
-def test_translate_insert(sql_query):
-    fql_query = insert.translate_insert(sql_query)
+def test_translate_insert():
+    fql_query = insert.translate_insert(TableFactory())
 
     assert isinstance(fql_query, QueryExpression)

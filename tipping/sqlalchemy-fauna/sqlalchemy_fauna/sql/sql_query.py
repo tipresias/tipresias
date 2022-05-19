@@ -10,7 +10,7 @@ import enum
 from sqlparse import sql as token_groups, tokens as token_types
 
 from sqlalchemy_fauna import exceptions
-from . import sql_table, common
+from . import sql_table
 
 
 class OrderDirection(enum.Enum):
@@ -180,6 +180,7 @@ class SQLQuery:
         --------
         A new SQLQuery object.
         """
+        sql_instance = None
         first_token = statement.token_first(skip_cm=True, skip_ws=True)
         tables = cls._collect_tables(statement)
 
@@ -190,11 +191,6 @@ class SQLQuery:
             assert len(tables) == 1
             table = tables[0]
             sql_instance = cls._build_update_query(statement, table)
-
-        if first_token.match(token_types.DML, "INSERT"):
-            assert len(tables) == 1
-            table = tables[0]
-            sql_instance = cls._build_insert_query(statement, table)
 
         if first_token.match(token_types.DML, "DELETE"):
             assert len(tables) == 1
@@ -215,32 +211,8 @@ class SQLQuery:
     def _collect_tables(
         cls, statement: token_groups.Statement
     ) -> typing.List[sql_table.Table]:
-        idx, _ = statement.token_next_by(
-            m=[
-                (token_types.Keyword, "FROM"),
-                (token_types.Keyword, "INTO"),
-                (token_types.DML, "UPDATE"),
-            ]
-        )
-        _, maybe_table_identifier = statement.token_next(
-            idx=idx, skip_cm=True, skip_ws=True
-        )
-
-        if isinstance(maybe_table_identifier, token_groups.Function):
-            maybe_table_identifier = maybe_table_identifier.token_first(
-                skip_cm=True, skip_ws=True
-            )
-
-        # If we can't find a single table identifier, it means that multiple tables
-        # are referenced in the FROM/INTO clause, which isn't supported.
-        if not isinstance(maybe_table_identifier, token_groups.Identifier):
-            raise exceptions.NotSupportedError(
-                "In order to query multiple tables at a time, you must join them "
-                "together with a JOIN clause."
-            )
-
-        table_identifier = maybe_table_identifier
-        tables = [sql_table.Table.from_identifier(table_identifier)]
+        tables = [sql_table.Table.extract_principal(statement)]
+        idx = 0
 
         while True:
             idx, join_kw = statement.token_next_by(
@@ -331,59 +303,6 @@ class SQLQuery:
             column = sql_table.Column.from_comparison_group(comparison, position)
             table.add_column(column)
             position = position + 1
-
-        return cls(str(statement), tables=[table])
-
-    @classmethod
-    def _build_insert_query(
-        cls, statement: token_groups.Statement, table: sql_table.Table
-    ) -> SQLQuery:
-        _, function_group = statement.token_next_by(i=token_groups.Function)
-
-        if function_group is None:
-            raise exceptions.NotSupportedError(
-                "INSERT INTO statements without column names are not currently supported."
-            )
-
-        _, column_name_group = function_group.token_next_by(i=token_groups.Parenthesis)
-        _, column_name_identifiers = column_name_group.token_next_by(
-            i=(token_groups.IdentifierList, token_groups.Identifier)
-        )
-
-        _, value_group = statement.token_next_by(i=token_groups.Values)
-        val_idx, column_value_group = value_group.token_next_by(
-            i=token_groups.Parenthesis
-        )
-
-        _, additional_parenthesis_group = value_group.token_next_by(
-            i=token_groups.Parenthesis, idx=val_idx
-        )
-        if additional_parenthesis_group is not None:
-            raise exceptions.NotSupportedError(
-                "INSERT for multiple rows is not supported yet."
-            )
-
-        _, column_value_identifiers = column_value_group.token_next_by(
-            i=(token_groups.IdentifierList, token_groups.Identifier),
-        )
-        # If there's just one value in the VALUES clause, it doesn't get wrapped in an Identifer
-        column_value_identifiers = column_value_identifiers or column_value_group
-
-        idx = -1
-
-        for column in sql_table.Column.from_identifier_group(column_name_identifiers):
-            idx, column_value = column_value_identifiers.token_next_by(
-                t=[token_types.Literal, token_types.Keyword], idx=idx
-            )
-
-            if column_value is None:
-                raise exceptions.NotSupportedError(
-                    "Assigning values dynamically is not supported. "
-                    "You must use literal values only in INSERT statements."
-                )
-
-            column.value = common.extract_value(column_value)
-            table.add_column(column)
 
         return cls(str(statement), tables=[table])
 

@@ -3,3 +3,4 @@
 from .sql_query import OrderDirection, SQLQuery, OrderBy
 from .sql_table import Table, Column, Filter, Function, FilterGroup, Comparison
 from .common import extract_value
+from .insert import build_insert_table

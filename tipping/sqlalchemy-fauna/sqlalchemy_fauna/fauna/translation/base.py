@@ -52,13 +52,15 @@ def _translate_ddl_statement(sql_statement: token_groups.Statement, ddl_keyword:
 
 
 def _translate_dml_statement(sql_statement: token_groups.Statement, dml_keyword: str):
+    if dml_keyword == "INSERT":
+        return [
+            functoolz.pipe(sql_statement, sql.build_insert_table, fql.translate_insert)
+        ]
+
     sql_query = sql.SQLQuery.from_statement(sql_statement)
 
     if dml_keyword == "SELECT":
         return [fql.translate_select(sql_query)]
-
-    if dml_keyword == "INSERT":
-        return [fql.translate_insert(sql_query)]
 
     if dml_keyword == "DELETE":
         return [fql.translate_delete(sql_query)]

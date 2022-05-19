@@ -619,6 +619,46 @@ class Table:
             self.add_filter(sql_filter)
 
     @classmethod
+    def extract_principal(cls, statement: token_groups.Statement) -> Table:
+        """Extract the principal table from an SQL statement.
+
+        Params:
+        -------
+        statement: Parsed SQL statement.
+
+        Returns:
+        --------
+        The principal table (i.e. the first one referred to) in the SQL query.
+        """
+        idx, _ = statement.token_next_by(
+            m=[
+                (token_types.Keyword, "FROM"),
+                (token_types.Keyword, "INTO"),
+                (token_types.Keyword, "TABLE"),
+                (token_types.DML, "UPDATE"),
+            ]
+        )
+        _, maybe_table_identifier = statement.token_next(
+            idx=idx, skip_cm=True, skip_ws=True
+        )
+
+        if isinstance(maybe_table_identifier, token_groups.Function):
+            maybe_table_identifier = maybe_table_identifier.token_first(
+                skip_cm=True, skip_ws=True
+            )
+
+        # If we can't find a single table identifier, it means that multiple tables
+        # are referenced in the FROM/INTO clause, which isn't supported.
+        if not isinstance(maybe_table_identifier, token_groups.Identifier):
+            raise exceptions.NotSupportedError(
+                "In order to query multiple tables at a time, you must join them "
+                "together with a JOIN clause."
+            )
+
+        table_identifier = maybe_table_identifier
+        return cls.from_identifier(table_identifier)
+
+    @classmethod
     def from_identifier(cls, identifier: token_groups.Identifier) -> Table:
         """Extract table name from an SQL identifier.
 

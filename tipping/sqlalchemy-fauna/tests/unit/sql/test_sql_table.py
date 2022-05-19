@@ -178,6 +178,42 @@ class TestTable:
 
     @staticmethod
     @pytest.mark.parametrize(
+        "sql_string",
+        [
+            "SELECT users.name FROM users",
+            "INSERT INTO users (name, age) VALUES ('Bob', 45)",
+            "UPDATE users SET users.name = 'Bob'",
+            "DELETE FROM users WHERE users.name = 'Bob'",
+            "CREATE TABLE users",
+            "DROP TABLE users",
+            "ALTER TABLE users ADD name varchar(255)",
+        ],
+    )
+    def test_extract_principal(sql_string):
+        statement = sqlparse.parse(sql_string)[0]
+
+        table = sql_table.Table.extract_principal(statement)
+
+        assert table.name == "users"
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        ["sql_string", "error_message"],
+        [
+            (
+                "SELECT users.name, accounts.value FROM users, accounts",
+                "In order to query multiple tables at a time",
+            )
+        ],
+    )
+    def test_unsupported_extract_principal(sql_string, error_message):
+        statement = sqlparse.parse(sql_string)[0]
+
+        with pytest.raises(exceptions.NotSupportedError, match=error_message):
+            sql_table.Table.extract_principal(statement)
+
+    @staticmethod
+    @pytest.mark.parametrize(
         ["table_name", "sql_string"],
         [
             ["users", "SELECT users.name FROM users"],

@@ -10,7 +10,7 @@ chardet<4.0 # required version for gql 3.0.0a3
 gql==3.0.0a3
 cerberus
 alembic==1.5.8
-sqlalchemy==1.4.10
+sqlalchemy==1.4.39
 -e ./sqlalchemy-fauna
 
 # Browser automation

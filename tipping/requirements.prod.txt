@@ -6,7 +6,7 @@ pandas==1.2.4
 requests
 simplejson
 rollbar==0.15.2
-chardet<4.0 # required version for gql 3.0.0a3
+chardet<6.0 # required version for gql 3.0.0a3
 gql==3.0.0a3
 cerberus
 alembic==1.5.8

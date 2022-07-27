@@ -7,7 +7,7 @@ requests
 simplejson
 rollbar==0.15.2
 chardet<4.0 # required version for gql 3.0.0a3
-gql==3.0.0a3
+gql==3.4.0
 cerberus
 alembic==1.5.8
 sqlalchemy==1.4.10

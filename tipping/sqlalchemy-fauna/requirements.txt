@@ -14,5 +14,5 @@ pydocstyle>=5.0,<7.0
 pytest>=5.0,<7.0
 coverage
 numpy==1.21.0 # just used for random numbers in tests
-faker==8.1.0
+faker==13.15.1
 factory_boy

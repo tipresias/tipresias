@@ -6,7 +6,7 @@ pydocstyle==6.0.0
 black
 pytest
 pytest-env
-faker==8.1.0
+faker==14.1.0
 pytest-watch
 freezegun==1.1.0
 factory_boy

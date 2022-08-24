@@ -8,7 +8,7 @@ pytest
 pytest-env
 faker==8.1.0
 pytest-watch
-freezegun==1.1.0
+freezegun==1.2.2
 factory_boy
 coverage
 candystore==0.3.3

@@ -5,7 +5,7 @@ pandas==1.4.2
 # App packages
 django==4.0.4
 django-cors-headers
-graphene==3.0.0b6
+graphene==3.1.1
 graphene-django==3.0.0b7
 gql==3.2.0
 graphql-core==3.1.7

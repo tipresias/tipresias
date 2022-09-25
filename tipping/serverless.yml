@@ -50,14 +50,14 @@ functions:
       - schedule:
           # Monday-Tuesday, 12am UTC
           rate: cron(0 0 ? * 2-3 *)
-          enabled: true
+          enabled: false
   update_match_predictions:
     handler: handler.update_match_predictions
     events:
       - schedule:
           # Everyday, 12am UTC
           rate: cron(0 0 ? * 1-7 *)
-          enabled: true
+          enabled: false
           input:
             ml_model_names: tipresias_margin_2021
   update_matches:
@@ -66,11 +66,11 @@ functions:
       - schedule:
           # Wednesday, 12am UTC
           rate: cron(0 0 ? * 4 *)
-          enabled: true
+          enabled: false
   update_match_results:
     handler: handler.update_match_results
     events:
       - schedule:
           # Thurs-Sun, 2am-2pm UTC (next day, 12pm/1pm-12am/1am Melbourne time, depending on DST)
           rate: cron(0 2-14/3 ? * 1,5-7 *)
-          enabled: true
+          enabled: false

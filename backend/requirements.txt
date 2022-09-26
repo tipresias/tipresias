@@ -6,7 +6,7 @@ pandas==1.4.2
 django==4.0.4
 django-cors-headers
 graphene==3.0.0b6
-graphene-django==3.0.0b7
+graphene-django==3.0.0
 gql==3.2.0
 graphql-core==3.1.7
 graphql_relay==3.1.5

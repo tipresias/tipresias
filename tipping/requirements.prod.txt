@@ -17,4 +17,4 @@ sqlalchemy==1.4.10
 MechanicalSoup
 
 # Testing/Linting
-mypy==0.812 # Need mypy due to references to mypy_extensions in production code
+mypy==0.981 # Need mypy due to references to mypy_extensions in production code

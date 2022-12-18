@@ -7,14 +7,3 @@ tipresias-71b8
   src server
 
 @static
-
-@tables
-user
-  pk *String
-
-password
-  pk *String # userId
-
-note
-  pk *String  # userId
-  sk **String # noteId

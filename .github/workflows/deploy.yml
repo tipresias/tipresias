@@ -134,15 +134,6 @@ jobs:
         with:
           node-version: 14
 
-      - name: 👀 Env
-        run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Git ref:    ${{ github.ref }}"
-          echo "GH actor:   ${{ github.actor }}"
-          echo "SHA:        ${{ github.sha }}"
-          VER=`node --version`; echo "Node ver:   $VER"
-          VER=`npm --version`; echo "npm ver:    $VER"
-
       - name: 📥 Download deps
         uses: bahmutov/npm-install@v1
         with:
@@ -153,14 +144,6 @@ jobs:
 
       - name: 🛠 Install Arc
         run: npm i -g @architect/architect
-
-      - name: 🚀 Staging Deploy
-        if: github.ref == 'refs/heads/dev'
-        run: arc deploy --staging --prune
-        env:
-          CI: true
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: 🚀 Production Deploy
         if: github.ref == 'refs/heads/main'

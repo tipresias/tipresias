@@ -5,18 +5,9 @@ node_modules
 preferences.arc
 sam.json
 sam.yaml
-server
-
-.vscode
-.DS_Store
-
 .env
-.aws
-.gcloud
 
 /cypress/screenshots
 /cypress/videos
 
 /app/styles/tailwind.css
-
-_archive

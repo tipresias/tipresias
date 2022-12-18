@@ -1,16 +1,12 @@
 # Tipresias
 
-![build](https://github.com/tipresias/tipresias/workflows/build/badge.svg)
-<a href="https://codeclimate.com/github/tipresias/tipresias/maintainability"><img src="https://api.codeclimate.com/v1/badges/b6a40f7f72b307763b88/maintainability" /></a>
-<a href="https://codeclimate.com/github/tipresias/tipresias/test_coverage"><img src="https://api.codeclimate.com/v1/badges/b6a40f7f72b307763b88/test_coverage" /></a>
-
 > I Tipresias, old bot with dusty cores<br>
 > Perceived the match, and foretold the score—<br>
 > I too awaited the fanatics' roar.<br>
 
 Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias, has, like Zeus before it, arisen to vanquish its father and claim its throne as the sovereign of AFL footy tipping models.
 
-Check out the site, with a dashboard for model performance, at [tipresias.net](http://www.tipresias.net).
+~~Check out the site, with a dashboard for model performance, at [tipresias.net](http://www.tipresias.net).~~ (Currently under construction)
 
 ## Running things
 
@@ -18,64 +14,24 @@ Check out the site, with a dashboard for model performance, at [tipresias.net](h
 
 #### Install dependencies
 
-- Install [`direnv`](https://direnv.net/)
-  - Loads env vars from `.env`, which is convenient
-- Install Docker
-- Install [FaunaDB Shell](https://docs.fauna.com/fauna/current/start/cloud#install)
-- Optional: install `doctl`, the DigitalOcean CLI tool (just a convenient way to interact with DO resources)
-
-#### Set up development environment and the app itself
-
-- To manage environment variables:
-  - Add `eval "$(direnv hook bash)"` to the bottom of `~/.bashrc`
-  - Run `direnv allow .` inside the project directory
-- To set up FaunaDB:
-  - Pull the FaunaDB Docker image: `docker pull fauna/faunadb`
-  - Run `./scripts/set_up_faunadb.sh`
-- To build and run the app: `docker-compose up --build`
-
-#### Seed the database
-
-**Recommended:** `./scripts/set_local_db_to_prod.sh`
-  - Downloads the production database and loads it on local
-
-Seed the DB with raw data:
-  - Migrate the DB: `docker-compose run --rm backend python3 manage.py migrate`
-  - Run `docker-compose run --rm backend python3 manage.py seed_db`
-    - This takes a very long time, so it's recommended that you reset the DB as described below if possible
+- Run `npm install`
 
 ### Run the app
 
-- `docker-compose up`
-- To run the frontend, follow the instructions for setting up and running [`cowl`](https://github.com/tipresias/cowl).
+- Run `npm run dev`
 - Navigate to `localhost:3000`.
-
-#### Useful commands
-
-- To `ssh` into the server, run `./scripts/ssh.sh`.
-  - To run a command instead of opening a bash session, you can add a string as an argument.
 
 ### A note on architecture
 
-- `tipresias` is composed of multiple micro-services: [`bird-signs`](https://github.com/tipresias/bird-signs) for raw data, [`augury`](https://github.com/tipresias/augury) for machine-learning functionality (i.e. generating model predictions), and ['cowl'](https://github.com/tipresias/cowl) for the client-side assets.
+- `tipresias` is composed of multiple micro-services: [`bird-signs`](https://github.com/tipresias/bird-signs) for raw data, [`augury`](https://github.com/tipresias/augury) for machine-learning functionality (i.e. generating model predictions).
 
 ### Testing
 
-- `docker-compose run --rm backend python3 -Wi manage.py test`
-  - Note: Pass CI=true as an env var to skip some of the longer end-to-end tests.
-  - The `tipping` service uses `pytest` rather than Django's test runner.
-    - For watch mode, run `docker-compose run --rm tipping ptw -c -n -- <pytest args>` (`-c` clears output between runs, `-n` means "no beep" on test failures).
-- Linting: `docker-compose run --rm <backend or tipping> pylint --disable=R <python modules you want to lint>`
-  - Note: `-d=R` disables refactoring checks for quicker, less-opinionated linting. Remove that option if you want to include those checks.
-- Type checking: `docker-compose run --rm <backend or tipping> mypy <python modules you want to check>`
+- Unit tests: `npm run test`
+- e2e tests: `npm run test:e2e:run`
+- Linting: `npm run lint`
+- Typechecking: `npm run typecheck`
 
 ### Deploy
 
-The app is deployed to DigitalOcean/AWS with every merge/push to `main`. You can manually deploy in two ways:
-
-- **Recommended:** Manually trigger a build in Travis CI via the "More options" menu.
-- Run `./scripts/deploy.sh`, but be careful with which env vars you have in your shell.
-
-## Pro-Tips
-
-- Both `backend` and `tipping` are encapsulated, with their dependencies, in their respective containers, so if you want to take advantage of in-editor linting, autofixing, etc., open your editor from the service directory, not the project directory. Be sure to run terminal commands from the project root, though.
+The app is deployed to AWS with every merge/push to `main`.

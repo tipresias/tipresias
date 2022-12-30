@@ -1,3 +1,0 @@
-[pydocstyle]
-convention = numpy
-match = '(?!test_|\d{3}|__init__).*\.py' # Ignores test files, migration files, and __init__ files

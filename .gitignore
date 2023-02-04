@@ -1,11 +1,14 @@
 node_modules
 
-/server/index.js
+.cache
+.env
+.vercel
+.output
+
+/build/
 /public/build
-preferences.arc
-sam.json
-sam.yaml
-server
+/api/index.js
+/api/index.js.map
 
 .vscode
 .DS_Store

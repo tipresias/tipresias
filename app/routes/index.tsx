@@ -1,18 +1,8 @@
-import {
-  Container,
-  Flex,
-  Heading,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Text,
-  Th,
-  Thead,
-  Tr,
-} from "@chakra-ui/react";
+import { Container, Flex, Heading, Text } from "@chakra-ui/react";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+
+import PredictionsTable from "~/components/PredictionsTable";
 
 export const loader = async () => {
   return json({
@@ -36,32 +26,12 @@ export default function Index() {
         <Text>A footy-tipping machine-learning model</Text>
       </Container>
       <Flex alignItems="center" flexDirection="column">
-        <TableContainer style={{ textAlign: "center" }}>
-          <Heading as="h2" size="l">
-            Predictions for round {currentRound}
-          </Heading>
-          <Table variant="simple" maxWidth="fit-content">
-            <Thead>
-              <Tr>
-                <Th>Winner</Th>
-                <Th>Loser</Th>
-                <Th isNumeric>Margin</Th>
-                <Th>Correct?</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {predictions &&
-                predictions.map(({ winner, loser, margin, wasCorrect }) => (
-                  <Tr key={winner}>
-                    <Td>{winner}</Td>
-                    <Td>{loser}</Td>
-                    <Td isNumeric>{margin}</Td>
-                    <Td>{String(wasCorrect)}</Td>
-                  </Tr>
-                ))}
-            </Tbody>
-          </Table>
-        </TableContainer>
+        {predictions && (
+          <PredictionsTable
+            currentRound={currentRound}
+            predictions={predictions}
+          />
+        )}
       </Flex>
     </div>
   );

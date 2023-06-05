@@ -12,6 +12,9 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ### Setup
 
+- Install NVM
+- Run `nvm install`
+
 #### Install dependencies
 
 - Run `npm install`

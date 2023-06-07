@@ -4,8 +4,8 @@ import { render, screen } from "@testing-library/react";
 import MetricsTable from "../../app/components/MetricsTable";
 
 describe("MetricsTable", () => {
-  const metrics = new Array(4).fill(null).map(() => ({
-    name: faker.company.buzzNoun(),
+  const metrics = new Array(4).fill(null).map((_, idx) => ({
+    name: `${faker.company.buzzNoun()}${idx}`,
     value: faker.number.float().toString(),
   }));
   const season = faker.number.int();

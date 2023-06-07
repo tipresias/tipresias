@@ -45,8 +45,8 @@ const PredictionsTable = ({
   currentRound,
   predictions,
 }: PredictionsTableProps) => (
-  <TableContainer style={{ textAlign: "center" }}>
-    <Heading as="h2" size="l">
+  <TableContainer textAlign="center">
+    <Heading as="h2" size="l" margin="0.5rem" whiteSpace="nowrap">
       Predictions for round {currentRound}
     </Heading>
     <Table variant="simple" maxWidth="fit-content">

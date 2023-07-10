@@ -49,7 +49,7 @@ const PredictionsTable = ({
     <Heading as="h2" size="l" margin="0.5rem" whiteSpace="nowrap">
       Predictions for round {currentRound}
     </Heading>
-    <Table variant="simple" maxWidth="fit-content">
+    <Table variant="striped" maxWidth="fit-content">
       <Thead>
         <Tr>
           <Th>Winner</Th>

@@ -1,4 +1,12 @@
-import { Box, Container, Flex, Heading, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Card,
+  CardBody,
+  Container,
+  Flex,
+  Heading,
+  Text,
+} from "@chakra-ui/react";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import MetricsTable from "~/components/MetricsTable";
@@ -28,24 +36,38 @@ export default function Index() {
     useLoaderData<typeof loader>();
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
+    <div
+      style={{
+        fontFamily: "system-ui, sans-serif",
+        lineHeight: "1.4",
+        backgroundColor: "ghostwhite",
+      }}
+    >
       <Container centerContent={true} padding="2rem">
         <Heading as="h1">Tipresias</Heading>
         <Text>A footy-tipping machine-learning model</Text>
       </Container>
-      <Flex alignItems="start" justifyContent="space-around" flexWrap="wrap">
-        <Box padding="1rem">
+      <Box margin="auto" width="fit-content">
+        <Flex alignItems="center" flexWrap="wrap" direction="column">
           {predictions && (
-            <PredictionsTable
-              currentRound={currentRound}
-              predictions={predictions}
-            />
+            <Card marginTop="1rem" marginBottom="1rem">
+              <CardBody>
+                <PredictionsTable
+                  currentRound={currentRound}
+                  predictions={predictions}
+                />
+              </CardBody>
+            </Card>
           )}
-        </Box>
-        <Box padding="1rem">
-          {metrics && <MetricsTable metrics={metrics} season={currentSeason} />}
-        </Box>
-      </Flex>
+          <Card marginTop="1rem" marginBottom="1rem" width="100%">
+            <CardBody>
+              {metrics && (
+                <MetricsTable metrics={metrics} season={currentSeason} />
+              )}
+            </CardBody>
+          </Card>
+        </Flex>
+      </Box>
     </div>
   );
 }

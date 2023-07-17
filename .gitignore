@@ -9,6 +9,8 @@ node_modules
 /public/build
 /api/index.js
 /api/index.js.map
+database/backups/*
+!.gitkeep
 
 .vscode
 .DS_Store

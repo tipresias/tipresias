@@ -30,7 +30,7 @@ const MetricsTable = ({ metrics, season }: MetricsTableProps) => (
     <Heading as="h2" size="l" margin="0.5rem" whiteSpace="nowrap">
       Model performance for {season}
     </Heading>
-    <Table variant="simple" maxWidth="fit-content">
+    <Table variant="simple">
       <Tbody>{metrics.map(MetricRow)}</Tbody>
     </Table>
   </TableContainer>

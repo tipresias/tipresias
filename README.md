@@ -14,6 +14,9 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 - Install NVM
 - Run `nvm install`
+- Install Docker
+- Install direnv
+- Run `mv .env.example .env` and update env var values
 
 #### Install dependencies
 
@@ -21,6 +24,7 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 
 ### Run the app
 
+- Run `docker-compouse up -d`
 - Run `npm run dev`
 - Navigate to `localhost:3000`.
 

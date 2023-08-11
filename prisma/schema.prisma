@@ -15,26 +15,21 @@ model Team {
 }
 
 model Match {
-  id            BigInt   @id @default(autoincrement())
-  updatedAt     DateTime @updatedAt
+  id            BigInt      @id @default(autoincrement())
+  updatedAt     DateTime    @updatedAt
   startDateTime DateTime
   roundNumber   Int
   venue         String
+  TeamMatch     TeamMatch[]
 }
 
 model TeamMatch {
-  id         BigInt      @id @default(autoincrement())
-  updatedAt  DateTime    @updatedAt
-  team       Team        @relation(fields: [teamId], references: [id])
-  teamId     BigInt
-  atHome     Boolean
-  TeamResult TeamResult?
-}
-
-model TeamResult {
-  id          BigInt    @id @default(autoincrement())
-  updatedAt   DateTime  @updatedAt
-  score       Int
-  teamMatch   TeamMatch @relation(fields: [teamMatchId], references: [id])
-  teamMatchId BigInt    @unique
+  id        BigInt   @id @default(autoincrement())
+  updatedAt DateTime @updatedAt
+  atHome    Boolean
+  score     Int?
+  team      Team     @relation(fields: [teamId], references: [id])
+  teamId    BigInt
+  match     Match    @relation(fields: [matchId], references: [id])
+  matchId   BigInt
 }

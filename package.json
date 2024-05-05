@@ -7,6 +7,9 @@
     "typecheck": "tsc",
     "test": "jest"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "dependencies": {
     "@chakra-ui/react": "^2.6.1",
     "@emotion/react": "^11.11.0",
@@ -18,6 +21,7 @@
     "@remix-run/vercel": "^1.13.0",
     "@vercel/node": "^2.6.2",
     "framer-motion": "^10.12.16",
+    "ramda": "^0.29.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -28,6 +32,7 @@
     "@remix-run/serve": "^1.13.0",
     "@testing-library/react": "^14.0.0",
     "@types/jest": "^29.5.2",
+    "@types/ramda": "^0.29.11",
     "@types/react": "^18.0.25",
     "@types/react-dom": "^18.0.8",
     "eslint": "^8.27.0",

@@ -17,10 +17,11 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 - Install Docker
 - Install direnv
 - Run `mv .env.example .env` and update env var values
-
-#### Install dependencies
-
 - Run `npm install`
+- Run `docker-compose up -d`
+- Load data dump with `docker-compose exec db psql -f tipresias/$DATA_DUMP_FILEPATH
+- RUN `npx prisma db pull`
+- RUN `npx prisma generate`
 
 ### Run the app
 

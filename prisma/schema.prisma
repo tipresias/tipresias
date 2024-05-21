@@ -3,17 +3,18 @@ generator client {
 }
 
 datasource db {
-  provider = "cockroachdb"
-  url      = env("DATABASE_URL")
+  provider  = "postgres"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model server_match {
-  id                BigInt              @id @default(sequence())
+  id                Int                 @id @default(autoincrement())
   start_date_time   DateTime            @db.Timestamptz(6)
-  round_number      Int                 @db.Int2
-  venue             String?             @db.String(100)
-  margin            BigInt?
-  winner_id         BigInt?
+  round_number      Int                 @db.SmallInt
+  venue             String?             @db.VarChar(100)
+  margin            Int?
+  winner_id         Int?
   server_team       server_team?        @relation(fields: [winner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "server_match_winner_id_8e4d5c8a_fk_server_team_id")
   server_prediction server_prediction[]
   server_teammatch  server_teammatch[]
@@ -23,11 +24,11 @@ model server_match {
 }
 
 model server_mlmodel {
-  id                   BigInt              @id @default(sequence())
-  name                 String              @unique(map: "server_mlmodel_name_b67f6f08_uniq") @db.String(100)
+  id                   Int                 @id @default(autoincrement())
+  name                 String              @unique(map: "server_mlmodel_name_b67f6f08_uniq") @db.VarChar(100)
   description          String?
   is_principal         Boolean
-  prediction_type      String              @db.String(100)
+  prediction_type      String              @db.VarChar(100)
   used_in_competitions Boolean
   server_prediction    server_prediction[]
 
@@ -35,11 +36,11 @@ model server_mlmodel {
 }
 
 model server_prediction {
-  id                        BigInt         @id @default(sequence())
+  id                        Int            @id @default(autoincrement())
   predicted_margin          Float?
-  match_id                  BigInt
-  ml_model_id               BigInt
-  predicted_winner_id       BigInt
+  match_id                  Int
+  ml_model_id               Int
+  predicted_winner_id       Int
   is_correct                Boolean?
   predicted_win_probability Float?
   created_at                DateTime       @db.Timestamptz(6)
@@ -54,8 +55,8 @@ model server_prediction {
 }
 
 model server_team {
-  id                BigInt              @id @default(sequence())
-  name              String              @unique(map: "server_team_name_1a256729_uniq") @db.String(100)
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique(map: "server_team_name_1a256729_uniq") @db.VarChar(100)
   server_match      server_match[]
   server_prediction server_prediction[]
   server_teammatch  server_teammatch[]
@@ -64,11 +65,11 @@ model server_team {
 }
 
 model server_teammatch {
-  id           BigInt       @id @default(sequence())
+  id           Int          @id @default(autoincrement())
   at_home      Boolean
-  score        Int          @db.Int2
-  match_id     BigInt
-  team_id      BigInt
+  score        Int          @db.SmallInt
+  match_id     Int
+  team_id      Int
   server_match server_match @relation(fields: [match_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "server_teammatch_match_id_d0498fdb_fk_server_match_id")
   server_team  server_team  @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "server_teammatch_team_id_9a0c00f1_fk_server_team_id")
 

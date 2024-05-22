@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgres"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model server_match {
+  id                Int                 @id @default(autoincrement())
+  start_date_time   DateTime            @db.Timestamptz(6)
+  round_number      Int                 @db.SmallInt
+  venue             String?             @db.VarChar(100)
+  margin            Int?
+  winner_id         Int?
+  server_team       server_team?        @relation(fields: [winner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "server_match_winner_id_8e4d5c8a_fk_server_team_id")
+  server_prediction server_prediction[]
+  server_teammatch  server_teammatch[]
+
+  @@unique([start_date_time, venue], map: "unique_start_date_time_and_venue")
+  @@index([winner_id], map: "server_match_winner_id_8e4d5c8a")
+}
+
+model server_mlmodel {
+  id                   Int                 @id @default(autoincrement())
+  name                 String              @unique(map: "server_mlmodel_name_b67f6f08_uniq") @db.VarChar(100)
+  description          String?
+  is_principal         Boolean
+  prediction_type      String              @db.VarChar(100)
+  used_in_competitions Boolean
+  server_prediction    server_prediction[]
+
+  @@index([name], map: "server_mlmodel_name_b67f6f08_like")
+}
+
+model server_prediction {
+  id                        Int            @id @default(autoincrement())
+  predicted_margin          Float?
+  match_id                  Int
+  ml_model_id               Int
+  predicted_winner_id       Int
+  is_correct                Boolean?
+  predicted_win_probability Float?
+  created_at                DateTime       @db.Timestamptz(6)
+  updated_at                DateTime       @db.Timestamptz(6)
+  server_match              server_match   @relation(fields: [match_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "server_prediction_match_id_00aaa745_fk_server_match_id")
+  server_mlmodel            server_mlmodel @relation(fields: [ml_model_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "server_prediction_ml_model_id_3de99081_fk_server_mlmodel_id")
+  server_team               server_team    @relation(fields: [predicted_winner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "server_prediction_predicted_winner_id_7487ef4f_fk_server_te")
+
+  @@index([match_id], map: "server_prediction_match_id_00aaa745")
+  @@index([ml_model_id], map: "server_prediction_ml_model_id_3de99081")
+  @@index([predicted_winner_id], map: "server_prediction_predicted_winner_id_7487ef4f")
+}
+
+model server_team {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique(map: "server_team_name_1a256729_uniq") @db.VarChar(100)
+  server_match      server_match[]
+  server_prediction server_prediction[]
+  server_teammatch  server_teammatch[]
+
+  @@index([name], map: "server_team_name_1a256729_like")
+}
+
+model server_teammatch {
+  id           Int          @id @default(autoincrement())
+  at_home      Boolean
+  score        Int          @db.SmallInt
+  match_id     Int
+  team_id      Int
+  server_match server_match @relation(fields: [match_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "server_teammatch_match_id_d0498fdb_fk_server_match_id")
+  server_team  server_team  @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "server_teammatch_team_id_9a0c00f1_fk_server_team_id")
+
+  @@index([match_id], map: "server_teammatch_match_id_d0498fdb")
+  @@index([team_id], map: "server_teammatch_team_id_9a0c00f1")
+}

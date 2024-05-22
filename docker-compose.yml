@@ -1,14 +1,12 @@
 version: "3"
 services:
   db:
-    image: cockroachdb/cockroach:latest
-    volumes:
-      - ./database:/cockroach/database
+    image: postgres:latest
     ports:
-      # Port for connecting to the DB
-      - "26257:26257"
-      # Port for dashboard
-      - "8080:8080"
+      - "5432:5432"
+    volumes:
+      - ./database:/tipresias/database
     environment:
-      COCKROACH_DATABASE: ${DB_NAME}
-    command: start-single-node --insecure
+      POSTGRES_PASSWORD: password
+      PGUSER: postgres
+      PGDATABASE: $DB_NAME

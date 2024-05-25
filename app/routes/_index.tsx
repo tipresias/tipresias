@@ -7,11 +7,21 @@ import {
   Heading,
   Text,
 } from "@chakra-ui/react";
-import { json } from "@remix-run/node";
+import { json, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import MetricsTable from "~/components/MetricsTable";
+import MetricsTable from "../components/MetricsTable";
 
-import PredictionsTable from "~/components/PredictionsTable";
+import PredictionsTable from "../components/PredictionsTable";
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "Tipresias: A footy-tipping machine-learning model" },
+    {
+      name: "description",
+      content: "Footy tipping tables and charts for the Tipresias model",
+    },
+  ];
+};
 
 export const loader = async () => {
   return json({

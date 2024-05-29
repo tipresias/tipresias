@@ -8,12 +8,13 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react";
+import round from "lodash/round";
 
-interface Prediction {
-  winner: string;
-  loser: string;
-  margin: number;
-  wasCorrect: boolean | null;
+export interface Prediction {
+  predictedWinnerName: string;
+  predictedMargin: number | null;
+  predictedWinProbability: number | null;
+  isCorrect: boolean | null;
 }
 
 interface PredictionsTableProps {
@@ -24,20 +25,25 @@ interface PredictionsTableProps {
 export const displayCorrectness = (wasCorrect: boolean | null) => {
   switch (wasCorrect) {
     case true:
-      return "yup";
+      return "yeah";
     case false:
-      return "nope";
+      return "nah";
     case null:
       return "dunno";
   }
 };
 
-const PredictionRow = ({ winner, loser, margin, wasCorrect }: Prediction) => (
-  <Tr key={winner}>
-    <Td>{winner}</Td>
-    <Td>{loser}</Td>
-    <Td isNumeric>{margin}</Td>
-    <Td>{displayCorrectness(wasCorrect)}</Td>
+const PredictionRow = ({
+  predictedWinnerName,
+  predictedMargin,
+  predictedWinProbability,
+  isCorrect,
+}: Prediction) => (
+  <Tr key={predictedWinnerName}>
+    <Td>{predictedWinnerName}</Td>
+    <Td isNumeric>{round(predictedMargin || NaN, 2) || "NA"}</Td>
+    <Td isNumeric>{round(predictedWinProbability || NaN, 2) || "NA"}</Td>
+    <Td>{displayCorrectness(isCorrect)}</Td>
   </Tr>
 );
 
@@ -52,9 +58,9 @@ const PredictionsTable = ({
     <Table variant="striped" maxWidth="fit-content">
       <Thead>
         <Tr>
-          <Th>Winner</Th>
-          <Th>Loser</Th>
-          <Th isNumeric>Margin</Th>
+          <Th>Predicted Winner</Th>
+          <Th isNumeric>Predicted Margin</Th>
+          <Th isNumeric>Predicted Win Probability (%)</Th>
           <Th>Correct?</Th>
         </Tr>
       </Thead>

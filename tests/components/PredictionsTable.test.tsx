@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { render, screen } from "@testing-library/react";
+import round from "lodash/round";
 
 import PredictionsTable, {
   displayCorrectness,
@@ -8,10 +9,10 @@ import PredictionsTable, {
 describe("PredictionsTable", () => {
   const currentRound = faker.number.int();
   const predictions = new Array(9).fill(null).map(() => ({
-    winner: faker.company.name(),
-    loser: faker.company.name(),
-    margin: faker.number.float(),
-    wasCorrect:
+    predictedWinnerName: faker.company.name(),
+    predictedMargin: faker.number.float(),
+    predictedWinProbability: faker.number.float(),
+    isCorrect:
       faker.helpers.maybe(faker.datatype.boolean, { probability: 0.67 }) ??
       null,
   }));
@@ -29,12 +30,16 @@ describe("PredictionsTable", () => {
       <PredictionsTable currentRound={currentRound} predictions={predictions} />
     );
 
-    const { winner, loser, margin, wasCorrect } =
-      faker.helpers.arrayElement(predictions);
+    const {
+      predictedWinnerName,
+      predictedMargin,
+      predictedWinProbability,
+      isCorrect,
+    } = faker.helpers.arrayElement(predictions);
 
-    screen.getByText(winner);
-    screen.getByText(loser);
-    screen.getByText(String(margin));
-    screen.getAllByText(displayCorrectness(wasCorrect));
+    screen.getByText(predictedWinnerName);
+    screen.getByText(String(round(predictedMargin, 2)));
+    screen.getByText(String(round(predictedWinProbability, 2)));
+    screen.getAllByText(displayCorrectness(isCorrect));
   });
 });

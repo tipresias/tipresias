@@ -10,12 +10,7 @@ import {
 } from "@chakra-ui/react";
 import round from "lodash/round";
 
-export interface Prediction {
-  predictedWinnerName: string;
-  predictedMargin: number | null;
-  predictedWinProbability: number | null;
-  isCorrect: boolean | null;
-}
+import { Prediction } from "~/.server/predictionService";
 
 interface PredictionsTableProps {
   currentRound: number;

@@ -13,6 +13,12 @@ import { useLoaderData } from "@remix-run/react";
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
 import { Prediction, fetchRoundPredictions } from "~/.server/predictionService";
+import { buildSql, sqlQuery } from "~/.server/db";
+
+interface Round {
+  round_number: number;
+  season: number;
+}
 
 export const meta: MetaFunction = () => {
   return [
@@ -25,17 +31,25 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async () => {
+  const predictedRoundSql = buildSql`
+    SELECT server_match.round_number, EXTRACT(YEAR FROM server_match.start_date_time) AS season
+    FROM server_match
+    INNER JOIN server_prediction ON server_prediction.match_id = server_match.id
+    ORDER BY server_match.start_date_time DESC
+    LIMIT 1
+  `;
+  const predictedRound = (await sqlQuery<Round[]>(predictedRoundSql))[0];
   const predictions: Prediction[] = await fetchRoundPredictions();
 
   return json({
-    currentRound: 42,
+    currentRound: predictedRound.round_number,
     predictions,
     metrics: [
       { name: "Total Tips", value: "42" },
       { name: "MAE", value: "21.2" },
       { name: "Accuracy", value: "84.8%" },
     ],
-    currentSeason: 2023,
+    currentSeason: predictedRound.season,
   });
 };
 
@@ -57,11 +71,12 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          {predictions && (
+          {predictions.length && (
             <Card marginTop="1rem" marginBottom="1rem">
               <CardBody>
                 <PredictionsTable
                   currentRound={currentRound}
+                  currentSeason={currentSeason}
                   predictions={predictions}
                 />
               </CardBody>
@@ -69,7 +84,7 @@ export default function Index() {
           )}
           <Card marginTop="1rem" marginBottom="1rem" width="100%">
             <CardBody>
-              {metrics && (
+              {metrics.length && (
                 <MetricsTable metrics={metrics} season={currentSeason} />
               )}
             </CardBody>

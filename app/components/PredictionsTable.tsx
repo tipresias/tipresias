@@ -14,6 +14,7 @@ import { Prediction } from "~/.server/predictionService";
 
 interface PredictionsTableProps {
   currentRound: number;
+  currentSeason: number;
   predictions: Prediction[];
 }
 
@@ -44,11 +45,12 @@ const PredictionRow = ({
 
 const PredictionsTable = ({
   currentRound,
+  currentSeason,
   predictions,
 }: PredictionsTableProps) => (
   <TableContainer textAlign="center">
     <Heading as="h2" size="l" margin="0.5rem" whiteSpace="nowrap">
-      Predictions for round {currentRound}
+      Predictions for round {currentRound}, {currentSeason}
     </Heading>
     <Table variant="striped" maxWidth="fit-content">
       <Thead>

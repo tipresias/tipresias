@@ -8,6 +8,7 @@ import PredictionsTable, {
 
 describe("PredictionsTable", () => {
   const currentRound = faker.number.int();
+  const currentSeason = faker.number.int();
   const predictions = new Array(9).fill(null).map(() => ({
     predictedWinnerName: faker.company.name(),
     predictedMargin: faker.number.float(),
@@ -19,15 +20,23 @@ describe("PredictionsTable", () => {
 
   it("displays the table title", () => {
     render(
-      <PredictionsTable currentRound={currentRound} predictions={predictions} />
+      <PredictionsTable
+        currentRound={currentRound}
+        currentSeason={currentSeason}
+        predictions={predictions}
+      />
     );
 
-    screen.getByText(`Predictions for round ${currentRound}`);
+    screen.getByText(`Predictions for round ${currentRound}, ${currentSeason}`);
   });
 
   it("displays predictions", () => {
     render(
-      <PredictionsTable currentRound={currentRound} predictions={predictions} />
+      <PredictionsTable
+        currentRound={currentRound}
+        currentSeason={currentSeason}
+        predictions={predictions}
+      />
     );
 
     const {

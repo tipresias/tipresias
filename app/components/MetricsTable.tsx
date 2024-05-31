@@ -7,21 +7,42 @@ import {
   Th,
   Tr,
 } from "@chakra-ui/react";
+import round from "lodash/round";
+
+export interface Metrics {
+  totalTips: number | null;
+  accuracy: number | null;
+  mae: number | null;
+  bits: number | null;
+}
 
 interface Metric {
-  name: string;
-  value: string;
+  name: keyof Metrics;
+  value: number | null;
 }
 
 interface MetricsTableProps {
-  metrics: Metric[];
+  metrics: Metrics;
   season: number;
 }
 
+const ROW_ORDER: Array<keyof Metrics> = [
+  "totalTips",
+  "accuracy",
+  "mae",
+  "bits",
+];
+export const METRIC_LABEL_MAP: Record<keyof Metrics, string> = {
+  totalTips: "Total Tips",
+  accuracy: "Accuracy",
+  mae: "MAE",
+  bits: "Bits",
+};
+
 const MetricRow = ({ name, value }: Metric) => (
-  <Tr key={name}>
-    <Th>{name}</Th>
-    <Td isNumeric>{value}</Td>
+  <Tr>
+    <Th>{METRIC_LABEL_MAP[name]}</Th>
+    <Td isNumeric>{round(value || NaN, 2) || "NA"}</Td>
   </Tr>
 );
 
@@ -31,7 +52,15 @@ const MetricsTable = ({ metrics, season }: MetricsTableProps) => (
       Model performance for {season}
     </Heading>
     <Table variant="simple">
-      <Tbody>{metrics.map(MetricRow)}</Tbody>
+      <Tbody>
+        {ROW_ORDER.map((metricKey) => (
+          <MetricRow
+            key={metricKey}
+            name={metricKey}
+            value={metrics[metricKey]}
+          />
+        ))}
+      </Tbody>
     </Table>
   </TableContainer>
 );

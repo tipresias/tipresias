@@ -8,26 +8,45 @@ import MetricsTable, {
 import { Metrics } from "../../app/.server/predictionService";
 
 describe("MetricsTable", () => {
-  const metrics = {
-    totalTips: faker.number.float(),
-    accuracy: faker.number.float(),
-    mae: faker.number.float(),
-    bits: faker.number.float(),
-  };
   const season = faker.number.int();
 
-  it("displays the table title", () => {
-    render(<MetricsTable metrics={metrics} season={season} />);
+  describe("when all values are present", () => {
+    const metrics = {
+      totalTips: faker.number.float(),
+      accuracy: faker.number.float(),
+      mae: faker.number.float(),
+      bits: faker.number.float(),
+    };
 
-    screen.getByText(`Model performance for ${season}`);
+    it("displays the table title", () => {
+      render(<MetricsTable metrics={metrics} season={season} />);
+
+      screen.getByText(`Model performance for ${season}`);
+    });
+
+    it("displays metrics", () => {
+      render(<MetricsTable metrics={metrics} season={season} />);
+
+      Object.entries(metrics).forEach(([name, value]) => {
+        screen.getByText(METRIC_LABEL_MAP[name as keyof Metrics]);
+        screen.getByText(round(value, 2));
+      });
+    });
   });
 
-  it("displays metrics", () => {
-    render(<MetricsTable metrics={metrics} season={season} />);
+  describe("when some values are null", () => {
+    const metrics = {
+      totalTips: null,
+      accuracy: null,
+      mae: null,
+      bits: null,
+    };
 
-    Object.entries(metrics).forEach(([name, value]) => {
-      screen.getByText(METRIC_LABEL_MAP[name as keyof Metrics]);
-      screen.getByText(round(value, 2));
+    it("displays NA for missing values", () => {
+      render(<MetricsTable metrics={metrics} season={season} />);
+
+      const naElements = screen.getAllByText("NA");
+      expect(naElements).toHaveLength(4);
     });
   });
 });

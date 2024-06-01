@@ -8,13 +8,7 @@ import {
   Tr,
 } from "@chakra-ui/react";
 import round from "lodash/round";
-
-export interface Metrics {
-  totalTips: number | null;
-  accuracy: number | null;
-  mae: number | null;
-  bits: number | null;
-}
+import { Metrics } from "../.server/predictionService";
 
 interface Metric {
   name: keyof Metrics;

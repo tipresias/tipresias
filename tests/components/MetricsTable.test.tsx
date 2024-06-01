@@ -4,8 +4,8 @@ import round from "lodash/round";
 
 import MetricsTable, {
   METRIC_LABEL_MAP,
-  Metrics,
 } from "../../app/components/MetricsTable";
+import { Metrics } from "../../app/.server/predictionService";
 
 describe("MetricsTable", () => {
   const metrics = {

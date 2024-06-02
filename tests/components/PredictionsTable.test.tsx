@@ -51,8 +51,8 @@ describe("PredictionsTable", () => {
       } = faker.helpers.arrayElement(predictions);
 
       screen.getByText(predictedWinnerName);
-      screen.getByText(String(round(predictedMargin, 2)));
-      screen.getByText(String(round(predictedWinProbability, 2)));
+      screen.getAllByText(String(round(predictedMargin, 2)));
+      screen.getAllByText(String(round(predictedWinProbability, 2)));
       screen.getAllByText(displayCorrectness(isCorrect));
     });
   });

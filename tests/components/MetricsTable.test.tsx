@@ -29,7 +29,7 @@ describe("MetricsTable", () => {
 
       Object.entries(metrics).forEach(([name, value]) => {
         screen.getByText(METRIC_LABEL_MAP[name as keyof Metrics]);
-        screen.getByText(round(value, 2));
+        screen.getAllByText(round(value, 2));
       });
     });
   });

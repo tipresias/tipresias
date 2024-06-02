@@ -9,9 +9,21 @@ import {
 } from "@chakra-ui/react";
 import { json, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import MetricsTable from "../components/MetricsTable";
 
+import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
+import {
+  Prediction,
+  fetchRoundPredictions,
+  Metrics,
+  fetchRoundMetrics,
+} from "../.server/predictionService";
+import { sqlQuery } from "../.server/db";
+
+interface Round {
+  round_number: number;
+  season: number;
+}
 
 export const meta: MetaFunction = () => {
   return [
@@ -24,20 +36,22 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async () => {
+  const PREDICTED_ROUND_SQL = `
+    SELECT server_match.round_number, EXTRACT(YEAR FROM server_match.start_date_time) AS season
+    FROM server_match
+    INNER JOIN server_prediction ON server_prediction.match_id = server_match.id
+    ORDER BY server_match.start_date_time DESC
+    LIMIT 1
+  `;
+  const predictedRound = (await sqlQuery<Round[]>(PREDICTED_ROUND_SQL))[0];
+  const predictions: Prediction[] = await fetchRoundPredictions();
+  const metrics: Metrics = await fetchRoundMetrics();
+
   return json({
-    currentRound: 42,
-    predictions: new Array(9).fill(null).map((_, i) => ({
-      winner: `Team ${i + 1}`,
-      loser: `Team ${-i - 1}`,
-      margin: i ** 2,
-      wasCorrect: i === 0 ? null : Boolean(i % 2),
-    })),
-    metrics: [
-      { name: "Total Tips", value: "42" },
-      { name: "MAE", value: "21.2" },
-      { name: "Accuracy", value: "84.8%" },
-    ],
-    currentSeason: 2023,
+    currentRound: predictedRound.round_number,
+    predictions,
+    metrics,
+    currentSeason: predictedRound.season,
   });
 };
 
@@ -59,11 +73,12 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          {predictions && (
+          {predictions?.length && (
             <Card marginTop="1rem" marginBottom="1rem">
               <CardBody>
                 <PredictionsTable
                   currentRound={currentRound}
+                  currentSeason={currentSeason}
                   predictions={predictions}
                 />
               </CardBody>

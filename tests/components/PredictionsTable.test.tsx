@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { render, screen } from "@testing-library/react";
+import round from "lodash/round";
 
 import PredictionsTable, {
   displayCorrectness,
@@ -7,34 +8,78 @@ import PredictionsTable, {
 
 describe("PredictionsTable", () => {
   const currentRound = faker.number.int();
-  const predictions = new Array(9).fill(null).map(() => ({
-    winner: faker.company.name(),
-    loser: faker.company.name(),
-    margin: faker.number.float(),
-    wasCorrect:
-      faker.helpers.maybe(faker.datatype.boolean, { probability: 0.67 }) ??
-      null,
-  }));
+  const currentSeason = faker.number.int();
 
-  it("displays the table title", () => {
-    render(
-      <PredictionsTable currentRound={currentRound} predictions={predictions} />
-    );
+  describe("when all values are present", () => {
+    const predictions = new Array(9).fill(null).map(() => ({
+      predictedWinnerName: faker.company.name(),
+      predictedMargin: faker.number.float(),
+      predictedWinProbability: faker.number.float(),
+      isCorrect:
+        faker.helpers.maybe(faker.datatype.boolean, { probability: 0.67 }) ??
+        null,
+    }));
 
-    screen.getByText(`Predictions for round ${currentRound}`);
+    it("displays the table title", () => {
+      render(
+        <PredictionsTable
+          currentRound={currentRound}
+          currentSeason={currentSeason}
+          predictions={predictions}
+        />
+      );
+
+      screen.getByText(
+        `Predictions for round ${currentRound}, ${currentSeason}`
+      );
+    });
+
+    it("displays predictions", () => {
+      render(
+        <PredictionsTable
+          currentRound={currentRound}
+          currentSeason={currentSeason}
+          predictions={predictions}
+        />
+      );
+
+      const {
+        predictedWinnerName,
+        predictedMargin,
+        predictedWinProbability,
+        isCorrect,
+      } = faker.helpers.arrayElement(predictions);
+
+      screen.getByText(predictedWinnerName);
+      screen.getByText(String(round(predictedMargin, 2)));
+      screen.getByText(String(round(predictedWinProbability, 2)));
+      screen.getAllByText(displayCorrectness(isCorrect));
+    });
   });
 
-  it("displays predictions", () => {
-    render(
-      <PredictionsTable currentRound={currentRound} predictions={predictions} />
-    );
+  describe("when some values are null", () => {
+    const predictions = [
+      {
+        predictedWinnerName: faker.company.name(),
+        predictedMargin: null,
+        predictedWinProbability: null,
+        isCorrect:
+          faker.helpers.maybe(faker.datatype.boolean, { probability: 0.67 }) ??
+          null,
+      },
+    ];
 
-    const { winner, loser, margin, wasCorrect } =
-      faker.helpers.arrayElement(predictions);
+    it("displays NA for missing values", () => {
+      render(
+        <PredictionsTable
+          currentRound={currentRound}
+          currentSeason={currentSeason}
+          predictions={predictions}
+        />
+      );
 
-    screen.getByText(winner);
-    screen.getByText(loser);
-    screen.getByText(String(margin));
-    screen.getAllByText(displayCorrectness(wasCorrect));
+      const naElements = screen.getAllByText("NA");
+      expect(naElements).toHaveLength(2);
+    });
   });
 });

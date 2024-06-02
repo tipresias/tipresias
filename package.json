@@ -7,6 +7,7 @@
     "build": "remix vite:build",
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
+    "postinstall": "prisma generate",
     "start": "remix-serve ./build/server/index.js",
     "test": "jest",
     "typecheck": "tsc"
@@ -26,6 +27,7 @@
     "@remix-run/serve": "^2.9.2",
     "framer-motion": "^10.12.16",
     "isbot": "^4.1.0",
+    "lodash": "^4.17.21",
     "ramda": "^0.29.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
@@ -55,6 +57,6 @@
     "vite-tsconfig-paths": "^4.2.1"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20"
   }
 }

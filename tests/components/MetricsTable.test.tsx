@@ -1,27 +1,52 @@
 import { faker } from "@faker-js/faker";
 import { render, screen } from "@testing-library/react";
+import round from "lodash/round";
 
-import MetricsTable from "../../app/components/MetricsTable";
+import MetricsTable, {
+  METRIC_LABEL_MAP,
+} from "../../app/components/MetricsTable";
+import { Metrics } from "../../app/.server/predictionService";
 
 describe("MetricsTable", () => {
-  const metrics = new Array(4).fill(null).map((_, idx) => ({
-    name: `${faker.company.buzzNoun()}${idx}`,
-    value: faker.number.float().toString(),
-  }));
   const season = faker.number.int();
 
-  it("displays the table title", () => {
-    render(<MetricsTable metrics={metrics} season={season} />);
+  describe("when all values are present", () => {
+    const metrics = {
+      totalTips: faker.number.float(),
+      accuracy: faker.number.float(),
+      mae: faker.number.float(),
+      bits: faker.number.float(),
+    };
 
-    screen.getByText(`Model performance for ${season}`);
+    it("displays the table title", () => {
+      render(<MetricsTable metrics={metrics} season={season} />);
+
+      screen.getByText(`Model performance for ${season}`);
+    });
+
+    it("displays metrics", () => {
+      render(<MetricsTable metrics={metrics} season={season} />);
+
+      Object.entries(metrics).forEach(([name, value]) => {
+        screen.getByText(METRIC_LABEL_MAP[name as keyof Metrics]);
+        screen.getByText(round(value, 2));
+      });
+    });
   });
 
-  it("displays metrics", () => {
-    render(<MetricsTable metrics={metrics} season={season} />);
+  describe("when some values are null", () => {
+    const metrics = {
+      totalTips: null,
+      accuracy: null,
+      mae: null,
+      bits: null,
+    };
 
-    const { name, value } = faker.helpers.arrayElement(metrics);
+    it("displays NA for missing values", () => {
+      render(<MetricsTable metrics={metrics} season={season} />);
 
-    screen.getByText(name);
-    screen.getByText(value);
+      const naElements = screen.getAllByText("NA");
+      expect(naElements).toHaveLength(4);
+    });
   });
 });

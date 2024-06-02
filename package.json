@@ -7,6 +7,7 @@
     "build": "remix vite:build",
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
+    "postinstall": "prisma generate",
     "start": "remix-serve ./build/server/index.js",
     "test": "jest",
     "typecheck": "tsc"

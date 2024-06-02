@@ -1,6 +1,6 @@
 import * as R from "ramda";
 
-import { buildSql, sqlQuery } from "./db";
+import { sqlQuery } from "./db";
 
 export interface RoundPredictionRecord {
   predicted_winner_name: string;
@@ -30,14 +30,7 @@ export interface Metrics {
   bits: number | null;
 }
 
-const BLANK_METRICS: Metrics = {
-  totalTips: null,
-  accuracy: null,
-  mae: null,
-  bits: null,
-};
-
-const roundPredictionsSql = buildSql`
+const ROUND_PREDICTIONS_SQL = `
   WITH latest_predicted_match AS (
     SELECT server_match.id, server_match.round_number, EXTRACT(YEAR FROM server_match.start_date_time) AS year
     FROM server_match
@@ -82,9 +75,9 @@ export const fetchRoundPredictions = () =>
   R.pipe(
     sqlQuery<RoundPredictionRecord[]>,
     R.andThen(R.map(convertPredictionKeysToCamelCase))
-  )(roundPredictionsSql);
+  )(ROUND_PREDICTIONS_SQL);
 
-const metricsSql = buildSql`
+const SEASON_METRICS_SQL = `
   WITH latest_predicted_match AS (
     SELECT server_match.id, server_match.round_number, EXTRACT(YEAR FROM server_match.start_date_time) AS year
     FROM server_match
@@ -115,6 +108,12 @@ const metricsSql = buildSql`
   AND server_prediction.is_correct IS NOT NULL
   AND EXTRACT(YEAR FROM server_match.start_date_time) = (SELECT latest_predicted_match.year FROM latest_predicted_match)
 `;
+const BLANK_METRICS: Metrics = {
+  totalTips: null,
+  accuracy: null,
+  mae: null,
+  bits: null,
+};
 const convertMetricKeysToCamelCase = ({
   total_tips,
   accuracy,
@@ -132,4 +131,4 @@ export const fetchRoundMetrics = () =>
     R.andThen(R.map<MetricsRecord, Metrics>(convertMetricKeysToCamelCase)),
     R.andThen(R.head<Metrics>),
     R.andThen(R.defaultTo(BLANK_METRICS))
-  )(metricsSql);
+  )(SEASON_METRICS_SQL);

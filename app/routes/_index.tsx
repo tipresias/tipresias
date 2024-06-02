@@ -18,7 +18,7 @@ import {
   Metrics,
   fetchRoundMetrics,
 } from "../.server/predictionService";
-import { buildSql, sqlQuery } from "../.server/db";
+import { sqlQuery } from "../.server/db";
 
 interface Round {
   round_number: number;
@@ -36,14 +36,14 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async () => {
-  const predictedRoundSql = buildSql`
+  const PREDICTED_ROUND_SQL = `
     SELECT server_match.round_number, EXTRACT(YEAR FROM server_match.start_date_time) AS season
     FROM server_match
     INNER JOIN server_prediction ON server_prediction.match_id = server_match.id
     ORDER BY server_match.start_date_time DESC
     LIMIT 1
   `;
-  const predictedRound = (await sqlQuery<Round[]>(predictedRoundSql))[0];
+  const predictedRound = (await sqlQuery<Round[]>(PREDICTED_ROUND_SQL))[0];
   const predictions: Prediction[] = await fetchRoundPredictions();
   const metrics: Metrics = await fetchRoundMetrics();
 

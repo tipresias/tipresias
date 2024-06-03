@@ -13,7 +13,7 @@ import { useLoaderData } from "@remix-run/react";
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
 import {
-  Prediction,
+  RoundPrediction,
   fetchRoundPredictions,
   Metrics,
   fetchRoundMetrics,
@@ -21,7 +21,7 @@ import {
 import { sqlQuery } from "../.server/db";
 
 interface Round {
-  round_number: number;
+  roundNumber: number;
   season: number;
 }
 
@@ -44,11 +44,11 @@ export const loader = async () => {
     LIMIT 1
   `;
   const predictedRound = (await sqlQuery<Round[]>(PREDICTED_ROUND_SQL))[0];
-  const predictions: Prediction[] = await fetchRoundPredictions();
+  const predictions: RoundPrediction[] = await fetchRoundPredictions();
   const metrics: Metrics = await fetchRoundMetrics();
 
   return json({
-    currentRound: predictedRound.round_number,
+    currentRound: predictedRound.roundNumber,
     predictions,
     metrics,
     currentSeason: predictedRound.season,

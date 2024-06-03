@@ -37,8 +37,14 @@ const PredictionRow = ({
 }: Prediction) => (
   <Tr key={predictedWinnerName}>
     <Td>{predictedWinnerName}</Td>
-    <Td isNumeric>{round(predictedMargin || NaN, 2) || "NA"}</Td>
-    <Td isNumeric>{round(predictedWinProbability || NaN, 2) || "NA"}</Td>
+    <Td isNumeric>
+      {predictedMargin === null ? "NA" : round(predictedMargin, 2)}
+    </Td>
+    <Td isNumeric>
+      {predictedWinProbability === null
+        ? "NA"
+        : round(predictedWinProbability, 2)}
+    </Td>
     <Td>{displayCorrectness(isCorrect)}</Td>
   </Tr>
 );

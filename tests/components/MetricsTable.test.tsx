@@ -1,10 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { render, screen } from "@testing-library/react";
 
-import MetricsTable, {
-  METRIC_LABEL_MAP,
-} from "../../app/components/MetricsTable";
-import { Metrics } from "../../app/.server/predictionService";
+import MetricsTable from "../../app/components/MetricsTable";
 
 describe("MetricsTable", () => {
   const season = faker.number.int();
@@ -26,10 +23,14 @@ describe("MetricsTable", () => {
     it("displays metrics", () => {
       render(<MetricsTable metrics={metrics} season={season} />);
 
-      Object.entries(metrics).forEach(([name, value]) => {
-        screen.getByText(METRIC_LABEL_MAP[name as keyof Metrics]);
-        screen.getAllByText(value.toFixed(2));
-      });
+      screen.getByText("Total Tips");
+      screen.getAllByText(metrics.totalTips.toFixed(2));
+      screen.getByText("Accuracy");
+      screen.getAllByText(`${(metrics.accuracy * 100).toFixed(2)}%`);
+      screen.getByText("MAE");
+      screen.getAllByText(metrics.mae.toFixed(2));
+      screen.getByText("Bits");
+      screen.getAllByText(metrics.bits.toFixed(2));
     });
   });
 

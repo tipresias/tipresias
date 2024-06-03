@@ -51,7 +51,7 @@ describe("PredictionsTable", () => {
 
       screen.getByText(predictedWinnerName);
       screen.getAllByText(predictedMargin.toFixed(2));
-      screen.getAllByText(predictedWinProbability.toFixed(2));
+      screen.getAllByText(`${(predictedWinProbability * 100).toFixed(2)}%`);
       screen.getAllByText(displayCorrectness(isCorrect));
     });
   });

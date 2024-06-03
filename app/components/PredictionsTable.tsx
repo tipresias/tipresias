@@ -10,7 +10,7 @@ import {
 } from "@chakra-ui/react";
 
 import { RoundPrediction } from "../.server/predictionService";
-import { presentNumber } from "../helpers/number";
+import { presentNumber, presentPercentage } from "../helpers/number";
 
 interface PredictionsTableProps {
   currentRound: number;
@@ -38,7 +38,7 @@ const PredictionRow = ({
   <Tr key={predictedWinnerName}>
     <Td>{predictedWinnerName}</Td>
     <Td isNumeric>{presentNumber(predictedMargin)}</Td>
-    <Td isNumeric>{presentNumber(predictedWinProbability)}</Td>
+    <Td isNumeric>{presentPercentage(predictedWinProbability)}</Td>
     <Td>{displayCorrectness(isCorrect)}</Td>
   </Tr>
 );
@@ -57,7 +57,7 @@ const PredictionsTable = ({
         <Tr>
           <Th>Predicted Winner</Th>
           <Th isNumeric>Predicted Margin</Th>
-          <Th isNumeric>Predicted Win Probability (%)</Th>
+          <Th isNumeric>Predicted Win Probability</Th>
           <Th>Correct?</Th>
         </Tr>
       </Thead>

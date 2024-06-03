@@ -37,10 +37,10 @@ export const meta: MetaFunction = () => {
 
 export const loader = async () => {
   const PREDICTED_ROUND_SQL = `
-    SELECT server_match.round_number, EXTRACT(YEAR FROM server_match.start_date_time) AS season
-    FROM server_match
-    INNER JOIN server_prediction ON server_prediction.match_id = server_match.id
-    ORDER BY server_match.start_date_time DESC
+    SELECT "Match"."roundNumber", EXTRACT(YEAR FROM "Match"."startDateTime") AS season
+    FROM "Match"
+    INNER JOIN "Prediction" ON "Prediction"."matchId" = "Match".id
+    ORDER BY "Match"."startDateTime" DESC
     LIMIT 1
   `;
   const predictedRound = (await sqlQuery<Round[]>(PREDICTED_ROUND_SQL))[0];

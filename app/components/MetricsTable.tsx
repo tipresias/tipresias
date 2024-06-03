@@ -36,7 +36,7 @@ export const METRIC_LABEL_MAP: Record<keyof Metrics, string> = {
 const MetricRow = ({ name, value }: Metric) => (
   <Tr>
     <Th>{METRIC_LABEL_MAP[name]}</Th>
-    <Td isNumeric>{round(value || NaN, 2) || "NA"}</Td>
+    <Td isNumeric>{value === null ? "NA" : round(value, 2)}</Td>
   </Tr>
 );
 

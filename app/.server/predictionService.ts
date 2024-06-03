@@ -31,33 +31,33 @@ export interface Metrics {
 }
 
 const ROUND_PREDICTIONS_SQL = `
-  WITH latest_predicted_match AS (
-    SELECT server_match.id, server_match.round_number, EXTRACT(YEAR FROM server_match.start_date_time) AS year
-    FROM server_match
-    INNER JOIN server_prediction ON server_prediction.match_id = server_match.id
-    ORDER BY server_match.start_date_time DESC
+  WITH "latestPredictedMatch" AS (
+    SELECT "Match".id, "Match"."roundNumber", EXTRACT(YEAR FROM "Match"."startDateTime") AS year
+    FROM "Match"
+    INNER JOIN "Prediction" ON "Prediction"."matchId" = "Match".id
+    ORDER BY "Match"."startDateTime" DESC
     LIMIT 1
   ),
-  principal_predictions AS (
-    SELECT server_prediction.match_id, server_team.name AS predicted_winner_name, server_prediction.is_correct FROM server_prediction
-    INNER JOIN server_team ON server_team.id = server_prediction.predicted_winner_id
-    INNER JOIN server_mlmodel ON server_mlmodel.id = server_prediction.ml_model_id
-    WHERE server_mlmodel.is_principal IS TRUE
+  "principalPrediction" AS (
+    SELECT "Prediction"."matchId", "Team".name AS "predictedWinnerName", "Prediction"."isCorrect" FROM "Prediction"
+    INNER JOIN "Team" ON "Team".id = "Prediction"."predictedWinnerId"
+    INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
+    WHERE "MlModel"."isPrincipal" IS TRUE
   )
   SELECT
-    principal_predictions.predicted_winner_name,
-    MAX(server_prediction.predicted_margin) AS predicted_margin,
-    MAX(server_prediction.predicted_win_probability) AS predicted_win_probability,
-    principal_predictions.is_correct
-  FROM server_prediction
-  INNER JOIN server_match ON server_match.id = server_prediction.match_id
-  INNER JOIN server_mlmodel ON server_mlmodel.id = server_prediction.ml_model_id
-  INNER JOIN principal_predictions ON principal_predictions.match_id = server_prediction.match_id
-  WHERE server_match.round_number = (SELECT latest_predicted_match.round_number FROM latest_predicted_match)
-  AND EXTRACT(YEAR FROM server_match.start_date_time) = (SELECT latest_predicted_match.year FROM latest_predicted_match)
-  AND server_mlmodel.used_in_competitions IS TRUE
-  GROUP BY principal_predictions.predicted_winner_name, principal_predictions.is_correct, server_match.start_date_time
-  ORDER BY server_match.start_date_time DESC
+    "principalPrediction"."predictedWinnerName",
+    MAX("Prediction"."predictedMargin") AS "predictedMargin",
+    MAX("Prediction"."predictedWinProbability") AS "predictedWinProbability",
+    "principalPrediction"."isCorrect"
+  FROM "Prediction"
+  INNER JOIN "Match" ON "Match".id = "Prediction"."matchId"
+  INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
+  INNER JOIN "principalPrediction" ON "principalPrediction"."matchId" = "Prediction"."matchId"
+  WHERE "Match"."roundNumber" = (SELECT "latestPredictedMatch"."roundNumber" FROM "latestPredictedMatch")
+  AND EXTRACT(YEAR FROM "Match"."startDateTime") = (SELECT "latestPredictedMatch".year FROM "latestPredictedMatch")
+  AND "MlModel"."usedInCompetitions" IS TRUE
+  GROUP BY "principalPrediction"."predictedWinnerName", "principalPrediction"."isCorrect", "Match"."startDateTime"
+  ORDER BY "Match"."startDateTime" DESC
 `;
 const convertPredictionKeysToCamelCase = ({
   predicted_winner_name,
@@ -78,35 +78,35 @@ export const fetchRoundPredictions = () =>
   )(ROUND_PREDICTIONS_SQL);
 
 const SEASON_METRICS_SQL = `
-  WITH latest_predicted_match AS (
-    SELECT server_match.id, server_match.round_number, EXTRACT(YEAR FROM server_match.start_date_time) AS year
-    FROM server_match
-    INNER JOIN server_prediction ON server_prediction.match_id = server_match.id
-    ORDER BY server_match.start_date_time DESC
+  WITH "latestPredictedMatch" AS (
+    SELECT "Match".id, "Match"."roundNumber", EXTRACT(YEAR FROM "Match"."startDateTime") AS year
+    FROM "Match"
+    INNER JOIN "Prediction" ON "Prediction"."matchId" = "Match".id
+    ORDER BY "Match"."startDateTime" DESC
     LIMIT 1
   )
   SELECT
-    SUM(server_prediction.is_correct::int) FILTER(WHERE server_mlmodel.is_principal IS TRUE)::int AS total_tips,
-    AVG(server_prediction.is_correct::int) FILTER(WHERE server_mlmodel.is_principal IS TRUE) AS accuracy,
-    AVG(ABS(server_match.margin + (server_prediction.predicted_margin * server_prediction.is_correct::int + server_prediction.predicted_margin * (server_prediction.is_correct::int - 1)) * -1))
-      FILTER(WHERE server_prediction.predicted_margin IS NOT NULL) AS mae,
+    SUM("Prediction"."isCorrect"::int) FILTER(WHERE "MlModel"."isPrincipal" IS TRUE)::int AS "totalTips",
+    AVG("Prediction"."isCorrect"::int) FILTER(WHERE "MlModel"."isPrincipal" IS TRUE) AS accuracy,
+    AVG(ABS("Match".margin + ("Prediction"."predictedMargin" * "Prediction"."isCorrect"::int + "Prediction"."predictedMargin" * ("Prediction"."isCorrect"::int - 1)) * -1))
+      FILTER(WHERE "Prediction"."predictedMargin" IS NOT NULL) AS mae,
     SUM(
       CASE
-        WHEN server_match.margin = 0
-          THEN 1 + (0.5 * LOG(2, (server_prediction.predicted_win_probability * (1 - server_prediction.predicted_win_probability))::numeric))
-        WHEN server_prediction.is_correct IS TRUE
-          THEN 1 + LOG(2, server_prediction.predicted_win_probability::numeric)
-        WHEN server_prediction.is_correct IS FALSE
-          THEN 1 + LOG(2, (1 - server_prediction.predicted_win_probability)::numeric)
+        WHEN "Match".margin = 0
+          THEN 1 + (0.5 * LOG(2, ("Prediction"."predictedWinProbability" * (1 - "Prediction"."predictedWinProbability"))::numeric))
+        WHEN "Prediction"."isCorrect" IS TRUE
+          THEN 1 + LOG(2, "Prediction"."predictedWinProbability"::numeric)
+        WHEN "Prediction"."isCorrect" IS FALSE
+          THEN 1 + LOG(2, (1 - "Prediction"."predictedWinProbability")::numeric)
         END
-    ) FILTER(WHERE server_prediction.predicted_win_probability IS NOT NULL) AS bits
+    ) FILTER(WHERE "Prediction"."predictedWinProbability" IS NOT NULL) AS bits
 
-  FROM server_prediction
-  INNER JOIN server_mlmodel ON server_mlmodel.id = server_prediction.ml_model_id
-  INNER JOIN server_match ON server_match.id = server_prediction.match_id
-  WHERE server_mlmodel.used_in_competitions IS TRUE
-  AND server_prediction.is_correct IS NOT NULL
-  AND EXTRACT(YEAR FROM server_match.start_date_time) = (SELECT latest_predicted_match.year FROM latest_predicted_match)
+  FROM "Prediction"
+  INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
+  INNER JOIN "Match" ON "Match".id = "Prediction"."matchId"
+  WHERE "MlModel"."usedInCompetitions" IS TRUE
+  AND "Prediction"."isCorrect" IS NOT NULL
+  AND EXTRACT(YEAR FROM "Match"."startDateTime") = (SELECT "latestPredictedMatch".year FROM "latestPredictedMatch")
 `;
 const BLANK_METRICS: Metrics = {
   totalTips: null,

@@ -37,7 +37,7 @@ const PredictionRow = ({
 }: RoundPrediction) => (
   <Tr key={predictedWinnerName}>
     <Td>{predictedWinnerName}</Td>
-    <Td isNumeric>{presentNumber(predictedMargin)}</Td>
+    <Td isNumeric>{presentNumber(predictedMargin, 2)}</Td>
     <Td isNumeric>{presentPercentage(predictedWinProbability)}</Td>
     <Td>{displayCorrectness(isCorrect)}</Td>
   </Tr>

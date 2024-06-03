@@ -8,7 +8,7 @@ describe("MetricsTable", () => {
 
   describe("when all values are present", () => {
     const metrics = {
-      totalTips: faker.number.float(),
+      totalTips: faker.number.int(),
       accuracy: faker.number.float(),
       mae: faker.number.float(),
       bits: faker.number.float(),
@@ -24,7 +24,7 @@ describe("MetricsTable", () => {
       render(<MetricsTable metrics={metrics} season={season} />);
 
       screen.getByText("Total Tips");
-      screen.getAllByText(metrics.totalTips.toFixed(2));
+      screen.getAllByText(metrics.totalTips.toString());
       screen.getByText("Accuracy");
       screen.getAllByText(`${(metrics.accuracy * 100).toFixed(2)}%`);
       screen.getByText("MAE");

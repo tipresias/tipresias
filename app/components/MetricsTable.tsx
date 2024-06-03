@@ -38,8 +38,8 @@ const MetricsTable = ({ metrics, season }: MetricsTableProps) => (
           name={"Accuracy"}
           value={presentPercentage(metrics.accuracy)}
         />
-        <MetricRow name={"MAE"} value={presentNumber(metrics.mae)} />
-        <MetricRow name={"Bits"} value={presentNumber(metrics.bits)} />
+        <MetricRow name={"MAE"} value={presentNumber(metrics.mae, 2)} />
+        <MetricRow name={"Bits"} value={presentNumber(metrics.bits, 2)} />
       </Tbody>
     </Table>
   </TableContainer>

@@ -8,9 +8,9 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react";
-import round from "lodash/round";
 
-import { RoundPrediction } from "~/.server/predictionService";
+import { RoundPrediction } from "../.server/predictionService";
+import { presentNumber, presentPercentage } from "../helpers/number";
 
 interface PredictionsTableProps {
   currentRound: number;
@@ -37,14 +37,8 @@ const PredictionRow = ({
 }: RoundPrediction) => (
   <Tr key={predictedWinnerName}>
     <Td>{predictedWinnerName}</Td>
-    <Td isNumeric>
-      {predictedMargin === null ? "NA" : round(predictedMargin, 2)}
-    </Td>
-    <Td isNumeric>
-      {predictedWinProbability === null
-        ? "NA"
-        : round(predictedWinProbability, 2)}
-    </Td>
+    <Td isNumeric>{presentNumber(predictedMargin, 2)}</Td>
+    <Td isNumeric>{presentPercentage(predictedWinProbability)}</Td>
     <Td>{displayCorrectness(isCorrect)}</Td>
   </Tr>
 );
@@ -63,7 +57,7 @@ const PredictionsTable = ({
         <Tr>
           <Th>Predicted Winner</Th>
           <Th isNumeric>Predicted Margin</Th>
-          <Th isNumeric>Predicted Win Probability (%)</Th>
+          <Th isNumeric>Predicted Win Probability</Th>
           <Th>Correct?</Th>
         </Tr>
       </Thead>

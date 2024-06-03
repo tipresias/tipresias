@@ -1,18 +1,14 @@
 import { faker } from "@faker-js/faker";
 import { render, screen } from "@testing-library/react";
-import round from "lodash/round";
 
-import MetricsTable, {
-  METRIC_LABEL_MAP,
-} from "../../app/components/MetricsTable";
-import { Metrics } from "../../app/.server/predictionService";
+import MetricsTable from "../../app/components/MetricsTable";
 
 describe("MetricsTable", () => {
   const season = faker.number.int();
 
   describe("when all values are present", () => {
     const metrics = {
-      totalTips: faker.number.float(),
+      totalTips: faker.number.int(),
       accuracy: faker.number.float(),
       mae: faker.number.float(),
       bits: faker.number.float(),
@@ -27,10 +23,14 @@ describe("MetricsTable", () => {
     it("displays metrics", () => {
       render(<MetricsTable metrics={metrics} season={season} />);
 
-      Object.entries(metrics).forEach(([name, value]) => {
-        screen.getByText(METRIC_LABEL_MAP[name as keyof Metrics]);
-        screen.getAllByText(round(value, 2));
-      });
+      screen.getByText("Total Tips");
+      screen.getAllByText(metrics.totalTips.toString());
+      screen.getByText("Accuracy");
+      screen.getAllByText(`${(metrics.accuracy * 100).toFixed(2)}%`);
+      screen.getByText("MAE");
+      screen.getAllByText(metrics.mae.toFixed(2));
+      screen.getByText("Bits");
+      screen.getAllByText(metrics.bits.toFixed(2));
     });
   });
 

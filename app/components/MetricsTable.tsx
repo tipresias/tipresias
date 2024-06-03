@@ -7,36 +7,19 @@ import {
   Th,
   Tr,
 } from "@chakra-ui/react";
-import round from "lodash/round";
-import { Metrics } from "../.server/predictionService";
 
-interface Metric {
-  name: keyof Metrics;
-  value: number | null;
-}
+import { Metrics } from "../.server/predictionService";
+import { presentNumber, presentPercentage } from "../helpers/number";
 
 interface MetricsTableProps {
   metrics: Metrics;
   season: number;
 }
 
-const ROW_ORDER: Array<keyof Metrics> = [
-  "totalTips",
-  "accuracy",
-  "mae",
-  "bits",
-];
-export const METRIC_LABEL_MAP: Record<keyof Metrics, string> = {
-  totalTips: "Total Tips",
-  accuracy: "Accuracy",
-  mae: "MAE",
-  bits: "Bits",
-};
-
-const MetricRow = ({ name, value }: Metric) => (
+const MetricRow = ({ name, value }: { name: string; value: string }) => (
   <Tr>
-    <Th>{METRIC_LABEL_MAP[name]}</Th>
-    <Td isNumeric>{value === null ? "NA" : round(value, 2)}</Td>
+    <Th>{name}</Th>
+    <Td isNumeric>{value}</Td>
   </Tr>
 );
 
@@ -47,13 +30,16 @@ const MetricsTable = ({ metrics, season }: MetricsTableProps) => (
     </Heading>
     <Table variant="simple">
       <Tbody>
-        {ROW_ORDER.map((metricKey) => (
-          <MetricRow
-            key={metricKey}
-            name={metricKey}
-            value={metrics[metricKey]}
-          />
-        ))}
+        <MetricRow
+          name={"Total Tips"}
+          value={presentNumber(metrics.totalTips)}
+        />
+        <MetricRow
+          name={"Accuracy"}
+          value={presentPercentage(metrics.accuracy)}
+        />
+        <MetricRow name={"MAE"} value={presentNumber(metrics.mae, 2)} />
+        <MetricRow name={"Bits"} value={presentNumber(metrics.bits, 2)} />
       </Tbody>
     </Table>
   </TableContainer>

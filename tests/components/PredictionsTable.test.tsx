@@ -1,6 +1,5 @@
 import { faker } from "@faker-js/faker";
 import { render, screen } from "@testing-library/react";
-import round from "lodash/round";
 
 import PredictionsTable, {
   displayCorrectness,
@@ -51,8 +50,8 @@ describe("PredictionsTable", () => {
       } = faker.helpers.arrayElement(predictions);
 
       screen.getByText(predictedWinnerName);
-      screen.getAllByText(String(round(predictedMargin, 2)));
-      screen.getAllByText(String(round(predictedWinProbability, 2)));
+      screen.getAllByText(predictedMargin.toFixed(2));
+      screen.getAllByText(`${(predictedWinProbability * 100).toFixed(2)}%`);
       screen.getAllByText(displayCorrectness(isCorrect));
     });
   });

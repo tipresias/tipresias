@@ -2,25 +2,11 @@ import * as R from "ramda";
 
 import { sqlQuery } from "./db";
 
-export interface RoundPredictionRecord {
-  predicted_winner_name: string;
-  predicted_margin: number | null;
-  predicted_win_probability: number | null;
-  is_correct: boolean | null;
-}
-
-export interface Prediction {
+export interface RoundPrediction {
   predictedWinnerName: string;
   predictedMargin: number | null;
   predictedWinProbability: number | null;
   isCorrect: boolean | null;
-}
-
-export interface MetricsRecord {
-  total_tips: number | null;
-  accuracy: number | null;
-  mae: number | null;
-  bits: number | null;
 }
 
 export interface Metrics {
@@ -59,23 +45,9 @@ const ROUND_PREDICTIONS_SQL = `
   GROUP BY "principalPrediction"."predictedWinnerName", "principalPrediction"."isCorrect", "Match"."startDateTime"
   ORDER BY "Match"."startDateTime" DESC
 `;
-const convertPredictionKeysToCamelCase = ({
-  predicted_winner_name,
-  predicted_margin,
-  predicted_win_probability,
-  is_correct,
-}: RoundPredictionRecord): Prediction => ({
-  predictedWinnerName: predicted_winner_name,
-  predictedMargin: predicted_margin,
-  predictedWinProbability: predicted_win_probability,
-  isCorrect: is_correct,
-});
 
 export const fetchRoundPredictions = () =>
-  R.pipe(
-    sqlQuery<RoundPredictionRecord[]>,
-    R.andThen(R.map(convertPredictionKeysToCamelCase))
-  )(ROUND_PREDICTIONS_SQL);
+  sqlQuery<RoundPrediction[]>(ROUND_PREDICTIONS_SQL);
 
 const SEASON_METRICS_SQL = `
   WITH "latestPredictedMatch" AS (
@@ -114,21 +86,9 @@ const BLANK_METRICS: Metrics = {
   mae: null,
   bits: null,
 };
-const convertMetricKeysToCamelCase = ({
-  total_tips,
-  accuracy,
-  mae,
-  bits,
-}: MetricsRecord) => ({
-  totalTips: total_tips,
-  accuracy,
-  mae,
-  bits,
-});
 export const fetchRoundMetrics = () =>
   R.pipe(
-    sqlQuery<MetricsRecord[]>,
-    R.andThen(R.map<MetricsRecord, Metrics>(convertMetricKeysToCamelCase)),
+    sqlQuery<Metrics[]>,
     R.andThen(R.head<Metrics>),
     R.andThen(R.defaultTo(BLANK_METRICS))
   )(SEASON_METRICS_SQL);

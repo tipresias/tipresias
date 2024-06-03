@@ -10,12 +10,12 @@ import {
 } from "@chakra-ui/react";
 import round from "lodash/round";
 
-import { Prediction } from "~/.server/predictionService";
+import { RoundPrediction } from "~/.server/predictionService";
 
 interface PredictionsTableProps {
   currentRound: number;
   currentSeason: number;
-  predictions: Prediction[];
+  predictions: RoundPrediction[];
 }
 
 export const displayCorrectness = (wasCorrect: boolean | null) => {
@@ -34,7 +34,7 @@ const PredictionRow = ({
   predictedMargin,
   predictedWinProbability,
   isCorrect,
-}: Prediction) => (
+}: RoundPrediction) => (
   <Tr key={predictedWinnerName}>
     <Td>{predictedWinnerName}</Td>
     <Td isNumeric>

@@ -4,8 +4,7 @@
 import { faker } from "@faker-js/faker";
 import {
   Metrics,
-  MetricsRecord,
-  RoundPredictionRecord,
+  RoundPrediction,
   fetchRoundMetrics,
   fetchRoundPredictions,
 } from "../../app/.server/predictionService";
@@ -16,16 +15,16 @@ const mockSqlQuery = jest.spyOn(db, "sqlQuery");
 describe("fetchRoundPredictions", () => {
   beforeAll(() => {
     const fakePredictions = new Array(9).fill(null).map(() => ({
-      predicted_winner_name: faker.company.name(),
-      predicted_margin: faker.number.float(),
-      predicted_win_probability: faker.number.float(),
-      is_correct:
+      predictedWinnerName: faker.company.name(),
+      predictedMargin: faker.number.float(),
+      predictedWinProbability: faker.number.float(),
+      isCorrect:
         faker.helpers.maybe(faker.datatype.boolean, {
           probability: faker.number.float(),
         }) ?? null,
     }));
     const mockSqlQueryImplementation = (async () =>
-      fakePredictions) as typeof db.sqlQuery<RoundPredictionRecord[]>;
+      fakePredictions) as typeof db.sqlQuery<RoundPrediction[]>;
     mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
   });
 
@@ -48,14 +47,14 @@ describe("fetchRoundMetrics", () => {
     beforeAll(() => {
       const fakeMetrics = [
         {
-          total_tips: faker.number.int(),
+          totalTips: faker.number.int(),
           accuracy: faker.number.float(),
           mae: faker.number.float(),
           bits: faker.number.float(),
         },
       ];
       const mockSqlQueryImplementation = (async () =>
-        fakeMetrics) as typeof db.sqlQuery<MetricsRecord[]>;
+        fakeMetrics) as typeof db.sqlQuery<Metrics[]>;
       mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
     });
 
@@ -74,14 +73,14 @@ describe("fetchRoundMetrics", () => {
     beforeAll(() => {
       const fakeMetrics = [
         {
-          total_tips: null,
+          totalTips: null,
           accuracy: null,
           mae: null,
           bits: null,
         },
       ];
       const mockSqlQueryImplementation = (async () =>
-        fakeMetrics) as typeof db.sqlQuery<MetricsRecord[]>;
+        fakeMetrics) as typeof db.sqlQuery<Metrics[]>;
       mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
     });
 

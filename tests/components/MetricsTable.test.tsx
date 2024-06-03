@@ -1,6 +1,5 @@
 import { faker } from "@faker-js/faker";
 import { render, screen } from "@testing-library/react";
-import round from "lodash/round";
 
 import MetricsTable, {
   METRIC_LABEL_MAP,
@@ -29,7 +28,7 @@ describe("MetricsTable", () => {
 
       Object.entries(metrics).forEach(([name, value]) => {
         screen.getByText(METRIC_LABEL_MAP[name as keyof Metrics]);
-        screen.getAllByText(round(value, 2));
+        screen.getAllByText(value.toFixed(2));
       });
     });
   });

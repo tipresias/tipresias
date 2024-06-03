@@ -7,8 +7,9 @@ import {
   Th,
   Tr,
 } from "@chakra-ui/react";
-import round from "lodash/round";
+
 import { Metrics } from "../.server/predictionService";
+import { presentNumber } from "../helpers/number";
 
 interface Metric {
   name: keyof Metrics;
@@ -36,7 +37,7 @@ export const METRIC_LABEL_MAP: Record<keyof Metrics, string> = {
 const MetricRow = ({ name, value }: Metric) => (
   <Tr>
     <Th>{METRIC_LABEL_MAP[name]}</Th>
-    <Td isNumeric>{value === null ? "NA" : round(value, 2)}</Td>
+    <Td isNumeric>{presentNumber(value)}</Td>
   </Tr>
 );
 

@@ -18,21 +18,38 @@ model Match {
   winner        Team?        @relation(fields: [winnerId], references: [id])
   predictions   Prediction[]
   teamMatches   TeamMatch[]
+  season        Season?      @relation(fields: [seasonId], references: [id])
+  seasonId      Int?
 
   @@unique([startDateTime, venue])
   @@index([winnerId])
 }
 
 model MlModel {
-  id                 Int          @id @default(autoincrement())
-  name               String       @unique
+  id                 Int             @id @default(autoincrement())
+  name               String          @unique
   description        String?
   isPrincipal        Boolean
   predictionType     String
   usedInCompetitions Boolean
   predictions        Prediction[]
+  mlModelSeasons     MlModelSeason[]
 
   @@index([name])
+}
+
+model MlModelSeason {
+  id                   Int     @id @default(autoincrement())
+  isPrincipal          Boolean @default(false)
+  isUsedInCompetitions Boolean @default(false)
+  seasonId             Int
+  season               Season  @relation(fields: [seasonId], references: [id])
+  mlModelId            Int
+  mlModel              MlModel @relation(fields: [mlModelId], references: [id])
+
+  @@unique([seasonId, mlModelId])
+  @@index([seasonId])
+  @@index([mlModelId])
 }
 
 model Prediction {
@@ -75,4 +92,13 @@ model TeamMatch {
 
   @@index([matchId])
   @@index([teamId])
+}
+
+model Season {
+  id             Int             @id @default(autoincrement())
+  year           Int             @unique
+  matches        Match[]
+  mlModelSeasons MlModelSeason[]
+
+  @@index([year])
 }

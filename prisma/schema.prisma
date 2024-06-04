@@ -47,7 +47,7 @@ model MlModelSeason {
   mlModelId            Int
   mlModel              MlModel @relation(fields: [mlModelId], references: [id])
 
-  @@unique([seasonId, isPrincipal])
+  @@unique([seasonId, mlModelId])
   @@index([seasonId])
   @@index([mlModelId])
 }

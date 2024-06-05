@@ -22,13 +22,10 @@ import {
   Metrics,
   fetchRoundMetrics,
 } from "../.server/predictionService";
-import { sqlQuery } from "../.server/db";
-import { fetchSeasons } from "~/.server/seasonService";
-
-interface Round {
-  roundNumber: number;
-  season: number;
-}
+import {
+  fetchLatestPredictedRound,
+  fetchSeasons,
+} from "~/.server/seasonService";
 
 const CURRENT_SEASON_PARAM = "current-season";
 
@@ -43,23 +40,18 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const PREDICTED_ROUND_SQL = `
-    SELECT "Match"."roundNumber", EXTRACT(YEAR FROM "Match"."startDateTime") AS season
-    FROM "Match"
-    INNER JOIN "Prediction" ON "Prediction"."matchId" = "Match".id
-    ORDER BY "Match"."startDateTime" DESC
-    LIMIT 1
-  `;
   const seasons = await fetchSeasons();
   const url = new URL(request.url);
   const currentSeason =
     parseInt(url.searchParams.get(CURRENT_SEASON_PARAM) || "") || max(seasons);
-  const predictedRound = (await sqlQuery<Round[]>(PREDICTED_ROUND_SQL))[0];
+  if (!currentSeason) throw Error("No season data found");
+
+  const currentRound = await fetchLatestPredictedRound(currentSeason);
   const predictions: RoundPrediction[] = await fetchRoundPredictions();
   const metrics: Metrics = await fetchRoundMetrics();
 
   return json({
-    currentRound: predictedRound.roundNumber,
+    currentRound,
     predictions,
     metrics,
     currentSeason,
@@ -89,12 +81,11 @@ export default function Index() {
           <Form>
             <FormControl>
               <FormLabel>Season</FormLabel>
-              <Select name={CURRENT_SEASON_PARAM}>
+              <Select name={CURRENT_SEASON_PARAM} defaultValue={currentSeason}>
                 {seasons.map((season) => (
                   <option
                     key={season}
                     value={season}
-                    selected={season === currentSeason}
                     onClick={(event) => submit(event.currentTarget.form)}
                   >
                     {season}
@@ -103,7 +94,7 @@ export default function Index() {
               </Select>
             </FormControl>
           </Form>
-          {predictions?.length && currentSeason && (
+          {predictions?.length && currentSeason && currentRound && (
             <Card marginTop="1rem" marginBottom="1rem">
               <CardBody>
                 <PredictionsTable

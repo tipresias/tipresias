@@ -47,7 +47,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!currentSeason) throw Error("No season data found");
 
   const currentRound = await fetchLatestPredictedRound(currentSeason);
-  const predictions: RoundPrediction[] = await fetchRoundPredictions();
+  const predictions: RoundPrediction[] = await fetchRoundPredictions(
+    currentSeason
+  );
   const metrics: Metrics = await fetchRoundMetrics();
 
   return json({

@@ -13,6 +13,8 @@ import * as db from "../../app/.server/db";
 const mockSqlQuery = jest.spyOn(db, "sqlQuery");
 
 describe("fetchRoundPredictions", () => {
+  const seasonYear = 2020;
+
   beforeAll(() => {
     const fakePredictions = new Array(9).fill(null).map(() => ({
       predictedWinnerName: faker.company.name(),
@@ -29,7 +31,7 @@ describe("fetchRoundPredictions", () => {
   });
 
   it("fetches predictions from the DB", async () => {
-    const predictions = await fetchRoundPredictions();
+    const predictions = await fetchRoundPredictions(seasonYear);
     expect(predictions).toHaveLength(9);
     predictions.forEach((prediction) => {
       expect(prediction).toMatchObject({

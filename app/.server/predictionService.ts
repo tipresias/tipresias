@@ -16,38 +16,63 @@ export interface Metrics {
   bits: number | null;
 }
 
-const ROUND_PREDICTIONS_SQL = `
-  WITH "latestPredictedMatch" AS (
-    SELECT "Match".id, "Match"."roundNumber", EXTRACT(YEAR FROM "Match"."startDateTime") AS year
+const buildRoundPredictionQuery = (seasonYear: number) => `
+  WITH "LatestPredictedMatch" AS (
+    SELECT "Match".id, "Match"."roundNumber", "Season".year
     FROM "Match"
     INNER JOIN "Prediction" ON "Prediction"."matchId" = "Match".id
+    INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
+    WHERE "Season".year = ${seasonYear}
     ORDER BY "Match"."startDateTime" DESC
     LIMIT 1
   ),
-  "principalPrediction" AS (
-    SELECT "Prediction"."matchId", "Team".name AS "predictedWinnerName", "Prediction"."isCorrect" FROM "Prediction"
+  "PrincipalPrediction" AS (
+    SELECT "Prediction".*, "Team".name AS "predictedWinnerName" FROM "Prediction"
     INNER JOIN "Team" ON "Team".id = "Prediction"."predictedWinnerId"
     INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
-    WHERE "MlModel"."isPrincipal" IS TRUE
+    INNER JOIN "MlModelSeason" ON "MlModelSeason"."mlModelId" = "MlModel".id
+    INNER JOIN "Season" ON "Season".id = "MlModelSeason"."seasonId"
+    WHERE "MlModelSeason"."isPrincipal" IS TRUE
+  AND "Season".year = ${seasonYear}
+  ),
+  "SecondaryPrediction" AS (
+    SELECT
+    "Prediction"."matchId",
+    CASE
+      WHEN "Prediction"."predictedWinnerId" = "PrincipalPrediction"."predictedWinnerId"
+      THEN "Prediction"."predictedWinProbability"
+      ELSE 1 - "Prediction"."predictedWinProbability"
+    END AS "predictedWinProbability",
+    CASE
+      WHEN "Prediction"."predictedWinnerId" = "PrincipalPrediction"."predictedWinnerId"
+      THEN "Prediction"."predictedMargin"
+      ELSE -1 * "Prediction"."predictedMargin"
+    END AS "predictedMargin"
+    FROM "Prediction"
+    INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
+    INNER JOIN "MlModelSeason" ON "MlModelSeason"."mlModelId" = "MlModel".id
+    INNER JOIN "Season" ON "Season".id = "MlModelSeason"."seasonId"
+    INNER JOIN "PrincipalPrediction" ON "PrincipalPrediction"."matchId" = "Prediction"."matchId"
+    WHERE "MlModelSeason"."isPrincipal" IS FALSE
+    AND "MlModelSeason"."isUsedInCompetitions" IS TRUE
+    AND "Season".year = ${seasonYear}
   )
   SELECT
-    "principalPrediction"."predictedWinnerName",
-    MAX("Prediction"."predictedMargin") AS "predictedMargin",
-    MAX("Prediction"."predictedWinProbability") AS "predictedWinProbability",
-    "principalPrediction"."isCorrect"
-  FROM "Prediction"
-  INNER JOIN "Match" ON "Match".id = "Prediction"."matchId"
-  INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
-  INNER JOIN "principalPrediction" ON "principalPrediction"."matchId" = "Prediction"."matchId"
-  WHERE "Match"."roundNumber" = (SELECT "latestPredictedMatch"."roundNumber" FROM "latestPredictedMatch")
-  AND EXTRACT(YEAR FROM "Match"."startDateTime") = (SELECT "latestPredictedMatch".year FROM "latestPredictedMatch")
-  AND "MlModel"."usedInCompetitions" IS TRUE
-  GROUP BY "principalPrediction"."predictedWinnerName", "principalPrediction"."isCorrect", "Match"."startDateTime"
+    "PrincipalPrediction"."predictedWinnerName",
+    COALESCE("PrincipalPrediction"."predictedMargin", "SecondaryPrediction"."predictedMargin") AS "predictedMargin",
+    COALESCE("PrincipalPrediction"."predictedWinProbability", "SecondaryPrediction"."predictedWinProbability") AS "predictedWinProbability",
+    "PrincipalPrediction"."isCorrect"
+  FROM "Match"
+  INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
+  INNER JOIN "PrincipalPrediction" ON "PrincipalPrediction"."matchId" = "Match".id
+  LEFT OUTER JOIN "SecondaryPrediction" ON "SecondaryPrediction"."matchId" = "Match".id
+  WHERE "Match"."roundNumber" = (SELECT "LatestPredictedMatch"."roundNumber" FROM "LatestPredictedMatch")
+  AND "Season".year = ${seasonYear}
   ORDER BY "Match"."startDateTime" DESC
 `;
 
-export const fetchRoundPredictions = () =>
-  sqlQuery<RoundPrediction[]>(ROUND_PREDICTIONS_SQL);
+export const fetchRoundPredictions = (seasonYear: number) =>
+  R.pipe(buildRoundPredictionQuery, sqlQuery<RoundPrediction[]>)(seasonYear);
 
 const SEASON_METRICS_SQL = `
   WITH "latestPredictedMatch" AS (

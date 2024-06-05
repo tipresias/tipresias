@@ -45,6 +45,8 @@ describe("fetchRoundPredictions", () => {
 });
 
 describe("fetchRoundMetrics", () => {
+  const seasonYear = 2020;
+
   describe("when prediction are available", () => {
     beforeAll(() => {
       const fakeMetrics = [
@@ -61,7 +63,7 @@ describe("fetchRoundMetrics", () => {
     });
 
     it("returns a metrics object", async () => {
-      const metrics = await fetchRoundMetrics();
+      const metrics = await fetchRoundMetrics(2020);
       expect(metrics).toMatchObject<Metrics>({
         totalTips: expect.any(Number),
         accuracy: expect.any(Number),
@@ -87,7 +89,7 @@ describe("fetchRoundMetrics", () => {
     });
 
     it("returns a blank metrics object", async () => {
-      const metrics = await fetchRoundMetrics();
+      const metrics = await fetchRoundMetrics(seasonYear);
       expect(metrics).toMatchObject<Metrics>({
         totalTips: null,
         accuracy: null,

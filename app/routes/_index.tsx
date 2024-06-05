@@ -50,7 +50,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const predictions: RoundPrediction[] = await fetchRoundPredictions(
     currentSeason
   );
-  const metrics: Metrics = await fetchRoundMetrics();
+  const metrics: Metrics = await fetchRoundMetrics(currentSeason);
 
   return json({
     currentRound,

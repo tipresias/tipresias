@@ -4,14 +4,11 @@ import {
   CardBody,
   Container,
   Flex,
-  FormControl,
-  FormLabel,
   Heading,
   Text,
-  Select,
 } from "@chakra-ui/react";
 import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { useLoaderData, Form, useSubmit } from "@remix-run/react";
+import { useLoaderData, useSubmit, Form } from "@remix-run/react";
 import max from "lodash/max";
 
 import MetricsTable from "../components/MetricsTable";
@@ -26,8 +23,7 @@ import {
   fetchLatestPredictedRound,
   fetchSeasons,
 } from "~/.server/seasonService";
-
-const CURRENT_SEASON_PARAM = "current-season";
+import SeasonSelect, { CURRENT_SEASON_PARAM } from "~/components/SeasonSelect";
 
 export const meta: MetaFunction = () => {
   return [
@@ -40,29 +36,30 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const seasons = await fetchSeasons();
+  const seasonYears = await fetchSeasons();
   const url = new URL(request.url);
-  const currentSeason =
-    parseInt(url.searchParams.get(CURRENT_SEASON_PARAM) || "") || max(seasons);
-  if (!currentSeason) throw Error("No season data found");
+  const currentSeasonYear =
+    parseInt(url.searchParams.get(CURRENT_SEASON_PARAM) || "") ||
+    max(seasonYears);
+  if (!currentSeasonYear) throw Error("No season data found");
 
-  const currentRound = await fetchLatestPredictedRound(currentSeason);
+  const currentRound = await fetchLatestPredictedRound(currentSeasonYear);
   const predictions: RoundPrediction[] = await fetchRoundPredictions(
-    currentSeason
+    currentSeasonYear
   );
-  const metrics: Metrics = await fetchRoundMetrics(currentSeason);
+  const metrics: Metrics = await fetchRoundMetrics(currentSeasonYear);
 
   return json({
     currentRound,
     predictions,
     metrics,
-    currentSeason,
-    seasons,
+    currentSeasonYear,
+    seasonYears,
   });
 };
 
 export default function Index() {
-  const { currentRound, predictions, metrics, seasons, currentSeason } =
+  const { currentRound, predictions, metrics, seasonYears, currentSeasonYear } =
     useLoaderData<typeof loader>();
   const submit = useSubmit();
 
@@ -80,28 +77,21 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          <Form>
-            <FormControl>
-              <FormLabel>Season</FormLabel>
-              <Select name={CURRENT_SEASON_PARAM} defaultValue={currentSeason}>
-                {seasons.map((season) => (
-                  <option
-                    key={season}
-                    value={season}
-                    onClick={(event) => submit(event.currentTarget.form)}
-                  >
-                    {season}
-                  </option>
-                ))}
-              </Select>
-            </FormControl>
-          </Form>
-          {predictions?.length && currentSeason && currentRound && (
+          {seasonYears && (
+            <Form style={{ padding: "1rem" }}>
+              <SeasonSelect
+                submit={submit}
+                seasonYears={seasonYears}
+                currentSeasonYear={currentSeasonYear}
+              />
+            </Form>
+          )}
+          {predictions && currentSeasonYear && currentRound && (
             <Card marginTop="1rem" marginBottom="1rem">
               <CardBody>
                 <PredictionsTable
                   currentRound={currentRound}
-                  currentSeason={currentSeason}
+                  currentSeason={currentSeasonYear}
                   predictions={predictions}
                 />
               </CardBody>
@@ -109,8 +99,8 @@ export default function Index() {
           )}
           <Card marginTop="1rem" marginBottom="1rem" width="100%">
             <CardBody>
-              {metrics && currentSeason && (
-                <MetricsTable metrics={metrics} season={currentSeason} />
+              {metrics && currentSeasonYear && (
+                <MetricsTable metrics={metrics} season={currentSeasonYear} />
               )}
             </CardBody>
           </Card>

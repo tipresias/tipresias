@@ -10,6 +10,7 @@ import {
 import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData, useSubmit, Form } from "@remix-run/react";
 import max from "lodash/max";
+import * as R from "ramda";
 
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
@@ -38,9 +39,16 @@ export const meta: MetaFunction = () => {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const seasonYears = await fetchSeasons();
   const url = new URL(request.url);
-  const currentSeasonYear =
-    parseInt(url.searchParams.get(CURRENT_SEASON_PARAM) || "") ||
-    max(seasonYears);
+  const currentSeasonYear = R.pipe(
+    (paramName) => url.searchParams.get(paramName),
+    R.defaultTo(String(max(seasonYears))),
+    parseInt,
+    R.ifElse(
+      (seasonYear) => R.includes(seasonYear, seasonYears),
+      R.identity,
+      () => max(seasonYears)
+    )
+  )(CURRENT_SEASON_PARAM);
   if (!currentSeasonYear) throw Error("No season data found");
 
   const currentRound = await fetchLatestPredictedRound(currentSeasonYear);

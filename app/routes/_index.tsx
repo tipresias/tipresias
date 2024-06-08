@@ -37,33 +37,29 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const seasonYears = await fetchSeasons();
-  const url = new URL(request.url);
-  const currentSeasonYear = R.pipe(
-    (paramName) => url.searchParams.get(paramName),
-    R.defaultTo(String(max(seasonYears))),
+const getCurrentTemporalValue = (paramValue: string, collection: number[]) =>
+  R.pipe(
     parseInt,
-    R.ifElse(
-      (seasonYear) => R.includes(seasonYear, seasonYears),
-      R.identity,
-      () => max(seasonYears)
-    )
-  )(CURRENT_SEASON_PARAM);
-  if (!currentSeasonYear) throw Error("No season data found");
+    (value) => collection.find((item) => item === value) || max(collection),
+    R.tap<number | undefined, number>((value) => {
+      if (value === undefined) throw Error("Required data not found");
+    })
+  )(paramValue);
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { searchParams } = new URL(request.url);
+
+  const seasonYears = await fetchSeasons();
+  const currentSeasonYear = getCurrentTemporalValue(
+    searchParams.get(CURRENT_SEASON_PARAM) || "",
+    seasonYears
+  );
 
   const roundNumbers = await fetchPredictedRoundNumbers(currentSeasonYear);
-  const currentRoundNumber = R.pipe(
-    (paramName) => url.searchParams.get(paramName),
-    R.defaultTo(String(max(roundNumbers))),
-    parseInt,
-    R.ifElse(
-      (seasonYear) => R.includes(seasonYear, roundNumbers),
-      R.identity,
-      () => max(roundNumbers)
-    )
-  )(CURRENT_ROUND_PARAM);
-  if (!currentRoundNumber) throw Error("No round prediction data found");
+  const currentRoundNumber = getCurrentTemporalValue(
+    searchParams.get(CURRENT_ROUND_PARAM) || "",
+    roundNumbers
+  );
 
   const predictions: RoundPrediction[] = await fetchRoundPredictions(
     currentSeasonYear,

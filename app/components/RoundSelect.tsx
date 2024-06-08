@@ -10,7 +10,7 @@ interface RoundOptionProps {
   roundNumber: number;
 }
 
-export const CURRENT_ROUND_PARAM = "current-round";
+export const CURRENT_ROUND_PARAM = "round";
 
 const RoundOption = ({ roundNumber }: RoundOptionProps) => (
   <option value={roundNumber}>{roundNumber}</option>
@@ -28,7 +28,7 @@ const RoundSelect = ({
       </FormLabel>
       <Select
         name={CURRENT_ROUND_PARAM}
-        defaultValue={currentRoundNumber}
+        value={currentRoundNumber}
         onChange={(event) => submit(event.currentTarget.form)}
         maxWidth="60%"
       >

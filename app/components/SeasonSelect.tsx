@@ -10,7 +10,7 @@ interface SeasonOptionProps {
   seasonYear: number;
 }
 
-export const CURRENT_SEASON_PARAM = "current-season";
+export const CURRENT_SEASON_PARAM = "season";
 
 const SeasonOption = ({ seasonYear }: SeasonOptionProps) => (
   <option value={seasonYear}>{seasonYear}</option>

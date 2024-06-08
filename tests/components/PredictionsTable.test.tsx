@@ -29,7 +29,7 @@ describe("PredictionsTable", () => {
       );
 
       screen.getByText(
-        `Predictions for round ${currentRound}, ${currentSeason}`
+        `Predictions for Round ${currentRound}, ${currentSeason}`
       );
     });
 

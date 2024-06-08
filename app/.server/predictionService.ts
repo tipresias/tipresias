@@ -16,24 +16,15 @@ export interface Metrics {
   bits: number | null;
 }
 
-const buildRoundPredictionQuery = (seasonYear: number) => `
-  WITH "LatestPredictedMatch" AS (
-    SELECT "Match".id, "Match"."roundNumber", "Season".year
-    FROM "Match"
-    INNER JOIN "Prediction" ON "Prediction"."matchId" = "Match".id
-    INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
-    WHERE "Season".year = ${seasonYear}
-    ORDER BY "Match"."startDateTime" DESC
-    LIMIT 1
-  ),
-  "PrincipalPrediction" AS (
+const buildRoundPredictionQuery = (seasonYear: number, roundNumber: number) => `
+  WITH "PrincipalPrediction" AS (
     SELECT "Prediction".*, "Team".name AS "predictedWinnerName" FROM "Prediction"
     INNER JOIN "Team" ON "Team".id = "Prediction"."predictedWinnerId"
     INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
     INNER JOIN "MlModelSeason" ON "MlModelSeason"."mlModelId" = "MlModel".id
     INNER JOIN "Season" ON "Season".id = "MlModelSeason"."seasonId"
     WHERE "MlModelSeason"."isPrincipal" IS TRUE
-  AND "Season".year = ${seasonYear}
+    AND "Season".year = ${seasonYear}
   ),
   "SecondaryPrediction" AS (
     SELECT
@@ -66,13 +57,19 @@ const buildRoundPredictionQuery = (seasonYear: number) => `
   INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
   INNER JOIN "PrincipalPrediction" ON "PrincipalPrediction"."matchId" = "Match".id
   LEFT OUTER JOIN "SecondaryPrediction" ON "SecondaryPrediction"."matchId" = "Match".id
-  WHERE "Match"."roundNumber" = (SELECT "LatestPredictedMatch"."roundNumber" FROM "LatestPredictedMatch")
+  WHERE "Match"."roundNumber" = ${roundNumber}
   AND "Season".year = ${seasonYear}
   ORDER BY "Match"."startDateTime" DESC
 `;
 
-export const fetchRoundPredictions = (seasonYear: number) =>
-  R.pipe(buildRoundPredictionQuery, sqlQuery<RoundPrediction[]>)(seasonYear);
+export const fetchRoundPredictions = (
+  seasonYear: number,
+  roundNumber: number
+) =>
+  R.pipe(buildRoundPredictionQuery, sqlQuery<RoundPrediction[]>)(
+    seasonYear,
+    roundNumber
+  );
 
 const buildSeasonMetricsQuery = (seasonYear: number) => `
   SELECT

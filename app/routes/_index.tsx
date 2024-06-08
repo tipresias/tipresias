@@ -15,16 +15,15 @@ import * as R from "ramda";
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
 import {
-  RoundPrediction,
   fetchRoundPredictions,
-  Metrics,
   fetchRoundMetrics,
 } from "../.server/predictionService";
 import {
-  fetchLatestPredictedRound,
+  fetchPredictedRoundNumbers,
   fetchSeasons,
 } from "~/.server/seasonService";
 import SeasonSelect, { CURRENT_SEASON_PARAM } from "~/components/SeasonSelect";
+import RoundSelect, { CURRENT_ROUND_PARAM } from "~/components/RoundSelect";
 
 export const meta: MetaFunction = () => {
   return [
@@ -36,29 +35,38 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const seasonYears = await fetchSeasons();
-  const url = new URL(request.url);
-  const currentSeasonYear = R.pipe(
-    (paramName) => url.searchParams.get(paramName),
-    R.defaultTo(String(max(seasonYears))),
+const getCurrentTemporalValue = (paramValue: string, collection: number[]) =>
+  R.pipe(
     parseInt,
-    R.ifElse(
-      (seasonYear) => R.includes(seasonYear, seasonYears),
-      R.identity,
-      () => max(seasonYears)
-    )
-  )(CURRENT_SEASON_PARAM);
-  if (!currentSeasonYear) throw Error("No season data found");
+    (value) => collection.find((item) => item === value) || max(collection),
+    R.tap<number | undefined, number>((value) => {
+      if (value === undefined) throw Error("Required data not found");
+    })
+  )(paramValue);
 
-  const currentRound = await fetchLatestPredictedRound(currentSeasonYear);
-  const predictions: RoundPrediction[] = await fetchRoundPredictions(
-    currentSeasonYear
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { searchParams } = new URL(request.url);
+
+  const seasonYears = await fetchSeasons();
+  const currentSeasonYear = getCurrentTemporalValue(
+    searchParams.get(CURRENT_SEASON_PARAM) || "",
+    seasonYears
   );
-  const metrics: Metrics = await fetchRoundMetrics(currentSeasonYear);
+
+  const roundNumbers = await fetchPredictedRoundNumbers(currentSeasonYear);
+  const currentRoundNumber = getCurrentTemporalValue(
+    searchParams.get(CURRENT_ROUND_PARAM) || "",
+    roundNumbers
+  );
+
+  const [predictions, metrics] = await Promise.all([
+    fetchRoundPredictions(currentSeasonYear, currentRoundNumber),
+    fetchRoundMetrics(currentSeasonYear),
+  ]);
 
   return json({
-    currentRound,
+    currentRoundNumber,
+    roundNumbers,
     predictions,
     metrics,
     currentSeasonYear,
@@ -67,8 +75,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Index() {
-  const { currentRound, predictions, metrics, seasonYears, currentSeasonYear } =
-    useLoaderData<typeof loader>();
+  const {
+    currentRoundNumber,
+    roundNumbers,
+    predictions,
+    metrics,
+    seasonYears,
+    currentSeasonYear,
+  } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
   return (
@@ -85,20 +99,25 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          {seasonYears && (
+          {seasonYears && roundNumbers && currentRoundNumber && (
             <Form style={{ padding: "1rem" }}>
               <SeasonSelect
                 submit={submit}
                 seasonYears={seasonYears}
                 currentSeasonYear={currentSeasonYear}
               />
+              <RoundSelect
+                submit={submit}
+                roundNumbers={roundNumbers}
+                currentRoundNumber={currentRoundNumber}
+              />
             </Form>
           )}
-          {predictions && currentSeasonYear && currentRound && (
+          {predictions && currentSeasonYear && currentRoundNumber && (
             <Card marginTop="1rem" marginBottom="1rem">
               <CardBody>
                 <PredictionsTable
-                  currentRound={currentRound}
+                  currentRound={currentRoundNumber}
                   currentSeason={currentSeasonYear}
                   predictions={predictions}
                 />

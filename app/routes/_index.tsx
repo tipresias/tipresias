@@ -7,8 +7,10 @@ import {
   Heading,
   Text,
 } from "@chakra-ui/react";
-import { json, MetaFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import { useLoaderData, useSubmit, Form } from "@remix-run/react";
+import max from "lodash/max";
+import * as R from "ramda";
 
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
@@ -18,12 +20,11 @@ import {
   Metrics,
   fetchRoundMetrics,
 } from "../.server/predictionService";
-import { sqlQuery } from "../.server/db";
-
-interface Round {
-  roundNumber: number;
-  season: number;
-}
+import {
+  fetchLatestPredictedRound,
+  fetchSeasons,
+} from "~/.server/seasonService";
+import SeasonSelect, { CURRENT_SEASON_PARAM } from "~/components/SeasonSelect";
 
 export const meta: MetaFunction = () => {
   return [
@@ -35,29 +36,40 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export const loader = async () => {
-  const PREDICTED_ROUND_SQL = `
-    SELECT "Match"."roundNumber", EXTRACT(YEAR FROM "Match"."startDateTime") AS season
-    FROM "Match"
-    INNER JOIN "Prediction" ON "Prediction"."matchId" = "Match".id
-    ORDER BY "Match"."startDateTime" DESC
-    LIMIT 1
-  `;
-  const predictedRound = (await sqlQuery<Round[]>(PREDICTED_ROUND_SQL))[0];
-  const predictions: RoundPrediction[] = await fetchRoundPredictions();
-  const metrics: Metrics = await fetchRoundMetrics();
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const seasonYears = await fetchSeasons();
+  const url = new URL(request.url);
+  const currentSeasonYear = R.pipe(
+    (paramName) => url.searchParams.get(paramName),
+    R.defaultTo(String(max(seasonYears))),
+    parseInt,
+    R.ifElse(
+      (seasonYear) => R.includes(seasonYear, seasonYears),
+      R.identity,
+      () => max(seasonYears)
+    )
+  )(CURRENT_SEASON_PARAM);
+  if (!currentSeasonYear) throw Error("No season data found");
+
+  const currentRound = await fetchLatestPredictedRound(currentSeasonYear);
+  const predictions: RoundPrediction[] = await fetchRoundPredictions(
+    currentSeasonYear
+  );
+  const metrics: Metrics = await fetchRoundMetrics(currentSeasonYear);
 
   return json({
-    currentRound: predictedRound.roundNumber,
+    currentRound,
     predictions,
     metrics,
-    currentSeason: predictedRound.season,
+    currentSeasonYear,
+    seasonYears,
   });
 };
 
 export default function Index() {
-  const { currentRound, predictions, metrics, currentSeason } =
+  const { currentRound, predictions, metrics, seasonYears, currentSeasonYear } =
     useLoaderData<typeof loader>();
+  const submit = useSubmit();
 
   return (
     <div
@@ -73,12 +85,21 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          {predictions?.length && (
+          {seasonYears && (
+            <Form style={{ padding: "1rem" }}>
+              <SeasonSelect
+                submit={submit}
+                seasonYears={seasonYears}
+                currentSeasonYear={currentSeasonYear}
+              />
+            </Form>
+          )}
+          {predictions && currentSeasonYear && currentRound && (
             <Card marginTop="1rem" marginBottom="1rem">
               <CardBody>
                 <PredictionsTable
                   currentRound={currentRound}
-                  currentSeason={currentSeason}
+                  currentSeason={currentSeasonYear}
                   predictions={predictions}
                 />
               </CardBody>
@@ -86,8 +107,8 @@ export default function Index() {
           )}
           <Card marginTop="1rem" marginBottom="1rem" width="100%">
             <CardBody>
-              {metrics && (
-                <MetricsTable metrics={metrics} season={currentSeason} />
+              {metrics && currentSeasonYear && (
+                <MetricsTable metrics={metrics} season={currentSeasonYear} />
               )}
             </CardBody>
           </Card>

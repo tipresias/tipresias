@@ -66,7 +66,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!currentRoundNumber) throw Error("No round prediction data found");
 
   const predictions: RoundPrediction[] = await fetchRoundPredictions(
-    currentSeasonYear
+    currentSeasonYear,
+    currentRoundNumber
   );
   const metrics: Metrics = await fetchRoundMetrics(currentSeasonYear);
 

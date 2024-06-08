@@ -66,7 +66,7 @@ const PredictionsTable = ({
 }: PredictionsTableProps) => (
   <TableContainer textAlign="center">
     <Heading as="h2" size="l" margin="0.5rem" whiteSpace="nowrap">
-      Predictions for round {currentRound}, {currentSeason}{" "}
+      Predictions for Round {currentRound}, {currentSeason}{" "}
       <PredictionInfoTooltip />
     </Heading>
     <Table variant="striped" maxWidth="fit-content">

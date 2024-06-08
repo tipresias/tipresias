@@ -15,9 +15,7 @@ import * as R from "ramda";
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
 import {
-  RoundPrediction,
   fetchRoundPredictions,
-  Metrics,
   fetchRoundMetrics,
 } from "../.server/predictionService";
 import {
@@ -61,11 +59,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     roundNumbers
   );
 
-  const predictions: RoundPrediction[] = await fetchRoundPredictions(
-    currentSeasonYear,
-    currentRoundNumber
-  );
-  const metrics: Metrics = await fetchRoundMetrics(currentSeasonYear);
+  const [predictions, metrics] = await Promise.all([
+    fetchRoundPredictions(currentSeasonYear, currentRoundNumber),
+    fetchRoundMetrics(currentSeasonYear),
+  ]);
 
   return json({
     currentRoundNumber,

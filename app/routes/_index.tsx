@@ -24,6 +24,15 @@ import {
 } from "~/.server/seasonService";
 import SeasonSelect, { CURRENT_SEASON_PARAM } from "~/components/SeasonSelect";
 import RoundSelect, { CURRENT_ROUND_PARAM } from "~/components/RoundSelect";
+import {
+  CartesianGrid,
+  Legend,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 export const meta: MetaFunction = () => {
   return [
@@ -112,6 +121,17 @@ export default function Index() {
                 currentRoundNumber={currentRoundNumber}
               />
             </Form>
+          )}
+          {currentSeasonYear && (
+            <ResponsiveContainer>
+              <LineChart>
+                <CartesianGrid />
+                <XAxis />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+              </LineChart>
+            </ResponsiveContainer>
           )}
           {predictions && currentSeasonYear && currentRoundNumber && (
             <Card marginTop="1rem" marginBottom="1rem">

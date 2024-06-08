@@ -3,9 +3,9 @@
  */
 import { faker } from "@faker-js/faker";
 import {
-  Metrics,
+  SeasonMetrics,
   RoundPrediction,
-  fetchRoundMetrics,
+  fetchSeasonMetrics,
   fetchRoundPredictions,
 } from "../../app/.server/predictionService";
 import * as db from "../../app/.server/db";
@@ -45,7 +45,7 @@ describe("fetchRoundPredictions", () => {
   });
 });
 
-describe("fetchRoundMetrics", () => {
+describe("fetchSeasonMetrics", () => {
   const seasonYear = 2020;
 
   describe("when prediction are available", () => {
@@ -59,13 +59,13 @@ describe("fetchRoundMetrics", () => {
         },
       ];
       const mockSqlQueryImplementation = (async () =>
-        fakeMetrics) as typeof db.sqlQuery<Metrics[]>;
+        fakeMetrics) as typeof db.sqlQuery<SeasonMetrics[]>;
       mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
     });
 
     it("returns a metrics object", async () => {
-      const metrics = await fetchRoundMetrics(2020);
-      expect(metrics).toMatchObject<Metrics>({
+      const metrics = await fetchSeasonMetrics(2020);
+      expect(metrics).toMatchObject<SeasonMetrics>({
         totalTips: expect.any(Number),
         accuracy: expect.any(Number),
         mae: expect.any(Number),
@@ -85,13 +85,13 @@ describe("fetchRoundMetrics", () => {
         },
       ];
       const mockSqlQueryImplementation = (async () =>
-        fakeMetrics) as typeof db.sqlQuery<Metrics[]>;
+        fakeMetrics) as typeof db.sqlQuery<SeasonMetrics[]>;
       mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
     });
 
     it("returns a blank metrics object", async () => {
-      const metrics = await fetchRoundMetrics(seasonYear);
-      expect(metrics).toMatchObject<Metrics>({
+      const metrics = await fetchSeasonMetrics(seasonYear);
+      expect(metrics).toMatchObject<SeasonMetrics>({
         totalTips: null,
         accuracy: null,
         mae: null,

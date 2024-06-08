@@ -16,7 +16,7 @@ import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
 import {
   fetchRoundPredictions,
-  fetchRoundMetrics,
+  fetchSeasonMetrics,
 } from "../.server/predictionService";
 import {
   fetchPredictedRoundNumbers,
@@ -70,7 +70,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const [predictions, metrics] = await Promise.all([
     fetchRoundPredictions(currentSeasonYear, currentRoundNumber),
-    fetchRoundMetrics(currentSeasonYear),
+    fetchSeasonMetrics(currentSeasonYear),
   ]);
 
   return json({

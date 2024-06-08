@@ -9,7 +9,7 @@ export interface RoundPrediction {
   isCorrect: boolean | null;
 }
 
-export interface Metrics {
+export interface SeasonMetrics {
   totalTips: number | null;
   accuracy: number | null;
   mae: number | null;
@@ -104,16 +104,16 @@ const buildSeasonMetricsQuery = (seasonYear: number) => `
   AND "Prediction"."isCorrect" IS NOT NULL
   AND "Season".year = ${seasonYear}
 `;
-const BLANK_METRICS: Metrics = {
+const BLANK_SEASON_METRICS: SeasonMetrics = {
   totalTips: null,
   accuracy: null,
   mae: null,
   bits: null,
 };
-export const fetchRoundMetrics = (seasonYear: number) =>
+export const fetchSeasonMetrics = (seasonYear: number) =>
   R.pipe(
     buildSeasonMetricsQuery,
-    sqlQuery<Metrics[]>,
-    R.andThen(R.head<Metrics>),
-    R.andThen(R.defaultTo(BLANK_METRICS))
+    sqlQuery<SeasonMetrics[]>,
+    R.andThen(R.head<SeasonMetrics>),
+    R.andThen(R.defaultTo(BLANK_SEASON_METRICS))
   )(seasonYear);

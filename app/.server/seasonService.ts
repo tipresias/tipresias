@@ -8,28 +8,26 @@ export interface Season {
 }
 
 export interface Round {
-  number: number | null;
+  roundNumber: number;
 }
 
-const BLANK_ROUND: Round = {
-  number: null,
-};
-
 export const fetchSeasons = () =>
-  R.pipe(season.findMany, R.andThen(R.map(R.prop("year"))))();
+  R.pipe(
+    season.findMany,
+    R.andThen(R.map(R.prop("year")))
+  )({ orderBy: { year: "asc" } });
 
-const buildLatestPredictedRoundQuery = (season: number) => `
-  SELECT MAX("Match"."roundNumber") AS number FROM "Match"
+const buildPredictedRoundsQuery = (seasonYear: number) => `
+  SELECT DISTINCT("Match"."roundNumber") FROM "Match"
   INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
   INNER JOIN "Prediction" ON "Prediction"."matchId" = "Match".id
-  WHERE "Season".year = ${season}
+  WHERE "Season".year = ${seasonYear}
+  ORDER BY "Match"."roundNumber" ASC
 `;
 
-export const fetchLatestPredictedRound = (seasonYear: number) =>
+export const fetchPredictedRoundNumbers = (seasonYear: number) =>
   R.pipe(
-    buildLatestPredictedRoundQuery,
+    buildPredictedRoundsQuery,
     sqlQuery<Round[]>,
-    R.andThen(R.head<Round>),
-    R.andThen(R.defaultTo(BLANK_ROUND)),
-    R.andThen(R.prop("number"))
+    R.andThen(R.map(R.prop("roundNumber")))
   )(seasonYear);

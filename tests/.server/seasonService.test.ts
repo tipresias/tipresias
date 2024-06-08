@@ -4,7 +4,7 @@
 
 import {
   Round,
-  fetchLatestPredictedRound,
+  fetchPredictedRoundNumbers,
   fetchSeasons,
 } from "../../app/.server/seasonService";
 import * as db from "../../app/.server/db";
@@ -31,22 +31,27 @@ describe("fetchSeasons", () => {
   });
 });
 
-describe("fetchLatestPredictedRound", () => {
+describe("fetchPredictedRoundNumbers", () => {
   const season = 2020;
 
-  describe("when a round number is available", () => {
-    const roundNumber = 5;
+  describe("when round numbers are available", () => {
+    const roundNumbers = Array(5)
+      .fill(null)
+      .map((_, idx) => ({
+        roundNumber: idx + 1,
+      }));
 
     beforeAll(() => {
-      const mockSqlQueryImplementation = (async () => [
-        { number: roundNumber },
-      ]) as typeof db.sqlQuery<Round[]>;
+      const mockSqlQueryImplementation = (async () =>
+        roundNumbers) as typeof db.sqlQuery<Round[]>;
       mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
     });
 
-    it("fetches a round number", async () => {
-      const latestPredictedRound = await fetchLatestPredictedRound(season);
-      expect(latestPredictedRound).toEqual(roundNumber);
+    it("fetches round numbers", async () => {
+      const predictedRoundNumbers = await fetchPredictedRoundNumbers(season);
+      expect(predictedRoundNumbers).toEqual(
+        roundNumbers.map(({ roundNumber }) => roundNumber)
+      );
     });
   });
 
@@ -58,9 +63,9 @@ describe("fetchLatestPredictedRound", () => {
       mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
     });
 
-    it("fetches a round number", async () => {
-      const latestPredictedRound = await fetchLatestPredictedRound(season);
-      expect(latestPredictedRound).toBeNull();
+    it("is empty", async () => {
+      const predictedRoundNumbers = await fetchPredictedRoundNumbers(season);
+      expect(predictedRoundNumbers).toEqual([]);
     });
   });
 });

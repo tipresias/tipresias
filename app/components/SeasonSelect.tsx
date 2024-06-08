@@ -21,8 +21,8 @@ const SeasonSelect = ({
   seasonYears,
   currentSeasonYear,
 }: SeasonSelectProps) => (
-  <FormControl>
-    <Flex alignItems="center">
+  <FormControl margin="0.5rem">
+    <Flex alignItems="center" justifyContent="space-between">
       <FormLabel margin="0.5rem" size="xl">
         Season
       </FormLabel>
@@ -30,6 +30,7 @@ const SeasonSelect = ({
         name={CURRENT_SEASON_PARAM}
         defaultValue={currentSeasonYear}
         onChange={(event) => submit(event.currentTarget.form)}
+        maxWidth="60%"
       >
         {seasonYears.map((seasonYear) => (
           <SeasonOption seasonYear={seasonYear} key={seasonYear} />

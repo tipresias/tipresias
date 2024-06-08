@@ -21,10 +21,11 @@ import {
   fetchRoundMetrics,
 } from "../.server/predictionService";
 import {
-  fetchLatestPredictedRound,
+  fetchPredictedRoundNumbers,
   fetchSeasons,
 } from "~/.server/seasonService";
 import SeasonSelect, { CURRENT_SEASON_PARAM } from "~/components/SeasonSelect";
+import RoundSelect, { CURRENT_ROUND_PARAM } from "~/components/RoundSelect";
 
 export const meta: MetaFunction = () => {
   return [
@@ -51,14 +52,27 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   )(CURRENT_SEASON_PARAM);
   if (!currentSeasonYear) throw Error("No season data found");
 
-  const currentRound = await fetchLatestPredictedRound(currentSeasonYear);
+  const roundNumbers = await fetchPredictedRoundNumbers(currentSeasonYear);
+  const currentRoundNumber = R.pipe(
+    (paramName) => url.searchParams.get(paramName),
+    R.defaultTo(String(max(roundNumbers))),
+    parseInt,
+    R.ifElse(
+      (seasonYear) => R.includes(seasonYear, roundNumbers),
+      R.identity,
+      () => max(roundNumbers)
+    )
+  )(CURRENT_ROUND_PARAM);
+  if (!currentRoundNumber) throw Error("No round prediction data found");
+
   const predictions: RoundPrediction[] = await fetchRoundPredictions(
     currentSeasonYear
   );
   const metrics: Metrics = await fetchRoundMetrics(currentSeasonYear);
 
   return json({
-    currentRound,
+    currentRoundNumber,
+    roundNumbers,
     predictions,
     metrics,
     currentSeasonYear,
@@ -67,8 +81,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Index() {
-  const { currentRound, predictions, metrics, seasonYears, currentSeasonYear } =
-    useLoaderData<typeof loader>();
+  const {
+    currentRoundNumber,
+    roundNumbers,
+    predictions,
+    metrics,
+    seasonYears,
+    currentSeasonYear,
+  } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
   return (
@@ -85,20 +105,25 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          {seasonYears && (
+          {seasonYears && roundNumbers && currentRoundNumber && (
             <Form style={{ padding: "1rem" }}>
               <SeasonSelect
                 submit={submit}
                 seasonYears={seasonYears}
                 currentSeasonYear={currentSeasonYear}
               />
+              <RoundSelect
+                submit={submit}
+                roundNumbers={roundNumbers}
+                currentRoundNumber={currentRoundNumber}
+              />
             </Form>
           )}
-          {predictions && currentSeasonYear && currentRound && (
+          {predictions && currentSeasonYear && currentRoundNumber && (
             <Card marginTop="1rem" marginBottom="1rem">
               <CardBody>
                 <PredictionsTable
-                  currentRound={currentRound}
+                  currentRound={currentRoundNumber}
                   currentSeason={currentSeasonYear}
                   predictions={predictions}
                 />

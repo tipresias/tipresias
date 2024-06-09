@@ -25,26 +25,7 @@ import {
 } from "~/.server/seasonService";
 import SeasonSelect, { CURRENT_SEASON_PARAM } from "~/components/SeasonSelect";
 import RoundSelect, { CURRENT_ROUND_PARAM } from "~/components/RoundSelect";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-const CHART_PALETTE = [
-  "#E69F00",
-  "#56B4E9",
-  "#CC79A7",
-  "#009E73",
-  "#0072B2",
-  "#D55E00",
-  "#F0E442",
-];
+import MetricsChart from "~/components/MetricsChart";
 
 export const meta: MetaFunction = () => {
   return [
@@ -123,58 +104,27 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          {seasonYears && roundNumbers && currentRoundNumber && (
-            <Form style={{ padding: "1rem" }}>
-              <SeasonSelect
-                submit={submit}
-                seasonYears={seasonYears}
-                currentSeasonYear={currentSeasonYear}
-              />
-              <RoundSelect
-                submit={submit}
-                roundNumbers={roundNumbers}
-                currentRoundNumber={currentRoundNumber}
-              />
-            </Form>
-          )}
-          {currentSeasonYear && (
+          {seasonYears &&
+            roundNumbers &&
+            currentRoundNumber &&
+            currentSeasonYear && (
+              <Form style={{ padding: "1rem" }}>
+                <SeasonSelect
+                  submit={submit}
+                  seasonYears={seasonYears}
+                  currentSeasonYear={currentSeasonYear}
+                />
+                <RoundSelect
+                  submit={submit}
+                  roundNumbers={roundNumbers}
+                  currentRoundNumber={currentRoundNumber}
+                />
+              </Form>
+            )}
+          {roundMetrics && (
             <Card marginTop="1rem" marginBottom="1rem" width="100%">
               <CardBody>
-                <ResponsiveContainer width="100%" height={600}>
-                  <LineChart data={roundMetrics.totalTips}>
-                    <CartesianGrid />
-                    <XAxis
-                      dataKey="roundNumber"
-                      label={{
-                        value: "Rounds",
-                        position: "insideBottom",
-                        offset: 25,
-                      }}
-                      height={70}
-                    />
-                    <YAxis
-                      label={{
-                        value: "Total Tips",
-                        angle: -90,
-                        position: "insideLeft",
-                        offset: 15,
-                      }}
-                    />
-                    <Tooltip itemSorter={({ value }) => -(value ?? 0)} />
-                    <Legend />
-                    {Object.keys(roundMetrics.totalTips[0])
-                      .filter((key) => key !== "roundNumber")
-                      .sort()
-                      .map((mlModelName, idx) => (
-                        <Line
-                          key={mlModelName}
-                          dataKey={mlModelName}
-                          stroke={CHART_PALETTE[idx]}
-                          fill={CHART_PALETTE[idx]}
-                        />
-                      ))}
-                  </LineChart>
-                </ResponsiveContainer>
+                <MetricsChart roundMetrics={roundMetrics} />
               </CardBody>
             </Card>
           )}

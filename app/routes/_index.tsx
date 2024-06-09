@@ -15,6 +15,7 @@ import * as R from "ramda";
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
 import {
+  fetchRoundMetrics,
   fetchRoundPredictions,
   fetchSeasonMetrics,
 } from "../.server/predictionService";
@@ -27,12 +28,23 @@ import RoundSelect, { CURRENT_ROUND_PARAM } from "~/components/RoundSelect";
 import {
   CartesianGrid,
   Legend,
+  Line,
   LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
+const CHART_PALETTE = [
+  "#E69F00",
+  "#56B4E9",
+  "#CC79A7",
+  "#009E73",
+  "#0072B2",
+  "#D55E00",
+  "#F0E442",
+];
 
 export const meta: MetaFunction = () => {
   return [
@@ -72,6 +84,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     fetchRoundPredictions(currentSeasonYear, currentRoundNumber),
     fetchSeasonMetrics(currentSeasonYear),
   ]);
+  const roundMetrics = await fetchRoundMetrics(currentSeasonYear);
 
   return json({
     currentRoundNumber,
@@ -80,6 +93,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     metrics,
     currentSeasonYear,
     seasonYears,
+    roundMetrics,
   });
 };
 
@@ -91,6 +105,7 @@ export default function Index() {
     metrics,
     seasonYears,
     currentSeasonYear,
+    roundMetrics,
   } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
@@ -123,15 +138,45 @@ export default function Index() {
             </Form>
           )}
           {currentSeasonYear && (
-            <ResponsiveContainer>
-              <LineChart>
-                <CartesianGrid />
-                <XAxis />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-              </LineChart>
-            </ResponsiveContainer>
+            <Card marginTop="1rem" marginBottom="1rem" width="100%">
+              <CardBody>
+                <ResponsiveContainer width="100%" height={600}>
+                  <LineChart data={roundMetrics.totalTips}>
+                    <CartesianGrid />
+                    <XAxis
+                      dataKey="roundNumber"
+                      label={{
+                        value: "Rounds",
+                        position: "insideBottom",
+                        offset: 25,
+                      }}
+                      height={70}
+                    />
+                    <YAxis
+                      label={{
+                        value: "Total Tips",
+                        angle: -90,
+                        position: "insideLeft",
+                        offset: 15,
+                      }}
+                    />
+                    <Tooltip itemSorter={({ value }) => -(value ?? 0)} />
+                    <Legend />
+                    {Object.keys(roundMetrics.totalTips[0])
+                      .filter((key) => key !== "roundNumber")
+                      .sort()
+                      .map((mlModelName, idx) => (
+                        <Line
+                          key={mlModelName}
+                          dataKey={mlModelName}
+                          stroke={CHART_PALETTE[idx]}
+                          fill={CHART_PALETTE[idx]}
+                        />
+                      ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardBody>
+            </Card>
           )}
           {predictions && currentSeasonYear && currentRoundNumber && (
             <Card marginTop="1rem" marginBottom="1rem">

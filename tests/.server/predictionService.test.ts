@@ -7,6 +7,8 @@ import {
   RoundPrediction,
   fetchSeasonMetrics,
   fetchRoundPredictions,
+  RoundMetrics,
+  fetchRoundMetrics,
 } from "../../app/.server/predictionService";
 import * as db from "../../app/.server/db";
 
@@ -96,6 +98,57 @@ describe("fetchSeasonMetrics", () => {
         accuracy: null,
         mae: null,
         bits: null,
+      });
+    });
+  });
+});
+
+describe("fetchRoundMetrics", () => {
+  const seasonYear = 2020;
+
+  describe("when prediction are available", () => {
+    const fakeRoundModelMetrics = [
+      {
+        roundNumber: faker.number.int(),
+        modelA: faker.number.float(),
+        modelB: faker.number.float(),
+      },
+    ];
+    const fakeRoundMetrics = {
+      totalTips: fakeRoundModelMetrics,
+      accuracy: fakeRoundModelMetrics,
+      mae: fakeRoundModelMetrics,
+      bits: fakeRoundModelMetrics,
+    };
+
+    beforeAll(() => {
+      const mockSqlQueryImplementation = (async () => [
+        fakeRoundMetrics,
+      ]) as typeof db.sqlQuery<RoundMetrics[]>;
+      mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
+    });
+
+    it("returns a metrics object", async () => {
+      const metrics = await fetchRoundMetrics(2020);
+      expect(metrics).toMatchObject<RoundMetrics>(fakeRoundMetrics);
+    });
+  });
+
+  describe("when no predictions are available", () => {
+    beforeAll(() => {
+      const fakeRoundMetrics: RoundMetrics[] = [];
+      const mockSqlQueryImplementation = (async () =>
+        fakeRoundMetrics) as typeof db.sqlQuery<RoundMetrics[]>;
+      mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
+    });
+
+    it("returns a blank metrics object", async () => {
+      const metrics = await fetchRoundMetrics(seasonYear);
+      expect(metrics).toMatchObject<RoundMetrics>({
+        totalTips: [],
+        accuracy: [],
+        mae: [],
+        bits: [],
       });
     });
   });

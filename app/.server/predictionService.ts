@@ -15,7 +15,7 @@ export interface SeasonMetrics {
   mae: number | null;
   bits: number | null;
 }
-interface MlModelRoundMetrics {
+export interface MlModelRoundMetrics {
   roundNumber: number;
   [mlModelName: string]: number;
 }

@@ -85,6 +85,7 @@ module.exports = {
   rules: {
     // There are plenty of times when you want to make sure a hook just runs once,
     // so I don't find this rule particularly helpful
-    'react-hooks/exhaustive-deps': "off"
+    "react-hooks/exhaustive-deps": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
   }
 };

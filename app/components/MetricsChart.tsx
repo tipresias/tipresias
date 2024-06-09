@@ -8,11 +8,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Flex, FormControl, FormLabel, Select } from "@chakra-ui/react";
+import { useState } from "react";
+
 import { RoundMetrics } from "../.server/predictionService";
 
 interface MetricsChartProps {
   roundMetrics: RoundMetrics;
 }
+type MetricName = keyof RoundMetrics;
 
 const CHART_PALETTE = [
   "#E69F00",
@@ -23,43 +27,84 @@ const CHART_PALETTE = [
   "#D55E00",
   "#F0E442",
 ];
+const METRIC_LABELS = {
+  totalTips: "Total Tips",
+  accuracy: "Accuracy",
+  mae: "MAE",
+  bits: "Bits",
+};
 
-const MetricsChart = ({ roundMetrics }: MetricsChartProps) => (
-  <ResponsiveContainer width="100%" height={600}>
-    <LineChart data={roundMetrics.totalTips}>
-      <CartesianGrid />
-      <XAxis
-        dataKey="roundNumber"
-        label={{
-          value: "Rounds",
-          position: "insideBottom",
-          offset: 25,
-        }}
-        height={70}
-      />
-      <YAxis
-        label={{
-          value: "Total Tips",
-          angle: -90,
-          position: "insideLeft",
-          offset: 15,
-        }}
-      />
-      <Tooltip itemSorter={({ value }) => -(value ?? 0)} />
-      <Legend />
-      {Object.keys(roundMetrics.totalTips[0])
-        .filter((key) => key !== "roundNumber")
-        .sort()
-        .map((mlModelName, idx) => (
-          <Line
-            key={mlModelName}
-            dataKey={mlModelName}
-            stroke={CHART_PALETTE[idx]}
-            fill={CHART_PALETTE[idx]}
+const isMetricName = (maybeMetricName: string): maybeMetricName is MetricName =>
+  Object.keys(METRIC_LABELS).includes(maybeMetricName);
+
+const MetricsChart = ({ roundMetrics }: MetricsChartProps) => {
+  const [currentMetric, setCurrentMetric] = useState<MetricName>("totalTips");
+
+  return (
+    <>
+      <FormControl
+        margin="0.5rem"
+        maxWidth="30%"
+        marginLeft="auto"
+        marginRight="auto"
+      >
+        <Flex alignItems="center" justifyContent="space-between">
+          <FormLabel margin="0.5rem" size="xl">
+            Metric
+          </FormLabel>
+          <Select
+            name={"metric"}
+            value={currentMetric}
+            onChange={(event) => {
+              const metricName = event.currentTarget.value;
+              if (isMetricName(metricName)) setCurrentMetric(metricName);
+            }}
+          >
+            {Object.keys(roundMetrics).map((metric) => (
+              <option value={metric} key={metric}>
+                {METRIC_LABELS[metric as MetricName]}
+              </option>
+            ))}
+          </Select>
+        </Flex>
+      </FormControl>
+      <ResponsiveContainer width="100%" height={600}>
+        <LineChart data={roundMetrics[currentMetric]}>
+          <CartesianGrid />
+          <XAxis
+            dataKey="roundNumber"
+            label={{
+              value: "Rounds",
+              position: "insideBottom",
+              offset: 25,
+            }}
+            height={70}
           />
-        ))}
-    </LineChart>
-  </ResponsiveContainer>
-);
+          <YAxis
+            label={{
+              value: METRIC_LABELS[currentMetric],
+              angle: -90,
+              position: "insideLeft",
+              offset: 15,
+            }}
+          />
+          <Tooltip itemSorter={({ value }) => -(value ?? 0)} />
+          <Legend />
+          {Object.keys(roundMetrics[currentMetric][0])
+            .filter((key) => key !== "roundNumber")
+            .sort()
+            .map((mlModelName, idx) => (
+              <Line
+                key={mlModelName}
+                dataKey={mlModelName}
+                stroke={CHART_PALETTE[idx]}
+                fill={CHART_PALETTE[idx]}
+              />
+            ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </>
+  );
+};
 
 export default MetricsChart;

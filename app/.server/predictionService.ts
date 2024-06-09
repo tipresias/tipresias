@@ -136,10 +136,10 @@ const buildRoundMetricsQuery = (seasonYear: number) => `
     json_agg("RoundMetrics".bits) AS bits
   FROM (
     SELECT
-      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg("Metrics".name, "Metrics"."totalTips")::jsonb)::json AS "totalTips",
-      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg("Metrics".name, "Metrics".accuracy)::jsonb)::json AS accuracy,
-      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg("Metrics".name, "Metrics".mae)::jsonb)::json AS mae,
-      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg("Metrics".name, "Metrics".bits)::jsonb)::json AS bits
+      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg_strict("Metrics".name, "Metrics"."totalTips")::jsonb)::json AS "totalTips",
+      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg_strict("Metrics".name, "Metrics".accuracy)::jsonb)::json AS accuracy,
+      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg_strict("Metrics".name, "Metrics".mae)::jsonb)::json AS mae,
+      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg_strict("Metrics".name, "Metrics".bits)::jsonb)::json AS bits
     FROM (
       SELECT DISTINCT
         "Match"."roundNumber",

@@ -15,8 +15,9 @@ import * as R from "ramda";
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
 import {
-  fetchRoundPredictions,
   fetchRoundMetrics,
+  fetchRoundPredictions,
+  fetchSeasonMetrics,
 } from "../.server/predictionService";
 import {
   fetchPredictedRoundNumbers,
@@ -24,6 +25,7 @@ import {
 } from "~/.server/seasonService";
 import SeasonSelect, { CURRENT_SEASON_PARAM } from "~/components/SeasonSelect";
 import RoundSelect, { CURRENT_ROUND_PARAM } from "~/components/RoundSelect";
+import MetricsChart from "~/components/MetricsChart";
 
 export const meta: MetaFunction = () => {
   return [
@@ -61,8 +63,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const [predictions, metrics] = await Promise.all([
     fetchRoundPredictions(currentSeasonYear, currentRoundNumber),
-    fetchRoundMetrics(currentSeasonYear),
+    fetchSeasonMetrics(currentSeasonYear),
   ]);
+  const roundMetrics = await fetchRoundMetrics(currentSeasonYear);
 
   return json({
     currentRoundNumber,
@@ -71,6 +74,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     metrics,
     currentSeasonYear,
     seasonYears,
+    roundMetrics,
   });
 };
 
@@ -82,6 +86,7 @@ export default function Index() {
     metrics,
     seasonYears,
     currentSeasonYear,
+    roundMetrics,
   } = useLoaderData<typeof loader>();
   const submit = useSubmit();
 
@@ -99,19 +104,29 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          {seasonYears && roundNumbers && currentRoundNumber && (
-            <Form style={{ padding: "1rem" }}>
-              <SeasonSelect
-                submit={submit}
-                seasonYears={seasonYears}
-                currentSeasonYear={currentSeasonYear}
-              />
-              <RoundSelect
-                submit={submit}
-                roundNumbers={roundNumbers}
-                currentRoundNumber={currentRoundNumber}
-              />
-            </Form>
+          {seasonYears &&
+            roundNumbers &&
+            currentRoundNumber &&
+            currentSeasonYear && (
+              <Form style={{ padding: "1rem" }}>
+                <SeasonSelect
+                  submit={submit}
+                  seasonYears={seasonYears}
+                  currentSeasonYear={currentSeasonYear}
+                />
+                <RoundSelect
+                  submit={submit}
+                  roundNumbers={roundNumbers}
+                  currentRoundNumber={currentRoundNumber}
+                />
+              </Form>
+            )}
+          {roundMetrics && (
+            <Card marginTop="1rem" marginBottom="1rem" width="100%">
+              <CardBody>
+                <MetricsChart roundMetrics={roundMetrics} />
+              </CardBody>
+            </Card>
           )}
           {predictions && currentSeasonYear && currentRoundNumber && (
             <Card marginTop="1rem" marginBottom="1rem">

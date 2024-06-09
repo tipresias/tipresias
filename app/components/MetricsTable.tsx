@@ -8,11 +8,11 @@ import {
   Tr,
 } from "@chakra-ui/react";
 
-import { Metrics } from "../.server/predictionService";
+import { SeasonMetrics } from "../.server/predictionService";
 import { presentNumber, presentPercentage } from "../helpers/number";
 
 interface MetricsTableProps {
-  metrics: Metrics;
+  metrics: SeasonMetrics;
   season: number;
 }
 

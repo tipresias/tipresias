@@ -3,7 +3,7 @@ import { userEvent } from "@testing-library/user-event";
 
 import RoundSelect from "../../app/components/RoundSelect";
 
-const mockSubmit = jest.fn();
+const mockLoadPredictions = jest.fn();
 const roundNumbers = [1, 2, 3, 4, 5];
 const currentRoundNumber = 5;
 
@@ -13,7 +13,7 @@ describe("SeasonSelect", () => {
 
     render(
       <RoundSelect
-        submit={mockSubmit}
+        loadPredictions={mockLoadPredictions}
         roundNumbers={roundNumbers}
         currentRoundNumber={currentRoundNumber}
       />
@@ -21,6 +21,6 @@ describe("SeasonSelect", () => {
 
     const select = screen.getByLabelText<HTMLSelectElement>("Round");
     await user.selectOptions(select, "1");
-    expect(mockSubmit).toHaveBeenCalled();
+    expect(mockLoadPredictions).toHaveBeenCalled();
   });
 });

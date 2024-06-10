@@ -14,25 +14,28 @@ window.ResizeObserver =
   }));
 
 describe("MetricsChart", () => {
-  const fakeRoundModelMetrics = [
+  const fakeRoundMetrics = [
     {
       roundNumber: faker.number.int(),
       modelA: faker.number.float(),
       modelB: faker.number.float(),
     },
   ];
-  const fakeRoundMetrics = {
-    totalTips: fakeRoundModelMetrics,
-    accuracy: fakeRoundModelMetrics,
-    mae: fakeRoundModelMetrics,
-    bits: fakeRoundModelMetrics,
-  };
+  const mockLoadData = jest.fn();
+  const fakeSeasonYear = 2020;
 
-  it("renders the chart", async () => {
+  it("selects a different metric", async () => {
     const user = userEvent.setup();
-    render(<MetricsChart roundMetrics={fakeRoundMetrics} />);
+    render(
+      <MetricsChart
+        roundMetrics={fakeRoundMetrics}
+        loadData={mockLoadData}
+        seasonYear={fakeSeasonYear}
+      />
+    );
     const select = screen.getByLabelText<HTMLSelectElement>("Metric");
     await user.selectOptions(select, "Accuracy");
+    expect(mockLoadData).toHaveBeenCalled();
     expect(select.value).toEqual("accuracy");
   });
 });

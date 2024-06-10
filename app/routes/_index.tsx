@@ -8,15 +8,15 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { useLoaderData, useSubmit, Form } from "@remix-run/react";
+import { useLoaderData, useSubmit, Form, useFetcher } from "@remix-run/react";
 import max from "lodash/max";
 import * as R from "ramda";
 
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
 import {
-  fetchRoundMetrics,
-  fetchRoundPredictions,
+  RoundMetrics,
+  RoundPrediction,
   fetchSeasonMetrics,
 } from "../.server/predictionService";
 import {
@@ -24,7 +24,6 @@ import {
   fetchSeasons,
 } from "~/.server/seasonService";
 import SeasonSelect, { CURRENT_SEASON_PARAM } from "~/components/SeasonSelect";
-import RoundSelect, { CURRENT_ROUND_PARAM } from "~/components/RoundSelect";
 import MetricsChart from "~/components/MetricsChart";
 
 export const meta: MetaFunction = () => {
@@ -54,41 +53,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     searchParams.get(CURRENT_SEASON_PARAM) || "",
     seasonYears
   );
-
   const roundNumbers = await fetchPredictedRoundNumbers(currentSeasonYear);
-  const currentRoundNumber = getCurrentTemporalValue(
-    searchParams.get(CURRENT_ROUND_PARAM) || "",
-    roundNumbers
-  );
 
-  const [predictions, metrics] = await Promise.all([
-    fetchRoundPredictions(currentSeasonYear, currentRoundNumber),
-    fetchSeasonMetrics(currentSeasonYear),
-  ]);
-  const roundMetrics = await fetchRoundMetrics(currentSeasonYear);
+  const metrics = await fetchSeasonMetrics(currentSeasonYear);
 
   return json({
-    currentRoundNumber,
     roundNumbers,
-    predictions,
     metrics,
     currentSeasonYear,
     seasonYears,
-    roundMetrics,
   });
 };
 
 export default function Index() {
-  const {
-    currentRoundNumber,
-    roundNumbers,
-    predictions,
-    metrics,
-    seasonYears,
-    currentSeasonYear,
-    roundMetrics,
-  } = useLoaderData<typeof loader>();
+  const { roundNumbers, metrics, seasonYears, currentSeasonYear } =
+    useLoaderData<typeof loader>();
   const submit = useSubmit();
+  const predictionFetcher = useFetcher<RoundPrediction[]>();
+  const metricFetcher = useFetcher<RoundMetrics[]>();
 
   return (
     <div
@@ -104,37 +86,34 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          {seasonYears &&
-            roundNumbers &&
-            currentRoundNumber &&
-            currentSeasonYear && (
-              <Form style={{ padding: "1rem" }}>
-                <SeasonSelect
-                  submit={submit}
-                  seasonYears={seasonYears}
-                  currentSeasonYear={currentSeasonYear}
-                />
-                <RoundSelect
-                  submit={submit}
-                  roundNumbers={roundNumbers}
-                  currentRoundNumber={currentRoundNumber}
-                />
-              </Form>
-            )}
-          {roundMetrics && (
+          {seasonYears && roundNumbers && currentSeasonYear && (
+            <Form style={{ padding: "1rem" }}>
+              <SeasonSelect
+                submit={submit}
+                seasonYears={seasonYears}
+                currentSeasonYear={currentSeasonYear}
+              />
+            </Form>
+          )}
+          {currentSeasonYear && (
             <Card marginTop="1rem" marginBottom="1rem" width="100%">
               <CardBody>
-                <MetricsChart roundMetrics={roundMetrics} />
+                <MetricsChart
+                  loadData={metricFetcher.load}
+                  seasonYear={currentSeasonYear}
+                  roundMetrics={metricFetcher.data || []}
+                />
               </CardBody>
             </Card>
           )}
-          {predictions && currentSeasonYear && currentRoundNumber && (
+          {currentSeasonYear && roundNumbers?.length && (
             <Card marginTop="1rem" marginBottom="1rem">
               <CardBody>
                 <PredictionsTable
-                  currentRound={currentRoundNumber}
-                  currentSeason={currentSeasonYear}
-                  predictions={predictions}
+                  loadData={predictionFetcher.load}
+                  roundNumbers={roundNumbers}
+                  seasonYear={currentSeasonYear}
+                  predictions={predictionFetcher.data || []}
                 />
               </CardBody>
             </Card>

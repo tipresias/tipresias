@@ -6,8 +6,9 @@ import PredictionsTable, {
 } from "../../app/components/PredictionsTable";
 
 describe("PredictionsTable", () => {
-  const currentRound = faker.number.int();
-  const currentSeason = faker.number.int();
+  const seasonYear = faker.number.int();
+  const roundNumbers = new Array(12).fill(null).map((_, idx) => idx + 1);
+  const fakeLoadData = jest.fn();
 
   describe("when all values are present", () => {
     const predictions = new Array(9).fill(null).map(() => ({
@@ -19,26 +20,30 @@ describe("PredictionsTable", () => {
         null,
     }));
 
-    it("displays the table title", () => {
+    it("displays the table title with year and max round", () => {
       render(
         <PredictionsTable
-          currentRound={currentRound}
-          currentSeason={currentSeason}
+          loadData={fakeLoadData}
           predictions={predictions}
+          seasonYear={seasonYear}
+          roundNumbers={roundNumbers}
         />
       );
 
       screen.getByText(
-        `Predictions for Round ${currentRound}, ${currentSeason}`
+        `Predictions for Round ${
+          roundNumbers[roundNumbers.length - 1]
+        }, ${seasonYear}`
       );
     });
 
     it("displays predictions", () => {
       render(
         <PredictionsTable
-          currentRound={currentRound}
-          currentSeason={currentSeason}
+          loadData={fakeLoadData}
           predictions={predictions}
+          seasonYear={seasonYear}
+          roundNumbers={roundNumbers}
         />
       );
 
@@ -71,9 +76,10 @@ describe("PredictionsTable", () => {
     it("displays NA for missing values", () => {
       render(
         <PredictionsTable
-          currentRound={currentRound}
-          currentSeason={currentSeason}
+          loadData={fakeLoadData}
           predictions={predictions}
+          seasonYear={seasonYear}
+          roundNumbers={roundNumbers}
         />
       );
 

@@ -9,21 +9,18 @@ import {
   YAxis,
 } from "recharts";
 import { Flex, FormControl, FormLabel, Select } from "@chakra-ui/react";
-import { useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
-import {
-  MlModelRoundMetrics,
-  RoundMetrics,
-} from "../.server/predictionService";
+import { RoundMetrics, MetricName } from "../.server/predictionService";
 
 interface MetricsChartProps {
-  roundMetrics: RoundMetrics;
+  roundMetrics: RoundMetrics[];
+  seasonYear: number;
+  loadData: (href: string) => void;
 }
-type MetricName = keyof RoundMetrics;
 interface MetricSelectProps {
-  roundMetrics: RoundMetrics;
+  loadMetrics: (metricName: MetricName) => void;
   currentMetric: MetricName;
-  setCurrentMetric: (metric: MetricName) => void;
 }
 
 const CHART_PALETTE = [
@@ -35,7 +32,7 @@ const CHART_PALETTE = [
   "#D55E00",
   "#F0E442",
 ];
-const METRIC_LABELS = {
+const METRIC_LABELS: Record<MetricName, string> = {
   totalTips: "Total Tips",
   accuracy: "Accuracy",
   mae: "MAE",
@@ -45,58 +42,64 @@ const METRIC_LABELS = {
 const isMetricName = (maybeMetricName: string): maybeMetricName is MetricName =>
   Object.keys(METRIC_LABELS).includes(maybeMetricName);
 
-const getModelNames = (mlModelRoundMetrics: MlModelRoundMetrics[]) =>
-  Object.keys(mlModelRoundMetrics[0])
+const getModelNames = (roundMetrics: RoundMetrics[]) =>
+  Object.keys(roundMetrics[0] || {})
     .filter((key) => key !== "roundNumber")
     .sort();
 
-const MetricSelect = ({
-  roundMetrics,
-  currentMetric,
-  setCurrentMetric,
-}: MetricSelectProps) => (
-  <FormControl
-    margin="0.5rem"
-    maxWidth="30%"
-    marginLeft="auto"
-    marginRight="auto"
-  >
-    <Flex alignItems="center" justifyContent="space-between">
-      <FormLabel margin="0.5rem" size="xl">
-        Metric
-      </FormLabel>
-      <Select
-        name={"metric"}
-        value={currentMetric}
-        onChange={(event) => {
-          const metricName = event.currentTarget.value;
-          if (isMetricName(metricName)) setCurrentMetric(metricName);
-        }}
-      >
-        {Object.entries(roundMetrics)
-          .filter(([_, metricValues]) => getModelNames(metricValues).length)
-          .map(([metric]) => (
-            <option value={metric} key={metric}>
-              {METRIC_LABELS[metric as MetricName]}
+const MetricSelect = ({ currentMetric, loadMetrics }: MetricSelectProps) => {
+  const onMetricChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const metricName = event.currentTarget.value;
+    if (isMetricName(metricName)) loadMetrics(metricName);
+  };
+
+  return (
+    <FormControl
+      margin="0.5rem"
+      maxWidth="30%"
+      marginLeft="auto"
+      marginRight="auto"
+    >
+      <Flex alignItems="center" justifyContent="space-between">
+        <FormLabel margin="0.5rem" size="xl">
+          Metric
+        </FormLabel>
+        <Select name={"metric"} value={currentMetric} onChange={onMetricChange}>
+          {Object.entries(METRIC_LABELS).map(([metricName, metricLabel]) => (
+            <option value={metricName} key={metricName}>
+              {metricLabel}
             </option>
           ))}
-      </Select>
-    </Flex>
-  </FormControl>
-);
+        </Select>
+      </Flex>
+    </FormControl>
+  );
+};
 
-const MetricsChart = ({ roundMetrics }: MetricsChartProps) => {
-  const [currentMetric, setCurrentMetric] = useState<MetricName>("totalTips");
+const MetricsChart = ({
+  roundMetrics,
+  loadData,
+  seasonYear,
+}: MetricsChartProps) => {
+  const [metricName, setMetricName] = useState<MetricName>("totalTips");
+
+  const loadMetrics = useCallback(
+    (newMetricName: MetricName) => {
+      loadData(`seasons/${seasonYear}/metrics/${newMetricName}`);
+      setMetricName(newMetricName);
+    },
+    [loadData, setMetricName, seasonYear]
+  );
+
+  useEffect(() => {
+    loadMetrics(metricName);
+  }, [metricName, loadMetrics]);
 
   return (
     <>
-      <MetricSelect
-        roundMetrics={roundMetrics}
-        currentMetric={currentMetric}
-        setCurrentMetric={setCurrentMetric}
-      />
+      <MetricSelect loadMetrics={loadMetrics} currentMetric={metricName} />
       <ResponsiveContainer width="100%" height={600}>
-        <LineChart data={roundMetrics[currentMetric]}>
+        <LineChart data={roundMetrics}>
           <CartesianGrid />
           <XAxis
             dataKey="roundNumber"
@@ -109,7 +112,7 @@ const MetricsChart = ({ roundMetrics }: MetricsChartProps) => {
           />
           <YAxis
             label={{
-              value: METRIC_LABELS[currentMetric],
+              value: METRIC_LABELS[metricName],
               angle: -90,
               position: "insideLeft",
               offset: 15,
@@ -117,16 +120,14 @@ const MetricsChart = ({ roundMetrics }: MetricsChartProps) => {
           />
           <Tooltip itemSorter={({ value }) => -(value ?? 0)} />
           <Legend />
-          {getModelNames(roundMetrics[currentMetric]).map(
-            (mlModelName, idx) => (
-              <Line
-                key={mlModelName}
-                dataKey={mlModelName}
-                stroke={CHART_PALETTE[idx]}
-                fill={CHART_PALETTE[idx]}
-              />
-            )
-          )}
+          {getModelNames(roundMetrics).map((mlModelName, idx) => (
+            <Line
+              key={mlModelName}
+              dataKey={mlModelName}
+              stroke={CHART_PALETTE[idx]}
+              fill={CHART_PALETTE[idx]}
+            />
+          ))}
         </LineChart>
       </ResponsiveContainer>
     </>

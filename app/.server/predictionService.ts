@@ -15,16 +15,20 @@ export interface SeasonMetrics {
   mae: number | null;
   bits: number | null;
 }
-export interface MlModelRoundMetrics {
+export interface RoundMetrics {
   roundNumber: number;
   [mlModelName: string]: number;
 }
-export interface RoundMetrics {
-  totalTips: MlModelRoundMetrics[];
-  accuracy: MlModelRoundMetrics[];
-  mae: MlModelRoundMetrics[];
-  bits: MlModelRoundMetrics[];
+export interface RoundMetricsResult {
+  value: RoundMetrics[];
 }
+interface BaseMetricQueriesMap {
+  totalTips: (seasonYear: number) => string;
+  accuracy: (seasonYear: number) => string;
+  mae: (seasonYear: number) => string;
+  bits: (seasonYear: number) => string;
+}
+export type MetricName = keyof BaseMetricQueriesMap;
 
 const buildRoundPredictionQuery = (seasonYear: number, roundNumber: number) => `
   WITH "PrincipalPrediction" AS (
@@ -128,67 +132,121 @@ export const fetchSeasonMetrics = (seasonYear: number) =>
     R.andThen(R.defaultTo(BLANK_SEASON_METRICS))
   )(seasonYear);
 
-const buildRoundMetricsQuery = (seasonYear: number) => `
+const buildTotalTipsQuery = (seasonYear: number) => `
+  SELECT DISTINCT
+    "Match"."roundNumber",
+    "MlModel".name,
+    SUM("Prediction"."isCorrect"::int) OVER "PerModelRound"::int AS value
+  FROM "Prediction"
+  INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
+  INNER JOIN "Match" ON "Match".id = "Prediction"."matchId"
+  INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
+  INNER JOIN "MlModelSeason" ON "MlModelSeason"."mlModelId" = "MlModel".id AND "MlModelSeason"."seasonId" = "Season".id
+  WHERE "Prediction"."isCorrect" IS NOT NULL
+  AND "Season".year = ${seasonYear}
+  WINDOW "PerModelRound" AS (PARTITION BY "MlModel".name ORDER BY "Match"."roundNumber" ASC)
+  ORDER BY "Match"."roundNumber" ASC, "MlModel".name
+`;
+const buildAccuracyQuery = (seasonYear: number) => `
+  SELECT DISTINCT
+    "Match"."roundNumber",
+    "MlModel".name,
+    AVG("Prediction"."isCorrect"::int) OVER "PerModelRound"::float AS value
+  FROM "Prediction"
+  INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
+  INNER JOIN "Match" ON "Match".id = "Prediction"."matchId"
+  INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
+  INNER JOIN "MlModelSeason" ON "MlModelSeason"."mlModelId" = "MlModel".id AND "MlModelSeason"."seasonId" = "Season".id
+  WHERE "Prediction"."isCorrect" IS NOT NULL
+  AND "Season".year = ${seasonYear}
+  WINDOW "PerModelRound" AS (PARTITION BY "MlModel".name ORDER BY "Match"."roundNumber" ASC)
+  ORDER BY "Match"."roundNumber" ASC, "MlModel".name
+`;
+const buildMaeQuery = (seasonYear: number) => `
+  SELECT DISTINCT
+    "Match"."roundNumber",
+    "MlModel".name,
+    AVG(
+      CASE
+      WHEN "Prediction"."isCorrect" IS TRUE
+        THEN ABS("Match".margin - "Prediction"."predictedMargin")
+      ELSE
+        "Match".margin + "Prediction"."predictedMargin"
+      END
+    ) FILTER(WHERE "Prediction"."predictedMargin" IS NOT NULL) OVER "PerModelRound"::float AS value
+  FROM "Prediction"
+  INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
+  INNER JOIN "Match" ON "Match".id = "Prediction"."matchId"
+  INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
+  INNER JOIN "MlModelSeason" ON "MlModelSeason"."mlModelId" = "MlModel".id AND "MlModelSeason"."seasonId" = "Season".id
+  WHERE "Prediction"."isCorrect" IS NOT NULL
+  AND "Season".year = ${seasonYear}
+  WINDOW "PerModelRound" AS (PARTITION BY "MlModel".name ORDER BY "Match"."roundNumber" ASC)
+  ORDER BY "Match"."roundNumber" ASC, "MlModel".name
+`;
+const buildBitsQuery = (seasonYear: number) => `
+  SELECT DISTINCT
+    "Match"."roundNumber",
+    "MlModel".name,
+    SUM(
+      (
+      CASE
+        WHEN "Match".margin = 0
+        THEN 1 + (0.5 * LOG(2, ("Prediction"."predictedWinProbability" * (1 - "Prediction"."predictedWinProbability"))::numeric))
+        WHEN "Match".margin <> 0 AND "Prediction"."isCorrect" IS TRUE
+        THEN 1 + LOG(2, "Prediction"."predictedWinProbability"::numeric)
+        WHEN "Prediction"."isCorrect" IS FALSE
+        THEN 1 + LOG(2, (1 - "Prediction"."predictedWinProbability")::numeric)
+        END
+      )::float
+    ) FILTER(WHERE "Prediction"."predictedWinProbability" IS NOT NULL) OVER "PerModelRound"::float AS value
+  FROM "Prediction"
+  INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
+  INNER JOIN "Match" ON "Match".id = "Prediction"."matchId"
+  INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
+  INNER JOIN "MlModelSeason" ON "MlModelSeason"."mlModelId" = "MlModel".id AND "MlModelSeason"."seasonId" = "Season".id
+  WHERE "Prediction"."isCorrect" IS NOT NULL
+  AND "Season".year = ${seasonYear}
+  WINDOW "PerModelRound" AS (PARTITION BY "MlModel".name ORDER BY "Match"."roundNumber" ASC)
+  ORDER BY "Match"."roundNumber" ASC, "MlModel".name
+`;
+
+const BASE_METRIC_QUERIES = {
+  totalTips: buildTotalTipsQuery,
+  accuracy: buildAccuracyQuery,
+  mae: buildMaeQuery,
+  bits: buildBitsQuery,
+};
+export const isMetricName = (
+  maybeMetricName: string | undefined
+): maybeMetricName is MetricName =>
+  !!maybeMetricName &&
+  Object.keys(BASE_METRIC_QUERIES).includes(maybeMetricName);
+
+const buildRoundMetricsQuery = (
+  seasonYear: number,
+  name: keyof BaseMetricQueriesMap
+) => `
   SELECT
-    json_agg("RoundMetrics"."totalTips") AS "totalTips",
-    json_agg("RoundMetrics".accuracy) AS accuracy,
-    json_agg("RoundMetrics".mae) AS mae,
-    json_agg("RoundMetrics".bits) AS bits
+    json_agg("RoundMetrics".value) AS value
   FROM (
-    SELECT
-      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg_strict("Metrics".name, "Metrics"."totalTips")::jsonb)::json AS "totalTips",
-      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg_strict("Metrics".name, "Metrics".accuracy)::jsonb)::json AS accuracy,
-      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg_strict("Metrics".name, "Metrics".mae)::jsonb)::json AS mae,
-      (json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb || json_object_agg_strict("Metrics".name, "Metrics".bits)::jsonb)::json AS bits
-    FROM (
-      SELECT DISTINCT
-        "Match"."roundNumber",
-        "MlModel".name,
-        SUM("Prediction"."isCorrect"::int) OVER "PerModelRound"::int AS "totalTips",
-        AVG("Prediction"."isCorrect"::int) OVER "PerModelRound"::float AS accuracy,
-        AVG(
-          CASE
-          WHEN "Prediction"."isCorrect" IS TRUE
-            THEN ABS("Match".margin - "Prediction"."predictedMargin")
-          ELSE
-            "Match".margin + "Prediction"."predictedMargin"
-          END
-        ) FILTER(WHERE "Prediction"."predictedMargin" IS NOT NULL) OVER "PerModelRound"::float AS mae,
-        SUM(
-          (
-          CASE
-            WHEN "Match".margin = 0
-            THEN 1 + (0.5 * LOG(2, ("Prediction"."predictedWinProbability" * (1 - "Prediction"."predictedWinProbability"))::numeric))
-            WHEN "Match".margin <> 0 AND "Prediction"."isCorrect" IS TRUE
-            THEN 1 + LOG(2, "Prediction"."predictedWinProbability"::numeric)
-            WHEN "Prediction"."isCorrect" IS FALSE
-            THEN 1 + LOG(2, (1 - "Prediction"."predictedWinProbability")::numeric)
-            END
-          )::float
-        ) FILTER(WHERE "Prediction"."predictedWinProbability" IS NOT NULL) OVER "PerModelRound"::float AS bits
-      FROM "Prediction"
-      INNER JOIN "MlModel" ON "MlModel".id = "Prediction"."mlModelId"
-      INNER JOIN "Match" ON "Match".id = "Prediction"."matchId"
-      INNER JOIN "Season" ON "Season".id = "Match"."seasonId"
-      INNER JOIN "MlModelSeason" ON "MlModelSeason"."mlModelId" = "MlModel".id AND "MlModelSeason"."seasonId" = "Season".id
-      WHERE "Prediction"."isCorrect" IS NOT NULL
-      AND "Season".year = ${seasonYear}
-      WINDOW "PerModelRound" AS (PARTITION BY "MlModel".name ORDER BY "Match"."roundNumber" ASC)
-      ORDER BY "Match"."roundNumber" ASC, "MlModel".name
-    ) AS "Metrics"
+    SELECT (
+      json_build_object('roundNumber', "Metrics"."roundNumber")::jsonb ||
+        json_object_agg_strict("Metrics".name, "Metrics".value)::jsonb
+    )::json AS value
+    FROM (${BASE_METRIC_QUERIES[name](seasonYear)}) AS "Metrics"
     GROUP BY "Metrics"."roundNumber"
   ) AS "RoundMetrics"
 `;
-const BLANK_ROUND_METRICS: RoundMetrics = {
-  totalTips: [],
-  accuracy: [],
-  mae: [],
-  bits: [],
-};
-export const fetchRoundMetrics = (seasonYear: number) =>
+const DEFAULT_ROUND_METRICS: { value: RoundMetrics[] } = { value: [] };
+export const fetchRoundMetrics = (
+  seasonYear: number,
+  name: keyof BaseMetricQueriesMap
+) =>
   R.pipe(
     buildRoundMetricsQuery,
-    sqlQuery<RoundMetrics[]>,
-    R.andThen(R.head<RoundMetrics>),
-    R.andThen(R.defaultTo(BLANK_ROUND_METRICS))
-  )(seasonYear);
+    sqlQuery<{ value: RoundMetrics[] }[]>,
+    R.andThen(R.head<{ value: RoundMetrics[] }>),
+    R.andThen(R.defaultTo(DEFAULT_ROUND_METRICS)),
+    R.andThen(R.prop("value"))
+  )(seasonYear, name);

@@ -15,8 +15,8 @@ import * as R from "ramda";
 import MetricsTable from "../components/MetricsTable";
 import PredictionsTable from "../components/PredictionsTable";
 import {
+  RoundMetrics,
   RoundPrediction,
-  fetchRoundMetrics,
   fetchSeasonMetrics,
 } from "../.server/predictionService";
 import {
@@ -56,27 +56,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const roundNumbers = await fetchPredictedRoundNumbers(currentSeasonYear);
 
   const metrics = await fetchSeasonMetrics(currentSeasonYear);
-  const roundMetrics = await fetchRoundMetrics(currentSeasonYear);
 
   return json({
     roundNumbers,
     metrics,
     currentSeasonYear,
     seasonYears,
-    roundMetrics,
   });
 };
 
 export default function Index() {
-  const {
-    roundNumbers,
-    metrics,
-    seasonYears,
-    currentSeasonYear,
-    roundMetrics,
-  } = useLoaderData<typeof loader>();
+  const { roundNumbers, metrics, seasonYears, currentSeasonYear } =
+    useLoaderData<typeof loader>();
   const submit = useSubmit();
   const predictionFetcher = useFetcher<RoundPrediction[]>();
+  const metricFetcher = useFetcher<RoundMetrics[]>();
 
   return (
     <div
@@ -101,10 +95,14 @@ export default function Index() {
               />
             </Form>
           )}
-          {roundMetrics && (
+          {currentSeasonYear && (
             <Card marginTop="1rem" marginBottom="1rem" width="100%">
               <CardBody>
-                <MetricsChart roundMetrics={roundMetrics} />
+                <MetricsChart
+                  loadData={metricFetcher.load}
+                  seasonYear={currentSeasonYear}
+                  roundMetrics={metricFetcher.data || []}
+                />
               </CardBody>
             </Card>
           )}

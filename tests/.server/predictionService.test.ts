@@ -9,6 +9,7 @@ import {
   fetchRoundPredictions,
   RoundMetrics,
   fetchRoundMetrics,
+  RoundMetricsResult,
 } from "../../app/.server/predictionService";
 import * as db from "../../app/.server/db";
 
@@ -114,23 +115,18 @@ describe("fetchRoundMetrics", () => {
         modelB: faker.number.float(),
       },
     ];
-    const fakeRoundMetrics = {
-      totalTips: fakeRoundModelMetrics,
-      accuracy: fakeRoundModelMetrics,
-      mae: fakeRoundModelMetrics,
-      bits: fakeRoundModelMetrics,
-    };
+    const fakeRoundMetrics = { value: fakeRoundModelMetrics };
 
     beforeAll(() => {
       const mockSqlQueryImplementation = (async () => [
         fakeRoundMetrics,
-      ]) as typeof db.sqlQuery<RoundMetrics[]>;
+      ]) as typeof db.sqlQuery<RoundMetricsResult[]>;
       mockSqlQuery.mockImplementation(mockSqlQueryImplementation);
     });
 
     it("returns a metrics object", async () => {
-      const metrics = await fetchRoundMetrics(2020);
-      expect(metrics).toMatchObject<RoundMetrics>(fakeRoundMetrics);
+      const metrics = await fetchRoundMetrics(2020, "totalTips");
+      expect(metrics).toMatchObject<RoundMetrics[]>(fakeRoundModelMetrics);
     });
   });
 
@@ -143,13 +139,8 @@ describe("fetchRoundMetrics", () => {
     });
 
     it("returns a blank metrics object", async () => {
-      const metrics = await fetchRoundMetrics(seasonYear);
-      expect(metrics).toMatchObject<RoundMetrics>({
-        totalTips: [],
-        accuracy: [],
-        mae: [],
-        bits: [],
-      });
+      const metrics = await fetchRoundMetrics(seasonYear, "totalTips");
+      expect(metrics).toEqual([]);
     });
   });
 });

@@ -20,14 +20,15 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 - Run `npm install`
 - Run `docker-compose up -d`
 - Load data dump with `docker-compose exec db psql -f tipresias/$DATA_DUMP_FILEPATH
-- RUN `npx prisma db pull`
-- RUN `npx prisma generate`
+- Run `npx prisma db pull`
+- Run `npx prisma generate`
+- Run `npx prisma migrate deploy`
 
 ### Run the app
 
 - Run `docker-compouse up -d`
 - Run `npm run dev`
-- Navigate to `localhost:3000`.
+- Navigate to `localhost:5173`.
 
 ### A note on architecture
 
@@ -36,10 +37,9 @@ Child of [Footy Tipper](https://github.com/cfranklin11/footy-tipper), Tipresias,
 ### Testing
 
 - Unit tests: `npm run test`
-- e2e tests: `npm run test:e2e:run`
 - Linting: `npm run lint`
 - Typechecking: `npm run typecheck`
 
 ### Deploy
 
-The app is deployed to AWS with every merge/push to `main`.
+The app is deployed to Vercel with every merge/push to `main`.

@@ -21,7 +21,7 @@ const SeasonSelect = ({
   seasonYears,
   currentSeasonYear,
 }: SeasonSelectProps) => (
-  <FormControl margin="0.5rem">
+  <FormControl marginLeft="auto" marginRight="auto" maxWidth="15rem">
     <Flex alignItems="center" justifyContent="space-between">
       <FormLabel margin="0.5rem" size="xl">
         Season

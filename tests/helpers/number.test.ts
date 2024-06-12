@@ -87,4 +87,13 @@ describe("presentPercentage", () => {
       expect(presentedNumber).toEqual("-512.98%");
     });
   });
+
+  describe("when the digits are defined", () => {
+    const value = 5.1298;
+
+    it("is rounded that many digits", () => {
+      const presentedNumber = presentPercentage(value, 4);
+      expect(presentedNumber).toEqual("512.9800%");
+    });
+  });
 });

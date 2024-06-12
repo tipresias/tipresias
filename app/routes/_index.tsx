@@ -86,18 +86,16 @@ export default function Index() {
       </Container>
       <Box margin="auto" width="fit-content">
         <Flex alignItems="center" flexWrap="wrap" direction="column">
-          {seasonYears && roundNumbers && currentSeasonYear && (
-            <Form style={{ padding: "1rem" }}>
-              <SeasonSelect
-                submit={submit}
-                seasonYears={seasonYears}
-                currentSeasonYear={currentSeasonYear}
-              />
-            </Form>
-          )}
           {currentSeasonYear && (
             <Card marginTop="1rem" marginBottom="1rem" width="100%">
               <CardBody>
+                <Form style={{ marginBottom: "1rem" }}>
+                  <SeasonSelect
+                    submit={submit}
+                    seasonYears={seasonYears}
+                    currentSeasonYear={currentSeasonYear}
+                  />
+                </Form>
                 <MetricsChart
                   loadData={metricFetcher.load}
                   seasonYear={currentSeasonYear}

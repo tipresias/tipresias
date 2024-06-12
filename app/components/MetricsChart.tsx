@@ -12,6 +12,7 @@ import { Flex, FormControl, FormLabel, Select } from "@chakra-ui/react";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
 import { RoundMetrics, MetricName } from "../.server/predictionService";
+import { presentNumber, presentPercentage } from "../helpers/number";
 
 interface MetricsChartProps {
   roundMetrics: RoundMetrics[];
@@ -38,6 +39,15 @@ const METRIC_LABELS: Record<MetricName, string> = {
   mae: "MAE",
   bits: "Bits",
 };
+const METRIC_PRESENTERS: Record<
+  MetricName,
+  (value: number | null, fractionDigits: number | undefined) => string
+> = {
+  totalTips: (value) => presentNumber(value),
+  accuracy: presentPercentage,
+  mae: presentNumber,
+  bits: presentNumber,
+};
 
 const isMetricName = (maybeMetricName: string): maybeMetricName is MetricName =>
   Object.keys(METRIC_LABELS).includes(maybeMetricName);
@@ -56,12 +66,12 @@ const MetricSelect = ({ currentMetric, loadMetrics }: MetricSelectProps) => {
   return (
     <FormControl
       margin="0.5rem"
-      maxWidth="30%"
+      maxWidth="15rem"
       marginLeft="auto"
       marginRight="auto"
     >
       <Flex alignItems="center" justifyContent="space-between">
-        <FormLabel margin="0.5rem" size="xl">
+        <FormLabel margin="0.5rem" marginRight="2.5rem" size="xl">
           Metric
         </FormLabel>
         <Select name={"metric"} value={currentMetric} onChange={onMetricChange}>
@@ -95,6 +105,8 @@ const MetricsChart = ({
     loadMetrics(metricName);
   }, [metricName, loadMetrics]);
 
+  const yAxisOffset = metricName === "accuracy" ? 5 : 15;
+
   return (
     <>
       <MetricSelect loadMetrics={loadMetrics} currentMetric={metricName} />
@@ -115,10 +127,18 @@ const MetricsChart = ({
               value: METRIC_LABELS[metricName],
               angle: -90,
               position: "insideLeft",
-              offset: 15,
+              offset: yAxisOffset,
             }}
+            tickFormatter={(value: number) =>
+              METRIC_PRESENTERS[metricName](value, 0)
+            }
           />
-          <Tooltip itemSorter={({ value }) => -(value ?? 0)} />
+          <Tooltip
+            itemSorter={({ value }) => -(value ?? 0)}
+            formatter={(value) =>
+              METRIC_PRESENTERS[metricName](value as number, 2)
+            }
+          />
           <Legend />
           {getModelNames(roundMetrics).map((mlModelName, idx) => (
             <Line

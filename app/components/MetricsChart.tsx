@@ -66,12 +66,12 @@ const MetricSelect = ({ currentMetric, loadMetrics }: MetricSelectProps) => {
   return (
     <FormControl
       margin="0.5rem"
-      maxWidth="30%"
+      maxWidth="15rem"
       marginLeft="auto"
       marginRight="auto"
     >
       <Flex alignItems="center" justifyContent="space-between">
-        <FormLabel margin="0.5rem" size="xl">
+        <FormLabel margin="0.5rem" marginRight="2.5rem" size="xl">
           Metric
         </FormLabel>
         <Select name={"metric"} value={currentMetric} onChange={onMetricChange}>
